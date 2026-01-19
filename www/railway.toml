@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+providers = ["staticfile"]
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 10

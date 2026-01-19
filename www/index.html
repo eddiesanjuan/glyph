@@ -2062,7 +2062,9 @@
     // ============================================
     // Configuration
     // ============================================
-    const API_URL = 'http://localhost:3000';
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://api.glyph.you';
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
 
     // Current state
