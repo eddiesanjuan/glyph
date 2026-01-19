@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from api directory
+COPY api/package*.json ./
 
 # Install dependencies
 RUN npm install
@@ -17,8 +17,12 @@ RUN npm install
 # Install Playwright browsers for PDF generation
 RUN npx playwright install chromium --with-deps
 
-# Copy source code
-COPY . .
+# Copy API source code
+COPY api/src ./src
+COPY api/tsconfig.json ./
+
+# Copy templates directory (needed for template rendering)
+COPY templates /templates
 
 ENV PORT=3000
 EXPOSE 3000
