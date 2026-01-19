@@ -9,23 +9,27 @@ import type {
   GlyphDocument,
   GeneratePdfOptions,
   ChatMessage,
-  GlyphError
+  GlyphError,
+  QuoteData
 } from './types';
 
-const DEFAULT_API_URL = 'https://api.glyph.dev';
+const DEFAULT_API_URL = 'https://api.glyph.so';
 
 export interface ApiClientConfig {
   apiKey: string;
   baseUrl?: string;
 }
 
+/**
+ * Main API client for traditional request/response patterns
+ */
 export class GlyphApiClient {
   private apiKey: string;
   private baseUrl: string;
 
   constructor(config: ApiClientConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || DEFAULT_API_URL;
+    this.baseUrl = (config.baseUrl || DEFAULT_API_URL).replace(/\/$/, '');
   }
 
   /**
@@ -149,4 +153,114 @@ export class GlyphApiClient {
  */
 export function createApiClient(config: ApiClientConfig): GlyphApiClient {
   return new GlyphApiClient(config);
+}
+
+// ============================================
+// GlyphAPI - Simplified API for the editor
+// ============================================
+
+/**
+ * Simplified API client for the GlyphEditor component
+ * Uses the session-based workflow: preview -> modify -> generate
+ */
+export class GlyphAPI {
+  private apiKey: string;
+  private baseUrl: string;
+
+  constructor(apiKey: string, baseUrl = DEFAULT_API_URL) {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+  }
+
+  /**
+   * Make authenticated request with error handling
+   */
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const headers = new Headers(options.headers);
+    headers.set('Authorization', `Bearer ${this.apiKey}`);
+    headers.set('Content-Type', 'application/json');
+
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Make request that returns a Blob (for PDF generation)
+   */
+  private async requestBlob(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<Blob> {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const headers = new Headers(options.headers);
+    headers.set('Authorization', `Bearer ${this.apiKey}`);
+    headers.set('Content-Type', 'application/json');
+
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+    }
+
+    return response.blob();
+  }
+
+  /**
+   * Create a preview session from template and data
+   * Returns the rendered HTML and a session ID for modifications
+   */
+  async preview(
+    template: string,
+    data: QuoteData
+  ): Promise<{ html: string; sessionId: string }> {
+    return this.request<{ html: string; sessionId: string }>('/v1/preview', {
+      method: 'POST',
+      body: JSON.stringify({ template, data })
+    });
+  }
+
+  /**
+   * Modify the current session with an AI prompt
+   * Optionally target a specific region of the document
+   */
+  async modify(
+    sessionId: string,
+    prompt: string,
+    region?: string
+  ): Promise<{ html: string; changes: string[] }> {
+    return this.request<{ html: string; changes: string[] }>('/v1/modify', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, prompt, region })
+    });
+  }
+
+  /**
+   * Generate a PDF from the current session state
+   * Returns the PDF as a Blob for download
+   */
+  async generate(sessionId: string): Promise<Blob> {
+    return this.requestBlob('/v1/generate', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId })
+    });
+  }
 }

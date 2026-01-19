@@ -2,8 +2,47 @@
  * Glyph SDK Type Definitions
  */
 
-/** Theme options for the editor */
-export type GlyphTheme = 'light' | 'dark' | 'auto';
+/** Theme preset options for the editor */
+export type GlyphThemePreset = 'light' | 'dark' | 'auto';
+
+/** Theme customization object */
+export interface GlyphTheme {
+  primaryColor?: string;
+  fontFamily?: string;
+  borderRadius?: string;
+}
+
+/** Quote line item */
+export interface QuoteLineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total?: number;
+}
+
+/** Quote data structure for templates */
+export interface QuoteData {
+  companyName?: string;
+  companyLogo?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  quoteNumber?: string;
+  quoteDate?: string;
+  validUntil?: string;
+  customerName?: string;
+  customerAddress?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  lineItems?: QuoteLineItem[];
+  subtotal?: number;
+  taxRate?: number;
+  tax?: number;
+  total?: number;
+  notes?: string;
+  terms?: string;
+  [key: string]: unknown;
+}
 
 /** Editor configuration props */
 export interface GlyphEditorProps {
@@ -12,9 +51,11 @@ export interface GlyphEditorProps {
   /** Template ID or inline template definition */
   template?: string | GlyphTemplate;
   /** Data to populate the template */
-  data?: Record<string, unknown>;
-  /** Theme preference */
-  theme?: GlyphTheme;
+  data?: Record<string, unknown> | QuoteData;
+  /** Theme preference (preset or custom object) */
+  theme?: GlyphThemePreset | GlyphTheme;
+  /** API URL override */
+  apiUrl?: string;
   /** Callback when document is saved */
   onSave?: (document: GlyphDocument) => void;
   /** Callback when PDF is generated */

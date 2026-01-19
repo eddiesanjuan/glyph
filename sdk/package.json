@@ -1,6 +1,6 @@
 {
   "name": "@glyph-pdf/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embeddable PDF editor SDK with AI-powered document generation",
   "type": "module",
   "main": "./dist/glyph.esm.js",
@@ -20,7 +20,8 @@
     "dev": "vite build --watch",
     "build": "vite build && tsc --emitDeclarationOnly",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:serve": "node test/serve.js"
   },
   "keywords": [
     "pdf",

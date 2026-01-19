@@ -11,12 +11,13 @@ import { GlyphPreview } from './components/Preview';
 import { GlyphChat } from './components/Chat';
 
 // API Client
-import { GlyphApiClient, createApiClient } from './lib/api';
+import { GlyphApiClient, GlyphAPI, createApiClient } from './lib/api';
 import type { ApiClientConfig } from './lib/api';
 
 // Types
 import type {
   GlyphTheme,
+  GlyphThemePreset,
   GlyphEditorProps,
   GlyphTemplate,
   TemplateSchema,
@@ -29,11 +30,13 @@ import type {
   GlyphError,
   ApiResponse,
   ChatMessage,
-  GeneratePdfOptions
+  GeneratePdfOptions,
+  QuoteData,
+  QuoteLineItem
 } from './lib/types';
 
 // Version
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 // Export components
 export {
@@ -41,6 +44,7 @@ export {
   GlyphPreview,
   GlyphChat,
   GlyphApiClient,
+  GlyphAPI,
   createApiClient,
   VERSION
 };
@@ -49,6 +53,7 @@ export {
 export type {
   ApiClientConfig,
   GlyphTheme,
+  GlyphThemePreset,
   GlyphEditorProps,
   GlyphTemplate,
   TemplateSchema,
@@ -61,7 +66,9 @@ export type {
   GlyphError,
   ApiResponse,
   ChatMessage,
-  GeneratePdfOptions
+  GeneratePdfOptions,
+  QuoteData,
+  QuoteLineItem
 };
 
 // Expose on window for IIFE/CDN usage
@@ -71,6 +78,7 @@ if (typeof window !== 'undefined') {
     GlyphEditor,
     GlyphPreview,
     GlyphChat,
+    GlyphAPI,
     createApiClient
   };
 
