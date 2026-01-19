@@ -1,0 +1,43 @@
+{
+  "name": "@glyph-pdf/core",
+  "version": "0.1.0",
+  "description": "Embeddable PDF editor SDK with AI-powered document generation",
+  "type": "module",
+  "main": "./dist/glyph.esm.js",
+  "module": "./dist/glyph.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/glyph.esm.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "pdf",
+    "editor",
+    "web-component",
+    "ai",
+    "document-generation"
+  ],
+  "author": "Glyph",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  },
+  "peerDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
