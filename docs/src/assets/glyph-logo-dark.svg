@@ -1,0 +1,12 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Glyph icon - stylized G with document corner -->
+  <path d="M4 6C4 4.89543 4.89543 4 6 4H20L26 10V26C26 27.1046 25.1046 28 24 28H6C4.89543 28 4 27.1046 4 26V6Z" fill="#8B5CF6"/>
+  <path d="M20 4V10H26" fill="#8B5CF6" stroke="#8B5CF6" stroke-width="1"/>
+  <path d="M20 4L26 10H20V4Z" fill="#C4B5FD"/>
+  <!-- AI sparkle -->
+  <circle cx="12" cy="16" r="2" fill="white"/>
+  <path d="M12 11V13M12 19V21M7 16H9M15 16H17M8.5 12.5L9.9 13.9M14.1 18.1L15.5 19.5M8.5 19.5L9.9 18.1M14.1 13.9L15.5 12.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Glyph text -->
+  <text x="36" y="22" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="#f8fafc">Glyph</text>
+</svg>

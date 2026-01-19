@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glyph - AI-Powered PDF Customization</title>
+  <meta name="description" content="Let your customers personalize documents with natural language. Ship in minutes with 2 lines of code.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>G</text></svg>">
+
+  <style>
+    /* ============================================
+       CSS Variables & Reset
+       ============================================ */
+    :root {
+      --color-bg: #0a0a0f;
+      --color-bg-elevated: #12121a;
+      --color-bg-card: #16161f;
+      --color-surface: #1a1a24;
+      --color-border: rgba(124, 58, 237, 0.15);
+      --color-border-subtle: rgba(255, 255, 255, 0.06);
+
+      --color-primary: #7C3AED;
+      --color-primary-bright: #8B5CF6;
+      --color-primary-glow: rgba(124, 58, 237, 0.4);
+      --color-primary-subtle: rgba(124, 58, 237, 0.1);
+
+      --color-text: #ffffff;
+      --color-text-muted: rgba(255, 255, 255, 0.6);
+      --color-text-subtle: rgba(255, 255, 255, 0.4);
+
+      --color-success: #10B981;
+      --color-accent-cyan: #22D3EE;
+      --color-accent-pink: #EC4899;
+
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 32px;
+
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ============================================
+       Background Effects
+       ============================================ */
+    .gradient-mesh {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.5;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .gradient-orb--1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
+      top: -200px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+
+    .gradient-orb--2 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--color-accent-cyan) 0%, transparent 70%);
+      bottom: 20%;
+      left: -100px;
+      animation-delay: -7s;
+      opacity: 0.3;
+    }
+
+    .gradient-orb--3 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--color-accent-pink) 0%, transparent 70%);
+      bottom: -150px;
+      right: 20%;
+      animation-delay: -14s;
+      opacity: 0.25;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .noise-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ============================================
+       Layout & Navigation
+       ============================================ */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 0;
+      background: linear-gradient(to bottom, var(--color-bg), transparent);
+      transition: background var(--transition-smooth);
+    }
+
+    .nav.scrolled {
+      background: rgba(10, 10, 15, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav__logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--color-text);
+    }
+
+    .nav__logo-mark {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-bright) 100%);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 400;
+      color: white;
+      box-shadow: 0 4px 20px var(--color-primary-glow);
+    }
+
+    .nav__logo-text {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav__link {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 400;
+      transition: color var(--transition-fast);
+    }
+
+    .nav__link:hover {
+      color: var(--color-text);
+    }
+
+    .nav__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--color-primary);
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 20px var(--color-primary-glow);
+    }
+
+    .nav__cta:hover {
+      background: var(--color-primary-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px var(--color-primary-glow);
+    }
+
+    /* ============================================
+       Hero Section
+       ============================================ */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 140px 0 80px;
+      z-index: 2;
+    }
+
+    .hero__content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .hero__text {
+      max-width: 560px;
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--color-primary-bright);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero__badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--color-success);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 6vw, 72px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease-out 0.1s both;
+    }
+
+    .hero__title span {
+      background: linear-gradient(135deg, var(--color-primary-bright) 0%, var(--color-accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero__subtitle {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: 40px;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero__actions {
+      display: flex;
+      gap: 16px;
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 28px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-bright) 100%);
+      color: white;
+      box-shadow: 0 4px 20px var(--color-primary-glow);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--color-primary-glow);
+    }
+
+    .btn--secondary {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .btn--secondary:hover {
+      background: var(--color-bg-card);
+      border-color: var(--color-border);
+    }
+
+    .btn__icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Hero Demo Preview */
+    .hero__demo {
+      position: relative;
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    .demo-container {
+      position: relative;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow:
+        0 0 0 1px var(--color-border-subtle),
+        0 20px 50px -10px rgba(0, 0, 0, 0.5),
+        0 0 80px var(--color-primary-glow);
+    }
+
+    .demo-container::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, var(--color-primary) 0%, transparent 50%, var(--color-accent-cyan) 100%);
+      opacity: 0.3;
+      z-index: -1;
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .demo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--color-border-subtle);
+    }
+
+    .demo-dot--red { background: #EF4444; }
+    .demo-dot--yellow { background: #F59E0B; }
+    .demo-dot--green { background: #10B981; }
+
+    .demo-preview {
+      background: white;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      aspect-ratio: 8.5 / 7;
+      position: relative;
+    }
+
+    .demo-preview__content {
+      position: absolute;
+      inset: 0;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+      font-size: 11px;
+      color: #1a1a1a;
+      overflow: hidden;
+    }
+
+    .demo-doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--demo-accent, #7C3AED);
+      margin-bottom: 16px;
+      transition: border-color 0.5s ease;
+    }
+
+    .demo-company {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--demo-accent, #7C3AED);
+      transition: color 0.5s ease;
+    }
+
+    .demo-quote-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--demo-accent, #7C3AED);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: color 0.5s ease;
+    }
+
+    .demo-meta {
+      display: flex;
+      gap: 24px;
+      background: #f9fafb;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .demo-meta-item {
+      text-align: center;
+    }
+
+    .demo-meta-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .demo-meta-value {
+      font-weight: 600;
+    }
+
+    .demo-table {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .demo-table-header {
+      background: var(--demo-accent, #7C3AED);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px 4px 0 0;
+      font-weight: 600;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      transition: background-color 0.5s ease;
+    }
+
+    .demo-table-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e5e5;
+      font-size: 10px;
+    }
+
+    /* Floating Command Animation */
+    .demo-command {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      animation: commandFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes commandFloat {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    .demo-command__icon {
+      width: 20px;
+      height: 20px;
+      color: var(--color-primary-bright);
+    }
+
+    .demo-command__text {
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .demo-command__cursor {
+      width: 2px;
+      height: 16px;
+      background: var(--color-primary);
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ============================================
+       Live Playground Section
+       ============================================ */
+    .playground {
+      position: relative;
+      padding: 120px 0;
+      z-index: 2;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto 64px;
+    }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-primary-bright);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .section-subtitle {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .playground__editor {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px var(--color-border-subtle),
+        0 40px 80px -20px rgba(0, 0, 0, 0.5);
+    }
+
+    .playground__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .playground__tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--color-surface);
+      padding: 4px;
+      border-radius: var(--radius-sm);
+    }
+
+    .playground__tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .playground__tab:hover {
+      color: var(--color-text);
+    }
+
+    .playground__tab--active {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .playground__actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .playground__body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 500px;
+    }
+
+    .playground__input-area {
+      padding: 24px;
+      border-right: 1px solid var(--color-border-subtle);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .playground__prompt {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .playground__prompt-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+    }
+
+    .playground__input {
+      flex: 1;
+      width: 100%;
+      padding: 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      resize: none;
+      transition: border-color var(--transition-fast);
+    }
+
+    .playground__input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    .playground__input::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .playground__suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .playground__suggestion {
+      padding: 8px 14px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .playground__suggestion:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .playground__preview-area {
+      padding: 24px;
+      background: var(--color-bg-elevated);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .playground__preview-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+      margin-bottom: 16px;
+    }
+
+    .playground__preview {
+      flex: 1;
+      background: white;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .playground__preview-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      border: none;
+    }
+
+    .playground__rate-notice {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    /* ============================================
+       Features Section
+       ============================================ */
+    .features {
+      position: relative;
+      padding: 120px 0;
+      z-index: 2;
+    }
+
+    .features__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-accent-cyan));
+      opacity: 0;
+      transition: opacity var(--transition-smooth);
+    }
+
+    .feature-card:hover {
+      border-color: var(--color-border);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-card__icon {
+      width: 48px;
+      height: 48px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--color-primary-bright);
+    }
+
+    .feature-card__icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .feature-card__title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card__description {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    /* Highlight Card */
+    .feature-card--highlight {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-primary-subtle) 100%);
+    }
+
+    .feature-card--highlight .feature-card__content {
+      padding-right: 20px;
+    }
+
+    .feature-card--highlight .feature-card__visual {
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .code-line {
+      opacity: 0.7;
+    }
+
+    .code-line--highlight {
+      opacity: 1;
+      color: var(--color-primary-bright);
+    }
+
+    /* ============================================
+       Integration Section
+       ============================================ */
+    .integration {
+      position: relative;
+      padding: 120px 0;
+      z-index: 2;
+    }
+
+    .integration__content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .integration__text h2 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 4vw, 48px);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+
+    .integration__text p {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .framework-badges {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .framework-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      transition: all var(--transition-fast);
+    }
+
+    .framework-badge:hover {
+      border-color: var(--color-border);
+      color: var(--color-text);
+    }
+
+    .framework-badge svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .integration__code {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .code-tabs {
+      display: flex;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .code-tab {
+      padding: 14px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .code-tab:hover {
+      color: var(--color-text);
+    }
+
+    .code-tab--active {
+      color: var(--color-primary-bright);
+      border-bottom-color: var(--color-primary);
+    }
+
+    .code-content {
+      padding: 24px;
+    }
+
+    .code-block {
+      display: none;
+    }
+
+    .code-block--active {
+      display: block;
+    }
+
+    .code-block pre {
+      background: var(--color-surface);
+      padding: 20px;
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .code-block code {
+      color: var(--color-text-muted);
+    }
+
+    .code-keyword { color: var(--color-accent-pink); }
+    .code-string { color: var(--color-success); }
+    .code-tag { color: var(--color-primary-bright); }
+    .code-attr { color: var(--color-accent-cyan); }
+    .code-comment { color: var(--color-text-subtle); }
+
+    /* ============================================
+       Pricing Section
+       ============================================ */
+    .pricing {
+      position: relative;
+      padding: 120px 0;
+      z-index: 2;
+    }
+
+    .pricing__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .pricing-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      transition: all var(--transition-smooth);
+    }
+
+    .pricing-card:hover {
+      border-color: var(--color-border);
+      transform: translateY(-4px);
+    }
+
+    .pricing-card--popular {
+      background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-primary-subtle) 100%);
+      border-color: var(--color-primary);
+      position: relative;
+    }
+
+    .pricing-card--popular::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 16px;
+      background: var(--color-primary);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 100px;
+    }
+
+    .pricing-card__name {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+
+    .pricing-card__price {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .pricing-card__price span {
+      font-size: 16px;
+      color: var(--color-text-muted);
+    }
+
+    .pricing-card__description {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .pricing-card__features {
+      list-style: none;
+      flex: 1;
+      margin-bottom: 24px;
+    }
+
+    .pricing-card__features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .pricing-card__features li svg {
+      width: 18px;
+      height: 18px;
+      color: var(--color-success);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .pricing-card .btn {
+      width: 100%;
+    }
+
+    /* ============================================
+       Footer
+       ============================================ */
+    .footer {
+      position: relative;
+      padding: 80px 0 40px;
+      border-top: 1px solid var(--color-border-subtle);
+      z-index: 2;
+    }
+
+    .footer__content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 60px;
+      margin-bottom: 60px;
+    }
+
+    .footer__brand {
+      max-width: 280px;
+    }
+
+    .footer__logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--color-text);
+      margin-bottom: 16px;
+    }
+
+    .footer__logo-mark {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-bright) 100%);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: white;
+    }
+
+    .footer__logo-text {
+      font-family: var(--font-display);
+      font-size: 22px;
+    }
+
+    .footer__tagline {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .footer__column h4 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text);
+      margin-bottom: 20px;
+    }
+
+    .footer__column ul {
+      list-style: none;
+    }
+
+    .footer__column li {
+      margin-bottom: 12px;
+    }
+
+    .footer__column a {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .footer__column a:hover {
+      color: var(--color-text);
+    }
+
+    .footer__bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 32px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .footer__copyright {
+      font-size: 13px;
+      color: var(--color-text-subtle);
+    }
+
+    .footer__social {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer__social a {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+      transition: all var(--transition-fast);
+    }
+
+    .footer__social a:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .footer__social svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ============================================
+       Responsive Design
+       ============================================ */
+    @media (max-width: 1024px) {
+      .hero__content {
+        grid-template-columns: 1fr;
+        gap: 60px;
+      }
+
+      .hero__demo {
+        order: -1;
+      }
+
+      .features__grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .feature-card--highlight {
+        grid-column: span 2;
+      }
+
+      .pricing__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer__content {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav__links {
+        display: none;
+      }
+
+      .hero {
+        padding: 120px 0 60px;
+      }
+
+      .hero__title {
+        font-size: 40px;
+      }
+
+      .hero__actions {
+        flex-direction: column;
+      }
+
+      .features__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-card--highlight {
+        grid-column: span 1;
+        grid-template-columns: 1fr;
+      }
+
+      .playground__body {
+        grid-template-columns: 1fr;
+      }
+
+      .playground__input-area {
+        border-right: none;
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+
+      .integration__content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .pricing__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer__content {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .footer__bottom {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+      }
+    }
+
+    /* ============================================
+       Utility Classes
+       ============================================ */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Loading state for playground */
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--color-border-subtle);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .playground__loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 15, 0.8);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Effects -->
+  <div class="gradient-mesh" aria-hidden="true">
+    <div class="gradient-orb gradient-orb--1"></div>
+    <div class="gradient-orb gradient-orb--2"></div>
+    <div class="gradient-orb gradient-orb--3"></div>
+  </div>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="container nav__inner">
+      <a href="/" class="nav__logo">
+        <span class="nav__logo-mark">G</span>
+        <span class="nav__logo-text">Glyph</span>
+      </a>
+      <ul class="nav__links">
+        <li><a href="#playground" class="nav__link">Playground</a></li>
+        <li><a href="#features" class="nav__link">Features</a></li>
+        <li><a href="#pricing" class="nav__link">Pricing</a></li>
+        <li><a href="/docs" class="nav__link">Docs</a></li>
+      </ul>
+      <a href="/dashboard" class="nav__cta">
+        Get API Key
+        <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero__content">
+        <div class="hero__text">
+          <div class="hero__badge">Now in Public Beta</div>
+          <h1 class="hero__title">
+            AI-Powered<br><span>PDF Customization</span>
+          </h1>
+          <p class="hero__subtitle">
+            Let your customers personalize documents with natural language.
+            Ship in minutes with just 2 lines of code.
+          </p>
+          <div class="hero__actions">
+            <a href="#playground" class="btn btn--primary">
+              Try the Playground
+              <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </a>
+            <a href="/dashboard" class="btn btn--secondary">
+              Get API Key
+            </a>
+          </div>
+        </div>
+
+        <div class="hero__demo">
+          <div class="demo-container">
+            <div class="demo-header">
+              <span class="demo-dot demo-dot--red"></span>
+              <span class="demo-dot demo-dot--yellow"></span>
+              <span class="demo-dot demo-dot--green"></span>
+            </div>
+            <div class="demo-preview" id="hero-demo">
+              <div class="demo-preview__content">
+                <div class="demo-doc-header">
+                  <div class="demo-company">Acme Corp</div>
+                  <div class="demo-quote-title">Quote</div>
+                </div>
+                <div class="demo-meta">
+                  <div class="demo-meta-item">
+                    <div class="demo-meta-label">Quote #</div>
+                    <div class="demo-meta-value">Q-2024-0042</div>
+                  </div>
+                  <div class="demo-meta-item">
+                    <div class="demo-meta-label">Date</div>
+                    <div class="demo-meta-value">Jan 18, 2026</div>
+                  </div>
+                  <div class="demo-meta-item">
+                    <div class="demo-meta-label">Valid Until</div>
+                    <div class="demo-meta-value">Feb 17, 2026</div>
+                  </div>
+                </div>
+                <div class="demo-table">
+                  <div class="demo-table-header">
+                    <span>Description</span>
+                    <span style="text-align: right">Qty</span>
+                    <span style="text-align: right">Total</span>
+                  </div>
+                  <div class="demo-table-row">
+                    <span>Enterprise License</span>
+                    <span style="text-align: right">1</span>
+                    <span style="text-align: right">$2,400</span>
+                  </div>
+                  <div class="demo-table-row">
+                    <span>Premium Support</span>
+                    <span style="text-align: right">12</span>
+                    <span style="text-align: right">$1,200</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-command">
+              <svg class="demo-command__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              <span class="demo-command__text" id="typing-text">Make the header blue</span>
+              <span class="demo-command__cursor"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Playground Section -->
+  <section class="playground" id="playground">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+          </svg>
+          Live Playground
+        </div>
+        <h2 class="section-title">Try it yourself</h2>
+        <p class="section-subtitle">
+          Type natural language commands to customize the document in real-time.
+          No coding required.
+        </p>
+      </div>
+
+      <div class="playground__editor">
+        <div class="playground__toolbar">
+          <div class="playground__tabs">
+            <button class="playground__tab playground__tab--active" data-template="quote-modern">Modern</button>
+            <button class="playground__tab" data-template="quote-professional">Professional</button>
+            <button class="playground__tab" data-template="quote-bold">Bold</button>
+          </div>
+          <div class="playground__actions">
+            <button class="btn btn--primary" id="generate-btn">
+              <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Generate PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="playground__body">
+          <div class="playground__input-area">
+            <div class="playground__prompt">
+              <label class="playground__prompt-label">What would you like to change?</label>
+              <textarea
+                class="playground__input"
+                id="prompt-input"
+                placeholder="Try: 'Make the header green' or 'Add a 10% discount' or 'Change the company name to TechStart'"
+              ></textarea>
+              <div class="playground__suggestions">
+                <button class="playground__suggestion" data-prompt="Make the header navy blue">Make header blue</button>
+                <button class="playground__suggestion" data-prompt="Add a 15% early payment discount">Add discount</button>
+                <button class="playground__suggestion" data-prompt="Change the accent color to teal">Change to teal</button>
+                <button class="playground__suggestion" data-prompt="Make the font size larger">Larger text</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="playground__preview-area">
+            <div class="playground__preview-label">Live Preview</div>
+            <div class="playground__preview" id="preview-container">
+              <!-- Glyph editor will be mounted here -->
+              <div id="glyph-mount"></div>
+            </div>
+            <div class="playground__rate-notice">
+              Demo limited to 10 requests/minute. Get an API key for higher limits.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Features
+        </div>
+        <h2 class="section-title">Everything you need to ship</h2>
+        <p class="section-subtitle">
+          A complete toolkit for AI-powered document customization.
+          Built for developers, loved by end users.
+        </p>
+      </div>
+
+      <div class="features__grid">
+        <!-- Natural Language Card (Highlight) -->
+        <div class="feature-card feature-card--highlight">
+          <div class="feature-card__content">
+            <div class="feature-card__icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Natural Language Editing</h3>
+            <p class="feature-card__description">
+              Your users simply describe what they want. "Make the header blue"
+              just works. No complex UI, no training required.
+            </p>
+          </div>
+          <div class="feature-card__visual">
+            <div class="code-line code-line--highlight">"Add a 10% discount for early payment"</div>
+            <div class="code-line" style="margin-top: 12px; color: var(--color-text-subtle);">// AI understands context and applies changes</div>
+            <div class="code-line" style="color: var(--color-success); margin-top: 8px;">+ Discount row added: -$240.00</div>
+            <div class="code-line" style="color: var(--color-success);">+ Total updated: $2,160.00</div>
+          </div>
+        </div>
+
+        <!-- Templates Card -->
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+            </svg>
+          </div>
+          <h3 class="feature-card__title">Professional Templates</h3>
+          <p class="feature-card__description">
+            Start with beautiful, responsive templates. Quotes, invoices, proposals -
+            all designed for real business use.
+          </p>
+        </div>
+
+        <!-- Fast Generation -->
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="feature-card__title">Lightning Fast</h3>
+          <p class="feature-card__description">
+            PDFs generated in under 3 seconds. Real-time preview updates
+            as your users type their requests.
+          </p>
+        </div>
+
+        <!-- Tiny SDK -->
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <h3 class="feature-card__title">Tiny SDK</h3>
+          <p class="feature-card__description">
+            Under 10KB gzipped. One script tag, one component.
+            No build tools required.
+          </p>
+        </div>
+
+        <!-- Secure -->
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="feature-card__title">Secure by Default</h3>
+          <p class="feature-card__description">
+            AI guardrails prevent data tampering. Users can customize styling,
+            not manipulate protected data fields.
+          </p>
+        </div>
+
+        <!-- Region Selection -->
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+            </svg>
+          </div>
+          <h3 class="feature-card__title">Smart Region Selection</h3>
+          <p class="feature-card__description">
+            Click to select specific sections. Apply changes to just
+            the header, line items, or footer.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integration Section -->
+  <section class="integration" id="integration">
+    <div class="container">
+      <div class="integration__content">
+        <div class="integration__text">
+          <h2>Works with<br>any framework</h2>
+          <p>
+            Drop in a single script tag and web component. Works with React,
+            Vue, Svelte, or vanilla HTML. No complex setup required.
+          </p>
+          <div class="framework-badges">
+            <span class="framework-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.23 12.004a2.236 2.236 0 0 1-2.235 2.236 2.236 2.236 0 0 1-2.236-2.236 2.236 2.236 0 0 1 2.235-2.236 2.236 2.236 0 0 1 2.236 2.236zm2.648-10.69c-1.346 0-3.107.96-4.888 2.622-1.78-1.653-3.542-2.602-4.887-2.602-.41 0-.783.093-1.106.278-1.375.793-1.683 3.264-.973 6.365C1.98 8.917 0 10.42 0 12.004c0 1.59 1.99 3.097 5.043 4.03-.704 3.113-.39 5.588.988 6.38.32.187.69.275 1.102.275 1.345 0 3.107-.96 4.888-2.624 1.78 1.654 3.542 2.603 4.887 2.603.41 0 .783-.09 1.106-.275 1.374-.792 1.683-3.263.973-6.365C22.02 15.096 24 13.59 24 12.004c0-1.59-1.99-3.097-5.043-4.032.704-3.11.39-5.587-.988-6.38-.318-.184-.688-.277-1.092-.278zm-.005 1.09v.006c.225 0 .406.044.558.127.666.382.955 1.835.73 3.704-.054.46-.142.945-.25 1.44-.96-.236-2.006-.417-3.107-.534-.66-.905-1.345-1.727-2.035-2.447 1.592-1.48 3.087-2.292 4.105-2.295zm-9.77.02c1.012 0 2.514.808 4.11 2.28-.686.72-1.37 1.537-2.02 2.442-1.107.117-2.154.298-3.113.538-.112-.49-.195-.964-.254-1.42-.23-1.868.054-3.32.714-3.707.19-.09.4-.127.563-.132zm4.882 3.05c.455.468.91.992 1.36 1.564-.44-.02-.89-.034-1.345-.034-.46 0-.915.01-1.36.034.44-.572.895-1.096 1.345-1.565zM12 8.1c.74 0 1.477.034 2.202.093.406.582.802 1.203 1.183 1.86.372.64.71 1.29 1.018 1.946-.308.655-.646 1.31-1.013 1.95-.38.66-.773 1.288-1.18 1.87-.728.063-1.466.098-2.21.098-.74 0-1.477-.035-2.202-.093-.406-.582-.802-1.204-1.183-1.86-.372-.64-.71-1.29-1.018-1.946.303-.657.646-1.313 1.013-1.954.38-.66.773-1.286 1.18-1.868.728-.064 1.466-.098 2.21-.098zm-3.635.254c-.24.377-.48.763-.704 1.16-.225.39-.435.782-.635 1.174-.265-.656-.49-1.31-.676-1.947.64-.15 1.315-.283 2.015-.386zm7.26 0c.695.103 1.365.23 2.006.387-.18.632-.405 1.282-.66 1.933-.2-.39-.41-.783-.64-1.174-.225-.392-.465-.774-.705-1.146zm3.063.675c.484.15.944.317 1.375.498 1.732.74 2.852 1.708 2.852 2.476-.005.768-1.125 1.74-2.857 2.475-.42.18-.88.342-1.355.493-.28-.958-.646-1.956-1.1-2.98.45-1.017.81-2.01 1.085-2.964zm-13.395.004c.278.96.645 1.957 1.1 2.98-.45 1.017-.812 2.01-1.086 2.964-.484-.15-.944-.318-1.37-.5-1.732-.737-2.852-1.706-2.852-2.474 0-.768 1.12-1.742 2.852-2.476.42-.18.88-.342 1.356-.494zm11.678 4.28c.265.657.49 1.312.676 1.948-.64.157-1.316.29-2.016.39.24-.375.48-.762.705-1.158.225-.39.435-.788.636-1.18zm-9.945.02c.2.392.41.783.64 1.175.23.39.465.772.705 1.143-.695-.102-1.365-.23-2.006-.386.18-.63.406-1.282.66-1.933zM17.92 16.32c.112.493.2.968.254 1.423.23 1.868-.054 3.32-.714 3.708-.147.09-.338.128-.563.128-1.012 0-2.514-.807-4.11-2.28.686-.72 1.37-1.536 2.02-2.44 1.107-.118 2.154-.3 3.113-.54zm-11.83.01c.96.234 2.006.415 3.107.532.66.905 1.345 1.727 2.035 2.446-1.595 1.483-3.092 2.295-4.11 2.295-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.834-.73-3.703.054-.46.142-.944.25-1.438zm4.56.64c.44.02.89.034 1.345.034.46 0 .915-.01 1.36-.034-.44.572-.895 1.095-1.345 1.565-.455-.47-.91-.993-1.36-1.565z"/></svg>
+              React
+            </span>
+            <span class="framework-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24,1.61H6.24L6,1.61l-.12.05-.05,0-.1.1L0,12.27,5.76,22.95l.08.11.05.05.1.07.1,0H6.24L18.4,22.55h0l.13-.1h0l.1-.11L24,12.27ZM6.39,20.5l-4-8.23,4-8.23,13.33-1.64ZM7.08,4l12.23,5.54L19,17.72ZM17,17.94l-8.91.89L16.5,8.55l2.29,9.14Z"/></svg>
+              Vue
+            </span>
+            <span class="framework-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.354 21.125a4.44 4.44 0 0 1-4.765-1.767 4.109 4.109 0 0 1-.703-3.107 3.898 3.898 0 0 1 .134-.522l.105-.321.287.21a7.21 7.21 0 0 0 2.186 1.092l.208.063-.02.208a1.253 1.253 0 0 0 .226.83 1.337 1.337 0 0 0 1.435.533 1.231 1.231 0 0 0 .343-.15l5.59-3.562a1.164 1.164 0 0 0 .524-.778 1.242 1.242 0 0 0-.211-.937 1.338 1.338 0 0 0-1.435-.533 1.23 1.23 0 0 0-.343.15l-2.133 1.36a4.078 4.078 0 0 1-1.135.499 4.44 4.44 0 0 1-4.765-1.766 4.108 4.108 0 0 1-.702-3.108 3.855 3.855 0 0 1 1.742-2.582l5.589-3.563a4.072 4.072 0 0 1 1.135-.499 4.44 4.44 0 0 1 4.765 1.767 4.109 4.109 0 0 1 .703 3.107 3.943 3.943 0 0 1-.134.522l-.105.321-.286-.21a7.204 7.204 0 0 0-2.187-1.093l-.208-.063.02-.207a1.255 1.255 0 0 0-.226-.831 1.337 1.337 0 0 0-1.435-.532 1.231 1.231 0 0 0-.343.15L8.62 9.368a1.162 1.162 0 0 0-.524.778 1.243 1.243 0 0 0 .212.936 1.338 1.338 0 0 0 1.435.533 1.235 1.235 0 0 0 .343-.15l2.133-1.36a4.067 4.067 0 0 1 1.135-.498 4.44 4.44 0 0 1 4.765 1.766 4.108 4.108 0 0 1 .702 3.108 3.857 3.857 0 0 1-1.742 2.583l-5.589 3.562a4.072 4.072 0 0 1-1.136.498z"/></svg>
+              Svelte
+            </span>
+            <span class="framework-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm7.031 9.75l-.232-2.718 10.059.003.23-2.622L5.412 4.41l.698 8.01h9.126l-.326 3.426-2.91.804-2.955-.81-.188-2.11H6.248l.33 4.171L12 19.351l5.379-1.443.744-8.157H8.531z"/></svg>
+              HTML
+            </span>
+          </div>
+        </div>
+
+        <div class="integration__code">
+          <div class="code-tabs">
+            <button class="code-tab code-tab--active" data-lang="html">HTML</button>
+            <button class="code-tab" data-lang="react">React</button>
+            <button class="code-tab" data-lang="vue">Vue</button>
+          </div>
+          <div class="code-content">
+            <div class="code-block code-block--active" id="code-html">
+              <pre><code><span class="code-comment">&lt;!-- Include the SDK --&gt;</span>
+<span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://cdn.glyph.so/v1.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
+
+<span class="code-comment">&lt;!-- Add the editor component --&gt;</span>
+<span class="code-tag">&lt;glyph-editor</span>
+  <span class="code-attr">api-key</span>=<span class="code-string">"gk_your_api_key"</span>
+  <span class="code-attr">template</span>=<span class="code-string">"quote-modern"</span>
+  <span class="code-attr">:data</span>=<span class="code-string">"quoteData"</span>
+<span class="code-tag">/&gt;</span></code></pre>
+            </div>
+            <div class="code-block" id="code-react">
+              <pre><code><span class="code-keyword">import</span> { GlyphEditor } <span class="code-keyword">from</span> <span class="code-string">'@glyph-so/react'</span>
+
+<span class="code-keyword">function</span> <span class="code-tag">QuoteEditor</span>() {
+  <span class="code-keyword">return</span> (
+    <span class="code-tag">&lt;GlyphEditor</span>
+      <span class="code-attr">apiKey</span>=<span class="code-string">"gk_your_api_key"</span>
+      <span class="code-attr">template</span>=<span class="code-string">"quote-modern"</span>
+      <span class="code-attr">data</span>={quoteData}
+    <span class="code-tag">/&gt;</span>
+  )
+}</code></pre>
+            </div>
+            <div class="code-block" id="code-vue">
+              <pre><code><span class="code-tag">&lt;template&gt;</span>
+  <span class="code-tag">&lt;GlyphEditor</span>
+    <span class="code-attr">api-key</span>=<span class="code-string">"gk_your_api_key"</span>
+    <span class="code-attr">template</span>=<span class="code-string">"quote-modern"</span>
+    <span class="code-attr">:data</span>=<span class="code-string">"quoteData"</span>
+  <span class="code-tag">/&gt;</span>
+<span class="code-tag">&lt;/template&gt;</span>
+
+<span class="code-tag">&lt;script setup&gt;</span>
+<span class="code-keyword">import</span> { GlyphEditor } <span class="code-keyword">from</span> <span class="code-string">'@glyph-so/vue'</span>
+<span class="code-tag">&lt;/script&gt;</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Pricing
+        </div>
+        <h2 class="section-title">Simple, transparent pricing</h2>
+        <p class="section-subtitle">
+          Start free. Scale as you grow. No hidden fees or surprises.
+        </p>
+      </div>
+
+      <div class="pricing__grid">
+        <!-- Free Tier -->
+        <div class="pricing-card">
+          <div class="pricing-card__name">Free</div>
+          <div class="pricing-card__price">$0<span>/mo</span></div>
+          <div class="pricing-card__description">Perfect for trying things out</div>
+          <ul class="pricing-card__features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              100 PDFs per month
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              10 requests per minute
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              All 3 templates
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Community support
+            </li>
+          </ul>
+          <a href="/dashboard" class="btn btn--secondary">Get Started</a>
+        </div>
+
+        <!-- Pro Tier -->
+        <div class="pricing-card pricing-card--popular">
+          <div class="pricing-card__name">Pro</div>
+          <div class="pricing-card__price">$29<span>/mo</span></div>
+          <div class="pricing-card__description">For growing businesses</div>
+          <ul class="pricing-card__features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              1,000 PDFs per month
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              60 requests per minute
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Custom branding
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Email support
+            </li>
+          </ul>
+          <a href="/dashboard" class="btn btn--primary">Get Started</a>
+        </div>
+
+        <!-- Scale Tier -->
+        <div class="pricing-card">
+          <div class="pricing-card__name">Scale</div>
+          <div class="pricing-card__price">$99<span>/mo</span></div>
+          <div class="pricing-card__description">For high-volume needs</div>
+          <ul class="pricing-card__features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              10,000 PDFs per month
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              120 requests per minute
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Custom templates
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Priority support
+            </li>
+          </ul>
+          <a href="/dashboard" class="btn btn--secondary">Get Started</a>
+        </div>
+
+        <!-- Enterprise Tier -->
+        <div class="pricing-card">
+          <div class="pricing-card__name">Enterprise</div>
+          <div class="pricing-card__price">Custom</div>
+          <div class="pricing-card__description">For large organizations</div>
+          <ul class="pricing-card__features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Unlimited PDFs
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Dedicated infrastructure
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Custom AI training
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              SLA & dedicated support
+            </li>
+          </ul>
+          <a href="mailto:hello@glyph.so" class="btn btn--secondary">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__content">
+        <div class="footer__brand">
+          <a href="/" class="footer__logo">
+            <span class="footer__logo-mark">G</span>
+            <span class="footer__logo-text">Glyph</span>
+          </a>
+          <p class="footer__tagline">
+            AI-powered PDF customization. Let your customers personalize documents
+            with natural language. Ship in minutes.
+          </p>
+        </div>
+
+        <div class="footer__column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#playground">Playground</a></li>
+            <li><a href="/changelog">Changelog</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__column">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="/docs">Documentation</a></li>
+            <li><a href="/docs/api">API Reference</a></li>
+            <li><a href="https://github.com/glyph-so/glyph">GitHub</a></li>
+            <li><a href="/examples">Examples</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__column">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="/about">About</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/privacy">Privacy</a></li>
+            <li><a href="/terms">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p class="footer__copyright">
+          Built by Eddie San Juan. All rights reserved.
+        </p>
+        <div class="footer__social">
+          <a href="https://github.com/glyph-so" aria-label="GitHub">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+          <a href="https://twitter.com/glyph_so" aria-label="Twitter">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://discord.gg/glyph" aria-label="Discord">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // ============================================
+    // Navigation Scroll Effect
+    // ============================================
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // ============================================
+    // Hero Demo Animation
+    // ============================================
+    const typingText = document.getElementById('typing-text');
+    const heroDemo = document.getElementById('hero-demo');
+    const commands = [
+      { text: 'Make the header blue', color: '#3B82F6' },
+      { text: 'Change accent to teal', color: '#14B8A6' },
+      { text: 'Use a red theme', color: '#EF4444' },
+      { text: 'Make it purple', color: '#7C3AED' }
+    ];
+    let commandIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    let currentColor = '#7C3AED';
+
+    function typeCommand() {
+      const command = commands[commandIndex];
+
+      if (!isDeleting) {
+        typingText.textContent = command.text.substring(0, charIndex + 1);
+        charIndex++;
+
+        if (charIndex === command.text.length) {
+          // Finished typing, apply color change
+          setTimeout(() => {
+            heroDemo.style.setProperty('--demo-accent', command.color);
+            currentColor = command.color;
+          }, 300);
+
+          setTimeout(() => {
+            isDeleting = true;
+            typeCommand();
+          }, 2000);
+          return;
+        }
+      } else {
+        typingText.textContent = command.text.substring(0, charIndex - 1);
+        charIndex--;
+
+        if (charIndex === 0) {
+          isDeleting = false;
+          commandIndex = (commandIndex + 1) % commands.length;
+        }
+      }
+
+      setTimeout(typeCommand, isDeleting ? 30 : 80);
+    }
+
+    setTimeout(typeCommand, 1000);
+
+    // ============================================
+    // Code Tab Switching
+    // ============================================
+    const codeTabs = document.querySelectorAll('.code-tab');
+    const codeBlocks = document.querySelectorAll('.code-block');
+
+    codeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const lang = tab.dataset.lang;
+
+        codeTabs.forEach(t => t.classList.remove('code-tab--active'));
+        codeBlocks.forEach(b => b.classList.remove('code-block--active'));
+
+        tab.classList.add('code-tab--active');
+        document.getElementById(`code-${lang}`).classList.add('code-block--active');
+      });
+    });
+
+    // ============================================
+    // Playground Functionality
+    // ============================================
+    const playgroundTabs = document.querySelectorAll('.playground__tab');
+    const promptInput = document.getElementById('prompt-input');
+    const suggestions = document.querySelectorAll('.playground__suggestion');
+    const generateBtn = document.getElementById('generate-btn');
+    const previewContainer = document.getElementById('preview-container');
+    const glyphMount = document.getElementById('glyph-mount');
+
+    // Template switching
+    playgroundTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        playgroundTabs.forEach(t => t.classList.remove('playground__tab--active'));
+        tab.classList.add('playground__tab--active');
+        // In production, this would reload the glyph-editor with new template
+        const template = tab.dataset.template;
+        console.log('Switching to template:', template);
+      });
+    });
+
+    // Quick suggestions
+    suggestions.forEach(suggestion => {
+      suggestion.addEventListener('click', () => {
+        promptInput.value = suggestion.dataset.prompt;
+        promptInput.focus();
+      });
+    });
+
+    // Generate button
+    generateBtn.addEventListener('click', () => {
+      const btn = generateBtn;
+      const originalText = btn.innerHTML;
+
+      btn.innerHTML = `
+        <div class="loading-spinner" style="width: 18px; height: 18px; border-width: 2px;"></div>
+        Generating...
+      `;
+      btn.disabled = true;
+
+      // Simulate PDF generation
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('PDF generation requires a valid API key. Sign up to try it!');
+      }, 2000);
+    });
+
+    // Mount placeholder preview (actual glyph-editor would be loaded with SDK)
+    glyphMount.innerHTML = `
+      <div style="
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+        background: white;
+        padding: 32px;
+        font-family: system-ui, sans-serif;
+        font-size: 12px;
+        color: #1a1a1a;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #7C3AED; margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 18px; font-weight: 700; color: #7C3AED;">Acme Corporation</div>
+            <div style="font-size: 11px; color: #666; margin-top: 4px;">123 Business Ave, Suite 100<br>San Francisco, CA 94102</div>
+          </div>
+          <div style="font-size: 24px; font-weight: 700; color: #7C3AED; text-transform: uppercase; letter-spacing: 0.05em;">Quote</div>
+        </div>
+
+        <div style="display: flex; gap: 32px; background: #f9fafb; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;">
+          <div style="text-align: center;">
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 4px;">Quote Number</div>
+            <div style="font-weight: 600;">Q-2024-0042</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 4px;">Date</div>
+            <div style="font-weight: 600;">January 18, 2026</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 4px;">Valid Until</div>
+            <div style="font-weight: 600;">February 17, 2026</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; font-weight: 600;">Prepared For</div>
+          <div style="font-weight: 600; font-size: 14px;">John Smith</div>
+          <div style="color: #666; margin-top: 4px;">TechStart Inc.</div>
+          <div style="color: #666; font-size: 11px;">john@techstart.io</div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #7C3AED; color: white;">
+              <th style="padding: 10px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Description</th>
+              <th style="padding: 10px 12px; text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Qty</th>
+              <th style="padding: 10px 12px; text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Price</th>
+              <th style="padding: 10px 12px; text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #e5e5e5;">
+              <td style="padding: 12px;">
+                <div style="font-weight: 500;">Enterprise License</div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px;">Annual subscription with all features</div>
+              </td>
+              <td style="padding: 12px; text-align: right;">1</td>
+              <td style="padding: 12px; text-align: right;">$2,400.00</td>
+              <td style="padding: 12px; text-align: right;">$2,400.00</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e5e5e5;">
+              <td style="padding: 12px;">
+                <div style="font-weight: 500;">Premium Support</div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px;">24/7 dedicated support channel</div>
+              </td>
+              <td style="padding: 12px; text-align: right;">12</td>
+              <td style="padding: 12px; text-align: right;">$100.00</td>
+              <td style="padding: 12px; text-align: right;">$1,200.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+          <div style="width: 200px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5;">
+              <span style="color: #666;">Subtotal</span>
+              <span style="font-weight: 500;">$3,600.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #7C3AED; margin-top: 4px;">
+              <span style="font-weight: 700; color: #7C3AED;">Total</span>
+              <span style="font-weight: 700; color: #7C3AED;">$3,600.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // ============================================
+    // Smooth Scroll for Anchor Links
+    // ============================================
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // ============================================
+    // Intersection Observer for Animations
+    // ============================================
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observe feature cards and pricing cards
+    document.querySelectorAll('.feature-card, .pricing-card').forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(30px)';
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(card);
+    });
+  </script>
+</body>
+</html>

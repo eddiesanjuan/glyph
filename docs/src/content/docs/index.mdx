@@ -1,0 +1,91 @@
+---
+title: Glyph Documentation
+description: AI-powered PDF customization. 2 lines of code. Unlimited possibilities.
+template: splash
+hero:
+  tagline: Generate beautiful, customizable PDFs with AI. Drop in a web component, let your users edit with natural language, export to PDF.
+  image:
+    file: ../../assets/glyph-logo-light.svg
+  actions:
+    - text: Get Started
+      link: /getting-started/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/glyph-so/glyph
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why Glyph?
+
+<CardGrid stagger>
+  <Card title="Drop-in Web Component" icon="puzzle">
+    Add `<glyph-editor>` to any page. Works with React, Vue, Svelte, or vanilla HTML. No build step required.
+  </Card>
+  <Card title="AI-Powered Editing" icon="star">
+    Users describe changes in plain English. "Make the header navy blue" or "Add my company logo". Claude handles the rest.
+  </Card>
+  <Card title="Professional Templates" icon="document">
+    Start with beautiful, production-ready templates for quotes, invoices, and proposals. Customize everything.
+  </Card>
+  <Card title="PDF Export" icon="rocket">
+    One-click export to high-quality PDF. Ready for email, print, or digital delivery.
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+```html
+<script src="https://cdn.glyph.so/v1.js"></script>
+
+<glyph-editor
+  api-key="gk_your_key_here"
+  template="quote-modern"
+  data='{"client": {"name": "Acme Corp"}, "lineItems": [...]}'>
+</glyph-editor>
+```
+
+That's it. Your users can now:
+
+- See a live preview of their document
+- Click on sections to select them for editing
+- Type natural language commands like "Make this more professional"
+- Download as PDF with one click
+
+## Choose Your Path
+
+<CardGrid>
+  <Card title="Quick Start" icon="rocket">
+    Get your first PDF generated in under 5 minutes.
+
+    [Start now &rarr;](/getting-started/quickstart/)
+  </Card>
+  <Card title="API Reference" icon="setting">
+    Build custom integrations with our REST API.
+
+    [View API docs &rarr;](/api/overview/)
+  </Card>
+  <Card title="SDK Reference" icon="puzzle">
+    Deep dive into the `<glyph-editor>` web component.
+
+    [Explore SDK &rarr;](/sdk/overview/)
+  </Card>
+  <Card title="Templates" icon="document">
+    Browse available templates and learn to create your own.
+
+    [See templates &rarr;](/templates/overview/)
+  </Card>
+</CardGrid>
+
+## Pricing Tiers
+
+| Tier | Rate Limit | Monthly PDFs | Price |
+|------|------------|--------------|-------|
+| Free | 10/min | 100 | $0 |
+| Pro | 60/min | 1,000 | $29/mo |
+| Scale | 120/min | 10,000 | $99/mo |
+| Enterprise | 300/min | Unlimited | Contact us |
+
+All tiers include access to all templates and AI features. [Get your API key](https://glyph.so/dashboard).

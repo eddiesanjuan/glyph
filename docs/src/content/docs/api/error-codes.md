@@ -1,0 +1,386 @@
+---
+title: Error Codes
+description: Understanding Glyph API error responses
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+When an API request fails, Glyph returns a structured error response with details to help you diagnose and handle the issue.
+
+## Error Response Format
+
+All errors follow this structure:
+
+```json
+{
+  "error": "Human-readable error message",
+  "code": "ERROR_CODE",
+  "details": { /* Additional context, if available */ }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `error` | string | Human-readable error description |
+| `code` | string | Machine-readable error code |
+| `details` | object | Optional additional context |
+
+## Error Codes Reference
+
+### Authentication Errors
+
+#### `HTTP_ERROR` (401 Unauthorized)
+
+Missing or invalid authentication.
+
+```json
+{
+  "error": "Missing Authorization header",
+  "code": "HTTP_ERROR"
+}
+```
+
+**Possible causes:**
+- No `Authorization` header provided
+- Invalid header format (should be `Bearer <key>`)
+- Invalid API key format (should start with `gk_`)
+- API key not found in database
+- API key revoked or deactivated
+
+**Solution:** Verify your API key and header format.
+
+---
+
+### Validation Errors
+
+#### `VALIDATION_ERROR` (400 Bad Request)
+
+Request body failed validation.
+
+```json
+{
+  "error": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "details": [
+    {
+      "path": ["data", "client", "name"],
+      "message": "Required"
+    },
+    {
+      "path": ["data", "totals", "total"],
+      "message": "Expected number, received string"
+    }
+  ]
+}
+```
+
+**Common validation issues:**
+- Missing required fields
+- Wrong data types
+- Invalid email format
+- Empty arrays where items are required
+
+**Solution:** Check the `details` array for specific field errors.
+
+---
+
+### Guardrail Violations
+
+#### `GUARDRAIL_VIOLATION` (400 Bad Request)
+
+The modification prompt violated safety guardrails.
+
+```json
+{
+  "error": "Invalid prompt",
+  "code": "GUARDRAIL_VIOLATION",
+  "details": {
+    "category": "unsafe_content"
+  }
+}
+```
+
+**Categories:**
+- `unsafe_content` - Inappropriate or harmful content
+- `injection_attempt` - Detected prompt injection attempt
+- `script_injection` - Attempted to inject scripts
+
+**Solution:** Rephrase your modification prompt.
+
+---
+
+### Session Errors
+
+#### `HTTP_ERROR` (404 Not Found)
+
+Session not found.
+
+```json
+{
+  "error": "Session not found",
+  "code": "HTTP_ERROR"
+}
+```
+
+**Possible causes:**
+- Invalid session ID
+- Session belongs to a different API key
+- Session was deleted
+
+**Solution:** Create a new session with `/v1/preview`.
+
+---
+
+#### `HTTP_ERROR` (410 Gone)
+
+Session has expired.
+
+```json
+{
+  "error": "Session expired",
+  "code": "HTTP_ERROR"
+}
+```
+
+**Note:** Sessions expire after 1 hour of inactivity.
+
+**Solution:** Create a new session with `/v1/preview`.
+
+---
+
+### Rate Limiting Errors
+
+#### `RATE_LIMIT_EXCEEDED` (429 Too Many Requests)
+
+Per-minute rate limit exceeded.
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "retryAfter": 45,
+  "tier": "free",
+  "limit": 10,
+  "windowMs": 60000
+}
+```
+
+**Solution:** Wait for `retryAfter` seconds, then retry.
+
+---
+
+#### `MONTHLY_LIMIT_EXCEEDED` (429 Too Many Requests)
+
+Monthly PDF generation limit exceeded.
+
+```json
+{
+  "error": "Monthly PDF limit exceeded",
+  "code": "MONTHLY_LIMIT_EXCEEDED",
+  "limit": 100,
+  "used": 100,
+  "tier": "free",
+  "upgrade": "https://glyph.so/pricing"
+}
+```
+
+**Solution:** Wait until the next month or upgrade your plan.
+
+---
+
+### Configuration Errors
+
+#### `CONFIG_ERROR` (503 Service Unavailable)
+
+Server configuration issue.
+
+```json
+{
+  "error": "Session mode requires database configuration",
+  "code": "CONFIG_ERROR"
+}
+```
+
+**Note:** This typically occurs on self-hosted deployments.
+
+**Solution:** Ensure Supabase is properly configured.
+
+---
+
+### Generation Errors
+
+#### `PLAYWRIGHT_NOT_INSTALLED` (503 Service Unavailable)
+
+PDF generation unavailable.
+
+```json
+{
+  "error": "PDF generation not available. Playwright is not installed.",
+  "code": "PLAYWRIGHT_NOT_INSTALLED",
+  "details": {
+    "install": "bun add playwright && npx playwright install chromium"
+  }
+}
+```
+
+**Note:** This occurs on self-hosted deployments without Playwright.
+
+**Solution:** Install Playwright and Chromium.
+
+---
+
+#### `GENERATE_ERROR` (500 Internal Server Error)
+
+PDF generation failed.
+
+```json
+{
+  "error": "Failed to generate PDF",
+  "code": "GENERATE_ERROR"
+}
+```
+
+**Possible causes:**
+- Invalid HTML content
+- Resource loading timeout
+- Server resource exhaustion
+
+**Solution:** Verify your HTML is valid and try again.
+
+---
+
+### General Errors
+
+#### `PREVIEW_ERROR` (500 Internal Server Error)
+
+Preview generation failed.
+
+```json
+{
+  "error": "Template not found: invalid-template",
+  "code": "PREVIEW_ERROR"
+}
+```
+
+**Solution:** Check template ID and data structure.
+
+---
+
+#### `MODIFY_ERROR` (500 Internal Server Error)
+
+Modification failed.
+
+```json
+{
+  "error": "AI service unavailable",
+  "code": "MODIFY_ERROR"
+}
+```
+
+**Solution:** Retry the request. If persistent, check status.glyph.so.
+
+---
+
+#### `TEMPLATES_ERROR` (500 Internal Server Error)
+
+Failed to list templates.
+
+```json
+{
+  "error": "Failed to load template registry",
+  "code": "TEMPLATES_ERROR"
+}
+```
+
+**Solution:** This is a server-side issue. Contact support if persistent.
+
+---
+
+#### `INTERNAL_ERROR` (500 Internal Server Error)
+
+Unexpected server error.
+
+```json
+{
+  "error": "Internal server error",
+  "code": "INTERNAL_ERROR"
+}
+```
+
+**Solution:** Retry the request. If persistent, contact support.
+
+---
+
+#### `NOT_FOUND` (404 Not Found)
+
+Endpoint not found.
+
+```json
+{
+  "error": "Not found",
+  "code": "NOT_FOUND",
+  "path": "/v1/invalid-endpoint"
+}
+```
+
+**Solution:** Check the API endpoint path.
+
+---
+
+## HTTP Status Code Summary
+
+| Status | Meaning | Common Causes |
+|--------|---------|---------------|
+| 400 | Bad Request | Validation error, guardrail violation |
+| 401 | Unauthorized | Missing or invalid API key |
+| 403 | Forbidden | Deactivated API key |
+| 404 | Not Found | Invalid endpoint or session |
+| 410 | Gone | Expired session |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server-side error |
+| 503 | Service Unavailable | Configuration or dependency issue |
+
+## Error Handling Example
+
+```javascript
+async function callGlyph(endpoint, data) {
+  const response = await fetch(`https://api.glyph.so${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+
+    switch (error.code) {
+      case 'VALIDATION_ERROR':
+        console.error('Validation errors:', error.details);
+        throw new Error(`Invalid request: ${error.details.map(d => d.message).join(', ')}`);
+
+      case 'RATE_LIMIT_EXCEEDED':
+        console.log(`Rate limited. Retry in ${error.retryAfter}s`);
+        await sleep(error.retryAfter * 1000);
+        return callGlyph(endpoint, data); // Retry
+
+      case 'MONTHLY_LIMIT_EXCEEDED':
+        throw new Error('Monthly PDF limit reached. Please upgrade your plan.');
+
+      case 'GUARDRAIL_VIOLATION':
+        throw new Error('Your request was blocked for safety reasons.');
+
+      default:
+        throw new Error(error.error || 'Unknown error');
+    }
+  }
+
+  return response.json();
+}
+```
+
+<Aside type="tip">
+For production applications, implement proper error logging and user-friendly error messages based on these error codes.
+</Aside>

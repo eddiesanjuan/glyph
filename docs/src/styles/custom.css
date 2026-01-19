@@ -1,0 +1,309 @@
+/* Glyph Documentation Custom Styles */
+/* Purple accent: #7C3AED */
+
+:root {
+  /* Primary purple accent colors */
+  --sl-color-accent-low: #2e1065;
+  --sl-color-accent: #7c3aed;
+  --sl-color-accent-high: #c4b5fd;
+
+  /* Text colors for better readability */
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f8fafc;
+  --sl-color-gray-2: #e2e8f0;
+  --sl-color-gray-3: #cbd5e1;
+  --sl-color-gray-4: #94a3b8;
+  --sl-color-gray-5: #64748b;
+  --sl-color-gray-6: #475569;
+  --sl-color-black: #0f172a;
+
+  /* Backgrounds */
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #f8fafc;
+  --sl-color-bg-sidebar: #f8fafc;
+
+  /* Content width */
+  --sl-content-width: 50rem;
+
+  /* Font customizations */
+  --sl-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #4c1d95;
+  --sl-color-accent: #8b5cf6;
+  --sl-color-accent-high: #ddd6fe;
+
+  --sl-color-white: #0f172a;
+  --sl-color-gray-1: #1e293b;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-3: #475569;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #94a3b8;
+  --sl-color-gray-6: #cbd5e1;
+  --sl-color-black: #f8fafc;
+
+  --sl-color-bg: #0f172a;
+  --sl-color-bg-nav: #1e293b;
+  --sl-color-bg-sidebar: #1e293b;
+}
+
+/* Logo styling */
+.site-title img {
+  height: 28px;
+  width: auto;
+}
+
+/* Hero section on index */
+.hero {
+  --hero-gradient-start: #7c3aed;
+  --hero-gradient-end: #4f46e5;
+}
+
+/* Code block styling */
+.expressive-code pre {
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-2);
+}
+
+.expressive-code .frame {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Button styling */
+.sl-button {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.sl-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+}
+
+/* Sidebar active link accent */
+nav[aria-label="Main"] .active {
+  color: var(--sl-color-accent);
+  font-weight: 600;
+}
+
+/* Card styling for features */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.card {
+  background: var(--sl-color-bg-nav);
+  border: 1px solid var(--sl-color-gray-2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--sl-color-accent);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+}
+
+.card h3 {
+  margin-top: 0;
+  color: var(--sl-color-black);
+}
+
+/* Endpoint badges */
+.endpoint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--sl-font-mono);
+}
+
+.endpoint-badge.post {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.endpoint-badge.get {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.endpoint-badge.delete {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+:root[data-theme='dark'] .endpoint-badge.post {
+  background: #14532d;
+  color: #86efac;
+}
+
+:root[data-theme='dark'] .endpoint-badge.get {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+
+:root[data-theme='dark'] .endpoint-badge.delete {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+/* Tier badges */
+.tier-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tier-badge.free {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.tier-badge.pro {
+  background: #ddd6fe;
+  color: #5b21b6;
+}
+
+.tier-badge.scale {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.tier-badge.enterprise {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+:root[data-theme='dark'] .tier-badge.free {
+  background: #3730a3;
+  color: #e0e7ff;
+}
+
+:root[data-theme='dark'] .tier-badge.pro {
+  background: #5b21b6;
+  color: #ddd6fe;
+}
+
+:root[data-theme='dark'] .tier-badge.scale {
+  background: #9d174d;
+  color: #fce7f3;
+}
+
+:root[data-theme='dark'] .tier-badge.enterprise {
+  background: #92400e;
+  color: #fef3c7;
+}
+
+/* Quick start steps */
+.steps {
+  counter-reset: step;
+  list-style: none;
+  padding-left: 0;
+}
+
+.steps li {
+  position: relative;
+  padding-left: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--sl-color-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sl-color-gray-2);
+}
+
+th {
+  background: var(--sl-color-bg-nav);
+  font-weight: 600;
+  color: var(--sl-color-black);
+}
+
+tr:hover td {
+  background: var(--sl-color-gray-1);
+}
+
+/* Callout/admonition enhancements */
+.starlight-aside {
+  border-radius: 8px;
+  border-left-width: 4px;
+}
+
+.starlight-aside--note {
+  border-color: var(--sl-color-accent);
+}
+
+/* Search styling */
+.search-input {
+  border-radius: 8px;
+}
+
+/* Footer styling */
+.sl-container footer {
+  border-top: 1px solid var(--sl-color-gray-2);
+  padding-top: 2rem;
+  margin-top: 3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 50rem) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animation for page transitions */
+main {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

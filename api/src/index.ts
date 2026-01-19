@@ -19,6 +19,8 @@ import {
 import preview from "./routes/preview.js";
 import modify from "./routes/modify.js";
 import generate from "./routes/generate.js";
+import dashboard from "./routes/dashboard.js";
+import keys from "./routes/keys.js";
 
 const app = new Hono();
 
@@ -75,6 +77,8 @@ app.get("/", (c) => {
       preview: "POST /v1/preview",
       modify: "POST /v1/modify",
       generate: "POST /v1/generate",
+      dashboard: "GET /v1/dashboard",
+      regenerateKey: "POST /v1/keys/regenerate",
     },
   });
 });
@@ -85,6 +89,9 @@ app.route("/v1/modify", modify);
 // Apply monthly limit check before generate (actual PDF creation)
 app.use("/v1/generate", monthlyLimitMiddleware);
 app.route("/v1/generate", generate);
+// Dashboard and key management
+app.route("/v1/dashboard", dashboard);
+app.route("/v1/keys", keys);
 
 // 404 handler
 app.notFound((c) => {
@@ -139,10 +146,12 @@ console.log(`
   🚀 Glyph API running on http://localhost:${port}
 
   Endpoints:
-    GET  /health      - Health check
-    POST /v1/preview  - Generate HTML preview
-    POST /v1/modify   - AI-powered HTML editing
-    POST /v1/generate - Generate PDF/PNG
+    GET  /health            - Health check
+    POST /v1/preview        - Generate HTML preview
+    POST /v1/modify         - AI-powered HTML editing
+    POST /v1/generate       - Generate PDF/PNG
+    GET  /v1/dashboard      - API key usage metrics
+    POST /v1/keys/regenerate - Regenerate API key
 `);
 
 // Also export for Bun compatibility
