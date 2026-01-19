@@ -33,6 +33,9 @@ export interface QuoteData {
     companyName?: string;
     companyAddress?: string;
   };
+  styles?: {
+    accentColor?: string;
+  };
 }
 
 export interface PreviewRequest {

@@ -1038,3 +1038,370 @@ Return only the HTML document, no explanations.`,
 
   return textContent.text;
 }
+
+// =============================================================================
+// Template Generation from Airtable Schema
+// =============================================================================
+
+/**
+ * Schema field definition for template generation
+ */
+export interface AirtableFieldForTemplate {
+  name: string;
+  type: string;
+  glyphType: string;
+  description: string;
+  mustachePath: string;
+  isArray: boolean;
+  hasConditional: boolean;
+}
+
+/**
+ * AI Schema format from Airtable service
+ */
+export interface AirtableAISchema {
+  tableName: string;
+  tableDescription: string;
+  fields: AirtableFieldForTemplate[];
+}
+
+/**
+ * Template generation result
+ */
+export interface GenerateTemplateResult {
+  html: string;
+  css: string;
+  fullHtml: string;
+  fields: string[];
+  tokensUsed: number;
+}
+
+/**
+ * Style presets for template generation
+ */
+const STYLE_PRESETS: Record<string, string> = {
+  modern: `Clean, minimal design with lots of whitespace. Use a sans-serif font (Inter or system fonts).
+    Colors: Dark navy (#1e3a5f) for headers, light gray (#f9fafb) backgrounds for sections.
+    Subtle borders and rounded corners. Professional but approachable.`,
+
+  classic: `Traditional business document style. Serif fonts for headings, sans-serif for body.
+    Colors: Black text, blue (#2563eb) accents. Sharp corners. Formal and authoritative.`,
+
+  vibrant: `Bold, colorful design with gradient accents. Modern sans-serif fonts.
+    Use the brand's accent color prominently. Rounded corners, subtle shadows.
+    Eye-catching but still professional.`,
+
+  minimal: `Ultra-minimal design. Maximum whitespace. Single accent color.
+    Typography-focused with clear hierarchy. No borders, just spacing and type weight.`,
+
+  invoice: `Structured invoice/quote layout. Clear sections for company info, client info, line items, totals.
+    Table for line items with proper alignment. Prominent total section.`,
+
+  report: `Professional report layout. Cover page style header with title and date.
+    Sections with clear headings. Good for data summaries and overviews.`,
+};
+
+/**
+ * The system prompt for template generation from Airtable schema
+ */
+const TEMPLATE_GENERATOR_PROMPT = `You are GLYPH TEMPLATE ARCHITECT - an expert at creating beautiful HTML/CSS document templates from database schemas.
+
+You take a user's natural language description and an Airtable schema, then produce a professional Mustache template.
+
+═══════════════════════════════════════════════════════════════════════════════
+                              MUSTACHE SYNTAX
+═══════════════════════════════════════════════════════════════════════════════
+
+VARIABLES:
+  {{fields.FieldName}}     → Output field value, HTML-escaped
+  {{{fields.FieldName}}}   → Output raw HTML (for rich text)
+
+CONDITIONALS:
+  {{#fields.FieldName}}...{{/fields.FieldName}}   → Show if field exists/truthy
+  {{^fields.FieldName}}...{{/fields.FieldName}}   → Show if field is empty/falsy
+
+ARRAYS (for attachment, multiselect, linked records):
+  {{#fields.Images}}
+    <img src="{{url}}" alt="{{filename}}" />
+  {{/fields.Images}}
+
+ATTACHMENTS (common pattern):
+  {{#fields.Logo}}
+    <img src="{{fields.Logo.0.url}}" alt="Logo" />
+  {{/fields.Logo}}
+
+═══════════════════════════════════════════════════════════════════════════════
+                              REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. OUTPUT COMPLETE HTML - Include <!DOCTYPE html>, <html>, <head>, <body>
+2. ALL STYLES IN <style> BLOCK - No external stylesheets
+3. USE EXACT FIELD PATHS - Reference fields as {{fields.FieldName}}
+4. WRAP OPTIONAL FIELDS - Use {{#fields.X}}...{{/fields.X}} for any field that might be empty
+5. PRINT-FRIENDLY - Include @media print rules, proper page breaks
+6. RESPONSIVE - Works on screen and when printed
+7. PROFESSIONAL - Clean typography, proper spacing, visual hierarchy
+
+═══════════════════════════════════════════════════════════════════════════════
+                              FIELD TYPE HANDLING
+═══════════════════════════════════════════════════════════════════════════════
+
+TEXT FIELDS:
+  <p>{{fields.Description}}</p>
+  {{#fields.Notes}}<div class="notes">{{{fields.Notes}}}</div>{{/fields.Notes}}
+
+CURRENCY FIELDS:
+  <span class="amount">\${{fields.Price}}</span>
+
+DATE FIELDS:
+  <span class="date">{{fields.DueDate}}</span>
+
+ATTACHMENTS (images):
+  {{#fields.Logo}}
+  <img src="{{fields.Logo.0.url}}" class="logo" alt="Logo" />
+  {{/fields.Logo}}
+
+CHECKBOXES:
+  {{#fields.IsPaid}}<span class="badge paid">Paid</span>{{/fields.IsPaid}}
+  {{^fields.IsPaid}}<span class="badge unpaid">Unpaid</span>{{/fields.IsPaid}}
+
+SELECT FIELDS:
+  <span class="status">{{fields.Status}}</span>
+
+MULTI-SELECT:
+  {{#fields.Tags}}<span class="tag">{{.}}</span>{{/fields.Tags}}
+
+LINKED RECORDS (when expanded):
+  {{#fields.LineItems}}
+  <tr>
+    <td>{{fields.Description}}</td>
+    <td>{{fields.Quantity}}</td>
+    <td>\${{fields.Amount}}</td>
+  </tr>
+  {{/fields.LineItems}}
+
+═══════════════════════════════════════════════════════════════════════════════
+                              CSS BEST PRACTICES
+═══════════════════════════════════════════════════════════════════════════════
+
+- Use CSS variables for colors (--color-primary, --color-text, etc.)
+- Use rem/em for sizing, not px
+- Include print styles: @media print { ... }
+- Use flexbox/grid for layout
+- Add page-break-inside: avoid to important sections
+- Set reasonable max-width for readability (800-900px)
+`;
+
+/**
+ * Generate a complete HTML template from Airtable schema and user description
+ */
+export async function generateTemplateFromSchema(
+  schema: AirtableAISchema,
+  description: string,
+  options: {
+    style?: string;
+    sampleData?: Record<string, unknown>;
+  } = {}
+): Promise<GenerateTemplateResult> {
+  const stylePreset = options.style
+    ? STYLE_PRESETS[options.style] || options.style
+    : STYLE_PRESETS.modern;
+
+  // Build field documentation for the AI
+  const fieldDocs = schema.fields
+    .map((f) => {
+      const conditionalNote = f.hasConditional ? " (may be empty)" : "";
+      const arrayNote = f.isArray ? " [array]" : "";
+      return `- ${f.name} (${f.type}${arrayNote}${conditionalNote}): ${f.description}\n  Mustache: {{${f.mustachePath}}}`;
+    })
+    .join("\n");
+
+  const userPrompt = `Create a professional HTML document template for: "${description}"
+
+TABLE: ${schema.tableName}
+${schema.tableDescription}
+
+AVAILABLE FIELDS:
+${fieldDocs}
+
+STYLE GUIDANCE:
+${stylePreset}
+
+${options.sampleData ? `SAMPLE DATA FOR REFERENCE:\n${JSON.stringify(options.sampleData, null, 2)}` : ""}
+
+INSTRUCTIONS:
+1. Create a complete HTML document with embedded CSS
+2. Use the exact Mustache paths shown above for each field
+3. Make intelligent decisions about which fields to include based on the description
+4. Wrap all optional fields with conditional blocks
+5. If the description mentions "invoice" or "quote", include a line items table structure
+6. If the description mentions "logo", use the attachment pattern for images
+7. After the HTML, list "FIELDS_USED:" with each field name you included`;
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 16384,
+    system: TEMPLATE_GENERATOR_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: userPrompt,
+      },
+    ],
+  });
+
+  const responseText =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
+  // Parse response - extract HTML
+  let fullHtml: string;
+  const htmlMatch = responseText.match(/```html\n([\s\S]*?)\n```/);
+
+  if (htmlMatch) {
+    fullHtml = htmlMatch[1];
+  } else {
+    // Try to extract HTML directly
+    const docStart =
+      responseText.indexOf("<!DOCTYPE html>") !== -1
+        ? responseText.indexOf("<!DOCTYPE html>")
+        : responseText.indexOf("<html");
+    const docEnd = responseText.lastIndexOf("</html>") + 7;
+
+    if (docStart !== -1 && docEnd > docStart) {
+      fullHtml = responseText.slice(docStart, docEnd);
+    } else {
+      fullHtml = responseText;
+    }
+  }
+
+  // Extract CSS from the HTML
+  const cssMatch = fullHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+  const css = cssMatch ? cssMatch[1].trim() : "";
+
+  // Extract just the body HTML
+  const bodyMatch = fullHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/);
+  const html = bodyMatch ? bodyMatch[1].trim() : fullHtml;
+
+  // Extract fields used
+  const fieldsMatch = responseText.match(/FIELDS_USED:\s*([\s\S]*?)(?:$|```)/);
+  const fields: string[] = [];
+  if (fieldsMatch) {
+    const fieldLines = fieldsMatch[1].trim().split("\n");
+    for (const line of fieldLines) {
+      const cleanLine = line.replace(/^[-*•]\s*/, "").trim();
+      if (cleanLine) fields.push(cleanLine);
+    }
+  } else {
+    // Extract fields from the template itself
+    const fieldMatches = fullHtml.matchAll(/\{\{#?fields\.([^}]+)\}\}/g);
+    const fieldSet = new Set<string>();
+    for (const match of fieldMatches) {
+      const fieldName = match[1].split(".")[0]; // Get first part before any dots
+      fieldSet.add(fieldName);
+    }
+    fields.push(...fieldSet);
+  }
+
+  return {
+    html,
+    css,
+    fullHtml,
+    fields,
+    tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
+  };
+}
+
+/**
+ * Refine/modify an existing template based on user feedback
+ */
+export async function refineTemplate(
+  currentHtml: string,
+  schema: AirtableAISchema,
+  instruction: string
+): Promise<GenerateTemplateResult> {
+  // Build field documentation for the AI
+  const fieldDocs = schema.fields
+    .map((f) => {
+      const conditionalNote = f.hasConditional ? " (may be empty)" : "";
+      const arrayNote = f.isArray ? " [array]" : "";
+      return `- ${f.name} (${f.type}${arrayNote}${conditionalNote}): {{${f.mustachePath}}}`;
+    })
+    .join("\n");
+
+  const userPrompt = `Current template:
+
+\`\`\`html
+${currentHtml}
+\`\`\`
+
+AVAILABLE FIELDS (use these exact Mustache paths):
+${fieldDocs}
+
+USER REQUEST: ${instruction}
+
+INSTRUCTIONS:
+1. Modify the template according to the user's request
+2. When adding fields, use the exact Mustache paths shown above
+3. Preserve existing structure unless explicitly asked to change it
+4. Output the complete modified HTML document
+5. After the HTML, list "CHANGES:" with what you modified`;
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 16384,
+    system: TEMPLATE_GENERATOR_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: userPrompt,
+      },
+    ],
+  });
+
+  const responseText =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
+  // Parse response - extract HTML
+  let fullHtml: string;
+  const htmlMatch = responseText.match(/```html\n([\s\S]*?)\n```/);
+
+  if (htmlMatch) {
+    fullHtml = htmlMatch[1];
+  } else {
+    const docStart =
+      responseText.indexOf("<!DOCTYPE html>") !== -1
+        ? responseText.indexOf("<!DOCTYPE html>")
+        : responseText.indexOf("<html");
+    const docEnd = responseText.lastIndexOf("</html>") + 7;
+
+    if (docStart !== -1 && docEnd > docStart) {
+      fullHtml = responseText.slice(docStart, docEnd);
+    } else {
+      fullHtml = responseText;
+    }
+  }
+
+  // Extract CSS from the HTML
+  const cssMatch = fullHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+  const css = cssMatch ? cssMatch[1].trim() : "";
+
+  // Extract just the body HTML
+  const bodyMatch = fullHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/);
+  const html = bodyMatch ? bodyMatch[1].trim() : fullHtml;
+
+  // Extract fields from the template
+  const fieldMatches = fullHtml.matchAll(/\{\{#?fields\.([^}]+)\}\}/g);
+  const fieldSet = new Set<string>();
+  for (const match of fieldMatches) {
+    const fieldName = match[1].split(".")[0];
+    fieldSet.add(fieldName);
+  }
+
+  return {
+    html,
+    css,
+    fullHtml,
+    fields: [...fieldSet],
+    tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
+  };
+}

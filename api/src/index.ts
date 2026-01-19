@@ -21,6 +21,8 @@ import modify from "./routes/modify.js";
 import generate from "./routes/generate.js";
 import dashboard from "./routes/dashboard.js";
 import keys from "./routes/keys.js";
+import airtable from "./routes/airtable.js";
+import templates from "./routes/templates.js";
 
 const app = new Hono();
 
@@ -61,7 +63,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.2.0",
+    version: "0.3.0",
     timestamp: new Date().toISOString(),
   });
 });
@@ -70,7 +72,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.2.0",
+    version: "0.3.0",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",
@@ -79,6 +81,16 @@ app.get("/", (c) => {
       generate: "POST /v1/generate",
       dashboard: "GET /v1/dashboard",
       regenerateKey: "POST /v1/keys/regenerate",
+      // Airtable integration
+      airtableConnect: "POST /v1/airtable/connect",
+      airtableTables: "GET /v1/airtable/bases/:baseId/tables",
+      airtableSchema: "GET /v1/airtable/bases/:baseId/tables/:tableId/schema",
+      airtableRecords: "GET /v1/airtable/bases/:baseId/tables/:tableId/records",
+      // Template generation
+      templateGenerate: "POST /v1/templates/generate",
+      templateRefine: "POST /v1/templates/refine",
+      templatePreview: "POST /v1/templates/preview",
+      templateStyles: "GET /v1/templates/styles",
     },
   });
 });
@@ -92,6 +104,10 @@ app.route("/v1/generate", generate);
 // Dashboard and key management
 app.route("/v1/dashboard", dashboard);
 app.route("/v1/keys", keys);
+// Airtable integration
+app.route("/v1/airtable", airtable);
+// AI-powered template generation
+app.route("/v1/templates", templates);
 
 // 404 handler
 app.notFound((c) => {
@@ -139,19 +155,31 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.1.1              ║
+  ║         Glyph API v0.3.0              ║
   ║   Document Generation & AI Editing    ║
   ╚═══════════════════════════════════════╝
 
-  🚀 Glyph API running on http://localhost:${port}
+  Glyph API running on http://localhost:${port}
 
-  Endpoints:
-    GET  /health            - Health check
-    POST /v1/preview        - Generate HTML preview
-    POST /v1/modify         - AI-powered HTML editing
-    POST /v1/generate       - Generate PDF/PNG
-    GET  /v1/dashboard      - API key usage metrics
-    POST /v1/keys/regenerate - Regenerate API key
+  Core Endpoints:
+    GET  /health              - Health check
+    POST /v1/preview          - Generate HTML preview
+    POST /v1/modify           - AI-powered HTML editing
+    POST /v1/generate         - Generate PDF/PNG
+    GET  /v1/dashboard        - API key usage metrics
+    POST /v1/keys/regenerate  - Regenerate API key
+
+  Airtable Integration:
+    POST /v1/airtable/connect                           - Connect with API key
+    GET  /v1/airtable/bases/:baseId/tables              - List tables
+    GET  /v1/airtable/bases/:baseId/tables/:tableId/schema   - Get field schema
+    GET  /v1/airtable/bases/:baseId/tables/:tableId/records  - Get sample records
+
+  Template Generation:
+    POST /v1/templates/generate  - Generate from description + schema
+    POST /v1/templates/refine    - Modify with natural language
+    POST /v1/templates/preview   - Render with data
+    GET  /v1/templates/styles    - List style presets
 `);
 
 // Also export for Bun compatibility
