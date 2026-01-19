@@ -11,6 +11,10 @@ export interface DevSession {
   id: string;
   current_html: string;
   original_html: string;
+  /** Template HTML with Mustache placeholders (for AI modifications) */
+  template_html: string;
+  /** Original data used for rendering (for re-rendering after modifications) */
+  data: Record<string, unknown>;
   modifications: Array<{
     prompt: string;
     region: string | null;
@@ -31,15 +35,19 @@ const devSessions = new Map<string, DevSession>();
 export function createDevSession(
   sessionId: string,
   template: string,
-  html: string
+  renderedHtml: string,
+  templateHtml: string,
+  data: Record<string, unknown>
 ): DevSession {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
 
   const session: DevSession = {
     id: sessionId,
-    current_html: html,
-    original_html: html,
+    current_html: renderedHtml,
+    original_html: renderedHtml,
+    template_html: templateHtml,
+    data,
     modifications: [],
     template,
     created_at: now.toISOString(),
@@ -77,7 +85,7 @@ export function getDevSession(sessionId: string): DevSession | null {
  */
 export function updateDevSession(
   sessionId: string,
-  updates: Partial<Pick<DevSession, 'current_html' | 'modifications'>>
+  updates: Partial<Pick<DevSession, 'current_html' | 'template_html' | 'modifications'>>
 ): DevSession | null {
   const session = devSessions.get(sessionId);
 

@@ -18,7 +18,9 @@ const TEMPLATES_DIR = join(__dirname, "../../../templates");
 
 interface TemplateResult {
   html: string;
+  templateHtml: string;
   templateName: string;
+  renderData: Record<string, unknown>;
 }
 
 export class TemplateEngine {
@@ -37,7 +39,22 @@ export class TemplateEngine {
     // Render Mustache template
     const html = Mustache.render(templateHtml, renderData);
 
-    return { html, templateName };
+    return { html, templateHtml, templateName, renderData };
+  }
+
+  /**
+   * Render a raw template string with data
+   * Used for re-rendering after AI modifications
+   */
+  renderRaw(templateHtml: string, renderData: Record<string, unknown>): string {
+    return Mustache.render(templateHtml, renderData);
+  }
+
+  /**
+   * Get raw template HTML (with Mustache placeholders)
+   */
+  async getTemplateHtml(templateName: string): Promise<string> {
+    return this.loadTemplate(templateName);
   }
 
   /**

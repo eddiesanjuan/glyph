@@ -90,6 +90,7 @@ preview.post(
           const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
           // Create session in Supabase
+          // Store both rendered HTML and template HTML for AI modifications
           const { data: session, error: sessionError } = await getSupabase()
             .from("sessions")
             .insert({
@@ -97,7 +98,8 @@ preview.post(
               template,
               current_html: result.html,
               original_html: result.html,
-              data,
+              template_html: result.templateHtml,
+              data: result.renderData,
               modifications: [],
               expires_at: expiresAt,
             })
@@ -131,8 +133,15 @@ preview.post(
       } else if (!supabase) {
         // Development mode: Create a session in memory storage
         // This allows the SDK to work without database configuration
+        // Store both rendered HTML and template HTML for AI modifications
         const devSessionId = generateDevSessionId();
-        createDevSession(devSessionId, template, result.html);
+        createDevSession(
+          devSessionId,
+          template,
+          result.html,
+          result.templateHtml,
+          result.renderData
+        );
         response.sessionId = devSessionId;
       }
 

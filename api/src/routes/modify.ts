@@ -19,6 +19,7 @@ import {
   validateModification as validateGuardrails,
   sanitizeHtml,
 } from "../services/guardrails.js";
+import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
 import { getDevSession, updateDevSession, isDevSessionId } from "../lib/devSessions.js";
@@ -70,6 +71,8 @@ modify.post("/", async (c) => {
       let session: {
         current_html: string;
         original_html: string;
+        template_html: string;
+        data: Record<string, unknown>;
         modifications: Array<{ prompt: string; region: string | null; timestamp: string; changes: string[] }>;
         template: string;
         api_key_id?: string;
@@ -141,18 +144,23 @@ modify.post("/", async (c) => {
         return c.json(error, 400);
       }
 
-      // Call Claude to modify
-      const result = await modifyTemplate(session.current_html, prompt, region);
+      // FIX: Send TEMPLATE HTML (with Mustache placeholders) to AI, not rendered HTML
+      // This ensures AI modifications preserve the template structure
+      const templateToModify = session.template_html || session.current_html;
 
-      // GUARDRAIL: Validate the AI output
+      // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
+      const result = await modifyTemplate(templateToModify, prompt, region);
+
+      // GUARDRAIL: Validate the AI output against original template
+      const originalTemplate = session.template_html || session.original_html;
       const validation = validateModification(
-        session.original_html,
+        originalTemplate,
         result.html
       );
 
       // Additional comprehensive guardrail validation
       const guardrailValidation = validateGuardrails(
-        session.original_html,
+        originalTemplate,
         result.html
       );
 
@@ -162,6 +170,9 @@ modify.post("/", async (c) => {
         ...guardrailValidation.violations,
       ];
       const isFullyValid = validation.valid && guardrailValidation.valid;
+
+      // Store the modified template HTML (still has Mustache vars)
+      let modifiedTemplateHtml = result.html;
 
       if (!isFullyValid) {
         console.warn("Guardrail violations detected:", allIssues);
@@ -177,9 +188,21 @@ modify.post("/", async (c) => {
 
         if (criticalViolations.length > 0) {
           // Sanitize and use sanitized version
-          result.html = sanitizeHtml(result.html);
+          modifiedTemplateHtml = sanitizeHtml(result.html);
           console.warn("Applied HTML sanitization due to:", criticalViolations);
         }
+      }
+
+      // FIX: Re-render the modified template with the original data
+      // This produces the final HTML with actual values for display
+      let renderedHtml: string;
+      try {
+        renderedHtml = templateEngine.renderRaw(modifiedTemplateHtml, session.data);
+      } catch (renderError) {
+        console.error("Template re-render failed:", renderError);
+        // If re-render fails, return the template HTML as-is
+        // This shouldn't happen but provides a fallback
+        renderedHtml = modifiedTemplateHtml;
       }
 
       // Update session with new HTML and modification history
@@ -194,17 +217,20 @@ modify.post("/", async (c) => {
       ];
 
       // Update session in appropriate storage
+      // Store BOTH the modified template AND the rendered HTML
       if (isDevSession) {
         // Update in-memory dev session
         updateDevSession(sessionId, {
-          current_html: result.html,
+          current_html: renderedHtml,
+          template_html: modifiedTemplateHtml,
           modifications,
         });
       } else if (supabase) {
         const { error: updateError } = await getSupabase()
           .from("sessions")
           .update({
-            current_html: result.html,
+            current_html: renderedHtml,
+            template_html: modifiedTemplateHtml,
             modifications,
           })
           .eq("id", sessionId);
@@ -231,8 +257,9 @@ modify.post("/", async (c) => {
           });
       }
 
+      // Return the RENDERED HTML (with actual data) to the frontend
       return c.json({
-        html: result.html,
+        html: renderedHtml,
         changes: result.changes,
         tokensUsed: result.tokensUsed,
         validationWarnings: allIssues.length > 0 ? allIssues : undefined,
