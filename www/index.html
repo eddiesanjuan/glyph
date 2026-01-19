@@ -4400,61 +4400,106 @@
       }
     }
 
-    // Simulate modification for demo when API unavailable
+    // Inject watermark into existing HTML without replacing content
+    function injectWatermark(html, text = 'DRAFT') {
+      if (html.includes('glyph-watermark')) {
+        // Update existing watermark text
+        return html.replace(/(<div class="glyph-watermark"[^>]*>)[^<]*(<\/div>)/i, `$1${text}$2`);
+      }
+      const watermarkStyle = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 100px;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.07);
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 1000;
+        letter-spacing: 20px;
+        user-select: none;
+      `.replace(/\n\s*/g, ' ');
+      const watermarkDiv = `<div class="glyph-watermark" style="${watermarkStyle}">${text}</div>`;
+      return html.replace('</body>', `${watermarkDiv}</body>`);
+    }
+
+    // Inject QR code into existing HTML without replacing content
+    function injectQrCode(html) {
+      if (html.includes('glyph-qr-code')) return html;
+      const qrStyle = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 80px;
+        height: 100px;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+        font-family: sans-serif;
+        font-size: 8px;
+        color: #666;
+        z-index: 999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      `.replace(/\n\s*/g, ' ');
+      const qrSvg = `<svg viewBox="0 0 64 64" style="width:60px;height:60px;"><rect fill="#000" x="0" y="0" width="8" height="8"/><rect fill="#000" x="8" y="0" width="8" height="8"/><rect fill="#000" x="16" y="0" width="8" height="8"/><rect fill="#000" x="24" y="0" width="8" height="8"/><rect fill="#000" x="32" y="0" width="8" height="8"/><rect fill="#000" x="40" y="0" width="8" height="8"/><rect fill="#000" x="48" y="0" width="8" height="8"/><rect fill="#000" x="0" y="8" width="8" height="8"/><rect fill="#000" x="48" y="8" width="8" height="8"/><rect fill="#000" x="0" y="16" width="8" height="8"/><rect fill="#000" x="16" y="16" width="8" height="8"/><rect fill="#000" x="24" y="16" width="8" height="8"/><rect fill="#000" x="32" y="16" width="8" height="8"/><rect fill="#000" x="48" y="16" width="8" height="8"/><rect fill="#000" x="0" y="24" width="8" height="8"/><rect fill="#000" x="16" y="24" width="8" height="8"/><rect fill="#000" x="24" y="24" width="8" height="8"/><rect fill="#000" x="32" y="24" width="8" height="8"/><rect fill="#000" x="48" y="24" width="8" height="8"/><rect fill="#000" x="0" y="32" width="8" height="8"/><rect fill="#000" x="16" y="32" width="8" height="8"/><rect fill="#000" x="24" y="32" width="8" height="8"/><rect fill="#000" x="32" y="32" width="8" height="8"/><rect fill="#000" x="48" y="32" width="8" height="8"/><rect fill="#000" x="0" y="40" width="8" height="8"/><rect fill="#000" x="48" y="40" width="8" height="8"/><rect fill="#000" x="0" y="48" width="8" height="8"/><rect fill="#000" x="8" y="48" width="8" height="8"/><rect fill="#000" x="16" y="48" width="8" height="8"/><rect fill="#000" x="24" y="48" width="8" height="8"/><rect fill="#000" x="32" y="48" width="8" height="8"/><rect fill="#000" x="40" y="48" width="8" height="8"/><rect fill="#000" x="48" y="48" width="8" height="8"/></svg>`;
+      const qrDiv = `<div class="glyph-qr-code" style="${qrStyle}">${qrSvg}<div style="margin-top:4px;">Scan to pay</div></div>`;
+      return html.replace('</body>', `${qrDiv}</body>`);
+    }
+
+    // Change accent color in existing HTML
+    function changeAccentColor(html, newColor) {
+      // Replace CSS variable
+      html = html.replace(/--accent-color:\s*[^;]+;/g, `--accent-color: ${newColor};`);
+      // Replace inline accent colors (common patterns)
+      html = html.replace(/background(-color)?:\s*#14B8A6/gi, `background$1: ${newColor}`);
+      html = html.replace(/border(-color)?:\s*#14B8A6/gi, `border$1: ${newColor}`);
+      html = html.replace(/color:\s*#14B8A6/gi, `color: ${newColor}`);
+      return html;
+    }
+
+    // Simulate modification for demo when API unavailable - MODIFIES existing HTML instead of regenerating
     function simulateModification(prompt) {
       const lowPrompt = prompt.toLowerCase();
-      let newColor = sampleQuoteData.styles.accentColor || '#14B8A6';
-      let extras = { watermark: null, qrCode: null, terms: null, signature: null, progressBar: null, style: null };
+      let modifiedHtml = currentHtml; // START WITH EXISTING HTML - DON'T REGENERATE
 
-      // Detect color changes
-      if (lowPrompt.includes('blue')) newColor = '#3B82F6';
-      else if (lowPrompt.includes('teal') || lowPrompt.includes('cyan')) newColor = '#14B8A6';
-      else if (lowPrompt.includes('red')) newColor = '#EF4444';
-      else if (lowPrompt.includes('green')) newColor = '#22C55E';
-      else if (lowPrompt.includes('orange')) newColor = '#F97316';
-      else if (lowPrompt.includes('pink')) newColor = '#EC4899';
-      else if (lowPrompt.includes('navy')) newColor = '#1E40AF';
-      else if (lowPrompt.includes('purple') || lowPrompt.includes('violet')) newColor = '#8B5CF6';
-
-      // Detect Stripe style
-      if (lowPrompt.includes('stripe')) {
-        newColor = '#635BFF';
-        extras.style = 'stripe';
-      }
-      // Detect Apple style
-      if (lowPrompt.includes('apple')) {
-        newColor = '#1D1D1F';
-        extras.style = 'apple';
+      // Detect and apply watermark
+      if (lowPrompt.includes('watermark')) {
+        let watermarkText = 'DRAFT';
+        if (lowPrompt.includes('paid')) watermarkText = 'PAID';
+        else if (lowPrompt.includes('confidential')) watermarkText = 'CONFIDENTIAL';
+        else if (lowPrompt.includes('approved')) watermarkText = 'APPROVED';
+        else if (lowPrompt.includes('void')) watermarkText = 'VOID';
+        else if (lowPrompt.includes('sample')) watermarkText = 'SAMPLE';
+        modifiedHtml = injectWatermark(modifiedHtml, watermarkText);
       }
 
-      // Detect watermark
-      if (lowPrompt.includes('watermark') || lowPrompt.includes('draft')) {
-        extras.watermark = lowPrompt.includes('paid') ? 'PAID' : 'DRAFT';
-      }
-
-      // Detect QR code
+      // Detect and apply QR code
       if (lowPrompt.includes('qr')) {
-        extras.qrCode = true;
+        modifiedHtml = injectQrCode(modifiedHtml);
       }
 
-      // Detect payment terms
-      if (lowPrompt.includes('terms') || lowPrompt.includes('net 30') || lowPrompt.includes('payment')) {
-        extras.terms = 'Net 30 days. 2% discount if paid within 10 days.';
+      // Detect and apply color changes
+      if (lowPrompt.includes('blue')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#3B82F6');
+      } else if (lowPrompt.includes('purple') || lowPrompt.includes('stripe')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#635BFF');
+      } else if (lowPrompt.includes('red')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#EF4444');
+      } else if (lowPrompt.includes('green')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#22C55E');
+      } else if (lowPrompt.includes('orange')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#F97316');
+      } else if (lowPrompt.includes('pink')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#EC4899');
+      } else if (lowPrompt.includes('gold') || lowPrompt.includes('yellow')) {
+        modifiedHtml = changeAccentColor(modifiedHtml, '#EAB308');
       }
 
-      // Detect signature
-      if (lowPrompt.includes('signature') || lowPrompt.includes('sign')) {
-        extras.signature = true;
-      }
-
-      // Detect progress bar
-      if (lowPrompt.includes('progress') || lowPrompt.includes('deposit') || lowPrompt.includes('50%')) {
-        extras.progressBar = 50;
-      }
-
-      // Update demo data and re-render with extras
-      sampleQuoteData.styles.accentColor = newColor;
-      currentHtml = generateEnhancedHtml(sampleQuoteData, newColor, extras);
+      // Update the current HTML and re-render
+      currentHtml = modifiedHtml;
       renderPreview(currentHtml);
 
       previewContainer.classList.add('success');
