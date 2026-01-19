@@ -183,7 +183,7 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.6.0              ║
+  ║         Glyph API v0.8.1              ║
   ║   Document Generation & AI Editing    ║
   ╚═══════════════════════════════════════╝
 
