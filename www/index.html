@@ -4460,10 +4460,59 @@
       return html;
     }
 
+    // Extract terms text from prompt
+    function extractTermsText(prompt) {
+      const lower = prompt.toLowerCase();
+      // Try to extract Net X pattern
+      const netMatch = prompt.match(/net\s*(\d+)/i);
+      const netDays = netMatch ? netMatch[1] : '30';
+      // Check for discount
+      const discountMatch = prompt.match(/(\d+)%\s*(early\s*)?(?:payment\s*)?discount/i);
+      const discount = discountMatch ? discountMatch[1] : null;
+      // Check for discount period
+      const periodMatch = prompt.match(/(?:within|in)\s*(\d+)\s*days/i);
+      const discountPeriod = periodMatch ? periodMatch[1] : '10';
+      // Build terms
+      let terms = `Net ${netDays} days`;
+      if (discount) {
+        terms += `. ${discount}% early payment discount if paid within ${discountPeriod} days`;
+      } else if (lower.includes('discount') || lower.includes('early')) {
+        terms += `. 2% early payment discount if paid within ${discountPeriod} days`;
+      }
+      return terms;
+    }
+
+    // Inject payment terms into existing HTML without replacing content
+    function injectPaymentTerms(html, termsText) {
+      if (html.includes('glyph-payment-terms') || html.includes('Payment Terms</div>')) {
+        // Update existing terms
+        return html.replace(/(<div class="glyph-payment-terms"[^>]*>[\s\S]*?<div[^>]*>Payment Terms<\/div>\s*<div[^>]*>)[^<]*(<\/div>)/i, `$1${termsText}$2`);
+      }
+      const termsStyle = `
+        margin: 24px 20px;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border-left: 4px solid #1e3a5f;
+        font-family: sans-serif;
+      `.replace(/\n\s*/g, ' ');
+      const termsDiv = `<div class="glyph-payment-terms" style="${termsStyle}">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; font-weight: 600;">Payment Terms</div>
+        <div style="font-size: 12px; color: #1a1a1a; line-height: 1.5;">${termsText}</div>
+      </div>`;
+      return html.replace('</body>', `${termsDiv}</body>`);
+    }
+
     // Simulate modification for demo when API unavailable - MODIFIES existing HTML instead of regenerating
     function simulateModification(prompt) {
       const lowPrompt = prompt.toLowerCase();
       let modifiedHtml = currentHtml; // START WITH EXISTING HTML - DON'T REGENERATE
+
+      // Detect and apply payment terms - MUST come before other checks
+      if (lowPrompt.includes('terms') || lowPrompt.includes('payment terms') || lowPrompt.includes('net ')) {
+        const termsText = extractTermsText(prompt);
+        modifiedHtml = injectPaymentTerms(modifiedHtml, termsText);
+      }
 
       // Detect and apply watermark
       if (lowPrompt.includes('watermark')) {

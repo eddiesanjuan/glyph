@@ -76,6 +76,10 @@ export function canFastTransform(prompt: string): boolean {
   // Match just "add watermark" or "add a watermark" or "add a diagonal watermark" (default to DRAFT)
   if (/add\s+(a\s+)?(diagonal\s+)?watermark/i.test(lower)) return true;
 
+  // Payment terms additions
+  if (/add\s+.*?(terms|payment\s*terms)/i.test(lower)) return true;
+  if (/(payment\s*)?terms.*?(net\s*\d+|due|discount)/i.test(lower)) return true;
+
   // Simple color changes for header/accent
   if (/make\s*(the\s+)?(header|accent|title)\s*(color\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
   if (/change\s*(the\s+)?(header|accent|title)\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
@@ -104,6 +108,13 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
     const textMatch = lower.match(/(draft|paid|sample|confidential|void|approved)/i);
     const watermarkText = textMatch ? textMatch[1].toUpperCase() : 'DRAFT';
     return addWatermark(html, watermarkText);
+  }
+
+  // === PAYMENT TERMS ===
+  if (/add\s+.*?(terms|payment\s*terms)/i.test(lower) || /(payment\s*)?terms.*?(net\s*\d+|due|discount)/i.test(lower)) {
+    // Extract terms details from the prompt
+    const termsText = extractTermsFromPrompt(prompt);
+    return addPaymentTerms(html, termsText);
   }
 
   // === COLOR CHANGES ===
@@ -287,6 +298,129 @@ function changeColor(html: string, target: string, colorName: string): FastTrans
   return {
     html: modifiedHtml,
     changes,
+    transformed: true,
+  };
+}
+
+/**
+ * Extract payment terms text from prompt
+ */
+function extractTermsFromPrompt(prompt: string): string {
+  const lower = prompt.toLowerCase();
+
+  // Try to extract specific terms mentioned in the prompt
+  // Pattern: "Net 30" or "Net 15" etc.
+  const netMatch = prompt.match(/net\s*(\d+)/i);
+  const netDays = netMatch ? netMatch[1] : '30';
+
+  // Check for early payment discount
+  const discountMatch = prompt.match(/(\d+)%\s*(early\s*)?(?:payment\s*)?discount/i);
+  const discount = discountMatch ? discountMatch[1] : null;
+
+  // Check for discount period
+  const periodMatch = prompt.match(/(?:within|in)\s*(\d+)\s*days/i);
+  const discountPeriod = periodMatch ? periodMatch[1] : '10';
+
+  // Build terms text
+  let termsText = `Net ${netDays} days`;
+
+  if (discount) {
+    termsText += `. ${discount}% early payment discount if paid within ${discountPeriod} days`;
+  } else if (lower.includes('discount') || lower.includes('early')) {
+    // Default discount if mentioned but not specified
+    termsText += `. 2% early payment discount if paid within ${discountPeriod} days`;
+  }
+
+  // Add late fee if mentioned
+  if (lower.includes('late') || lower.includes('penalty') || lower.includes('overdue')) {
+    termsText += '. 1.5% monthly interest on overdue amounts';
+  }
+
+  return termsText;
+}
+
+/**
+ * Pre-defined Payment Terms HTML block
+ */
+const PAYMENT_TERMS_HTML = (termsText: string) => `<div class="glyph-payment-terms" data-glyph-region="terms" style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #1e3a5f;">
+  <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; font-weight: 600;">Payment Terms</div>
+  <div style="font-size: 12px; color: #1a1a1a; line-height: 1.5;">${termsText}</div>
+</div>`;
+
+/**
+ * Add payment terms to document - INJECTS without replacing content
+ */
+function addPaymentTerms(html: string, termsText: string): FastTransformResult {
+  // Check if payment terms already exist
+  if (html.includes('glyph-payment-terms') || html.includes('Payment Terms')) {
+    return {
+      html,
+      changes: ['Payment terms already present'],
+      transformed: true,
+    };
+  }
+
+  let modifiedHtml = html;
+  const termsHtml = PAYMENT_TERMS_HTML(termsText);
+
+  // Strategy 1: Insert before closing </body> tag
+  if (/<\/body>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<\/body>/i,
+      `\n${termsHtml}\n</body>`
+    );
+    return {
+      html: modifiedHtml,
+      changes: [`Added payment terms: ${termsText}`],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert after footer region if it exists
+  if (/data-glyph-region="footer"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="footer"[^>]*>[\s\S]*?<\/[^>]+>)/i,
+      `$1\n${termsHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: [`Added payment terms after footer: ${termsText}`],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Insert after totals region if it exists
+  if (/data-glyph-region="totals"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="totals"[^>]*>[\s\S]*?<\/[^>]+>)/i,
+      `$1\n${termsHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: [`Added payment terms after totals: ${termsText}`],
+      transformed: true,
+    };
+  }
+
+  // Strategy 4: Insert after last div or section before </body> or at end
+  if (/<\/div>\s*<\/body>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<\/div>)(\s*<\/body>)/i,
+      `$1\n${termsHtml}$2`
+    );
+    return {
+      html: modifiedHtml,
+      changes: [`Added payment terms: ${termsText}`],
+      transformed: true,
+    };
+  }
+
+  // Strategy 5: Append to end of HTML (fallback)
+  modifiedHtml = modifiedHtml + `\n${termsHtml}`;
+
+  return {
+    html: modifiedHtml,
+    changes: [`Added payment terms: ${termsText}`],
     transformed: true,
   };
 }
