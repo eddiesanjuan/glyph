@@ -1,15 +1,21 @@
-FROM oven/bun:1
+FROM node:20-slim
 
 WORKDIR /app
 
+# Install system dependencies for Playwright
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy package files
-COPY package.json ./
+COPY package*.json ./
 
 # Install dependencies
-RUN bun install
+RUN npm install
 
 # Install Playwright browsers for PDF generation
-RUN bunx playwright install chromium --with-deps
+RUN npx playwright install chromium --with-deps
 
 # Copy source code
 COPY . .
@@ -17,4 +23,4 @@ COPY . .
 ENV PORT=3000
 EXPOSE 3000
 
-CMD ["bun", "run", "src/index.ts"]
+CMD ["npx", "tsx", "src/index.ts"]
