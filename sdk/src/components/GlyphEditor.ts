@@ -22,6 +22,12 @@ export class GlyphEditor extends HTMLElement {
   private isLoading: boolean = false;
   private selectedRegion: string | null = null;
   private shadow: ShadowRoot;
+  private _isEditMode: boolean = false;
+
+  // Undo/Redo history
+  private history: string[] = [];
+  private historyIndex: number = -1;
+  private readonly maxHistory: number = 20;
 
   // Event callbacks for programmatic usage
   public onSave?: GlyphEditorProps['onSave'];
@@ -92,6 +98,7 @@ export class GlyphEditor extends HTMLElement {
       const result = await this.api.preview(template, data);
       this.sessionId = result.sessionId;
       this.currentHtml = result.html;
+      this.saveToHistory(); // Save initial state
       this.renderPreview();
       this.emit('glyph:ready', { sessionId: this.sessionId });
     } catch (error) {
@@ -648,6 +655,237 @@ export class GlyphEditor extends HTMLElement {
           background: #fecaca;
         }
 
+        /* Floating Region Toolbar */
+        .glyph-region-toolbar {
+          position: absolute;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+          border: 1px solid var(--glyph-border);
+          border-radius: 10px;
+          padding: 8px;
+          display: flex;
+          gap: 4px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
+          animation: glyph-toolbar-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          pointer-events: auto;
+        }
+
+        @keyframes glyph-toolbar-pop {
+          from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .glyph-toolbar-btn {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          color: var(--glyph-text);
+          transition: all 0.15s ease;
+        }
+
+        .glyph-toolbar-btn:hover {
+          background: #f1f5f9;
+          border-color: var(--glyph-border);
+        }
+
+        .glyph-toolbar-btn:active {
+          transform: scale(0.95);
+        }
+
+        .glyph-toolbar-btn.active {
+          background: var(--glyph-primary);
+          color: white;
+          border-color: var(--glyph-primary);
+        }
+
+        .glyph-toolbar-divider {
+          width: 1px;
+          background: var(--glyph-border);
+          margin: 4px 4px;
+        }
+
+        .glyph-toolbar-color-picker {
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          background: transparent;
+        }
+
+        .glyph-toolbar-color-picker::-webkit-color-swatch-wrapper {
+          padding: 4px;
+        }
+
+        .glyph-toolbar-color-picker::-webkit-color-swatch {
+          border-radius: 4px;
+          border: 1px solid var(--glyph-border);
+        }
+
+        /* Undo/Redo Controls */
+        .glyph-history-controls {
+          display: flex;
+          gap: 4px;
+          margin-right: 8px;
+        }
+
+        .glyph-history-btn {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--glyph-bg);
+          border: 1px solid var(--glyph-border);
+          border-radius: var(--glyph-radius);
+          cursor: pointer;
+          color: var(--glyph-text);
+          transition: all 0.15s ease;
+        }
+
+        .glyph-history-btn:hover:not(:disabled) {
+          background: #f1f5f9;
+          border-color: var(--glyph-primary);
+          color: var(--glyph-primary);
+        }
+
+        .glyph-history-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .glyph-history-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        /* Field Picker */
+        .glyph-field-picker-wrapper {
+          position: relative;
+        }
+
+        .glyph-field-picker-btn {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--glyph-bg);
+          border: 1px solid var(--glyph-border);
+          border-radius: var(--glyph-radius);
+          cursor: pointer;
+          font-size: 20px;
+          color: var(--glyph-text);
+          transition: all 0.15s ease;
+          margin-right: 8px;
+        }
+
+        .glyph-field-picker-btn:hover {
+          background: #f1f5f9;
+          border-color: var(--glyph-primary);
+          color: var(--glyph-primary);
+        }
+
+        .glyph-field-picker-dropdown {
+          position: absolute;
+          bottom: calc(100% + 8px);
+          left: 0;
+          width: 280px;
+          max-height: 300px;
+          overflow-y: auto;
+          background: var(--glyph-bg);
+          border: 1px solid var(--glyph-border);
+          border-radius: var(--glyph-radius);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          animation: glyph-fade-in 0.2s ease-out;
+        }
+
+        .glyph-field-picker-dropdown.hidden {
+          display: none;
+        }
+
+        .glyph-field-category {
+          padding: 8px 12px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--glyph-text-muted);
+          background: #f8fafc;
+          border-bottom: 1px solid var(--glyph-border);
+        }
+
+        .glyph-field-option {
+          padding: 10px 12px;
+          font-size: 13px;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #f1f5f9;
+          transition: background 0.1s ease;
+        }
+
+        .glyph-field-option:hover {
+          background: #f8fafc;
+        }
+
+        .glyph-field-option:last-child {
+          border-bottom: none;
+        }
+
+        .glyph-field-name {
+          color: var(--glyph-text);
+        }
+
+        .glyph-field-path {
+          font-size: 11px;
+          color: var(--glyph-text-muted);
+          font-family: ui-monospace, monospace;
+        }
+
+        /* Region Quick Actions (context-specific pills) */
+        .glyph-region-actions {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 10px;
+          flex-wrap: wrap;
+          animation: glyph-fade-in 0.2s ease-out;
+        }
+
+        .glyph-region-action-pill {
+          padding: 6px 12px;
+          background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+          border: 1px solid #93c5fd;
+          border-radius: 16px;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          color: #1e40af;
+          transition: all 0.15s ease;
+        }
+
+        .glyph-region-action-pill:hover {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        }
+
         /* Responsive adjustments */
         @media (max-width: 480px) {
           .glyph-controls {
@@ -667,6 +905,19 @@ export class GlyphEditor extends HTMLElement {
           .glyph-btn {
             padding: 8px 16px;
             font-size: 13px;
+          }
+
+          .glyph-region-toolbar {
+            padding: 6px;
+          }
+
+          .glyph-toolbar-btn {
+            width: 28px;
+            height: 28px;
+          }
+
+          .glyph-field-picker-dropdown {
+            width: 240px;
           }
         }
       </style>
@@ -693,7 +944,24 @@ export class GlyphEditor extends HTMLElement {
             <button class="glyph-pill" data-action="Make the totals section larger and more prominent with bold styling">Emphasize totals</button>
             <button class="glyph-pill" data-action="Use a more compact layout with less whitespace while maintaining readability">Compact layout</button>
           </div>
+          <div class="glyph-region-actions" id="glyph-region-actions" style="display: none;"></div>
           <div class="glyph-command-row">
+            <div class="glyph-history-controls">
+              <button class="glyph-history-btn" id="glyph-undo" aria-label="Undo" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                </svg>
+              </button>
+              <button class="glyph-history-btn" id="glyph-redo" aria-label="Redo" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>
+                </svg>
+              </button>
+            </div>
+            <div class="glyph-field-picker-wrapper">
+              <button class="glyph-field-picker-btn" id="glyph-field-picker" aria-label="Insert field">+</button>
+              <div class="glyph-field-picker-dropdown hidden" id="glyph-field-dropdown"></div>
+            </div>
             <input type="text" class="glyph-command-input" placeholder="Describe what you want to change..." aria-label="Edit command" />
             <button class="glyph-btn glyph-btn-secondary" id="glyph-download" aria-label="Download PDF">Download</button>
           </div>
@@ -735,6 +1003,48 @@ export class GlyphEditor extends HTMLElement {
     if (downloadBtn) {
       downloadBtn.addEventListener('click', () => this.downloadPdf());
     }
+
+    // Undo/Redo buttons
+    const undoBtn = this.shadow.getElementById('glyph-undo');
+    const redoBtn = this.shadow.getElementById('glyph-redo');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => this.undo());
+    }
+    if (redoBtn) {
+      redoBtn.addEventListener('click', () => this.redo());
+    }
+
+    // Keyboard shortcuts for undo/redo
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          this.redo();
+        } else {
+          e.preventDefault();
+          this.undo();
+        }
+      }
+    });
+
+    // Field picker
+    const fieldPickerBtn = this.shadow.getElementById('glyph-field-picker');
+    const fieldDropdown = this.shadow.getElementById('glyph-field-dropdown');
+    if (fieldPickerBtn && fieldDropdown) {
+      fieldPickerBtn.addEventListener('click', () => {
+        fieldDropdown.classList.toggle('hidden');
+        if (!fieldDropdown.classList.contains('hidden')) {
+          this.populateFieldPicker();
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!fieldPickerBtn.contains(e.target as Node) && !fieldDropdown.contains(e.target as Node)) {
+          fieldDropdown.classList.add('hidden');
+        }
+      });
+    }
   }
 
   /**
@@ -762,10 +1072,12 @@ export class GlyphEditor extends HTMLElement {
       );
 
       this.currentHtml = result.html;
+      this.saveToHistory();
       this.renderPreview();
 
       // Clear region selection after successful modification
       this.selectedRegion = null;
+      this.hideRegionActions();
       const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
       if (input) {
         input.placeholder = 'Describe what you want to change...';
@@ -925,6 +1237,7 @@ export class GlyphEditor extends HTMLElement {
     const regions = doc.querySelectorAll('[data-glyph-region]');
 
     regions.forEach(region => {
+      // Single click - select region and show quick actions
       region.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -935,15 +1248,51 @@ export class GlyphEditor extends HTMLElement {
         // Highlight new selection
         region.classList.add('glyph-region-highlight');
         this.selectedRegion = region.getAttribute('data-glyph-region');
+        this._isEditMode = false;
+        this.hideFloatingToolbar();
+
+        // Show region-specific quick actions
+        if (this.selectedRegion) {
+          this.showRegionActions(this.selectedRegion);
+        }
 
         // Update placeholder and focus input
         const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
         if (input) {
           input.placeholder = `Edit the ${this.selectedRegion}...`;
-          input.focus();
         }
 
         this.emit('glyph:region-selected', { region: this.selectedRegion });
+      });
+
+      // Double-click - enter edit mode with floating toolbar
+      region.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        // Clear previous selection
+        regions.forEach(r => r.classList.remove('glyph-region-highlight'));
+
+        // Highlight selection
+        region.classList.add('glyph-region-highlight');
+        this.selectedRegion = region.getAttribute('data-glyph-region');
+        this._isEditMode = true;
+
+        // Show floating toolbar
+        this.showFloatingToolbar(region);
+
+        // Show region-specific quick actions too
+        if (this.selectedRegion) {
+          this.showRegionActions(this.selectedRegion);
+        }
+
+        // Update placeholder
+        const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+        if (input) {
+          input.placeholder = `Edit the ${this.selectedRegion} (edit mode)...`;
+        }
+
+        this.emit('glyph:edit-mode', { region: this.selectedRegion });
       });
     });
 
@@ -962,10 +1311,371 @@ export class GlyphEditor extends HTMLElement {
   private clearRegionSelection(regions: NodeListOf<Element>) {
     regions.forEach(r => r.classList.remove('glyph-region-highlight'));
     this.selectedRegion = null;
+    this._isEditMode = false;
+    this.hideFloatingToolbar();
+    this.hideRegionActions();
 
     const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
     if (input) {
       input.placeholder = 'Describe what you want to change...';
+    }
+  }
+
+  // ============================================
+  // UNDO/REDO HISTORY MANAGEMENT
+  // ============================================
+
+  /**
+   * Save current HTML state to history
+   */
+  private saveToHistory() {
+    // If we're not at the end of history, truncate future states
+    if (this.historyIndex < this.history.length - 1) {
+      this.history = this.history.slice(0, this.historyIndex + 1);
+    }
+
+    // Add current state
+    this.history.push(this.currentHtml);
+
+    // Limit history size
+    if (this.history.length > this.maxHistory) {
+      this.history.shift();
+    } else {
+      this.historyIndex++;
+    }
+
+    this.updateHistoryButtons();
+  }
+
+  /**
+   * Undo last modification
+   */
+  public undo() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.currentHtml = this.history[this.historyIndex];
+      this.renderPreview();
+      this.updateHistoryButtons();
+      this.showToast('Undone');
+      this.emit('glyph:undo', { historyIndex: this.historyIndex });
+    }
+  }
+
+  /**
+   * Redo previously undone modification
+   */
+  public redo() {
+    if (this.historyIndex < this.history.length - 1) {
+      this.historyIndex++;
+      this.currentHtml = this.history[this.historyIndex];
+      this.renderPreview();
+      this.updateHistoryButtons();
+      this.showToast('Redone');
+      this.emit('glyph:redo', { historyIndex: this.historyIndex });
+    }
+  }
+
+  /**
+   * Update undo/redo button states
+   */
+  private updateHistoryButtons() {
+    const undoBtn = this.shadow.getElementById('glyph-undo') as HTMLButtonElement;
+    const redoBtn = this.shadow.getElementById('glyph-redo') as HTMLButtonElement;
+
+    if (undoBtn) {
+      undoBtn.disabled = this.historyIndex <= 0;
+    }
+    if (redoBtn) {
+      redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+    }
+  }
+
+  // ============================================
+  // FIELD PICKER SYSTEM
+  // ============================================
+
+  /**
+   * Get available fields from template schema
+   */
+  private getAvailableFields(): Array<{ category: string; name: string; path: string; description: string }> {
+    // These are the fields from quote-modern schema
+    return [
+      // Branding fields
+      { category: 'Branding', name: 'Company Name', path: 'branding.companyName', description: 'Your company name' },
+      { category: 'Branding', name: 'Logo', path: 'branding.logoUrl', description: 'Company logo URL' },
+      { category: 'Branding', name: 'Company Address', path: 'branding.companyAddress', description: 'Business address' },
+
+      // Client fields
+      { category: 'Client', name: 'Client Name', path: 'client.name', description: 'Client full name' },
+      { category: 'Client', name: 'Company', path: 'client.company', description: 'Client company' },
+      { category: 'Client', name: 'Email', path: 'client.email', description: 'Client email address' },
+      { category: 'Client', name: 'Phone', path: 'client.phone', description: 'Client phone number' },
+      { category: 'Client', name: 'Address', path: 'client.address', description: 'Client address' },
+
+      // Meta fields
+      { category: 'Quote Info', name: 'Quote Number', path: 'meta.quoteNumber', description: 'Unique quote ID' },
+      { category: 'Quote Info', name: 'Date', path: 'meta.date', description: 'Quote date' },
+      { category: 'Quote Info', name: 'Valid Until', path: 'meta.validUntil', description: 'Expiration date' },
+      { category: 'Quote Info', name: 'Notes', path: 'meta.notes', description: 'Additional notes' },
+      { category: 'Quote Info', name: 'Terms', path: 'meta.terms', description: 'Terms and conditions' },
+
+      // Totals fields
+      { category: 'Totals', name: 'Subtotal', path: 'totals.subtotal', description: 'Sum before adjustments' },
+      { category: 'Totals', name: 'Discount', path: 'totals.discount', description: 'Discount amount' },
+      { category: 'Totals', name: 'Tax', path: 'totals.tax', description: 'Tax amount' },
+      { category: 'Totals', name: 'Tax Rate', path: 'totals.taxRate', description: 'Tax percentage' },
+      { category: 'Totals', name: 'Total', path: 'totals.total', description: 'Final total' },
+    ];
+  }
+
+  /**
+   * Populate the field picker dropdown
+   */
+  private populateFieldPicker() {
+    const dropdown = this.shadow.getElementById('glyph-field-dropdown');
+    if (!dropdown) return;
+
+    const fields = this.getAvailableFields();
+    const categories = [...new Set(fields.map(f => f.category))];
+
+    let html = '';
+    for (const category of categories) {
+      html += `<div class="glyph-field-category">${this.escapeHtml(category)}</div>`;
+      const categoryFields = fields.filter(f => f.category === category);
+      for (const field of categoryFields) {
+        html += `
+          <div class="glyph-field-option" data-path="${this.escapeHtml(field.path)}">
+            <span class="glyph-field-name">${this.escapeHtml(field.name)}</span>
+            <span class="glyph-field-path">{{${this.escapeHtml(field.path)}}}</span>
+          </div>
+        `;
+      }
+    }
+
+    dropdown.innerHTML = html;
+
+    // Add click handlers
+    dropdown.querySelectorAll('.glyph-field-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const path = option.getAttribute('data-path');
+        if (path) {
+          this.insertFieldCommand(path);
+          dropdown.classList.add('hidden');
+        }
+      });
+    });
+  }
+
+  /**
+   * Insert field into command input
+   */
+  private insertFieldCommand(fieldPath: string) {
+    const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+    if (!input) return;
+
+    const regionContext = this.selectedRegion ? ` to the ${this.selectedRegion}` : '';
+    input.value = `Add {{${fieldPath}}}${regionContext}`;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+
+  // ============================================
+  // REGION QUICK ACTIONS
+  // ============================================
+
+  /**
+   * Get context-specific quick actions for a region
+   */
+  private getRegionQuickActions(region: string): Array<{ label: string; action: string }> {
+    const actionsByRegion: Record<string, Array<{ label: string; action: string }>> = {
+      'header': [
+        { label: 'Add logo', action: 'Add a company logo to the header' },
+        { label: 'Change company name style', action: 'Make the company name more prominent with larger text and bold styling' },
+        { label: 'Add contact info', action: 'Add company phone and email below the company name' },
+      ],
+      'client-info': [
+        { label: 'Add phone number', action: 'Add the client phone number {{client.phone}} to the client info section' },
+        { label: 'Add email', action: 'Add the client email address {{client.email}} to the client info section' },
+        { label: 'Compact layout', action: 'Make the client info section more compact' },
+      ],
+      'line-items': [
+        { label: 'Add column', action: 'Add a new column for item code/SKU to the line items table' },
+        { label: 'Alternate row colors', action: 'Add alternating row colors to the line items table for better readability' },
+        { label: 'Compact rows', action: 'Reduce the spacing in the line items table for a more compact look' },
+        { label: 'Add details column', action: 'Add a details column to show item descriptions' },
+      ],
+      'totals': [
+        { label: 'Emphasize total', action: 'Make the final total larger and more prominent with bold styling and a highlight color' },
+        { label: 'Add discount row', action: 'Add a discount row showing {{totals.discount}} to the totals section' },
+        { label: 'Currency format', action: 'Format all currency values with proper currency symbols and thousands separators' },
+        { label: 'Show tax rate', action: 'Display the tax rate percentage next to the tax amount' },
+      ],
+      'footer': [
+        { label: 'Add terms', action: 'Add the terms and conditions {{meta.terms}} to the footer' },
+        { label: 'Add signature line', action: 'Add signature lines for client and company representative' },
+        { label: 'Add page number', action: 'Add page numbering to the footer' },
+      ],
+    };
+
+    return actionsByRegion[region] || [
+      { label: 'Make prominent', action: `Make the ${region} section more prominent and visually emphasized` },
+      { label: 'Compact', action: `Make the ${region} section more compact with less spacing` },
+      { label: 'Edit with AI', action: '' }, // Special case - focuses input
+    ];
+  }
+
+  /**
+   * Show region-specific quick actions
+   */
+  private showRegionActions(region: string) {
+    const container = this.shadow.getElementById('glyph-region-actions');
+    if (!container) return;
+
+    const actions = this.getRegionQuickActions(region);
+    let html = '';
+
+    for (const action of actions) {
+      if (action.action === '') {
+        // Edit with AI button
+        html += `<button class="glyph-region-action-pill" data-focus-input="true">Edit with AI</button>`;
+      } else {
+        html += `<button class="glyph-region-action-pill" data-action="${this.escapeHtml(action.action)}">${this.escapeHtml(action.label)}</button>`;
+      }
+    }
+
+    container.innerHTML = html;
+    container.style.display = 'flex';
+
+    // Add click handlers
+    container.querySelectorAll('.glyph-region-action-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const action = pill.getAttribute('data-action');
+        const focusInput = pill.getAttribute('data-focus-input');
+
+        if (focusInput) {
+          const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+          if (input) input.focus();
+        } else if (action) {
+          this.executeCommand(action, pill as HTMLElement);
+        }
+      });
+    });
+  }
+
+  /**
+   * Hide region quick actions
+   */
+  private hideRegionActions() {
+    const container = this.shadow.getElementById('glyph-region-actions');
+    if (container) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+    }
+  }
+
+  // ============================================
+  // FLOATING TOOLBAR (Edit Mode)
+  // ============================================
+
+  /**
+   * Show floating toolbar near selected region
+   */
+  private showFloatingToolbar(region: Element) {
+    // Remove existing toolbar if any
+    this.hideFloatingToolbar();
+
+    const previewArea = this.shadow.querySelector('.glyph-preview-area');
+    if (!previewArea) return;
+
+    // Get region position relative to iframe
+    const iframe = previewArea.querySelector('iframe') as HTMLIFrameElement;
+    if (!iframe) return;
+
+    const regionRect = region.getBoundingClientRect();
+
+    // Create toolbar element
+    const toolbar = document.createElement('div');
+    toolbar.className = 'glyph-region-toolbar';
+    toolbar.id = 'glyph-floating-toolbar';
+
+    toolbar.innerHTML = `
+      <button class="glyph-toolbar-btn" data-action="increase-font" title="Increase font size">A+</button>
+      <button class="glyph-toolbar-btn" data-action="decrease-font" title="Decrease font size">A-</button>
+      <div class="glyph-toolbar-divider"></div>
+      <button class="glyph-toolbar-btn" data-action="bold" title="Bold">B</button>
+      <div class="glyph-toolbar-divider"></div>
+      <input type="color" class="glyph-toolbar-color-picker" data-action="color" value="#1e3a5f" title="Text color">
+      <div class="glyph-toolbar-divider"></div>
+      <button class="glyph-toolbar-btn" data-action="spacing-increase" title="Increase spacing">+</button>
+      <button class="glyph-toolbar-btn" data-action="spacing-decrease" title="Decrease spacing">-</button>
+      <div class="glyph-toolbar-divider"></div>
+      <button class="glyph-toolbar-btn" data-action="ai-edit" title="Edit with AI">AI</button>
+    `;
+
+    // Position toolbar above the region
+    const previewRect = previewArea.getBoundingClientRect();
+    const top = regionRect.top - previewRect.top - 50;
+    const left = Math.max(10, regionRect.left - previewRect.left);
+
+    toolbar.style.top = `${Math.max(10, top)}px`;
+    toolbar.style.left = `${left}px`;
+
+    previewArea.appendChild(toolbar);
+
+    // Add event listeners to toolbar buttons
+    toolbar.querySelectorAll('.glyph-toolbar-btn, .glyph-toolbar-color-picker').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute('data-action');
+        if (action) {
+          this.applyToolbarAction(action, btn);
+        }
+      });
+
+      if (btn.classList.contains('glyph-toolbar-color-picker')) {
+        btn.addEventListener('input', (e) => {
+          const color = (e.target as HTMLInputElement).value;
+          this.applyToolbarAction('color', btn, color);
+        });
+      }
+    });
+  }
+
+  /**
+   * Hide floating toolbar
+   */
+  private hideFloatingToolbar() {
+    const toolbar = this.shadow.getElementById('glyph-floating-toolbar');
+    if (toolbar) {
+      toolbar.remove();
+    }
+  }
+
+  /**
+   * Apply toolbar action to selected region
+   */
+  private applyToolbarAction(action: string, _button: Element, value?: string) {
+    if (!this.selectedRegion) return;
+
+    const commands: Record<string, string> = {
+      'increase-font': `Increase the font size in the ${this.selectedRegion} section`,
+      'decrease-font': `Decrease the font size in the ${this.selectedRegion} section`,
+      'bold': `Make the text in the ${this.selectedRegion} section bold`,
+      'color': `Change the text color in the ${this.selectedRegion} section to ${value || '#1e3a5f'}`,
+      'spacing-increase': `Increase the spacing/padding in the ${this.selectedRegion} section`,
+      'spacing-decrease': `Decrease the spacing/padding in the ${this.selectedRegion} section`,
+      'ai-edit': '', // Special case - focuses input
+    };
+
+    const command = commands[action];
+    if (command === '') {
+      // Focus the command input for AI editing
+      const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+      }
+    } else if (command) {
+      this.executeCommand(command);
     }
   }
 
@@ -1108,6 +1818,13 @@ export class GlyphEditor extends HTMLElement {
    */
   public getHtml(): string {
     return this.currentHtml;
+  }
+
+  /**
+   * Check if a region is in edit mode (double-clicked)
+   */
+  public isInEditMode(): boolean {
+    return this._isEditMode;
   }
 
   /**
