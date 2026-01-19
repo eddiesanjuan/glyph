@@ -2,6 +2,9 @@
   "buildCommand": null,
   "outputDirectory": "dist",
   "framework": null,
+  "redirects": [
+    { "source": "/", "destination": "https://docs.glyph.you/sdk/installation", "permanent": false }
+  ],
   "headers": [
     {
       "source": "/(.*)",

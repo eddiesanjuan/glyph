@@ -30,7 +30,10 @@
   --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Dark mode overrides */
+/* ============================================
+   DARK MODE - Comprehensive Overrides
+   ============================================ */
+
 :root[data-theme='dark'] {
   --sl-color-accent-low: #4c1d95;
   --sl-color-accent: #8b5cf6;
@@ -45,52 +48,292 @@
   --sl-color-text: #f1f5f9;
   --sl-color-text-accent: #e2e8f0;
 
-  /* Gray scale for dark mode */
-  --sl-color-gray-1: #1e293b;
-  --sl-color-gray-2: #334155;
-  --sl-color-gray-3: #475569;
+  /* Gray scale for dark mode - INVERTED for proper contrast */
+  --sl-color-gray-1: #f1f5f9;
+  --sl-color-gray-2: #e2e8f0;
+  --sl-color-gray-3: #cbd5e1;
   --sl-color-gray-4: #94a3b8;
-  --sl-color-gray-5: #cbd5e1;
-  --sl-color-gray-6: #f1f5f9;
+  --sl-color-gray-5: #64748b;
+  --sl-color-gray-6: #475569;
+
+  /* Backgrounds for components */
+  --sl-color-bg-inline-code: #334155;
+  --sl-color-hairline: #334155;
+  --sl-color-hairline-light: #1e293b;
 
   /* Fix text readability */
   --sl-color-white: #f8fafc;
-  --sl-color-black: #0f172a;
+  --sl-color-black: #f1f5f9;
 }
 
-/* Force readable text in dark mode */
+/* Force all text to be readable in dark mode */
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] main,
+:root[data-theme='dark'] article {
+  color: #e2e8f0;
+}
+
 :root[data-theme='dark'] h1,
 :root[data-theme='dark'] h2,
 :root[data-theme='dark'] h3,
 :root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  color: #f8fafc !important;
+}
+
 :root[data-theme='dark'] p,
 :root[data-theme='dark'] li,
 :root[data-theme='dark'] span,
-:root[data-theme='dark'] .card-grid .card {
+:root[data-theme='dark'] td,
+:root[data-theme='dark'] th,
+:root[data-theme='dark'] label,
+:root[data-theme='dark'] a:not([class]) {
   color: #e2e8f0;
 }
 
-:root[data-theme='dark'] .hero h1 {
-  color: #ffffff;
+/* ============================================
+   STARLIGHT CARD COMPONENTS - Dark Mode
+   ============================================ */
+
+/* Main card grid cards */
+:root[data-theme='dark'] .card,
+:root[data-theme='dark'] .sl-card,
+:root[data-theme='dark'] [class*="Card"] {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
 }
 
-:root[data-theme='dark'] .hero p {
+:root[data-theme='dark'] .card:hover,
+:root[data-theme='dark'] .sl-card:hover {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+:root[data-theme='dark'] .card h2,
+:root[data-theme='dark'] .card h3,
+:root[data-theme='dark'] .card p,
+:root[data-theme='dark'] .sl-card h2,
+:root[data-theme='dark'] .sl-card h3,
+:root[data-theme='dark'] .sl-card p {
+  color: #f1f5f9 !important;
+}
+
+/* Link cards */
+:root[data-theme='dark'] .sl-link-card,
+:root[data-theme='dark'] a.card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme='dark'] .sl-link-card:hover,
+:root[data-theme='dark'] a.card:hover {
+  border-color: #8b5cf6 !important;
+  background: #263548 !important;
+}
+
+:root[data-theme='dark'] .sl-link-card h2,
+:root[data-theme='dark'] .sl-link-card p,
+:root[data-theme='dark'] .sl-link-card span {
+  color: #f1f5f9 !important;
+}
+
+/* Feature card icons */
+:root[data-theme='dark'] .card svg,
+:root[data-theme='dark'] .sl-card svg {
+  color: #a78bfa;
+}
+
+/* ============================================
+   CODE BLOCKS - Dark Mode
+   ============================================ */
+
+/* Inline code */
+:root[data-theme='dark'] code:not(pre code) {
+  background: #334155 !important;
+  color: #c4b5fd !important;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+/* Code blocks with expressive-code */
+:root[data-theme='dark'] .expressive-code,
+:root[data-theme='dark'] .expressive-code pre,
+:root[data-theme='dark'] .expressive-code .frame {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+:root[data-theme='dark'] .expressive-code pre code {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+:root[data-theme='dark'] .expressive-code .frame {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Syntax highlighting tokens */
+:root[data-theme='dark'] .expressive-code .token.comment { color: #64748b !important; }
+:root[data-theme='dark'] .expressive-code .token.string { color: #86efac !important; }
+:root[data-theme='dark'] .expressive-code .token.keyword { color: #c4b5fd !important; }
+:root[data-theme='dark'] .expressive-code .token.function { color: #93c5fd !important; }
+:root[data-theme='dark'] .expressive-code .token.number { color: #fca5a5 !important; }
+:root[data-theme='dark'] .expressive-code .token.operator { color: #94a3b8 !important; }
+:root[data-theme='dark'] .expressive-code .token.punctuation { color: #94a3b8 !important; }
+:root[data-theme='dark'] .expressive-code .token.tag { color: #f472b6 !important; }
+:root[data-theme='dark'] .expressive-code .token.attr-name { color: #c4b5fd !important; }
+:root[data-theme='dark'] .expressive-code .token.attr-value { color: #86efac !important; }
+
+/* Plain pre/code blocks */
+:root[data-theme='dark'] pre:not(.expressive-code pre) {
+  background: #0f172a !important;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] pre:not(.expressive-code pre) code {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+/* ============================================
+   TABLES - Dark Mode
+   ============================================ */
+
+:root[data-theme='dark'] table {
+  border-color: #334155;
+}
+
+:root[data-theme='dark'] th {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155;
+}
+
+:root[data-theme='dark'] td {
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] tr:hover td {
+  background: #263548 !important;
+}
+
+/* ============================================
+   NAVIGATION & SIDEBAR - Dark Mode
+   ============================================ */
+
+:root[data-theme='dark'] nav a,
+:root[data-theme='dark'] .sidebar-content a {
   color: #cbd5e1;
 }
 
-:root[data-theme='dark'] .sl-link-card {
+:root[data-theme='dark'] nav a:hover,
+:root[data-theme='dark'] .sidebar-content a:hover {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] nav a[aria-current="page"],
+:root[data-theme='dark'] .sidebar-content a[aria-current="page"] {
+  color: #a78bfa !important;
+  font-weight: 600;
+}
+
+/* ============================================
+   SEARCH - Dark Mode
+   ============================================ */
+
+:root[data-theme='dark'] .search-input,
+:root[data-theme='dark'] input[type="search"] {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+:root[data-theme='dark'] .search-input::placeholder {
+  color: #64748b;
+}
+
+/* ============================================
+   BADGES - Dark Mode
+   ============================================ */
+
+/* Endpoint badges */
+.endpoint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--sl-font-mono);
+}
+
+.endpoint-badge.post { background: #dcfce7; color: #166534; }
+.endpoint-badge.get { background: #dbeafe; color: #1e40af; }
+.endpoint-badge.delete { background: #fee2e2; color: #991b1b; }
+
+:root[data-theme='dark'] .endpoint-badge.post { background: #14532d; color: #86efac; }
+:root[data-theme='dark'] .endpoint-badge.get { background: #1e3a8a; color: #93c5fd; }
+:root[data-theme='dark'] .endpoint-badge.delete { background: #7f1d1d; color: #fca5a5; }
+
+/* Tier badges */
+.tier-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tier-badge.free { background: #e0e7ff; color: #3730a3; }
+.tier-badge.pro { background: #ddd6fe; color: #5b21b6; }
+.tier-badge.scale { background: #fce7f3; color: #9d174d; }
+.tier-badge.enterprise { background: #fef3c7; color: #92400e; }
+
+:root[data-theme='dark'] .tier-badge.free { background: #3730a3; color: #e0e7ff; }
+:root[data-theme='dark'] .tier-badge.pro { background: #5b21b6; color: #ddd6fe; }
+:root[data-theme='dark'] .tier-badge.scale { background: #9d174d; color: #fce7f3; }
+:root[data-theme='dark'] .tier-badge.enterprise { background: #92400e; color: #fef3c7; }
+
+/* ============================================
+   ASIDES / CALLOUTS - Dark Mode
+   ============================================ */
+
+:root[data-theme='dark'] .starlight-aside {
   background: #1e293b;
   border-color: #334155;
 }
 
-:root[data-theme='dark'] .sl-link-card:hover {
-  border-color: #8b5cf6;
+:root[data-theme='dark'] .starlight-aside--note {
+  border-left-color: #8b5cf6;
 }
 
-:root[data-theme='dark'] .sl-link-card h2,
-:root[data-theme='dark'] .sl-link-card p {
-  color: #f1f5f9;
+:root[data-theme='dark'] .starlight-aside--tip {
+  border-left-color: #22c55e;
 }
+
+:root[data-theme='dark'] .starlight-aside--caution {
+  border-left-color: #f59e0b;
+}
+
+:root[data-theme='dark'] .starlight-aside--danger {
+  border-left-color: #ef4444;
+}
+
+:root[data-theme='dark'] .starlight-aside p,
+:root[data-theme='dark'] .starlight-aside span {
+  color: #e2e8f0 !important;
+}
+
+/* ============================================
+   SHARED STYLES (Light & Dark)
+   ============================================ */
 
 /* Logo styling */
 .site-title img {
@@ -98,21 +341,19 @@
   width: auto;
 }
 
-/* Hero section on index */
+/* Hero section */
 .hero {
   --hero-gradient-start: #7c3aed;
   --hero-gradient-end: #4f46e5;
 }
 
-/* Code block styling */
+/* Code block base styling */
 .expressive-code pre {
   border-radius: 8px;
-  border: 1px solid var(--sl-color-gray-2);
 }
 
 .expressive-code .frame {
   border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Button styling */
@@ -127,13 +368,7 @@
   box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
 }
 
-/* Sidebar active link accent */
-nav[aria-label="Main"] .active {
-  color: var(--sl-color-accent);
-  font-weight: 600;
-}
-
-/* Card styling for features */
+/* Card grid layout */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -142,112 +377,9 @@ nav[aria-label="Main"] .active {
 }
 
 .card {
-  background: var(--sl-color-bg-nav);
-  border: 1px solid var(--sl-color-gray-2);
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.2s ease;
-}
-
-.card:hover {
-  border-color: var(--sl-color-accent);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
-}
-
-.card h3 {
-  margin-top: 0;
-  color: var(--sl-color-black);
-}
-
-/* Endpoint badges */
-.endpoint-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: var(--sl-font-mono);
-}
-
-.endpoint-badge.post {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.endpoint-badge.get {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.endpoint-badge.delete {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-:root[data-theme='dark'] .endpoint-badge.post {
-  background: #14532d;
-  color: #86efac;
-}
-
-:root[data-theme='dark'] .endpoint-badge.get {
-  background: #1e3a8a;
-  color: #93c5fd;
-}
-
-:root[data-theme='dark'] .endpoint-badge.delete {
-  background: #7f1d1d;
-  color: #fca5a5;
-}
-
-/* Tier badges */
-.tier-badge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.tier-badge.free {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.tier-badge.pro {
-  background: #ddd6fe;
-  color: #5b21b6;
-}
-
-.tier-badge.scale {
-  background: #fce7f3;
-  color: #9d174d;
-}
-
-.tier-badge.enterprise {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-:root[data-theme='dark'] .tier-badge.free {
-  background: #3730a3;
-  color: #e0e7ff;
-}
-
-:root[data-theme='dark'] .tier-badge.pro {
-  background: #5b21b6;
-  color: #ddd6fe;
-}
-
-:root[data-theme='dark'] .tier-badge.scale {
-  background: #9d174d;
-  color: #fce7f3;
-}
-
-:root[data-theme='dark'] .tier-badge.enterprise {
-  background: #92400e;
-  color: #fef3c7;
 }
 
 /* Quick start steps */
@@ -281,7 +413,7 @@ nav[aria-label="Main"] .active {
   font-size: 0.875rem;
 }
 
-/* Table styling */
+/* Table base styling */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -292,30 +424,15 @@ table {
 th, td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid var(--sl-color-gray-2);
 }
 
-th {
-  background: var(--sl-color-bg-nav);
-  font-weight: 600;
-  color: var(--sl-color-black);
-}
-
-tr:hover td {
-  background: var(--sl-color-gray-1);
-}
-
-/* Callout/admonition enhancements */
+/* Callout base styling */
 .starlight-aside {
   border-radius: 8px;
   border-left-width: 4px;
 }
 
-.starlight-aside--note {
-  border-color: var(--sl-color-accent);
-}
-
-/* Search styling */
+/* Search input base */
 .search-input {
   border-radius: 8px;
 }
@@ -334,7 +451,7 @@ tr:hover td {
   }
 }
 
-/* Animation for page transitions */
+/* Page transition animation */
 main {
   animation: fadeIn 0.3s ease-out;
 }
