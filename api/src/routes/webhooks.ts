@@ -44,8 +44,14 @@ const createWebhookSchema = z.object({
     .default(["created", "updated"]),
   delivery: z
     .object({
-      type: z.enum(["url", "email", "storage"]).default("url"),
+      type: z.enum(["url", "email", "storage"]).default("storage"),
       destination: z.string().optional(),
+      // Email delivery options
+      emailTo: z.string().optional(),         // Static or "{{fields.Email}}"
+      emailSubject: z.string().optional(),    // Subject with Mustache support
+      emailBody: z.string().optional(),       // HTML body with Mustache support
+      emailFrom: z.string().optional(),       // Custom from address
+      emailReplyTo: z.string().optional(),    // Reply-to address
     })
     .optional(),
   pdfOptions: z

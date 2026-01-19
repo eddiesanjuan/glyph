@@ -5,6 +5,12 @@
 
 import Mustache from "mustache";
 import { generatePDF, type PDFOptions } from "./pdf.js";
+import {
+  sendPdfEmail,
+  isEmailConfigured,
+  DEFAULT_EMAIL_SUBJECT,
+  DEFAULT_EMAIL_BODY,
+} from "./email.js";
 import type {
   WebhookConfig,
   WebhookCreateRequest,
@@ -242,46 +248,128 @@ export async function processWebhook(
     // Update webhook stats
     updateWebhookStats(webhookId);
 
-    // Handle delivery based on type
-    let pdfUrl: string;
-
-    if (config.delivery.type === "url" && config.delivery.destination) {
-      // POST PDF to destination URL
-      try {
-        const formData = new FormData();
-        formData.append("file", new Blob([pdfBuffer], { type: "application/pdf" }), filename);
-        formData.append("recordId", payload.record.id);
-        formData.append("webhookId", webhookId);
-
-        const response = await fetch(config.delivery.destination, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          console.warn(`Delivery to ${config.delivery.destination} failed: ${response.status}`);
-        }
-      } catch (err) {
-        console.warn(`Delivery failed: ${err instanceof Error ? err.message : "Unknown error"}`);
-      }
-
-      // Still store locally and return URL
-      const pdfId = storePdf(pdfBuffer, filename);
-      pdfUrl = `${baseUrl}/v1/webhooks/pdfs/${pdfId}`;
-    } else {
-      // Default: store and return URL
-      const pdfId = storePdf(pdfBuffer, filename);
-      pdfUrl = `${baseUrl}/v1/webhooks/pdfs/${pdfId}`;
-    }
+    // Always store PDF locally for backup/download
+    const pdfId = storePdf(pdfBuffer, filename);
+    const pdfUrl = `${baseUrl}/v1/webhooks/pdfs/${pdfId}`;
 
     const processingTimeMs = Date.now() - startTime;
 
-    return {
-      success: true,
-      pdfUrl,
-      filename,
-      processingTimeMs,
-    };
+    // Handle delivery based on type
+    switch (config.delivery.type) {
+      case "email": {
+        // Email delivery
+        if (!isEmailConfigured()) {
+          return {
+            success: false,
+            error: "Email delivery is not configured. Set RESEND_API_KEY environment variable.",
+            pdfUrl,
+            filename,
+            processingTimeMs,
+          };
+        }
+
+        // Render email recipient (supports Mustache templates like {{fields.Email}})
+        const emailTo = config.delivery.emailTo
+          ? Mustache.render(config.delivery.emailTo, templateData)
+          : null;
+
+        if (!emailTo) {
+          return {
+            success: false,
+            error: "Email delivery requires emailTo configuration",
+            pdfUrl,
+            filename,
+            processingTimeMs,
+          };
+        }
+
+        // Render email subject and body with Mustache
+        const emailSubject = config.delivery.emailSubject
+          ? Mustache.render(config.delivery.emailSubject, templateData)
+          : DEFAULT_EMAIL_SUBJECT;
+
+        const emailBody = config.delivery.emailBody
+          ? Mustache.render(config.delivery.emailBody, templateData)
+          : DEFAULT_EMAIL_BODY;
+
+        // Send email
+        const emailResult = await sendPdfEmail({
+          to: emailTo,
+          subject: emailSubject,
+          body: emailBody,
+          pdf: pdfBuffer,
+          filename,
+          from: config.delivery.emailFrom,
+          replyTo: config.delivery.emailReplyTo,
+        });
+
+        if (!emailResult.success) {
+          console.error(`[Webhook] Email delivery failed: ${emailResult.error}`);
+          return {
+            success: false,
+            error: `Email delivery failed: ${emailResult.error}`,
+            pdfUrl,
+            filename,
+            processingTimeMs,
+          };
+        }
+
+        console.log(`[Webhook] Email sent to ${emailTo}, messageId: ${emailResult.messageId}`);
+
+        return {
+          success: true,
+          pdfUrl,
+          filename,
+          processingTimeMs,
+          deliveryType: "email",
+          emailSentTo: emailTo,
+          emailMessageId: emailResult.messageId,
+        };
+      }
+
+      case "url": {
+        // POST PDF to destination URL
+        if (config.delivery.destination) {
+          try {
+            const formData = new FormData();
+            formData.append("file", new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }), filename);
+            formData.append("recordId", payload.record.id);
+            formData.append("webhookId", webhookId);
+
+            const response = await fetch(config.delivery.destination, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) {
+              console.warn(`Delivery to ${config.delivery.destination} failed: ${response.status}`);
+            }
+          } catch (err) {
+            console.warn(`URL delivery failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+          }
+        }
+
+        return {
+          success: true,
+          pdfUrl,
+          filename,
+          processingTimeMs,
+          deliveryType: "url",
+        };
+      }
+
+      case "storage":
+      default: {
+        // Default: just return the PDF URL
+        return {
+          success: true,
+          pdfUrl,
+          filename,
+          processingTimeMs,
+          deliveryType: "storage",
+        };
+      }
+    }
   } catch (err) {
     return {
       success: false,

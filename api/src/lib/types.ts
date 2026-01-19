@@ -86,6 +86,25 @@ export interface ApiError {
 // Webhook Types
 // =============================================================================
 
+export interface WebhookEmailConfig {
+  emailTo: string;           // Static email or "{{fields.Client Email}}" for dynamic
+  emailSubject?: string;     // Subject line with Mustache support
+  emailBody?: string;        // HTML body with Mustache support
+  emailFrom?: string;        // Custom from address (optional)
+  emailReplyTo?: string;     // Reply-to address (optional)
+}
+
+export interface WebhookDelivery {
+  type: 'url' | 'email' | 'storage';
+  destination?: string;              // URL to POST (for type='url')
+  // Email-specific options (for type='email')
+  emailTo?: string;                  // Static email or "{{fields.Client Email}}"
+  emailSubject?: string;             // Subject line with Mustache support
+  emailBody?: string;                // HTML body with Mustache support
+  emailFrom?: string;                // Custom from address
+  emailReplyTo?: string;             // Reply-to address
+}
+
 export interface WebhookConfig {
   id: string;                          // webhook_xxx
   templateHtml: string;                // Saved template with Mustache placeholders
@@ -96,10 +115,7 @@ export interface WebhookConfig {
   };
   filenameTemplate: string;            // e.g., "invoice-{{fields.Invoice Number}}.pdf"
   actions: ('created' | 'updated')[];  // Which actions trigger PDF generation
-  delivery: {
-    type: 'url' | 'email' | 'storage';
-    destination?: string;              // URL to POST, email address, or storage path
-  };
+  delivery: WebhookDelivery;
   pdfOptions?: {
     format?: 'letter' | 'a4';
     landscape?: boolean;
@@ -119,10 +135,7 @@ export interface WebhookCreateRequest {
   };
   filenameTemplate?: string;           // Default: "document-{{record.id}}.pdf"
   actions?: ('created' | 'updated')[];
-  delivery?: {
-    type: 'url' | 'email' | 'storage';
-    destination?: string;
-  };
+  delivery?: WebhookDelivery;
   pdfOptions?: {
     format?: 'letter' | 'a4';
     landscape?: boolean;
@@ -157,4 +170,8 @@ export interface WebhookResponse {
   filename?: string;
   error?: string;
   processingTimeMs?: number;
+  // Email delivery info
+  deliveryType?: 'url' | 'email' | 'storage';
+  emailSentTo?: string;
+  emailMessageId?: string;
 }
