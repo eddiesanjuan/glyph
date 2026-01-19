@@ -157,6 +157,7 @@ export class GlyphEditor extends HTMLElement {
           overflow: hidden;
           box-shadow: var(--glyph-shadow);
           border: 1px solid var(--glyph-border);
+          animation: glyph-fade-in 0.4s ease-out;
         }
 
         .glyph-preview-area {
@@ -176,9 +177,14 @@ export class GlyphEditor extends HTMLElement {
         }
 
         .glyph-controls {
-          padding: 12px 16px;
-          background: var(--glyph-bg);
+          padding: 14px 18px;
+          background: linear-gradient(180deg, var(--glyph-bg) 0%, #fafafa 100%);
           border-top: 1px solid var(--glyph-border);
+          transition: box-shadow 0.2s ease;
+        }
+
+        .glyph-controls:focus-within {
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
         }
 
         .glyph-quick-actions {
@@ -204,46 +210,85 @@ export class GlyphEditor extends HTMLElement {
         }
 
         .glyph-pill {
-          padding: 6px 14px;
-          background: #f3f4f6;
+          padding: 8px 16px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           border: 1px solid var(--glyph-border);
-          border-radius: 20px;
+          border-radius: 24px;
           font-size: 13px;
+          font-weight: 500;
           font-family: var(--glyph-font);
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.15s ease;
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
           color: var(--glyph-text);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .glyph-pill::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--glyph-primary);
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          border-radius: inherit;
+        }
+
+        .glyph-pill span {
+          position: relative;
+          z-index: 1;
         }
 
         .glyph-pill:hover {
-          background: var(--glyph-primary);
-          color: white;
           border-color: var(--glyph-primary);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .glyph-pill:hover::before {
+          opacity: 1;
+        }
+
+        .glyph-pill:hover {
+          color: white;
         }
 
         .glyph-pill:active {
-          transform: scale(0.98);
+          transform: translateY(0) scale(0.98);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         .glyph-pill.loading {
-          opacity: 0.6;
           pointer-events: none;
           position: relative;
         }
 
-        .glyph-pill.loading::after {
-          content: '';
-          position: absolute;
-          right: 8px;
-          top: 50%;
-          width: 12px;
-          height: 12px;
-          margin-top: -6px;
-          border: 2px solid currentColor;
-          border-top-color: transparent;
-          border-radius: 50%;
-          animation: glyph-spin 0.6s linear infinite;
+        .glyph-pill.loading::before {
+          opacity: 1;
+          background: linear-gradient(
+            90deg,
+            var(--glyph-primary) 0%,
+            color-mix(in srgb, var(--glyph-primary) 70%, white) 50%,
+            var(--glyph-primary) 100%
+          );
+          background-size: 200% 100%;
+          animation: glyph-shimmer 1.5s ease-in-out infinite;
+        }
+
+        .glyph-pill.loading {
+          color: white;
+        }
+
+        .glyph-pill.success {
+          background: #22c55e !important;
+          border-color: #22c55e !important;
+          color: white;
+          animation: glyph-success-pop 0.4s ease-out;
+        }
+
+        .glyph-pill.success::before {
+          opacity: 0 !important;
         }
 
         .glyph-command-row {
@@ -253,145 +298,354 @@ export class GlyphEditor extends HTMLElement {
 
         .glyph-command-input {
           flex: 1;
-          padding: 10px 14px;
-          border: 1px solid var(--glyph-border);
+          padding: 12px 16px;
+          border: 1.5px solid var(--glyph-border);
           border-radius: var(--glyph-radius);
           font-size: 14px;
           font-family: var(--glyph-font);
           outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
           background: var(--glyph-bg);
           color: var(--glyph-text);
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .glyph-command-input:hover:not(:disabled):not(:focus) {
+          border-color: color-mix(in srgb, var(--glyph-primary) 50%, var(--glyph-border));
         }
 
         .glyph-command-input:focus {
           border-color: var(--glyph-primary);
-          box-shadow: 0 0 0 3px color-mix(in srgb, var(--glyph-primary) 15%, transparent);
+          box-shadow: 0 0 0 4px color-mix(in srgb, var(--glyph-primary) 12%, transparent),
+                      inset 0 1px 2px rgba(0, 0, 0, 0.03);
+          transform: translateY(-1px);
         }
 
         .glyph-command-input::placeholder {
           color: var(--glyph-text-muted);
+          transition: color 0.2s ease;
+        }
+
+        .glyph-command-input:focus::placeholder {
+          color: color-mix(in srgb, var(--glyph-text-muted) 60%, transparent);
         }
 
         .glyph-command-input:disabled {
           background: #f9fafb;
           cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        .glyph-command-input.processing {
+          background: linear-gradient(
+            90deg,
+            var(--glyph-bg) 0%,
+            #f8fafc 50%,
+            var(--glyph-bg) 100%
+          );
+          background-size: 200% 100%;
+          animation: glyph-shimmer 2s ease-in-out infinite;
         }
 
         .glyph-btn {
-          padding: 10px 20px;
-          background: var(--glyph-primary);
+          padding: 11px 22px;
+          background: linear-gradient(135deg, var(--glyph-primary) 0%, var(--glyph-primary-hover) 100%);
           color: white;
           border: none;
           border-radius: var(--glyph-radius);
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           font-family: var(--glyph-font);
           cursor: pointer;
-          transition: opacity 0.15s, transform 0.1s;
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .glyph-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg,
+            rgba(255,255,255,0.15) 0%,
+            transparent 50%,
+            rgba(0,0,0,0.1) 100%
+          );
+          opacity: 0;
+          transition: opacity 0.25s ease;
         }
 
         .glyph-btn:hover {
-          opacity: 0.9;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(30, 58, 95, 0.25), 0 2px 6px rgba(30, 58, 95, 0.15);
+        }
+
+        .glyph-btn:hover::before {
+          opacity: 1;
         }
 
         .glyph-btn:active {
-          transform: scale(0.98);
+          transform: translateY(0) scale(0.98);
+          box-shadow: 0 2px 8px rgba(30, 58, 95, 0.2);
         }
 
         .glyph-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
           transform: none;
+          box-shadow: none;
+        }
+
+        .glyph-btn.generating {
+          background: linear-gradient(
+            90deg,
+            var(--glyph-primary) 0%,
+            color-mix(in srgb, var(--glyph-primary) 70%, white) 50%,
+            var(--glyph-primary) 100%
+          );
+          background-size: 200% 100%;
+          animation: glyph-shimmer 1.5s ease-in-out infinite;
         }
 
         .glyph-btn-secondary {
-          background: #f3f4f6;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
           color: #374151;
           border: 1px solid var(--glyph-border);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .glyph-btn-secondary:hover {
-          background: #e5e7eb;
-          opacity: 1;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-color: var(--glyph-primary);
+          color: var(--glyph-primary);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .glyph-btn-secondary:hover::before {
+          opacity: 0;
         }
 
         .glyph-loading {
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           height: 100%;
           min-height: 200px;
           color: var(--glyph-text-muted);
+          gap: 16px;
+          animation: glyph-fade-in 0.3s ease-out;
+        }
+
+        .glyph-loading-content {
+          display: flex;
+          align-items: center;
           gap: 12px;
         }
 
         .glyph-spinner {
-          width: 24px;
-          height: 24px;
-          border: 2px solid var(--glyph-border);
+          width: 28px;
+          height: 28px;
+          border: 2.5px solid var(--glyph-border);
           border-top-color: var(--glyph-primary);
           border-radius: 50%;
-          animation: glyph-spin 0.8s linear infinite;
+          animation: glyph-spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
+
+        .glyph-loading-text {
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .glyph-loading-dots {
+          display: inline-flex;
+          gap: 4px;
+          margin-left: 4px;
+        }
+
+        .glyph-loading-dots span {
+          width: 4px;
+          height: 4px;
+          background: var(--glyph-text-muted);
+          border-radius: 50%;
+          animation: glyph-pulse 1.2s ease-in-out infinite;
+        }
+
+        .glyph-loading-dots span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .glyph-loading-dots span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        /* Skeleton shimmer for preview area */
+        .glyph-skeleton {
+          width: 90%;
+          max-width: 400px;
+          padding: 20px;
+          background: var(--glyph-bg);
+          border-radius: 8px;
+          border: 1px solid var(--glyph-border);
+        }
+
+        .glyph-skeleton-line {
+          height: 12px;
+          background: linear-gradient(
+            90deg,
+            var(--glyph-border) 0%,
+            #f0f0f0 50%,
+            var(--glyph-border) 100%
+          );
+          background-size: 200% 100%;
+          animation: glyph-shimmer 1.5s ease-in-out infinite;
+          border-radius: 4px;
+          margin-bottom: 12px;
+        }
+
+        .glyph-skeleton-line:nth-child(2) { width: 80%; }
+        .glyph-skeleton-line:nth-child(3) { width: 60%; }
+        .glyph-skeleton-line:nth-child(4) { width: 90%; margin-bottom: 0; }
 
         @keyframes glyph-spin {
           to { transform: rotate(360deg); }
         }
 
+        @keyframes glyph-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes glyph-shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+
+        @keyframes glyph-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        @keyframes glyph-success-pop {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes glyph-shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+          20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+
         .glyph-error {
-          padding: 24px;
+          padding: 32px 24px;
           color: #dc2626;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 12px;
+          gap: 16px;
           height: 100%;
           justify-content: center;
+          animation: glyph-fade-in 0.3s ease-out;
         }
 
         .glyph-error-icon {
-          width: 48px;
-          height: 48px;
+          width: 56px;
+          height: 56px;
           border-radius: 50%;
-          background: #fef2f2;
+          background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 24px;
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+          animation: glyph-shake 0.5s ease-in-out;
         }
 
         .glyph-error-message {
           font-size: 14px;
           max-width: 300px;
+          line-height: 1.5;
+        }
+
+        .glyph-error-retry {
+          margin-top: 8px;
+          padding: 8px 20px;
+          background: transparent;
+          border: 1px solid #dc2626;
+          border-radius: 6px;
+          color: #dc2626;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .glyph-error-retry:hover {
+          background: #dc2626;
+          color: white;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
         }
 
         .glyph-toast {
           position: absolute;
-          bottom: 20px;
+          bottom: 24px;
           left: 50%;
-          transform: translateX(-50%) translateY(10px);
-          background: #1f2937;
+          transform: translateX(-50%) translateY(16px) scale(0.95);
+          background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
           color: white;
-          padding: 10px 20px;
-          border-radius: var(--glyph-radius);
+          padding: 12px 20px 12px 16px;
+          border-radius: 10px;
           font-size: 13px;
+          font-weight: 500;
           opacity: 0;
-          transition: opacity 0.2s, transform 0.2s;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           pointer-events: none;
           z-index: 100;
-          max-width: 80%;
-          text-align: center;
+          max-width: 85%;
+          text-align: left;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(8px);
+        }
+
+        .glyph-toast::before {
+          content: '';
+          display: inline-flex;
+          width: 20px;
+          height: 20px;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 50%;
+          flex-shrink: 0;
         }
 
         .glyph-toast.show {
           opacity: 1;
-          transform: translateX(-50%) translateY(0);
+          transform: translateX(-50%) translateY(0) scale(1);
+        }
+
+        .glyph-toast.success::before {
+          background: #22c55e;
+          box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
         }
 
         .glyph-toast.error {
-          background: #dc2626;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+
+        .glyph-toast.error::before {
+          background: #fecaca;
         }
 
         /* Responsive adjustments */
@@ -419,8 +673,16 @@ export class GlyphEditor extends HTMLElement {
       <div class="glyph-container">
         <div class="glyph-preview-area">
           <div class="glyph-loading">
-            <div class="glyph-spinner"></div>
-            <span>Loading preview...</span>
+            <div class="glyph-loading-content">
+              <div class="glyph-spinner"></div>
+              <span class="glyph-loading-text">Loading preview<span class="glyph-loading-dots"><span></span><span></span><span></span></span></span>
+            </div>
+            <div class="glyph-skeleton">
+              <div class="glyph-skeleton-line"></div>
+              <div class="glyph-skeleton-line"></div>
+              <div class="glyph-skeleton-line"></div>
+              <div class="glyph-skeleton-line"></div>
+            </div>
           </div>
         </div>
         <div class="glyph-controls">
@@ -481,6 +743,12 @@ export class GlyphEditor extends HTMLElement {
   private async executeCommand(command: string, pillElement?: HTMLElement) {
     if (!this.api || !this.sessionId || this.isLoading) return;
 
+    // Add processing state to input
+    const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+    if (input) {
+      input.classList.add('processing');
+    }
+
     if (pillElement) {
       pillElement.classList.add('loading');
     }
@@ -496,6 +764,15 @@ export class GlyphEditor extends HTMLElement {
       this.currentHtml = result.html;
       this.renderPreview();
 
+      // Show success state on pill
+      if (pillElement) {
+        pillElement.classList.remove('loading');
+        pillElement.classList.add('success');
+        setTimeout(() => {
+          pillElement.classList.remove('success');
+        }, 1500);
+      }
+
       const changeMessage = result.changes?.[0] || 'Changes applied successfully';
       this.showToast(changeMessage);
       this.emit('glyph:modified', { command, changes: result.changes, region: this.selectedRegion });
@@ -503,9 +780,21 @@ export class GlyphEditor extends HTMLElement {
       const message = error instanceof Error ? error.message : 'Failed to apply changes';
       this.showToast(message, true);
       this.onError?.({ code: 'MODIFY_ERROR', message });
-    } finally {
+
+      // Shake the input on error
+      if (input) {
+        input.style.animation = 'glyph-shake 0.5s ease-in-out';
+        setTimeout(() => {
+          input.style.animation = '';
+        }, 500);
+      }
+
       if (pillElement) {
         pillElement.classList.remove('loading');
+      }
+    } finally {
+      if (input) {
+        input.classList.remove('processing');
       }
       this.setLoading(false);
     }
@@ -524,6 +813,7 @@ export class GlyphEditor extends HTMLElement {
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Generating...';
+    btn.classList.add('generating');
 
     try {
       const blob = await this.api.generate(this.sessionId);
@@ -540,14 +830,24 @@ export class GlyphEditor extends HTMLElement {
 
       this.emit('glyph:saved', { blob, sessionId: this.sessionId });
       this.onGenerate?.(blob);
+
+      // Brief success state
+      btn.textContent = 'Downloaded!';
+      btn.style.background = '#22c55e';
+      setTimeout(() => {
+        btn.style.background = '';
+        btn.textContent = originalText;
+      }, 1500);
+
       this.showToast('PDF downloaded successfully!');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate PDF';
       this.showToast(message, true);
       this.onError?.({ code: 'GENERATE_ERROR', message });
+      btn.textContent = originalText;
     } finally {
       btn.disabled = false;
-      btn.textContent = originalText;
+      btn.classList.remove('generating');
     }
   }
 
@@ -560,7 +860,7 @@ export class GlyphEditor extends HTMLElement {
 
     // Create iframe with sandboxed HTML content
     previewArea.innerHTML = `
-      <iframe class="glyph-preview-frame" sandbox="allow-same-origin" title="Document preview"></iframe>
+      <iframe class="glyph-preview-frame" sandbox="allow-same-origin" title="Document preview" style="opacity: 0; transition: opacity 0.3s ease-out;"></iframe>
       <div class="glyph-toast"></div>
     `;
 
@@ -571,6 +871,11 @@ export class GlyphEditor extends HTMLElement {
       doc.open();
       doc.write(this.wrapHtmlWithStyles(this.currentHtml));
       doc.close();
+
+      // Fade in the iframe once content is ready
+      requestAnimationFrame(() => {
+        iframe.style.opacity = '1';
+      });
 
       // Add click handlers for region selection
       this.setupRegionSelection(doc);
@@ -721,13 +1026,26 @@ export class GlyphEditor extends HTMLElement {
   private showToast(message: string, isError = false) {
     const toast = this.shadow.querySelector('.glyph-toast') as HTMLElement;
     if (toast) {
-      toast.textContent = message;
-      toast.classList.toggle('error', isError);
+      // Clear previous classes
+      toast.classList.remove('show', 'success', 'error');
+
+      // Create a span for the message text
+      toast.innerHTML = `<span>${this.escapeHtml(message)}</span>`;
+
+      // Apply appropriate class
+      if (isError) {
+        toast.classList.add('error');
+      } else {
+        toast.classList.add('success');
+      }
+
+      // Trigger reflow for animation restart
+      void toast.offsetWidth;
       toast.classList.add('show');
 
       setTimeout(() => {
         toast.classList.remove('show');
-      }, 2500);
+      }, 3000);
     }
   }
 
