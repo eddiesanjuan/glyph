@@ -70,9 +70,11 @@ export function canFastTransform(prompt: string): boolean {
   // QR code additions
   if (/add\s*(a\s+)?qr\s*code/i.test(lower)) return true;
 
-  // Watermark additions
-  if (/add\s*(a\s+)?(draft|paid|sample|confidential|void)\s*watermark/i.test(lower)) return true;
-  if (/add\s*(a\s+)?watermark.*?(draft|paid|sample|confidential|void)/i.test(lower)) return true;
+  // Watermark additions - flexible patterns
+  // Match "add [any words] watermark" with draft/paid/etc anywhere in prompt
+  if (/add\s+.*?watermark/i.test(lower) && /(draft|paid|sample|confidential|void|approved)/i.test(lower)) return true;
+  // Match just "add watermark" or "add a watermark" or "add a diagonal watermark" (default to DRAFT)
+  if (/add\s+(a\s+)?(diagonal\s+)?watermark/i.test(lower)) return true;
 
   // Simple color changes for header/accent
   if (/make\s*(the\s+)?(header|accent|title)\s*(color\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
@@ -96,10 +98,11 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
   }
 
   // === WATERMARK ===
-  const watermarkMatch = lower.match(/add\s*(a\s+)?(draft|paid|sample|confidential|void)\s*watermark/i) ||
-                         lower.match(/add\s*(a\s+)?watermark.*?(draft|paid|sample|confidential|void)/i);
-  if (watermarkMatch) {
-    const watermarkText = (watermarkMatch[2] || 'DRAFT').toUpperCase();
+  // Flexible matching: "add [any words] watermark" with text extracted from anywhere in prompt
+  if (/add\s+.*?watermark/i.test(lower) || /add\s+(a\s+)?(diagonal\s+)?watermark/i.test(lower)) {
+    // Extract watermark text from anywhere in the prompt
+    const textMatch = lower.match(/(draft|paid|sample|confidential|void|approved)/i);
+    const watermarkText = textMatch ? textMatch[1].toUpperCase() : 'DRAFT';
     return addWatermark(html, watermarkText);
   }
 

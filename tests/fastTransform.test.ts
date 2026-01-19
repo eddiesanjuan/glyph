@@ -21,6 +21,10 @@ describe('fastTransform', () => {
       expect(canFastTransform('Add a draft watermark')).toBe(true);
       expect(canFastTransform('add paid watermark')).toBe(true);
       expect(canFastTransform('Add watermark with text CONFIDENTIAL')).toBe(true);
+      // Flexible patterns - words between "add" and "watermark"
+      expect(canFastTransform('Add a diagonal watermark that says DRAFT across the page')).toBe(true);
+      expect(canFastTransform('add a large watermark saying paid')).toBe(true);
+      expect(canFastTransform('Add watermark')).toBe(true); // Should default to DRAFT
     });
 
     it('should return true for color change requests', () => {
@@ -77,6 +81,28 @@ describe('fastTransform', () => {
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('CONFIDENTIAL');
+    });
+
+    it('should handle flexible watermark prompts with words between add and watermark', () => {
+      const result = fastTransform(baseHtml, 'Add a diagonal watermark that says DRAFT across the page');
+
+      expect(result.transformed).toBe(true);
+      expect(result.html).toContain('glyph-watermark');
+      expect(result.html).toContain('DRAFT');
+    });
+
+    it('should default to DRAFT when no text specified', () => {
+      const result = fastTransform(baseHtml, 'Add watermark');
+
+      expect(result.transformed).toBe(true);
+      expect(result.html).toContain('DRAFT');
+    });
+
+    it('should add APPROVED watermark', () => {
+      const result = fastTransform(baseHtml, 'Add approved watermark');
+
+      expect(result.transformed).toBe(true);
+      expect(result.html).toContain('APPROVED');
     });
   });
 
