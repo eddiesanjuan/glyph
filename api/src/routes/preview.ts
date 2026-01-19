@@ -48,7 +48,7 @@ const previewRequestSchema = z.object({
       .optional(),
     branding: z
       .object({
-        logoUrl: z.string().url().optional(),
+        logoUrl: z.string().url().optional().or(z.literal("")),
         companyName: z.string().optional(),
         companyAddress: z.string().optional(),
       })

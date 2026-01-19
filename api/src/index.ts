@@ -44,6 +44,9 @@ app.use(
       if (origin.includes("glyph.so") || origin.includes("glyph.dev"))
         return origin;
 
+      // Allow Vercel preview/production deployments
+      if (origin.includes("vercel.app")) return origin;
+
       // In production, could restrict further
       return origin; // Allow all for now during beta
     },
@@ -71,7 +74,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.6.0",
+    version: "0.6.1",
     timestamp: new Date().toISOString(),
   });
 });
@@ -80,7 +83,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.6.0",
+    version: "0.6.1",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",
