@@ -11,6 +11,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { canFastTransform, fastTransform } from "./fastTransform.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -952,6 +953,23 @@ export async function modifyTemplate(
   userPrompt: string,
   region?: string
 ): Promise<ModifyResult> {
+  // FAST PATH: Try deterministic transformations first (no AI needed)
+  // This handles QR codes, watermarks, and simple color changes in <100ms
+  if (!region && canFastTransform(userPrompt)) {
+    const startTime = Date.now();
+    const fastResult = fastTransform(currentHtml, userPrompt);
+
+    if (fastResult.transformed) {
+      console.log(`[FAST] Transformed in ${Date.now() - startTime}ms: "${userPrompt.substring(0, 50)}..."`);
+      return {
+        html: fastResult.html,
+        changes: fastResult.changes,
+        tokensUsed: 0,  // No AI tokens used
+      };
+    }
+    // Fall through to AI if fast transform couldn't handle it
+  }
+
   // Enhance the prompt with detected intent
   const { enhancedPrompt, detectedIntent } = detectAndEnhanceFieldRequest(userPrompt);
 
