@@ -1,7 +1,13 @@
 /**
  * AI Service - Claude Integration
- * Handles HTML modifications via natural language
- * Enhanced with schema-awareness and field injection detection
+ * REVOLUTIONARY Document Intelligence System
+ *
+ * Capabilities:
+ * - Full schema awareness with intelligent field injection
+ * - Structural document manipulation (layout, grouping, sections)
+ * - Advanced Mustache syntax understanding (conditionals, loops, sections)
+ * - Intelligent calculation display patterns
+ * - Context-aware modifications based on document semantics
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -17,6 +23,74 @@ export interface ModifyResult {
 }
 
 /**
+ * Complete schema definition - the AI's knowledge of available data
+ * Note: This is exported for potential programmatic use but primarily
+ * serves as documentation that's used to generate the AI's schema guide.
+ * Can be used by clients to understand available fields.
+ */
+export const TEMPLATE_SCHEMA = {
+  meta: {
+    description: "Quote/document metadata",
+    fields: {
+      quoteNumber: { type: "string", description: "Unique identifier (e.g., Q-2024-001)", mustache: "{{meta.quoteNumber}}" },
+      date: { type: "string", description: "Creation date", mustache: "{{meta.date}}" },
+      validUntil: { type: "string", description: "Expiration date", mustache: "{{meta.validUntil}}" },
+      notes: { type: "string", description: "Additional notes (optional)", mustache: "{{meta.notes}}", conditional: true },
+      terms: { type: "string", description: "Terms and conditions (optional)", mustache: "{{meta.terms}}", conditional: true },
+      showSignature: { type: "boolean", description: "Show signature lines", mustache: "{{meta.showSignature}}", conditional: true },
+    }
+  },
+  client: {
+    description: "Client/recipient information",
+    fields: {
+      name: { type: "string", description: "Client full name", mustache: "{{client.name}}" },
+      company: { type: "string", description: "Client's company (optional)", mustache: "{{client.company}}", conditional: true },
+      email: { type: "string", description: "Client email", mustache: "{{client.email}}", conditional: true },
+      phone: { type: "string", description: "Client phone number", mustache: "{{client.phone}}", conditional: true },
+      address: { type: "string", description: "Client address (multiline)", mustache: "{{client.address}}", conditional: true },
+    }
+  },
+  branding: {
+    description: "Company branding/identity",
+    fields: {
+      companyName: { type: "string", description: "Your company name", mustache: "{{branding.companyName}}" },
+      logoUrl: { type: "string", description: "URL to company logo", mustache: "{{branding.logoUrl}}", conditional: true },
+      companyAddress: { type: "string", description: "Your company address (multiline)", mustache: "{{branding.companyAddress}}", conditional: true },
+    }
+  },
+  lineItems: {
+    description: "Array of products/services - use {{#lineItems}}...{{/lineItems}} to loop",
+    isArray: true,
+    fields: {
+      description: { type: "string", description: "Item name/description", mustache: "{{description}}" },
+      details: { type: "string", description: "Additional details (optional)", mustache: "{{details}}", conditional: true },
+      quantity: { type: "number|string", description: "Quantity (e.g., 5, '10 hours')", mustache: "{{quantity}}" },
+      unitPrice: { type: "number|string", description: "Price per unit", mustache: "{{unitPrice}}" },
+      total: { type: "number|string", description: "Line total (qty * price)", mustache: "{{total}}" },
+    }
+  },
+  totals: {
+    description: "Financial totals and calculations",
+    fields: {
+      subtotal: { type: "number|string", description: "Sum before adjustments", mustache: "{{totals.subtotal}}" },
+      discount: { type: "number|string", description: "Discount amount", mustache: "{{totals.discount}}", conditional: true },
+      discountPercent: { type: "number", description: "Discount percentage", mustache: "{{totals.discountPercent}}", conditional: true },
+      tax: { type: "number|string", description: "Tax amount", mustache: "{{totals.tax}}", conditional: true },
+      taxRate: { type: "number", description: "Tax percentage (e.g., 8.25)", mustache: "{{totals.taxRate}}", conditional: true },
+      total: { type: "number|string", description: "Final total", mustache: "{{totals.total}}" },
+    }
+  },
+  styles: {
+    description: "Visual customization (CSS variables)",
+    fields: {
+      accentColor: { type: "string", description: "Primary brand color", mustache: "{{styles.accentColor}}" },
+      fontFamily: { type: "string", description: "Font override", mustache: "{{styles.fontFamily}}", conditional: true },
+      fontSize: { type: "string", description: "Base font size", mustache: "{{styles.fontSize}}", conditional: true },
+    }
+  }
+};
+
+/**
  * Available data fields that can be injected into templates
  * Maps common user terms to Mustache placeholder paths
  */
@@ -25,6 +99,7 @@ const FIELD_MAPPINGS: Record<string, string> = {
   "phone": "client.phone",
   "phone number": "client.phone",
   "client phone": "client.phone",
+  "customer phone": "client.phone",
   "email": "client.email",
   "client email": "client.email",
   "customer email": "client.email",
@@ -33,107 +108,308 @@ const FIELD_MAPPINGS: Record<string, string> = {
   "customer name": "client.name",
   "address": "client.address",
   "client address": "client.address",
+  "customer address": "client.address",
   "company": "client.company",
   "client company": "client.company",
+  "customer company": "client.company",
 
   // Branding field aliases
   "logo": "branding.logoUrl",
   "company logo": "branding.logoUrl",
+  "my logo": "branding.logoUrl",
   "company name": "branding.companyName",
   "business name": "branding.companyName",
+  "my company name": "branding.companyName",
   "company address": "branding.companyAddress",
   "business address": "branding.companyAddress",
+  "my address": "branding.companyAddress",
 
   // Quote info aliases
   "quote number": "meta.quoteNumber",
   "invoice number": "meta.quoteNumber",
+  "reference number": "meta.quoteNumber",
+  "po number": "meta.poNumber",
+  "purchase order": "meta.poNumber",
   "date": "meta.date",
   "quote date": "meta.date",
+  "invoice date": "meta.date",
   "valid until": "meta.validUntil",
   "expiry date": "meta.validUntil",
   "expiration": "meta.validUntil",
+  "due date": "meta.validUntil",
   "notes": "meta.notes",
+  "note": "meta.notes",
   "terms": "meta.terms",
   "terms and conditions": "meta.terms",
+  "payment terms": "meta.terms",
 
   // Totals aliases
   "subtotal": "totals.subtotal",
+  "sub total": "totals.subtotal",
   "discount": "totals.discount",
+  "discount amount": "totals.discount",
+  "discount percent": "totals.discountPercent",
+  "discount percentage": "totals.discountPercent",
   "tax": "totals.tax",
+  "tax amount": "totals.tax",
+  "sales tax": "totals.tax",
+  "vat": "totals.tax",
   "tax rate": "totals.taxRate",
+  "tax percentage": "totals.taxRate",
   "total": "totals.total",
   "grand total": "totals.total",
+  "final total": "totals.total",
+  "amount due": "totals.total",
+
+  // Line item aliases (for inside the loop)
+  "item description": "description",
+  "service name": "description",
+  "product name": "description",
+  "item details": "details",
+  "item quantity": "quantity",
+  "qty": "quantity",
+  "unit price": "unitPrice",
+  "price": "unitPrice",
+  "rate": "unitPrice",
+  "line total": "total",
+  "item total": "total",
 };
 
 /**
- * Schema documentation for the AI to understand available fields
+ * Generate the comprehensive schema documentation for the AI
  */
-const AVAILABLE_FIELDS_DOC = `
-AVAILABLE DATA FIELDS (Mustache placeholders you can ADD to the document):
+function generateSchemaDocumentation(): string {
+  return `
+═══════════════════════════════════════════════════════════════════════════════
+                     DOCUMENT SCHEMA - AVAILABLE DATA FIELDS
+═══════════════════════════════════════════════════════════════════════════════
 
-BRANDING:
-- {{branding.companyName}} - Company/business name
-- {{branding.logoUrl}} - URL to company logo (use in <img src="...">)
-- {{branding.companyAddress}} - Company address (may include newlines)
+You have access to the following data fields. Use the exact Mustache syntax shown.
 
-CLIENT:
-- {{client.name}} - Client/customer full name
-- {{client.company}} - Client's company name
-- {{client.email}} - Client email address
-- {{client.phone}} - Client phone number
-- {{client.address}} - Client address (may include newlines)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ BRANDING (Company Identity)                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{branding.companyName}}     → Company/business name (REQUIRED)             │
+│ {{branding.logoUrl}}         → URL to logo image (optional)                 │
+│ {{branding.companyAddress}}  → Company address, supports \\n for newlines   │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-QUOTE METADATA:
-- {{meta.quoteNumber}} - Unique quote/invoice identifier
-- {{meta.date}} - Quote creation date
-- {{meta.validUntil}} - Quote expiration date
-- {{meta.notes}} - Additional notes
-- {{meta.terms}} - Terms and conditions
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CLIENT (Recipient Information)                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{client.name}}              → Client full name (REQUIRED)                  │
+│ {{client.company}}           → Client's company name (optional)             │
+│ {{client.email}}             → Client email address (optional)              │
+│ {{client.phone}}             → Client phone number (optional)               │
+│ {{client.address}}           → Client address, supports \\n for newlines    │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-TOTALS:
-- {{totals.subtotal}} - Sum before adjustments
-- {{totals.discount}} - Discount amount (if applicable)
-- {{totals.tax}} - Tax amount
-- {{totals.taxRate}} - Tax percentage (number)
-- {{totals.total}} - Final total after all adjustments
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ QUOTE METADATA                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{meta.quoteNumber}}         → Unique identifier (e.g., Q-2024-001)         │
+│ {{meta.date}}                → Quote creation date                          │
+│ {{meta.validUntil}}          → Expiration date                              │
+│ {{meta.notes}}               → Additional notes (optional)                  │
+│ {{meta.terms}}               → Terms and conditions (optional)              │
+│ {{meta.showSignature}}       → Boolean - whether to show signature lines    │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-LINE ITEMS (inside {{#lineItems}}...{{/lineItems}} loop):
-- {{description}} - Item/service description
-- {{details}} - Additional item details
-- {{quantity}} - Item quantity
-- {{unitPrice}} - Price per unit
-- {{total}} - Line item total
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FINANCIAL TOTALS                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{totals.subtotal}}          → Sum of line items before adjustments         │
+│ {{totals.discount}}          → Discount amount (optional)                   │
+│ {{totals.discountPercent}}   → Discount percentage for display (optional)   │
+│ {{totals.tax}}               → Tax amount (optional)                        │
+│ {{totals.taxRate}}           → Tax percentage number, e.g., 8.25 (optional) │
+│ {{totals.total}}             → Final total after all adjustments            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LINE ITEMS (Array - use inside {{#lineItems}}...{{/lineItems}} loop)        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{description}}              → Item/service name                            │
+│ {{details}}                  → Additional details (optional)                │
+│ {{quantity}}                 → Quantity (number or string like "10 hours")  │
+│ {{unitPrice}}                → Price per unit                               │
+│ {{total}}                    → Line total (quantity × unitPrice)            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STYLE VARIABLES (CSS)                                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ {{styles.accentColor}}       → Primary brand color (default: #1e3a5f)       │
+│ var(--accent-color)          → Use in CSS after it's set in :root           │
+│ var(--text-primary)          → Dark text color (#1a1a1a)                    │
+│ var(--text-secondary)        → Muted text color (#666666)                   │
+│ var(--border-color)          → Border color (#e5e5e5)                       │
+│ var(--bg-light)              → Light background (#f9fafb)                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+`;
+}
+
+/**
+ * Comprehensive Mustache syntax guide
+ */
+const MUSTACHE_SYNTAX_GUIDE = `
+═══════════════════════════════════════════════════════════════════════════════
+                          MUSTACHE TEMPLATE SYNTAX GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+BASIC OUTPUT:
+  {{variable}}                    → Output the value, HTML-escaped
+  {{{variable}}}                  → Output raw HTML (use sparingly)
+
+SECTIONS (Conditionals & Loops):
+  {{#section}}...{{/section}}     → Show content IF section is truthy/non-empty
+  {{^section}}...{{/section}}     → Show content IF section is falsy/empty (inverted)
+
+ARRAY ITERATION:
+  {{#lineItems}}                  → Start loop over lineItems array
+    <tr>
+      <td>{{description}}</td>    → Access item properties directly
+      <td>{{quantity}}</td>
+      <td>{{total}}</td>
+    </tr>
+  {{/lineItems}}                  → End loop
+
+CONDITIONAL DISPLAY:
+  {{#totals.discount}}            → Only show if discount exists and is truthy
+    <div class="discount">-\${{totals.discount}}</div>
+  {{/totals.discount}}
+
+  {{^totals.discount}}            → Show if discount does NOT exist (inverted)
+    <div class="no-discount">No discount applied</div>
+  {{/totals.discount}}
+
+NESTED CONDITIONALS:
+  {{#client.company}}             → Only if client has a company
+    <p class="company">{{client.company}}</p>
+  {{/client.company}}
+  {{#client.email}}               → Only if client has email
+    <p class="email">{{client.email}}</p>
+  {{/client.email}}
+
+BOOLEAN FLAGS:
+  {{#meta.showSignature}}         → Only if showSignature is true
+    <div class="signature-block">...</div>
+  {{/meta.showSignature}}
+
+═══════════════════════════════════════════════════════════════════════════════
+                              PATTERN EXAMPLES
+═══════════════════════════════════════════════════════════════════════════════
+
+ADDING A NEW FIELD (e.g., "Add client phone"):
+  <p class="client-phone">{{client.phone}}</p>
+
+  With conditional wrapper (shows only if phone exists):
+  {{#client.phone}}
+  <p class="client-phone">{{client.phone}}</p>
+  {{/client.phone}}
+
+ADDING A TAX LINE TO TOTALS:
+  {{#totals.tax}}
+  <div class="totals-row tax">
+    <span class="totals-label">Tax ({{totals.taxRate}}%)</span>
+    <span class="totals-value">\${{totals.tax}}</span>
+  </div>
+  {{/totals.tax}}
+
+ADDING A CUSTOM FIELD (e.g., PO Number):
+  Note: If the field doesn't exist in the schema, use a logical path:
+  {{#meta.poNumber}}
+  <div class="meta-item">
+    <div class="meta-label">PO Number</div>
+    <div class="meta-value">{{meta.poNumber}}</div>
+  </div>
+  {{/meta.poNumber}}
+
+GROUPING LINE ITEMS BY CATEGORY (Advanced):
+  If data has categories, use nested sections:
+  {{#categories}}
+    <tr class="category-header">
+      <td colspan="4">{{categoryName}}</td>
+    </tr>
+    {{#items}}
+      <tr>
+        <td>{{description}}</td>
+        <td>{{quantity}}</td>
+        <td>\${{unitPrice}}</td>
+        <td>\${{total}}</td>
+      </tr>
+    {{/items}}
+  {{/categories}}
 `;
 
 /**
- * Layout and styling best practices for the AI
+ * Layout manipulation patterns
  */
-const LAYOUT_GUIDELINES = `
-LAYOUT & STYLING GUIDELINES:
+const LAYOUT_PATTERNS = `
+═══════════════════════════════════════════════════════════════════════════════
+                          LAYOUT MANIPULATION PATTERNS
+═══════════════════════════════════════════════════════════════════════════════
 
-CSS VARIABLES (use these for consistency):
-- var(--font-family) or system font stack for typography
-- var(--accent-color) for brand colors (usually #1e3a5f)
-- var(--spacing-sm), var(--spacing-md), var(--spacing-lg) for consistent spacing
+TWO-COLUMN HEADER LAYOUT:
+  <header data-glyph-region="header" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <div class="header-left">
+      <!-- Logo and company info -->
+    </div>
+    <div class="header-right" style="text-align: right;">
+      <!-- Quote title and meta -->
+    </div>
+  </header>
 
-LAYOUT BEST PRACTICES:
-- The document uses CSS Grid and Flexbox for layout
-- Maintain consistent spacing between sections
-- Use proper heading hierarchy (h1 > h2 > h3)
-- Tables should have clear borders and proper cell padding
-- Keep totals right-aligned for financial documents
+THREE-COLUMN META BAR:
+  <section data-glyph-region="meta" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+    <div class="meta-item">...</div>
+    <div class="meta-item">...</div>
+    <div class="meta-item">...</div>
+  </section>
 
-TYPOGRAPHY:
-- Use relative units (rem, em) for font sizes
-- Maintain readable line heights (1.4-1.6)
-- Headers should be visually distinct from body text
-- Use font-weight: 600 or 700 for emphasis
+SIDE-BY-SIDE CLIENT AND TOTALS:
+  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <section data-glyph-region="client-info" style="flex: 1;">
+      <!-- Client info on left -->
+    </section>
+    <section data-glyph-region="totals" style="width: 300px;">
+      <!-- Totals on right -->
+    </section>
+  </div>
 
-COLORS:
-- Ensure sufficient contrast for readability
-- Use the accent color sparingly for emphasis
-- Keep body text in dark colors (#1f2937 or similar)
-- Use subtle backgrounds (#f8fafc) for section differentiation
+MOVE TOTALS TO LEFT:
+  <section data-glyph-region="totals" style="display: flex; flex-direction: column; align-items: flex-start;">
+    <!-- Totals now left-aligned -->
+  </section>
+
+FULL-WIDTH LINE ITEMS WITH ZEBRA STRIPING:
+  [data-glyph-region="line-items"] tbody tr:nth-child(even) {
+    background-color: var(--bg-light);
+  }
+
+COMPACT SINGLE-PAGE LAYOUT:
+  .quote-document {
+    padding: 0.5in;
+    font-size: 12px;
+  }
+  [data-glyph-region="line-items"] td {
+    padding: 0.5rem;
+  }
+
+CENTERED DOCUMENT TITLE:
+  .header-right {
+    text-align: center;
+    width: 100%;
+  }
+
+CARD-STYLE SECTIONS:
+  [data-glyph-region="client-info"],
+  [data-glyph-region="notes"] {
+    background: var(--bg-light);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
 `;
 
 /**
@@ -141,90 +417,411 @@ COLORS:
  */
 const REGION_GUIDELINES: Record<string, string> = {
   header: `
-HEADER REGION GUIDANCE:
-- Contains company branding (logo, name, address)
-- Should be visually prominent but not overwhelming
-- Logo should be appropriately sized (typically 100-150px wide)
-- Company name can use larger font and accent color
-- Contact info should be readable but secondary
+HEADER REGION - data-glyph-region="header"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Company branding (logo, name, address) + document title
+Layout: Typically flexbox with logo/info left, title right
+Key elements:
+  - .header-left: Logo and company info container
+  - .logo: Company logo image
+  - .company-info: Company name and address
+  - .header-right: Document title area
+  - .document-title: "Quote" or "Invoice" text
+
+Common modifications:
+  - "Make header two columns" → Use CSS grid
+  - "Move logo to right" → Swap flex order or grid positions
+  - "Add company phone" → Add {{branding.companyPhone}} if available
+  - "Make title bigger" → Increase .document-title font-size
 `,
+
+  meta: `
+META REGION - data-glyph-region="meta"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Quote number, date, valid until, and similar metadata
+Layout: Grid with 3 equal columns by default
+Key elements:
+  - .meta-item: Individual metadata entry
+  - .meta-label: Small uppercase label
+  - .meta-value: The actual value
+
+Common modifications:
+  - "Add PO number" → Add new .meta-item with {{meta.poNumber}}
+  - "Add project name" → Add new .meta-item with {{meta.projectName}}
+  - "Make 4 columns" → Change grid-template-columns
+  - "Stack vertically" → Change to flex-direction: column
+`,
+
   "client-info": `
-CLIENT INFO REGION GUIDANCE:
-- Displays recipient/customer details
-- Keep formatting consistent with header
-- "Bill To" or similar label should be clear
-- Client name is most important, followed by company
-- Contact details (email, phone) are supplementary
+CLIENT INFO REGION - data-glyph-region="client-info"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Client/customer details (name, company, address, contact)
+Layout: Stacked/vertical by default
+Key elements:
+  - h2: "Prepared For" or "Bill To" label
+  - .client-name: Client's full name
+  - .client-company: Client's company (conditional)
+  - .client-address: Multi-line address (conditional)
+  - .client-email: Email address (conditional)
+  - .client-phone: Phone number (conditional)
+
+Common modifications:
+  - "Add phone number" → Add {{#client.phone}}<p class="client-phone">{{client.phone}}</p>{{/client.phone}}
+  - "Add fax number" → Add similar pattern with {{client.fax}} if available
+  - "Make two columns" → Split into grid with ship-to/bill-to
+  - "Add contact person" → Add {{client.contactPerson}} field
 `,
+
   "line-items": `
-LINE ITEMS REGION GUIDANCE:
-- Table format for products/services
-- Clear column headers (Description, Qty, Price, Total)
-- Alternating row colors improve readability
-- Description column typically wider than numeric columns
-- Numbers should be right-aligned
-- Consider zebra striping for many rows
+LINE ITEMS REGION - data-glyph-region="line-items"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Table of products/services being quoted
+Structure: <table> with thead and tbody
+Key elements:
+  - thead: Column headers (Description, Qty, Unit Price, Total)
+  - {{#lineItems}}...{{/lineItems}}: Loop over items
+  - .item-description: Item name
+  - .item-details: Optional additional info
+
+Common modifications:
+  - "Add SKU column" → Add <th>SKU</th> and <td>{{sku}}</td>
+  - "Add category header" → Group items with {{#categories}} sections
+  - "Add row numbers" → Use CSS counter or manual numbering
+  - "Zebra striping" → Add tr:nth-child(even) background
+  - "Hide unit price column" → Remove from thead and tbody
 `,
+
   totals: `
-TOTALS REGION GUIDANCE:
-- Financial summary at bottom of document
-- Right-aligned for traditional invoice/quote look
-- Final total should be most prominent
-- Use horizontal lines to separate subtotal, adjustments, total
-- Consider a highlight background for the grand total
+TOTALS REGION - data-glyph-region="totals"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Financial summary (subtotal, tax, discount, total)
+Layout: Flexbox aligned right by default
+Key elements:
+  - .totals-table: Container for totals rows
+  - .totals-row: Individual line (subtotal, discount, tax, total)
+  - .totals-row.subtotal: Sum before adjustments
+  - .totals-row.discount: Discount line (conditional)
+  - .totals-row.tax: Tax line (conditional)
+  - .totals-row.total: Final total (prominent styling)
+
+Common modifications:
+  - "Add 15% tax" → Add conditional tax row with {{totals.taxRate}}%
+  - "Add shipping" → Add .totals-row for {{totals.shipping}}
+  - "Add deposit/balance" → Add rows for {{totals.deposit}} and {{totals.balance}}
+  - "Move to left" → Change align-items to flex-start
+  - "Make total more prominent" → Increase font-size, add background
 `,
+
+  notes: `
+NOTES REGION - data-glyph-region="notes"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Additional notes or comments
+Layout: Card-style with background
+Key elements:
+  - h3: "Notes" heading
+  - p: Note content from {{meta.notes}}
+
+Common modifications:
+  - "Add special instructions section" → Create new section
+  - "Add delivery notes" → Add {{meta.deliveryNotes}} field
+  - "Make notes collapsible" → Not recommended for PDF
+`,
+
   footer: `
-FOOTER REGION GUIDANCE:
-- Terms, conditions, payment instructions
-- Smaller font size is acceptable
-- Often includes legal disclaimers
-- May include signature lines if showSignature is true
-- Keep it unobtrusive but readable
+FOOTER REGION - data-glyph-region="footer"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains: Terms, conditions, signature lines
+Layout: Stacked with optional signature blocks
+Key elements:
+  - .terms: Terms and conditions text
+  - .footer-signature: Signature line container (conditional)
+  - .signature-block: Individual signature area
+  - .signature-line: The line for signing
+
+Common modifications:
+  - "Add payment instructions" → Add {{meta.paymentInstructions}}
+  - "Add bank details" → Add banking information section
+  - "Add QR code placeholder" → Add image placeholder
+  - "Remove signature lines" → Remove {{#meta.showSignature}} block
 `,
 };
 
-const SYSTEM_PROMPT = `You are an expert HTML/CSS developer modifying a PDF document TEMPLATE.
+/**
+ * The revolutionary system prompt that makes the AI a true document architect
+ */
+const DOCUMENT_ARCHITECT_PROMPT = `You are GLYPH DOCUMENT ARCHITECT - an expert system for intelligent document modification.
 
-CRITICAL UNDERSTANDING:
-- The document you receive is a TEMPLATE with Mustache placeholders like {{client.name}}, {{totals.total}}, etc.
-- These placeholders will be replaced with real data AFTER your modifications
-- You MUST preserve ALL Mustache syntax exactly as written (including {{#section}}...{{/section}} blocks)
+You don't just change colors - you understand document STRUCTURE, DATA FLOW, and SEMANTIC MEANING.
 
-CRITICAL RULES:
-1. NEVER change, remove, or alter any Mustache placeholders - they MUST remain exactly as they appear
-2. NEVER remove required sections (header, line-items, totals, footer)
-3. Keep all data-glyph-region attributes intact
-4. Output ONLY the complete modified HTML document, nothing else
-5. All {{...}} syntax must be preserved character-for-character
-6. When asked to ADD a field, use the exact Mustache placeholder syntax from the available fields below
+═══════════════════════════════════════════════════════════════════════════════
+                              CORE UNDERSTANDING
+═══════════════════════════════════════════════════════════════════════════════
 
-You may:
-- Change colors, backgrounds, borders
-- Modify fonts, sizes, weights
-- Adjust spacing, margins, padding
-- Rearrange layout within sections
-- Add visual elements (borders, shadows, gradients)
-- Add new sections with NEW Mustache placeholders from the available fields
-- Modify table styling
-- Add or change CSS classes
+1. TEMPLATE NATURE: The document uses Mustache templating. Placeholders like
+   {{client.name}} will be replaced with real data. You modify the TEMPLATE,
+   not the final output.
 
-EXAMPLES OF WHAT TO PRESERVE:
-- {{client.name}} -> Keep exactly as {{client.name}}
-- {{#lineItems}}...{{/lineItems}} -> Keep entire block structure
-- {{totals.subtotal}} -> Keep exactly as {{totals.subtotal}}
-- {{#totals.discount}}...{{/totals.discount}} -> Keep conditional block
+2. DATA SCHEMA: You have full knowledge of available data fields (listed below).
+   When users ask to "add phone number", you know to use {{client.phone}}.
 
-${AVAILABLE_FIELDS_DOC}
+3. STRUCTURAL AWARENESS: Documents have semantic regions (header, client-info,
+   line-items, totals, footer). Each region has a purpose and typical layout.
 
-${LAYOUT_GUIDELINES}`;
+4. CONDITIONAL LOGIC: Use {{#field}}...{{/field}} to show content only when
+   data exists. Use {{^field}}...{{/field}} for fallbacks.
+
+═══════════════════════════════════════════════════════════════════════════════
+                              ABSOLUTE RULES
+═══════════════════════════════════════════════════════════════════════════════
+
+1. PRESERVE ALL EXISTING MUSTACHE SYNTAX - Never modify, remove, or break any
+   {{...}} placeholders that already exist in the document.
+
+2. PRESERVE ALL data-glyph-region ATTRIBUTES - These define editable regions.
+
+3. PRESERVE DOCUMENT STRUCTURE - Don't remove required sections.
+
+4. OUTPUT COMPLETE HTML - Always return the full <!DOCTYPE html> document.
+
+5. USE EXACT MUSTACHE SYNTAX - When adding fields, use the exact placeholder
+   syntax from the schema (e.g., {{client.phone}}, not {{phone}}).
+
+═══════════════════════════════════════════════════════════════════════════════
+                              YOUR CAPABILITIES
+═══════════════════════════════════════════════════════════════════════════════
+
+STYLING:
+✓ Change colors, backgrounds, borders, shadows
+✓ Modify fonts, sizes, weights, line-heights
+✓ Adjust spacing, margins, padding
+✓ Add visual elements (gradients, icons, separators)
+
+LAYOUT:
+✓ Rearrange elements within sections
+✓ Change from flex to grid and vice versa
+✓ Create multi-column layouts
+✓ Reposition sections (move totals left, center header, etc.)
+
+STRUCTURE:
+✓ ADD new fields using the schema below
+✓ ADD new sections with appropriate data bindings
+✓ ADD conditional wrappers for optional fields
+✓ ADD new table columns with matching data
+✓ ADD calculation display rows (tax, shipping, deposits)
+
+CONTENT:
+✓ Change static labels ("Bill To" → "Invoice To")
+✓ Add static text (disclaimers, instructions)
+✓ Modify heading text
+
+${generateSchemaDocumentation()}
+
+${MUSTACHE_SYNTAX_GUIDE}
+
+${LAYOUT_PATTERNS}
+
+═══════════════════════════════════════════════════════════════════════════════
+                          FIELD INJECTION EXAMPLES
+═══════════════════════════════════════════════════════════════════════════════
+
+USER: "Add the client's phone number below their email"
+YOU: Add this after the email line in client-info section:
+  {{#client.phone}}
+  <p class="client-phone">{{client.phone}}</p>
+  {{/client.phone}}
+
+USER: "Add a PO number field to the meta section"
+YOU: Add this as a new meta-item:
+  {{#meta.poNumber}}
+  <div class="meta-item">
+    <div class="meta-label">PO Number</div>
+    <div class="meta-value">{{meta.poNumber}}</div>
+  </div>
+  {{/meta.poNumber}}
+
+USER: "Add 15% tax line"
+YOU: Add this in the totals section (after subtotal, before total):
+  {{#totals.tax}}
+  <div class="totals-row tax">
+    <span class="totals-label">Tax ({{totals.taxRate}}%)</span>
+    <span class="totals-value">\${{totals.tax}}</span>
+  </div>
+  {{/totals.tax}}
+
+USER: "Only show discount if there is one"
+YOU: Wrap the discount row with conditional:
+  {{#totals.discount}}
+  <div class="totals-row discount">
+    <span class="totals-label">Discount</span>
+    <span class="totals-value">-\${{totals.discount}}</span>
+  </div>
+  {{/totals.discount}}
+
+USER: "Add a shipping line to totals"
+YOU: Add this in the totals section:
+  {{#totals.shipping}}
+  <div class="totals-row shipping">
+    <span class="totals-label">Shipping</span>
+    <span class="totals-value">\${{totals.shipping}}</span>
+  </div>
+  {{/totals.shipping}}
+
+═══════════════════════════════════════════════════════════════════════════════
+                          LAYOUT EXAMPLES
+═══════════════════════════════════════════════════════════════════════════════
+
+USER: "Make the header two columns with logo on left and company info on right"
+YOU: Modify the header to use CSS grid:
+  <header data-glyph-region="header" style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center;">
+    <div class="header-logo">
+      {{#branding.logoUrl}}
+      <img src="{{branding.logoUrl}}" class="logo" alt="Logo" />
+      {{/branding.logoUrl}}
+    </div>
+    <div class="header-info" style="text-align: right;">
+      <h1>{{branding.companyName}}</h1>
+      {{#branding.companyAddress}}
+      <p class="company-address">{{branding.companyAddress}}</p>
+      {{/branding.companyAddress}}
+    </div>
+  </header>
+
+USER: "Move totals to the left side"
+YOU: Change the totals section alignment:
+  <section data-glyph-region="totals" class="totals" style="align-items: flex-start;">
+
+USER: "Put client info and totals side by side"
+YOU: Wrap both in a flex container:
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
+    <section data-glyph-region="client-info" style="flex: 1;">...</section>
+    <section data-glyph-region="totals" style="width: 280px;">...</section>
+  </div>
+
+═══════════════════════════════════════════════════════════════════════════════
+                          ADVANCED PATTERNS
+═══════════════════════════════════════════════════════════════════════════════
+
+ADDING A SKU COLUMN TO LINE ITEMS:
+  In thead: <th>SKU</th>
+  In tbody row: <td>{{sku}}</td>
+
+ZEBRA STRIPING FOR TABLES:
+  Add to <style>:
+  [data-glyph-region="line-items"] tbody tr:nth-child(even) {
+    background-color: var(--bg-light);
+  }
+
+DEPOSIT AND BALANCE DUE:
+  {{#totals.deposit}}
+  <div class="totals-row deposit">
+    <span class="totals-label">Deposit Paid</span>
+    <span class="totals-value">-\${{totals.deposit}}</span>
+  </div>
+  {{/totals.deposit}}
+  {{#totals.balance}}
+  <div class="totals-row balance">
+    <span class="totals-label">Balance Due</span>
+    <span class="totals-value">\${{totals.balance}}</span>
+  </div>
+  {{/totals.balance}}
+
+PAYMENT INSTRUCTIONS IN FOOTER:
+  {{#meta.paymentInstructions}}
+  <div class="payment-instructions" style="margin-top: 1rem; padding: 1rem; background: var(--bg-light); border-radius: 4px;">
+    <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem;">Payment Instructions</h4>
+    <p style="font-size: 0.875rem; white-space: pre-wrap;">{{meta.paymentInstructions}}</p>
+  </div>
+  {{/meta.paymentInstructions}}
+`;
 
 /**
- * Detect if the user is trying to add a field and enhance the prompt
+ * Detect user intent and enhance the prompt with specific guidance
  */
-function detectAndEnhanceFieldRequest(userPrompt: string): string {
+function detectAndEnhanceFieldRequest(userPrompt: string): { enhancedPrompt: string; detectedIntent: string | null } {
   const lowerPrompt = userPrompt.toLowerCase();
 
-  // Check if user is asking to "add" something
+  // Intent patterns for different modification types
+  const intentPatterns: Array<{ pattern: RegExp; intent: string; enhancement: string }> = [
+    // Field addition patterns
+    {
+      pattern: /add\s+(the\s+)?(client'?s?\s+)?phone/i,
+      intent: "add_client_phone",
+      enhancement: "Add the client phone number using {{client.phone}}. Wrap it with {{#client.phone}}...{{/client.phone}} for conditional display."
+    },
+    {
+      pattern: /add\s+(the\s+)?(client'?s?\s+)?email/i,
+      intent: "add_client_email",
+      enhancement: "Add the client email using {{client.email}}. Wrap it with {{#client.email}}...{{/client.email}} for conditional display."
+    },
+    {
+      pattern: /add\s+(a\s+)?po\s*number|purchase\s*order/i,
+      intent: "add_po_number",
+      enhancement: "Add a PO number field using {{meta.poNumber}}. Wrap it with {{#meta.poNumber}}...{{/meta.poNumber}} for conditional display."
+    },
+    {
+      pattern: /add\s+(a\s+)?tax\s*(line|row)?|add\s+\d+%?\s*tax/i,
+      intent: "add_tax",
+      enhancement: "Add a tax line in the totals section using {{totals.tax}} and {{totals.taxRate}}. Wrap with {{#totals.tax}}...{{/totals.tax}}."
+    },
+    {
+      pattern: /add\s+(a\s+)?shipping|add\s+delivery\s*fee/i,
+      intent: "add_shipping",
+      enhancement: "Add a shipping line in the totals section using {{totals.shipping}}. Wrap with {{#totals.shipping}}...{{/totals.shipping}}."
+    },
+    {
+      pattern: /add\s+(a\s+)?discount|show\s+discount/i,
+      intent: "add_discount",
+      enhancement: "Ensure the discount row uses {{totals.discount}} and is wrapped with {{#totals.discount}}...{{/totals.discount}}."
+    },
+
+    // Layout patterns
+    {
+      pattern: /two\s*columns?|split.*header|side\s*by\s*side.*header/i,
+      intent: "two_column_header",
+      enhancement: "Use CSS grid with grid-template-columns: 1fr 1fr or auto 1fr for a two-column header layout."
+    },
+    {
+      pattern: /move\s+totals?\s+(to\s+(the\s+)?)?left/i,
+      intent: "totals_left",
+      enhancement: "Change the totals section's align-items from flex-end to flex-start."
+    },
+    {
+      pattern: /center\s+(the\s+)?title|title.*center/i,
+      intent: "center_title",
+      enhancement: "Center the document title using text-align: center on the appropriate container."
+    },
+    {
+      pattern: /zebra\s*strip|alternate\s*row|striped\s*table/i,
+      intent: "zebra_stripes",
+      enhancement: "Add zebra striping using CSS: [data-glyph-region=\"line-items\"] tbody tr:nth-child(even) { background-color: var(--bg-light); }"
+    },
+
+    // Conditional patterns
+    {
+      pattern: /only\s*(show|display).*if|hide.*if\s*(no|empty|not)/i,
+      intent: "conditional",
+      enhancement: "Use Mustache conditional syntax: {{#field}}...{{/field}} to show only when field exists, or {{^field}}...{{/field}} for the inverse."
+    },
+
+    // Grouping patterns
+    {
+      pattern: /group\s*(items?|line\s*items?).*by\s*category/i,
+      intent: "group_by_category",
+      enhancement: "Use nested Mustache sections: {{#categories}}...{{#items}}...{{/items}}...{{/categories}} for grouped display."
+    },
+  ];
+
+  // Check each pattern
+  for (const { pattern, intent, enhancement } of intentPatterns) {
+    if (pattern.test(lowerPrompt)) {
+      return {
+        enhancedPrompt: `${userPrompt}\n\nIMPORTANT: ${enhancement}`,
+        detectedIntent: intent
+      };
+    }
+  }
+
+  // Check for generic field addition
   const addPatterns = [
     /add\s+(the\s+)?(\w+[\w\s]*)/i,
     /include\s+(the\s+)?(\w+[\w\s]*)/i,
@@ -241,8 +838,10 @@ function detectAndEnhanceFieldRequest(userPrompt: string): string {
       // Check if this maps to a known field
       for (const [alias, path] of Object.entries(FIELD_MAPPINGS)) {
         if (fieldName.includes(alias) || alias.includes(fieldName)) {
-          // User is asking to add a known field - enhance the prompt
-          return `${userPrompt}. Use the Mustache placeholder {{${path}}} for this field.`;
+          return {
+            enhancedPrompt: `${userPrompt}\n\nIMPORTANT: Use the Mustache placeholder {{${path}}} for this field. If it's optional data, wrap it with {{#${path}}}...{{/${path}}} for conditional display.`,
+            detectedIntent: `add_field_${path}`
+          };
         }
       }
     }
@@ -250,10 +849,10 @@ function detectAndEnhanceFieldRequest(userPrompt: string): string {
 
   // Check if user already included a Mustache placeholder
   if (userPrompt.includes("{{") && userPrompt.includes("}}")) {
-    return userPrompt; // Already has placeholder, use as-is
+    return { enhancedPrompt: userPrompt, detectedIntent: "explicit_mustache" };
   }
 
-  return userPrompt;
+  return { enhancedPrompt: userPrompt, detectedIntent: null };
 }
 
 /**
@@ -264,10 +863,13 @@ function getRegionContext(region?: string): string {
 
   const guidance = REGION_GUIDELINES[region];
   if (guidance) {
-    return `\n\nTARGETED REGION: "${region}"\n${guidance}`;
+    return `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TARGETED REGION: "${region}"
+${guidance}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   }
 
-  return `\n\nThe user selected the "${region}" region for editing.`;
+  return `\n\nThe user selected the "${region}" region for editing. Focus your modifications on that section while preserving the rest of the document.`;
 }
 
 export async function modifyTemplate(
@@ -275,8 +877,8 @@ export async function modifyTemplate(
   userPrompt: string,
   region?: string
 ): Promise<ModifyResult> {
-  // Enhance the prompt if user is requesting a field addition
-  const enhancedPrompt = detectAndEnhanceFieldRequest(userPrompt);
+  // Enhance the prompt with detected intent
+  const { enhancedPrompt, detectedIntent } = detectAndEnhanceFieldRequest(userPrompt);
 
   // Build context with region-specific guidance
   const regionContext = getRegionContext(region);
@@ -284,14 +886,19 @@ export async function modifyTemplate(
     ? `The user selected the "${region}" section and wants: ${enhancedPrompt}${regionContext}`
     : enhancedPrompt;
 
+  // Log for debugging
+  if (detectedIntent) {
+    console.log(`[AI] Detected intent: ${detectedIntent}`);
+  }
+
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 8192,
-    system: SYSTEM_PROMPT,
+    max_tokens: 16384,
+    system: DOCUMENT_ARCHITECT_PROMPT,
     messages: [
       {
         role: "user",
-        content: `Current HTML document:
+        content: `Current HTML document template:
 
 \`\`\`html
 ${currentHtml}
@@ -299,7 +906,12 @@ ${currentHtml}
 
 Modification request: ${contextPrompt}
 
-Output the complete modified HTML document. After the HTML, on a new line, write "CHANGES:" followed by a brief bullet list of what you changed.`,
+INSTRUCTIONS:
+1. Output the COMPLETE modified HTML document (including <!DOCTYPE html>)
+2. Preserve ALL existing Mustache placeholders exactly as they appear
+3. Preserve ALL data-glyph-region attributes
+4. When adding new fields, use the exact Mustache syntax from the schema
+5. After the HTML, write "CHANGES:" followed by a bullet list of modifications`,
       },
     ],
   });
@@ -360,7 +972,7 @@ export function validateModification(
     }
   }
 
-  // Check Mustache placeholders are preserved
+  // Check Mustache placeholders are preserved (but allow additions)
   const originalPlaceholders = originalHtml.match(/\{\{[^}]+\}\}/g) || [];
   const modifiedPlaceholders = modifiedHtml.match(/\{\{[^}]+\}\}/g) || [];
 
@@ -370,10 +982,19 @@ export function validateModification(
   for (const placeholder of originalSet) {
     if (!modifiedSet.has(placeholder)) {
       // Allow removal of conditional blocks but not data placeholders
-      if (!placeholder.startsWith("{{#") && !placeholder.startsWith("{{/")) {
+      if (!placeholder.startsWith("{{#") && !placeholder.startsWith("{{/") && !placeholder.startsWith("{{^")) {
         issues.push(`Missing placeholder: ${placeholder}`);
       }
     }
+  }
+
+  // Check for common structural issues
+  if (!modifiedHtml.includes("<!DOCTYPE html>") && !modifiedHtml.includes("<html")) {
+    issues.push("Missing DOCTYPE or html tag");
+  }
+
+  if (!modifiedHtml.includes("</html>")) {
+    issues.push("Missing closing html tag");
   }
 
   return {
