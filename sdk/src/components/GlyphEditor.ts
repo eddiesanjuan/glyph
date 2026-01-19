@@ -29,6 +29,20 @@ export class GlyphEditor extends HTMLElement {
   private historyIndex: number = -1;
   private readonly maxHistory: number = 20;
 
+  // Debounce timer for command input
+  private commandDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly commandDebounceMs: number = 300;
+
+  // Toast management
+  private activeToasts: Set<string> = new Set();
+  private readonly maxToasts: number = 3;
+
+  // First edit celebration tracking
+  private static readonly CELEBRATION_KEY = 'glyph-first-edit-celebrated';
+
+  // Reduced motion preference
+  private prefersReducedMotion: boolean = false;
+
   // Event callbacks for programmatic usage
   public onSave?: GlyphEditorProps['onSave'];
   public onGenerate?: GlyphEditorProps['onGenerate'];
@@ -44,12 +58,21 @@ export class GlyphEditor extends HTMLElement {
   }
 
   connectedCallback() {
+    // Detect reduced motion preference
+    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+      this.prefersReducedMotion = e.matches;
+    });
+
     this.render();
     this.initialize();
   }
 
   disconnectedCallback() {
     // Cleanup: remove any pending timers or listeners
+    if (this.commandDebounceTimer) {
+      clearTimeout(this.commandDebounceTimer);
+    }
     this.api = null;
     this.sessionId = null;
   }
@@ -149,9 +172,40 @@ export class GlyphEditor extends HTMLElement {
           --glyph-text: #1f2937;
           --glyph-text-muted: #6b7280;
           --glyph-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          --glyph-success: #22c55e;
+          --glyph-warning: #f59e0b;
+          --glyph-error: #dc2626;
+          --glyph-transition-fast: 0.15s;
+          --glyph-transition-normal: 0.25s;
+          --glyph-transition-slow: 0.4s;
           display: block;
           font-family: var(--glyph-font);
           color: var(--glyph-text);
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+          :host {
+            --glyph-transition-fast: 0.01ms;
+            --glyph-transition-normal: 0.01ms;
+            --glyph-transition-slow: 0.01ms;
+          }
+
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+
+        /* Focus visible styles for accessibility */
+        :focus-visible {
+          outline: 2px solid var(--glyph-primary);
+          outline-offset: 2px;
+        }
+
+        :focus:not(:focus-visible) {
+          outline: none;
         }
 
         .glyph-container {
@@ -173,6 +227,8 @@ export class GlyphEditor extends HTMLElement {
           background: var(--glyph-bg);
           position: relative;
           min-height: 350px;
+          /* CSS containment for performance */
+          contain: content;
         }
 
         .glyph-preview-frame {
@@ -226,10 +282,15 @@ export class GlyphEditor extends HTMLElement {
           font-family: var(--glyph-font);
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: transform var(--glyph-transition-normal) cubic-bezier(0.34, 1.56, 0.64, 1),
+                      box-shadow var(--glyph-transition-normal) ease,
+                      border-color var(--glyph-transition-normal) ease,
+                      color var(--glyph-transition-normal) ease;
           color: var(--glyph-text);
           position: relative;
           overflow: hidden;
+          /* GPU acceleration for smooth animations */
+          will-change: transform;
         }
 
         .glyph-pill::before {
@@ -238,8 +299,20 @@ export class GlyphEditor extends HTMLElement {
           inset: 0;
           background: var(--glyph-primary);
           opacity: 0;
-          transition: opacity 0.25s ease;
+          transition: opacity var(--glyph-transition-normal) ease;
           border-radius: inherit;
+        }
+
+        /* Pill focus state for keyboard navigation */
+        .glyph-pill:focus-visible {
+          outline: 2px solid var(--glyph-primary);
+          outline-offset: 2px;
+          border-color: var(--glyph-primary);
+        }
+
+        .glyph-pill.pill-focused {
+          border-color: var(--glyph-primary);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--glyph-primary) 20%, transparent);
         }
 
         .glyph-pill span {
@@ -603,11 +676,21 @@ export class GlyphEditor extends HTMLElement {
           box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
         }
 
-        .glyph-toast {
+        /* Toast Stack Container */
+        .glyph-toast-container {
           position: absolute;
           bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%) translateY(16px) scale(0.95);
+          right: 24px;
+          display: flex;
+          flex-direction: column-reverse;
+          gap: 8px;
+          z-index: 100;
+          pointer-events: none;
+        }
+
+        .glyph-toast {
+          position: relative;
+          transform: translateX(100%) scale(0.95);
           background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
           color: white;
           padding: 12px 20px 12px 16px;
@@ -615,16 +698,18 @@ export class GlyphEditor extends HTMLElement {
           font-size: 13px;
           font-weight: 500;
           opacity: 0;
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          pointer-events: none;
-          z-index: 100;
-          max-width: 85%;
+          transition: transform var(--glyph-transition-slow) cubic-bezier(0.34, 1.56, 0.64, 1),
+                      opacity var(--glyph-transition-slow) ease;
+          pointer-events: auto;
+          max-width: 320px;
+          min-width: 200px;
           text-align: left;
           display: flex;
           align-items: center;
           gap: 10px;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
           backdrop-filter: blur(8px);
+          overflow: hidden;
         }
 
         .glyph-toast::before {
@@ -637,22 +722,155 @@ export class GlyphEditor extends HTMLElement {
           flex-shrink: 0;
         }
 
+        /* Progress bar for auto-dismiss */
+        .glyph-toast::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          height: 3px;
+          width: 100%;
+          background: rgba(255, 255, 255, 0.3);
+          transform-origin: left;
+          animation: glyph-toast-progress 3s linear forwards;
+        }
+
+        @keyframes glyph-toast-progress {
+          from { transform: scaleX(1); }
+          to { transform: scaleX(0); }
+        }
+
         .glyph-toast.show {
           opacity: 1;
-          transform: translateX(-50%) translateY(0) scale(1);
+          transform: translateX(0) scale(1);
+        }
+
+        .glyph-toast.hiding {
+          opacity: 0;
+          transform: translateX(100%) scale(0.95);
         }
 
         .glyph-toast.success::before {
-          background: #22c55e;
+          background: var(--glyph-success);
           box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
         }
 
+        .glyph-toast.warning {
+          background: linear-gradient(135deg, var(--glyph-warning) 0%, #d97706 100%);
+        }
+
+        .glyph-toast.warning::before {
+          background: #fef3c7;
+        }
+
         .glyph-toast.error {
-          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          background: linear-gradient(135deg, var(--glyph-error) 0%, #b91c1c 100%);
         }
 
         .glyph-toast.error::before {
           background: #fecaca;
+        }
+
+        .glyph-toast-message {
+          flex: 1;
+        }
+
+        .glyph-toast-close {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.7);
+          cursor: pointer;
+          padding: 4px;
+          margin: -4px -8px -4px 0;
+          font-size: 16px;
+          line-height: 1;
+          transition: color var(--glyph-transition-fast) ease;
+        }
+
+        .glyph-toast-close:hover {
+          color: white;
+        }
+
+        /* Confetti celebration animation */
+        .glyph-confetti-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+          overflow: hidden;
+          z-index: 1000;
+        }
+
+        .glyph-confetti {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          animation: glyph-confetti-fall 2s ease-out forwards;
+        }
+
+        @keyframes glyph-confetti-fall {
+          0% {
+            transform: translateY(-20px) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+
+        /* Change highlight animation for modified areas */
+        .glyph-change-highlight {
+          animation: glyph-highlight-flash 0.6s ease-out;
+        }
+
+        @keyframes glyph-highlight-flash {
+          0% {
+            box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+          }
+          50% {
+            box-shadow: 0 0 20px 10px rgba(251, 191, 36, 0.4);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+          }
+        }
+
+        /* Success checkmark animation */
+        .glyph-success-check {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          background: var(--glyph-success);
+          border-radius: 50%;
+          animation: glyph-check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .glyph-success-check svg {
+          width: 14px;
+          height: 14px;
+          stroke: white;
+          stroke-width: 3;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: 20;
+          stroke-dashoffset: 20;
+          animation: glyph-check-draw 0.3s ease-out 0.2s forwards;
+        }
+
+        @keyframes glyph-check-pop {
+          0% { transform: scale(0); }
+          60% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes glyph-check-draw {
+          to { stroke-dashoffset: 0; }
         }
 
         /* Floating Region Toolbar */
@@ -921,49 +1139,60 @@ export class GlyphEditor extends HTMLElement {
           }
         }
       </style>
-      <div class="glyph-container">
-        <div class="glyph-preview-area">
-          <div class="glyph-loading">
+      <div class="glyph-container" role="application" aria-label="Glyph PDF Editor">
+        <div class="glyph-preview-area" role="region" aria-label="Document preview" aria-live="polite">
+          <div class="glyph-loading" role="status" aria-label="Loading document preview">
             <div class="glyph-loading-content">
-              <div class="glyph-spinner"></div>
-              <span class="glyph-loading-text">Loading preview<span class="glyph-loading-dots"><span></span><span></span><span></span></span></span>
+              <div class="glyph-spinner" aria-hidden="true"></div>
+              <span class="glyph-loading-text">Loading preview<span class="glyph-loading-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>
             </div>
-            <div class="glyph-skeleton">
-              <div class="glyph-skeleton-line"></div>
-              <div class="glyph-skeleton-line"></div>
-              <div class="glyph-skeleton-line"></div>
-              <div class="glyph-skeleton-line"></div>
+            <div class="glyph-skeleton" aria-hidden="true">
+              <!-- Document-shaped skeleton: header, content blocks, footer -->
+              <div class="glyph-skeleton-header">
+                <div class="glyph-skeleton-line" style="width: 40%; height: 16px; margin-bottom: 8px;"></div>
+                <div class="glyph-skeleton-line" style="width: 60%; height: 10px;"></div>
+              </div>
+              <div class="glyph-skeleton-body" style="margin-top: 20px;">
+                <div class="glyph-skeleton-line" style="width: 100%;"></div>
+                <div class="glyph-skeleton-line" style="width: 85%;"></div>
+                <div class="glyph-skeleton-line" style="width: 70%;"></div>
+                <div class="glyph-skeleton-line" style="width: 90%;"></div>
+              </div>
+              <div class="glyph-skeleton-footer" style="margin-top: 20px;">
+                <div class="glyph-skeleton-line" style="width: 50%; margin-left: auto;"></div>
+              </div>
             </div>
           </div>
+          <div class="glyph-toast-container" id="glyph-toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
         </div>
-        <div class="glyph-controls">
-          <div class="glyph-quick-actions">
-            <button class="glyph-pill" data-action="Add company logo in the header">Add logo</button>
-            <button class="glyph-pill" data-action="Apply a professional navy blue and gold color scheme that matches corporate branding">Brand colors</button>
-            <button class="glyph-pill" data-action="Make this look more professional and polished with better typography and spacing">More professional</button>
-            <button class="glyph-pill" data-action="Make the totals section larger and more prominent with bold styling">Emphasize totals</button>
-            <button class="glyph-pill" data-action="Use a more compact layout with less whitespace while maintaining readability">Compact layout</button>
+        <div class="glyph-controls" role="toolbar" aria-label="Editing controls">
+          <div class="glyph-quick-actions" role="group" aria-label="Quick actions">
+            <button class="glyph-pill" data-action="Add company logo in the header" tabindex="0" aria-label="Add company logo to the document header">Add logo</button>
+            <button class="glyph-pill" data-action="Apply a professional navy blue and gold color scheme that matches corporate branding" tabindex="0" aria-label="Apply professional brand colors">Brand colors</button>
+            <button class="glyph-pill" data-action="Make this look more professional and polished with better typography and spacing" tabindex="0" aria-label="Make document more professional">More professional</button>
+            <button class="glyph-pill" data-action="Make the totals section larger and more prominent with bold styling" tabindex="0" aria-label="Emphasize the totals section">Emphasize totals</button>
+            <button class="glyph-pill" data-action="Use a more compact layout with less whitespace while maintaining readability" tabindex="0" aria-label="Apply compact layout">Compact layout</button>
           </div>
-          <div class="glyph-region-actions" id="glyph-region-actions" style="display: none;"></div>
+          <div class="glyph-region-actions" id="glyph-region-actions" style="display: none;" role="group" aria-label="Region-specific actions"></div>
           <div class="glyph-command-row">
-            <div class="glyph-history-controls">
-              <button class="glyph-history-btn" id="glyph-undo" aria-label="Undo" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="glyph-history-controls" role="group" aria-label="History controls">
+              <button class="glyph-history-btn" id="glyph-undo" aria-label="Undo last change (Ctrl+Z)" title="Undo (Ctrl+Z)" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
                 </svg>
               </button>
-              <button class="glyph-history-btn" id="glyph-redo" aria-label="Redo" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <button class="glyph-history-btn" id="glyph-redo" aria-label="Redo last undone change (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>
                 </svg>
               </button>
             </div>
             <div class="glyph-field-picker-wrapper">
-              <button class="glyph-field-picker-btn" id="glyph-field-picker" aria-label="Insert field">+</button>
-              <div class="glyph-field-picker-dropdown hidden" id="glyph-field-dropdown"></div>
+              <button class="glyph-field-picker-btn" id="glyph-field-picker" aria-label="Insert data field" aria-haspopup="listbox" aria-expanded="false" title="Insert field (+)">+</button>
+              <div class="glyph-field-picker-dropdown hidden" id="glyph-field-dropdown" role="listbox" aria-label="Available data fields"></div>
             </div>
-            <input type="text" class="glyph-command-input" placeholder="Describe what you want to change..." aria-label="Edit command" />
-            <button class="glyph-btn glyph-btn-secondary" id="glyph-download" aria-label="Download PDF">Download</button>
+            <input type="text" class="glyph-command-input" placeholder="Describe what you want to change..." aria-label="Type an edit command and press Enter" id="glyph-command-input" />
+            <button class="glyph-btn glyph-btn-secondary" id="glyph-download" aria-label="Download document as PDF" title="Download PDF">Download</button>
           </div>
         </div>
       </div>
@@ -976,24 +1205,57 @@ export class GlyphEditor extends HTMLElement {
    * Set up all event listeners
    */
   private setupEventListeners() {
-    // Quick action pills
+    // Quick action pills with keyboard navigation
     const pills = this.shadow.querySelectorAll('.glyph-pill');
-    pills.forEach(pill => {
+    const pillsArray = Array.from(pills) as HTMLElement[];
+
+    pills.forEach((pill, index) => {
       pill.addEventListener('click', (e) => {
         const action = (e.currentTarget as HTMLElement).getAttribute('data-action');
         if (action) {
           this.executeCommand(action, e.currentTarget as HTMLElement);
         }
       });
+
+      // Arrow key navigation for pills
+      pill.addEventListener('keydown', (e) => {
+        const key = (e as KeyboardEvent).key;
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+          e.preventDefault();
+          const nextIndex = (index + 1) % pillsArray.length;
+          this.focusPill(pillsArray, nextIndex);
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+          e.preventDefault();
+          const prevIndex = (index - 1 + pillsArray.length) % pillsArray.length;
+          this.focusPill(pillsArray, prevIndex);
+        } else if (key === 'Escape') {
+          // Clear pill focus and move to input
+          const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+          if (input) input.focus();
+        }
+      });
     });
 
-    // Command input - Enter key
+    // Command input - Enter key with debounce
     const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
     if (input) {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && input.value.trim() && !this.isLoading) {
-          this.executeCommand(input.value.trim());
+          // Debounce rapid Enter presses
+          if (this.commandDebounceTimer) {
+            clearTimeout(this.commandDebounceTimer);
+          }
+          this.commandDebounceTimer = setTimeout(() => {
+            this.executeCommand(input.value.trim());
+            input.value = '';
+            this.commandDebounceTimer = null;
+          }, this.commandDebounceMs);
+        } else if (e.key === 'Escape') {
+          // Clear selection and input
           input.value = '';
+          this.selectedRegion = null;
+          this.hideRegionActions();
+          input.placeholder = 'Describe what you want to change...';
         }
       });
     }
@@ -1027,14 +1289,23 @@ export class GlyphEditor extends HTMLElement {
       }
     });
 
-    // Field picker
+    // Field picker with accessibility
     const fieldPickerBtn = this.shadow.getElementById('glyph-field-picker');
     const fieldDropdown = this.shadow.getElementById('glyph-field-dropdown');
     if (fieldPickerBtn && fieldDropdown) {
       fieldPickerBtn.addEventListener('click', () => {
-        fieldDropdown.classList.toggle('hidden');
-        if (!fieldDropdown.classList.contains('hidden')) {
+        const isHidden = fieldDropdown.classList.toggle('hidden');
+        fieldPickerBtn.setAttribute('aria-expanded', (!isHidden).toString());
+        if (!isHidden) {
           this.populateFieldPicker();
+        }
+      });
+
+      // Keyboard support for field picker
+      fieldPickerBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          fieldDropdown.classList.add('hidden');
+          fieldPickerBtn.setAttribute('aria-expanded', 'false');
         }
       });
 
@@ -1042,8 +1313,24 @@ export class GlyphEditor extends HTMLElement {
       document.addEventListener('click', (e) => {
         if (!fieldPickerBtn.contains(e.target as Node) && !fieldDropdown.contains(e.target as Node)) {
           fieldDropdown.classList.add('hidden');
+          fieldPickerBtn.setAttribute('aria-expanded', 'false');
         }
       });
+    }
+  }
+
+  /**
+   * Focus a pill by index for keyboard navigation
+   */
+  private focusPill(pills: HTMLElement[], index: number) {
+    // Remove focus from all pills
+    pills.forEach(p => p.classList.remove('pill-focused'));
+
+    // Focus the target pill
+    const targetPill = pills[index];
+    if (targetPill) {
+      targetPill.classList.add('pill-focused');
+      targetPill.focus();
     }
   }
 
@@ -1094,6 +1381,10 @@ export class GlyphEditor extends HTMLElement {
 
       const changeMessage = result.changes?.[0] || 'Changes applied successfully';
       this.showToast(changeMessage);
+
+      // Celebrate first successful edit with confetti (one-time)
+      this.celebrateFirstEdit();
+
       this.emit('glyph:modified', { command, changes: result.changes });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to apply changes';
@@ -1747,32 +2038,124 @@ export class GlyphEditor extends HTMLElement {
   }
 
   /**
-   * Show toast notification
+   * Show toast notification with stacking support
    */
   private showToast(message: string, isError = false) {
-    const toast = this.shadow.querySelector('.glyph-toast') as HTMLElement;
-    if (toast) {
-      // Clear previous classes
-      toast.classList.remove('show', 'success', 'error');
+    const container = this.shadow.getElementById('glyph-toast-container');
+    if (!container) return;
 
-      // Create a span for the message text
-      toast.innerHTML = `<span>${this.escapeHtml(message)}</span>`;
+    // Generate unique ID for this toast
+    const toastId = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      // Apply appropriate class
-      if (isError) {
-        toast.classList.add('error');
+    // If we have max toasts, remove the oldest one
+    if (this.activeToasts.size >= this.maxToasts) {
+      const oldestToast = container.firstElementChild as HTMLElement;
+      if (oldestToast) {
+        this.removeToast(oldestToast, oldestToast.dataset.toastId || '');
+      }
+    }
+
+    // Create toast element using safe DOM methods (XSS prevention)
+    const toast = document.createElement('div');
+    toast.className = `glyph-toast ${isError ? 'error' : 'success'}`;
+    toast.dataset.toastId = toastId;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'glyph-toast-message';
+    messageSpan.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'glyph-toast-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss notification');
+    closeBtn.textContent = '\u00d7'; // × character
+    closeBtn.addEventListener('click', () => this.removeToast(toast, toastId));
+
+    toast.appendChild(messageSpan);
+    toast.appendChild(closeBtn);
+
+    container.appendChild(toast);
+    this.activeToasts.add(toastId);
+
+    // Trigger show animation
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+      this.removeToast(toast, toastId);
+    }, 3000);
+  }
+
+  /**
+   * Remove a toast from the stack
+   */
+  private removeToast(toast: HTMLElement, toastId: string) {
+    if (!this.activeToasts.has(toastId)) return;
+
+    toast.classList.remove('show');
+    toast.classList.add('hiding');
+
+    // Remove after animation
+    setTimeout(() => {
+      toast.remove();
+      this.activeToasts.delete(toastId);
+    }, 400);
+  }
+
+  /**
+   * Celebrate first successful edit with confetti
+   */
+  private celebrateFirstEdit() {
+    // Skip if already celebrated or reduced motion preferred
+    if (this.prefersReducedMotion) return;
+
+    try {
+      if (localStorage.getItem(GlyphEditor.CELEBRATION_KEY)) return;
+      localStorage.setItem(GlyphEditor.CELEBRATION_KEY, 'true');
+    } catch {
+      // localStorage not available, skip celebration
+      return;
+    }
+
+    const container = this.shadow.querySelector('.glyph-preview-area');
+    if (!container) return;
+
+    // Create confetti container
+    const confettiContainer = document.createElement('div');
+    confettiContainer.className = 'glyph-confetti-container';
+    confettiContainer.setAttribute('aria-hidden', 'true');
+
+    // Generate confetti pieces
+    const colors = ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'glyph-confetti';
+      confetti.style.left = `${Math.random() * 100}%`;
+      confetti.style.top = '-20px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+      confetti.style.animationDuration = `${1.5 + Math.random()}s`;
+
+      // Random shapes
+      if (Math.random() > 0.5) {
+        confetti.style.borderRadius = '50%';
       } else {
-        toast.classList.add('success');
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
       }
 
-      // Trigger reflow for animation restart
-      void toast.offsetWidth;
-      toast.classList.add('show');
-
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+      confettiContainer.appendChild(confetti);
     }
+
+    container.appendChild(confettiContainer);
+
+    // Remove confetti after animation
+    setTimeout(() => {
+      confettiContainer.remove();
+    }, 2500);
   }
 
   /**

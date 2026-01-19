@@ -36,7 +36,7 @@ import type {
 } from './lib/types';
 
 // Version
-const VERSION = '0.2.0';
+const VERSION = '0.4.0';
 
 // Export components
 export {
