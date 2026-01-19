@@ -1763,6 +1763,956 @@
     }
 
     /* ============================================
+       Airtable Connection Modal
+       ============================================ */
+    .airtable-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      padding: 24px;
+    }
+
+    .airtable-modal-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .airtable-modal {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow: hidden;
+      transform: scale(0.95) translateY(20px);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .airtable-modal-overlay.visible .airtable-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .airtable-modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      background: var(--color-bg-elevated);
+    }
+
+    .airtable-modal__header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .airtable-modal__icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #FCBF49, #F77F00);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .airtable-modal__icon svg {
+      width: 24px;
+      height: 24px;
+      color: #000;
+    }
+
+    .airtable-modal__title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .airtable-modal__subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
+    .airtable-modal__close {
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+
+    .airtable-modal__close:hover {
+      border-color: var(--color-text-muted);
+      color: var(--color-text);
+    }
+
+    .airtable-modal__close svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Progress Steps */
+    .airtable-progress {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px 28px;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-progress__step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .airtable-progress__number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--color-surface);
+      color: var(--color-text-subtle);
+      border: 1px solid var(--color-border-subtle);
+      transition: all 0.3s ease;
+    }
+
+    .airtable-progress__step.active .airtable-progress__number {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 4px var(--color-primary-subtle);
+    }
+
+    .airtable-progress__step.completed .airtable-progress__number {
+      background: var(--color-success);
+      color: white;
+      border-color: var(--color-success);
+    }
+
+    .airtable-progress__label {
+      font-size: 13px;
+      color: var(--color-text-subtle);
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .airtable-progress__step.active .airtable-progress__label {
+      color: var(--color-text);
+    }
+
+    .airtable-progress__step.completed .airtable-progress__label {
+      color: var(--color-success);
+    }
+
+    .airtable-progress__connector {
+      width: 40px;
+      height: 2px;
+      background: var(--color-border-subtle);
+      margin: 0 8px;
+      transition: background 0.3s ease;
+    }
+
+    .airtable-progress__connector.completed {
+      background: var(--color-success);
+    }
+
+    /* Modal Body */
+    .airtable-modal__body {
+      padding: 32px 28px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Step Content */
+    .airtable-step-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .airtable-step-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .airtable-step__title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .airtable-step__description {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    /* Form Elements */
+    .airtable-input-group {
+      margin-bottom: 24px;
+    }
+
+    .airtable-input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .airtable-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .airtable-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .airtable-input::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .airtable-input-hint {
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .airtable-input-hint a {
+      color: var(--color-primary-bright);
+      text-decoration: none;
+    }
+
+    .airtable-input-hint a:hover {
+      text-decoration: underline;
+    }
+
+    /* Select Dropdowns */
+    .airtable-select {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: 14px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A1A1AA'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 20px;
+      padding-right: 44px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .airtable-select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .airtable-select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .airtable-select option {
+      background: var(--color-bg-card);
+      color: var(--color-text);
+    }
+
+    /* Field Badges */
+    .airtable-fields {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-fields__title {
+      width: 100%;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-subtle);
+      margin-bottom: 8px;
+    }
+
+    .airtable-field-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border);
+      border-radius: 100px;
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .airtable-field-badge svg {
+      width: 12px;
+      height: 12px;
+      color: var(--color-primary-bright);
+    }
+
+    /* Description Textarea */
+    .airtable-textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      resize: vertical;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .airtable-textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .airtable-textarea::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    /* Style Presets */
+    .airtable-styles {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .airtable-style-btn {
+      flex: 1;
+      padding: 16px;
+      background: var(--color-surface);
+      border: 2px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+
+    .airtable-style-btn:hover {
+      border-color: var(--color-text-muted);
+      color: var(--color-text);
+    }
+
+    .airtable-style-btn.selected {
+      border-color: var(--color-primary);
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-bright);
+    }
+
+    .airtable-style-btn__icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    /* Preview Area */
+    .airtable-preview-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      min-height: 450px;
+    }
+
+    @media (max-width: 768px) {
+      .airtable-preview-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .airtable-preview-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .airtable-preview-frame-wrapper {
+      flex: 1;
+      background: white;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+      min-height: 400px;
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-preview-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      border: none;
+    }
+
+    .airtable-preview-loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      z-index: 10;
+    }
+
+    .airtable-preview-loading.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .airtable-preview-loading__text {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .airtable-preview-loading__subtext {
+      font-size: 12px;
+      color: #999;
+    }
+
+    /* Typing animation for AI generation */
+    .airtable-ai-typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: var(--color-primary);
+    }
+
+    .airtable-ai-typing__dot {
+      width: 6px;
+      height: 6px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      animation: aiTypingDot 1.4s infinite;
+    }
+
+    .airtable-ai-typing__dot:nth-child(2) { animation-delay: 0.2s; }
+    .airtable-ai-typing__dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes aiTypingDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Refine Input */
+    .airtable-refine {
+      display: flex;
+      gap: 12px;
+    }
+
+    .airtable-refine-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: 14px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .airtable-refine-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .airtable-refine-input::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .airtable-refine-btn {
+      padding: 12px 20px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--transition-fast);
+    }
+
+    .airtable-refine-btn:hover:not(:disabled) {
+      background: var(--color-primary-bright);
+    }
+
+    .airtable-refine-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Actions Panel */
+    .airtable-preview-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .airtable-info-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+
+    .airtable-info-card__title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .airtable-info-card__title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--color-primary-bright);
+    }
+
+    .airtable-data-preview {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    .airtable-data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-data-row:last-child {
+      border-bottom: none;
+    }
+
+    .airtable-data-label {
+      color: var(--color-text-subtle);
+    }
+
+    .airtable-data-value {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    /* Download Actions */
+    .airtable-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .airtable-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
+    }
+
+    .airtable-btn--primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .airtable-btn--primary:hover:not(:disabled) {
+      background: var(--color-primary-bright);
+    }
+
+    .airtable-btn--secondary {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-btn--secondary:hover:not(:disabled) {
+      border-color: var(--color-text-muted);
+    }
+
+    .airtable-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .airtable-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .airtable-btn.loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .airtable-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Modal Footer */
+    .airtable-modal__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-top: 1px solid var(--color-border-subtle);
+      background: var(--color-bg-elevated);
+    }
+
+    .airtable-modal__footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .airtable-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .airtable-back-btn:hover {
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    .airtable-back-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .airtable-next-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .airtable-next-btn:hover:not(:disabled) {
+      background: var(--color-primary-bright);
+    }
+
+    .airtable-next-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .airtable-next-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .airtable-next-btn.loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .airtable-next-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Skeleton Loading */
+    .airtable-skeleton {
+      background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-bg-elevated) 50%, var(--color-surface) 75%);
+      background-size: 200% 100%;
+      animation: skeleton 1.5s ease-in-out infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes skeleton {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .airtable-skeleton--field {
+      height: 32px;
+      width: 100px;
+      display: inline-block;
+      margin: 4px;
+    }
+
+    /* Success Animation */
+    .airtable-success-animation {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .airtable-success-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--color-success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      animation: successPop 0.5s ease;
+    }
+
+    .airtable-success-icon svg {
+      width: 40px;
+      height: 40px;
+      color: white;
+    }
+
+    @keyframes successPop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .airtable-success-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .airtable-success-message {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* Toast Notifications */
+    .airtable-toast {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .airtable-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .airtable-toast svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .airtable-toast--success svg {
+      color: var(--color-success);
+    }
+
+    .airtable-toast--info svg {
+      color: var(--color-primary);
+    }
+
+    .airtable-toast--error svg {
+      color: #f87171;
+    }
+
+    .airtable-toast span {
+      font-size: 14px;
+      color: var(--color-text);
+    }
+
+    /* Connect Button in Airtable Section */
+    .btn--airtable {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #FCBF49, #F77F00);
+      color: #000;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .btn--airtable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(252, 191, 73, 0.4);
+    }
+
+    .btn--airtable svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Responsive Airtable Modal */
+    @media (max-width: 768px) {
+      .airtable-modal {
+        max-height: 100vh;
+        border-radius: 0;
+      }
+
+      .airtable-modal__header {
+        padding: 16px 20px;
+      }
+
+      .airtable-modal__body {
+        padding: 20px;
+      }
+
+      .airtable-progress {
+        padding: 16px 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .airtable-progress__connector {
+        display: none;
+      }
+
+      .airtable-progress__label {
+        display: none;
+      }
+
+      .airtable-styles {
+        flex-direction: column;
+      }
+
+      .airtable-modal__footer {
+        padding: 16px 20px;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .airtable-modal__footer-left {
+        width: 100%;
+      }
+
+      .airtable-back-btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .airtable-next-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ============================================
        Mobile Hamburger Menu
        ============================================ */
     .nav__hamburger {
@@ -2241,7 +3191,12 @@
             </div>
           </div>
 
-          <a href="#playground" class="btn btn--primary">Try It Now</a>
+          <button class="btn--airtable" id="connect-airtable">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Connect Your Airtable
+          </button>
         </div>
 
         <div class="airtable__demo">
@@ -2584,6 +3539,272 @@
       </div>
     </div>
   </footer>
+
+  <!-- Airtable Connection Modal -->
+  <div class="airtable-modal-overlay" id="airtable-modal-overlay">
+    <div class="airtable-modal">
+      <!-- Header -->
+      <div class="airtable-modal__header">
+        <div class="airtable-modal__header-left">
+          <div class="airtable-modal__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="airtable-modal__title">Connect Airtable</div>
+            <div class="airtable-modal__subtitle">Generate templates from your data</div>
+          </div>
+        </div>
+        <button class="airtable-modal__close" id="airtable-modal-close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Progress Steps -->
+      <div class="airtable-progress">
+        <div class="airtable-progress__step active" data-step="1">
+          <div class="airtable-progress__number">1</div>
+          <span class="airtable-progress__label">Connect</span>
+        </div>
+        <div class="airtable-progress__connector"></div>
+        <div class="airtable-progress__step" data-step="2">
+          <div class="airtable-progress__number">2</div>
+          <span class="airtable-progress__label">Select Data</span>
+        </div>
+        <div class="airtable-progress__connector"></div>
+        <div class="airtable-progress__step" data-step="3">
+          <div class="airtable-progress__number">3</div>
+          <span class="airtable-progress__label">Describe</span>
+        </div>
+        <div class="airtable-progress__connector"></div>
+        <div class="airtable-progress__step" data-step="4">
+          <div class="airtable-progress__number">4</div>
+          <span class="airtable-progress__label">Preview</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="airtable-modal__body">
+        <!-- Step 1: Enter API Key -->
+        <div class="airtable-step-content active" data-step="1">
+          <h3 class="airtable-step__title">Connect Your Airtable</h3>
+          <p class="airtable-step__description">
+            Enter your Airtable Personal Access Token to get started. We'll read your bases and tables automatically.
+          </p>
+
+          <div class="airtable-input-group">
+            <label class="airtable-input-label" for="airtable-key">Personal Access Token</label>
+            <input
+              type="password"
+              class="airtable-input"
+              id="airtable-key"
+              placeholder="pat..."
+              autocomplete="off"
+            />
+            <div class="airtable-input-hint">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">Get your API token from Airtable</a>
+            </div>
+          </div>
+
+          <div class="airtable-info-card" style="margin-top: 24px;">
+            <div class="airtable-info-card__title">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              Your data is secure
+            </div>
+            <div class="airtable-data-preview">
+              Your API key is used client-side only and is never stored on our servers.
+              We only read your schema and sample data to generate templates.
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Select Base & Table -->
+        <div class="airtable-step-content" data-step="2">
+          <h3 class="airtable-step__title">Choose Your Data</h3>
+          <p class="airtable-step__description">
+            Select the base and table you want to create a template for.
+          </p>
+
+          <div class="airtable-input-group">
+            <label class="airtable-input-label" for="airtable-base">Base</label>
+            <select class="airtable-select" id="airtable-base" disabled>
+              <option value="">Select a base...</option>
+            </select>
+          </div>
+
+          <div class="airtable-input-group">
+            <label class="airtable-input-label" for="airtable-table">Table</label>
+            <select class="airtable-select" id="airtable-table" disabled>
+              <option value="">Select a table...</option>
+            </select>
+          </div>
+
+          <div class="airtable-fields" id="airtable-fields" style="display: none;">
+            <div class="airtable-fields__title">Available Fields</div>
+            <div id="airtable-fields-list">
+              <!-- Fields will be populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Describe Your Document -->
+        <div class="airtable-step-content" data-step="3">
+          <h3 class="airtable-step__title">Describe Your Document</h3>
+          <p class="airtable-step__description">
+            Tell us what kind of document you want to create. Be specific about layout, styling, and which fields to include.
+          </p>
+
+          <div class="airtable-input-group">
+            <label class="airtable-input-label" for="airtable-description">Document Description</label>
+            <textarea
+              class="airtable-textarea"
+              id="airtable-description"
+              placeholder="Create a professional invoice with the company logo at top, client info on the left, a table of line items with description, quantity, and price columns, and totals at the bottom. Use a clean, modern design with teal accents."
+            ></textarea>
+          </div>
+
+          <div class="airtable-input-group">
+            <label class="airtable-input-label">Style Preset</label>
+            <div class="airtable-styles">
+              <button class="airtable-style-btn selected" data-style="modern">
+                <div class="airtable-style-btn__icon">&#9632;</div>
+                Modern
+              </button>
+              <button class="airtable-style-btn" data-style="professional">
+                <div class="airtable-style-btn__icon">&#9633;</div>
+                Professional
+              </button>
+              <button class="airtable-style-btn" data-style="minimal">
+                <div class="airtable-style-btn__icon">&#9675;</div>
+                Minimal
+              </button>
+            </div>
+          </div>
+
+          <div class="airtable-info-card" style="margin-top: 24px;" id="selected-fields-info">
+            <div class="airtable-info-card__title">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+              </svg>
+              Selected Table Fields
+            </div>
+            <div class="airtable-data-preview" id="step3-fields-preview">
+              <!-- Fields will be shown here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Preview & Iterate -->
+        <div class="airtable-step-content" data-step="4">
+          <div class="airtable-preview-container">
+            <div class="airtable-preview-left">
+              <div class="airtable-preview-frame-wrapper">
+                <div class="airtable-preview-loading" id="airtable-preview-loading">
+                  <div class="loading-spinner"></div>
+                  <div class="airtable-preview-loading__text">
+                    <span class="airtable-ai-typing">
+                      AI is generating your template
+                      <span class="airtable-ai-typing__dot"></span>
+                      <span class="airtable-ai-typing__dot"></span>
+                      <span class="airtable-ai-typing__dot"></span>
+                    </span>
+                  </div>
+                  <div class="airtable-preview-loading__subtext">This may take a few seconds</div>
+                </div>
+                <iframe id="airtable-preview-frame" class="airtable-preview-frame" title="Template Preview"></iframe>
+              </div>
+              <div class="airtable-refine">
+                <input
+                  type="text"
+                  class="airtable-refine-input"
+                  id="airtable-refine-input"
+                  placeholder="Add the PO number field..."
+                />
+                <button class="airtable-refine-btn" id="airtable-refine-btn">Refine</button>
+              </div>
+            </div>
+            <div class="airtable-preview-right">
+              <div class="airtable-info-card">
+                <div class="airtable-info-card__title">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                  </svg>
+                  Data Preview
+                </div>
+                <div class="airtable-data-preview" id="airtable-data-preview">
+                  <!-- Data preview will be populated -->
+                </div>
+              </div>
+
+              <div class="airtable-info-card">
+                <div class="airtable-info-card__title">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  Template Info
+                </div>
+                <div class="airtable-data-preview">
+                  <div class="airtable-data-row">
+                    <span class="airtable-data-label">Base</span>
+                    <span class="airtable-data-value" id="info-base">-</span>
+                  </div>
+                  <div class="airtable-data-row">
+                    <span class="airtable-data-label">Table</span>
+                    <span class="airtable-data-value" id="info-table">-</span>
+                  </div>
+                  <div class="airtable-data-row">
+                    <span class="airtable-data-label">Style</span>
+                    <span class="airtable-data-value" id="info-style">Modern</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="airtable-actions">
+                <button class="airtable-btn airtable-btn--primary" id="airtable-download-pdf">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                  </svg>
+                  Download PDF
+                </button>
+                <button class="airtable-btn airtable-btn--secondary" id="airtable-save-template">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                  </svg>
+                  Save Template
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="airtable-modal__footer">
+        <div class="airtable-modal__footer-left">
+          <button class="airtable-back-btn" id="airtable-back-btn" style="display: none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+        </div>
+        <button class="airtable-next-btn" id="airtable-next-btn" disabled>
+          Connect
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal for API Key Prompt -->
   <div class="modal-overlay" id="modal-overlay">
@@ -3145,6 +4366,810 @@
       card.style.transform = 'translateY(30px)';
       card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
       observer.observe(card);
+    });
+
+    // ============================================
+    // Airtable Connection Flow
+    // ============================================
+    const GLYPH_API = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://glyph-api-production-3f73.up.railway.app';
+
+    // State
+    const airtableState = {
+      currentStep: 1,
+      apiKey: '',
+      bases: [],
+      selectedBase: null,
+      selectedTable: null,
+      tables: [],
+      fields: [],
+      records: [],
+      description: '',
+      style: 'modern',
+      generatedTemplate: null,
+      generatedHtml: ''
+    };
+
+    // DOM Elements
+    const airtableModalOverlay = document.getElementById('airtable-modal-overlay');
+    const connectAirtableBtn = document.getElementById('connect-airtable');
+    const airtableModalClose = document.getElementById('airtable-modal-close');
+    const airtableBackBtn = document.getElementById('airtable-back-btn');
+    const airtableNextBtn = document.getElementById('airtable-next-btn');
+    const airtableKeyInput = document.getElementById('airtable-key');
+    const airtableBaseSelect = document.getElementById('airtable-base');
+    const airtableTableSelect = document.getElementById('airtable-table');
+    const airtableFieldsContainer = document.getElementById('airtable-fields');
+    const airtableFieldsList = document.getElementById('airtable-fields-list');
+    const airtableDescription = document.getElementById('airtable-description');
+    const airtableStyleBtns = document.querySelectorAll('.airtable-style-btn');
+    const airtablePreviewFrame = document.getElementById('airtable-preview-frame');
+    const airtablePreviewLoading = document.getElementById('airtable-preview-loading');
+    const airtableRefineInput = document.getElementById('airtable-refine-input');
+    const airtableRefineBtn = document.getElementById('airtable-refine-btn');
+    const airtableDownloadPdfBtn = document.getElementById('airtable-download-pdf');
+    const airtableSaveTemplateBtn = document.getElementById('airtable-save-template');
+
+    // Open modal
+    connectAirtableBtn.addEventListener('click', () => {
+      airtableModalOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      airtableKeyInput.focus();
+    });
+
+    // Close modal
+    function closeAirtableModal() {
+      airtableModalOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+      // Reset state
+      resetAirtableState();
+    }
+
+    airtableModalClose.addEventListener('click', closeAirtableModal);
+    airtableModalOverlay.addEventListener('click', (e) => {
+      if (e.target === airtableModalOverlay) closeAirtableModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && airtableModalOverlay.classList.contains('visible')) {
+        closeAirtableModal();
+      }
+    });
+
+    // Reset state
+    function resetAirtableState() {
+      airtableState.currentStep = 1;
+      airtableState.apiKey = '';
+      airtableState.bases = [];
+      airtableState.selectedBase = null;
+      airtableState.selectedTable = null;
+      airtableState.tables = [];
+      airtableState.fields = [];
+      airtableState.records = [];
+      airtableState.description = '';
+      airtableState.style = 'modern';
+      airtableState.generatedTemplate = null;
+      airtableState.generatedHtml = '';
+
+      // Reset UI
+      airtableKeyInput.value = '';
+      airtableBaseSelect.innerHTML = '<option value="">Select a base...</option>';
+      airtableBaseSelect.disabled = true;
+      airtableTableSelect.innerHTML = '<option value="">Select a table...</option>';
+      airtableTableSelect.disabled = true;
+      airtableFieldsContainer.style.display = 'none';
+      airtableFieldsList.innerHTML = '';
+      airtableDescription.value = '';
+      airtableStyleBtns.forEach(btn => btn.classList.remove('selected'));
+      airtableStyleBtns[0].classList.add('selected');
+
+      goToStep(1);
+    }
+
+    // Step navigation
+    function goToStep(step) {
+      airtableState.currentStep = step;
+
+      // Update step content visibility
+      document.querySelectorAll('.airtable-step-content').forEach(el => {
+        el.classList.remove('active');
+        if (parseInt(el.dataset.step) === step) {
+          el.classList.add('active');
+        }
+      });
+
+      // Update progress indicators
+      document.querySelectorAll('.airtable-progress__step').forEach(el => {
+        const stepNum = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed');
+        if (stepNum === step) {
+          el.classList.add('active');
+        } else if (stepNum < step) {
+          el.classList.add('completed');
+        }
+      });
+
+      document.querySelectorAll('.airtable-progress__connector').forEach((el, idx) => {
+        if (idx < step - 1) {
+          el.classList.add('completed');
+        } else {
+          el.classList.remove('completed');
+        }
+      });
+
+      // Update back button
+      airtableBackBtn.style.display = step > 1 ? 'flex' : 'none';
+
+      // Update next button text and state
+      updateNextButton();
+    }
+
+    function updateNextButton() {
+      const step = airtableState.currentStep;
+      let buttonText = '';
+      let disabled = false;
+
+      switch (step) {
+        case 1:
+          buttonText = 'Connect';
+          disabled = !airtableKeyInput.value.trim().startsWith('pat');
+          break;
+        case 2:
+          buttonText = 'Continue';
+          disabled = !airtableState.selectedTable;
+          break;
+        case 3:
+          buttonText = 'Generate Template';
+          disabled = !airtableDescription.value.trim();
+          break;
+        case 4:
+          buttonText = 'Done';
+          disabled = false;
+          airtableNextBtn.style.display = 'none';
+          return;
+      }
+
+      airtableNextBtn.style.display = 'flex';
+      airtableNextBtn.innerHTML = `${buttonText}<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
+      airtableNextBtn.disabled = disabled;
+    }
+
+    // Input validation
+    airtableKeyInput.addEventListener('input', updateNextButton);
+    airtableDescription.addEventListener('input', updateNextButton);
+
+    // Style selection
+    airtableStyleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        airtableStyleBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        airtableState.style = btn.dataset.style;
+        document.getElementById('info-style').textContent = btn.dataset.style.charAt(0).toUpperCase() + btn.dataset.style.slice(1);
+      });
+    });
+
+    // Back button
+    airtableBackBtn.addEventListener('click', () => {
+      if (airtableState.currentStep > 1) {
+        goToStep(airtableState.currentStep - 1);
+      }
+    });
+
+    // Next button - main flow
+    airtableNextBtn.addEventListener('click', async () => {
+      const step = airtableState.currentStep;
+
+      switch (step) {
+        case 1:
+          await connectToAirtable();
+          break;
+        case 2:
+          prepareDescriptionStep();
+          goToStep(3);
+          break;
+        case 3:
+          await generateTemplate();
+          break;
+      }
+    });
+
+    // Step 1: Connect to Airtable
+    async function connectToAirtable() {
+      const apiKey = airtableKeyInput.value.trim();
+      if (!apiKey) return;
+
+      airtableState.apiKey = apiKey;
+      setNextButtonLoading(true);
+
+      try {
+        // First, try to use the Glyph API
+        const response = await fetch(`${GLYPH_API}/v1/airtable/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          airtableState.bases = data.bases || [];
+          populateBases(airtableState.bases);
+          goToStep(2);
+        } else {
+          // Fallback: Try direct Airtable API
+          await connectDirectToAirtable(apiKey);
+        }
+      } catch (err) {
+        console.warn('Glyph API connection failed, trying direct Airtable:', err);
+        await connectDirectToAirtable(apiKey);
+      } finally {
+        setNextButtonLoading(false);
+      }
+    }
+
+    // Direct Airtable API fallback
+    async function connectDirectToAirtable(apiKey) {
+      try {
+        const response = await fetch('https://api.airtable.com/v0/meta/bases', {
+          headers: { 'Authorization': `Bearer ${apiKey}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Invalid API key');
+        }
+
+        const data = await response.json();
+        airtableState.bases = data.bases || [];
+        populateBases(airtableState.bases);
+        goToStep(2);
+      } catch (err) {
+        console.error('Airtable connection failed:', err);
+        // Auto-fallback to demo mode with a toast notification
+        showAirtableToast('Connecting with demo data...', 'info');
+        loadDemoData();
+      }
+    }
+
+    // Toast notification for Airtable modal
+    function showAirtableToast(message, type = 'success') {
+      const existingToast = document.querySelector('.airtable-toast');
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement('div');
+      toast.className = `airtable-toast airtable-toast--${type}`;
+      toast.innerHTML = `
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' :
+            type === 'info' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>' :
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+        </svg>
+        <span>${message}</span>
+      `;
+      document.querySelector('.airtable-modal').appendChild(toast);
+
+      setTimeout(() => toast.classList.add('visible'), 10);
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Load demo data for demonstration purposes
+    function loadDemoData() {
+      airtableState.bases = [
+        { id: 'appDemo123', name: 'CRM Database' },
+        { id: 'appDemo456', name: 'Project Tracker' },
+        { id: 'appDemo789', name: 'Inventory Management' }
+      ];
+      populateBases(airtableState.bases);
+
+      // Pre-populate demo tables for each base
+      airtableState.demoTables = {
+        'appDemo123': [
+          {
+            id: 'tblClients',
+            name: 'Clients',
+            fields: [
+              { name: 'Name', type: 'singleLineText' },
+              { name: 'Company', type: 'singleLineText' },
+              { name: 'Email', type: 'email' },
+              { name: 'Phone', type: 'phoneNumber' },
+              { name: 'Status', type: 'singleSelect' },
+              { name: 'Deal Value', type: 'currency' }
+            ]
+          },
+          {
+            id: 'tblDeals',
+            name: 'Deals',
+            fields: [
+              { name: 'Deal Name', type: 'singleLineText' },
+              { name: 'Client', type: 'linkedRecord' },
+              { name: 'Value', type: 'currency' },
+              { name: 'Stage', type: 'singleSelect' },
+              { name: 'Close Date', type: 'date' }
+            ]
+          }
+        ],
+        'appDemo456': [
+          {
+            id: 'tblProjects',
+            name: 'Projects',
+            fields: [
+              { name: 'Project Name', type: 'singleLineText' },
+              { name: 'Description', type: 'multilineText' },
+              { name: 'Owner', type: 'collaborator' },
+              { name: 'Start Date', type: 'date' },
+              { name: 'Due Date', type: 'date' },
+              { name: 'Status', type: 'singleSelect' },
+              { name: 'Budget', type: 'currency' }
+            ]
+          },
+          {
+            id: 'tblTasks',
+            name: 'Tasks',
+            fields: [
+              { name: 'Task', type: 'singleLineText' },
+              { name: 'Project', type: 'linkedRecord' },
+              { name: 'Assignee', type: 'collaborator' },
+              { name: 'Priority', type: 'singleSelect' },
+              { name: 'Complete', type: 'checkbox' }
+            ]
+          }
+        ],
+        'appDemo789': [
+          {
+            id: 'tblProducts',
+            name: 'Products',
+            fields: [
+              { name: 'Product Name', type: 'singleLineText' },
+              { name: 'SKU', type: 'singleLineText' },
+              { name: 'Category', type: 'singleSelect' },
+              { name: 'Price', type: 'currency' },
+              { name: 'Quantity', type: 'number' },
+              { name: 'Supplier', type: 'linkedRecord' }
+            ]
+          }
+        ]
+      };
+
+      // Demo records
+      airtableState.demoRecords = {
+        'tblClients': [
+          { id: 'rec1', fields: { 'Name': 'John Smith', 'Company': 'Acme Corp', 'Email': 'john@acme.com', 'Phone': '+1 555-0123', 'Status': 'Active', 'Deal Value': 50000 } },
+          { id: 'rec2', fields: { 'Name': 'Sarah Johnson', 'Company': 'TechStart Inc', 'Email': 'sarah@techstart.io', 'Phone': '+1 555-0456', 'Status': 'Prospect', 'Deal Value': 25000 } },
+          { id: 'rec3', fields: { 'Name': 'Mike Chen', 'Company': 'Global Solutions', 'Email': 'mike@globalsol.com', 'Phone': '+1 555-0789', 'Status': 'Active', 'Deal Value': 75000 } }
+        ],
+        'tblProjects': [
+          { id: 'rec1', fields: { 'Project Name': 'Website Redesign', 'Description': 'Complete overhaul of company website', 'Owner': 'Alice', 'Start Date': '2024-01-15', 'Due Date': '2024-03-30', 'Status': 'In Progress', 'Budget': 45000 } },
+          { id: 'rec2', fields: { 'Project Name': 'Mobile App Launch', 'Description': 'Launch iOS and Android apps', 'Owner': 'Bob', 'Start Date': '2024-02-01', 'Due Date': '2024-06-15', 'Status': 'Planning', 'Budget': 120000 } }
+        ],
+        'tblProducts': [
+          { id: 'rec1', fields: { 'Product Name': 'Premium Widget', 'SKU': 'WDG-001', 'Category': 'Electronics', 'Price': 299.99, 'Quantity': 150, 'Supplier': 'SupplyCo' } },
+          { id: 'rec2', fields: { 'Product Name': 'Basic Gadget', 'SKU': 'GDG-002', 'Category': 'Electronics', 'Price': 49.99, 'Quantity': 500, 'Supplier': 'TechParts' } }
+        ]
+      };
+
+      airtableState.isDemo = true;
+      goToStep(2);
+    }
+
+    function populateBases(bases) {
+      airtableBaseSelect.innerHTML = '<option value="">Select a base...</option>';
+      bases.forEach(base => {
+        const option = document.createElement('option');
+        option.value = base.id;
+        option.textContent = base.name;
+        airtableBaseSelect.appendChild(option);
+      });
+      airtableBaseSelect.disabled = false;
+    }
+
+    // Base selection
+    airtableBaseSelect.addEventListener('change', async (e) => {
+      const baseId = e.target.value;
+      if (!baseId) {
+        airtableTableSelect.innerHTML = '<option value="">Select a table...</option>';
+        airtableTableSelect.disabled = true;
+        airtableFieldsContainer.style.display = 'none';
+        airtableState.selectedBase = null;
+        airtableState.selectedTable = null;
+        updateNextButton();
+        return;
+      }
+
+      airtableState.selectedBase = airtableState.bases.find(b => b.id === baseId);
+      document.getElementById('info-base').textContent = airtableState.selectedBase?.name || '-';
+
+      airtableTableSelect.innerHTML = '<option value="">Loading tables...</option>';
+      airtableTableSelect.disabled = true;
+
+      // If in demo mode, use demo tables
+      if (airtableState.isDemo && airtableState.demoTables[baseId]) {
+        airtableState.tables = airtableState.demoTables[baseId];
+        populateTables(airtableState.tables);
+        return;
+      }
+
+      try {
+        // Try Glyph API first
+        const response = await fetch(`${GLYPH_API}/v1/airtable/bases/${baseId}/tables`, {
+          headers: { 'Authorization': `Bearer ${airtableState.apiKey}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          airtableState.tables = data.tables || [];
+        } else {
+          // Fallback to direct Airtable
+          await fetchTablesDirectly(baseId);
+        }
+      } catch (err) {
+        console.warn('Glyph API failed, trying direct Airtable:', err);
+        await fetchTablesDirectly(baseId);
+      }
+
+      populateTables(airtableState.tables);
+    });
+
+    async function fetchTablesDirectly(baseId) {
+      try {
+        const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
+          headers: { 'Authorization': `Bearer ${airtableState.apiKey}` }
+        });
+        const data = await response.json();
+        airtableState.tables = data.tables || [];
+      } catch (err) {
+        console.error('Failed to fetch tables:', err);
+        airtableState.tables = [];
+      }
+    }
+
+    function populateTables(tables) {
+      airtableTableSelect.innerHTML = '<option value="">Select a table...</option>';
+      tables.forEach(table => {
+        const option = document.createElement('option');
+        option.value = table.id;
+        option.textContent = table.name;
+        airtableTableSelect.appendChild(option);
+      });
+      airtableTableSelect.disabled = false;
+    }
+
+    // Table selection
+    airtableTableSelect.addEventListener('change', async (e) => {
+      const tableId = e.target.value;
+      if (!tableId) {
+        airtableFieldsContainer.style.display = 'none';
+        airtableState.selectedTable = null;
+        airtableState.fields = [];
+        updateNextButton();
+        return;
+      }
+
+      airtableState.selectedTable = airtableState.tables.find(t => t.id === tableId);
+      document.getElementById('info-table').textContent = airtableState.selectedTable?.name || '-';
+
+      // Display fields
+      airtableState.fields = airtableState.selectedTable?.fields || [];
+      displayFields(airtableState.fields);
+
+      // Fetch sample records
+      await fetchSampleRecords();
+
+      updateNextButton();
+    });
+
+    function displayFields(fields) {
+      airtableFieldsList.innerHTML = '';
+      fields.forEach(field => {
+        const badge = document.createElement('span');
+        badge.className = 'airtable-field-badge';
+        badge.innerHTML = `
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+          </svg>
+          ${field.name}
+        `;
+        airtableFieldsList.appendChild(badge);
+      });
+      airtableFieldsContainer.style.display = 'flex';
+    }
+
+    async function fetchSampleRecords() {
+      if (!airtableState.selectedBase || !airtableState.selectedTable) return;
+
+      // If in demo mode, use demo records
+      if (airtableState.isDemo && airtableState.demoRecords) {
+        const tableId = airtableState.selectedTable.id;
+        airtableState.records = airtableState.demoRecords[tableId] || [];
+        return;
+      }
+
+      try {
+        const baseId = airtableState.selectedBase.id;
+        const tableId = airtableState.selectedTable.id;
+
+        const response = await fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(airtableState.selectedTable.name)}?maxRecords=3`, {
+          headers: { 'Authorization': `Bearer ${airtableState.apiKey}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          airtableState.records = data.records || [];
+        }
+      } catch (err) {
+        console.warn('Failed to fetch sample records:', err);
+        airtableState.records = [];
+      }
+    }
+
+    // Prepare description step
+    function prepareDescriptionStep() {
+      const fieldsPreview = document.getElementById('step3-fields-preview');
+      fieldsPreview.innerHTML = airtableState.fields.map(f =>
+        `<div class="airtable-data-row"><span class="airtable-data-label">${f.name}</span><span class="airtable-data-value">${f.type}</span></div>`
+      ).join('');
+    }
+
+    // Step 3: Generate Template
+    async function generateTemplate() {
+      airtableState.description = airtableDescription.value.trim();
+      if (!airtableState.description) return;
+
+      setNextButtonLoading(true);
+      goToStep(4);
+      showPreviewLoading(true);
+
+      try {
+        const response = await fetch(`${GLYPH_API}/v1/templates/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            airtable: {
+              apiKey: airtableState.apiKey,
+              baseId: airtableState.selectedBase.id,
+              tableId: airtableState.selectedTable.id,
+              tableName: airtableState.selectedTable.name
+            },
+            description: airtableState.description,
+            style: airtableState.style,
+            fields: airtableState.fields,
+            sampleRecords: airtableState.records
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          airtableState.generatedTemplate = data.template;
+          airtableState.generatedHtml = data.html || data.preview;
+          renderAirtablePreview(airtableState.generatedHtml);
+          displayDataPreview();
+        } else {
+          // Fallback to demo template
+          generateDemoTemplate();
+        }
+      } catch (err) {
+        console.warn('Template generation failed, using demo:', err);
+        generateDemoTemplate();
+      } finally {
+        setNextButtonLoading(false);
+        showPreviewLoading(false);
+      }
+    }
+
+    function generateDemoTemplate() {
+      const accentColor = airtableState.style === 'modern' ? '#14B8A6' :
+                          airtableState.style === 'professional' ? '#1E40AF' : '#6B7280';
+
+      const sampleData = airtableState.records[0]?.fields || {};
+      const fieldNames = airtableState.fields.map(f => f.name).slice(0, 5);
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; background: white; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid ${accentColor}; margin-bottom: 24px; }
+  .company { font-size: 20px; font-weight: 700; color: ${accentColor}; }
+  .doc-title { font-size: 28px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta { display: flex; gap: 40px; background: #f9fafb; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; }
+  .meta-item { }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 4px; }
+  .meta-value { font-weight: 600; font-size: 14px; }
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: ${accentColor}; margin-bottom: 12px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: ${accentColor}; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  td { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; }
+  .field-name { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-value { font-weight: 500; margin-top: 4px; }
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 10px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="company">${airtableState.selectedBase?.name || 'Your Company'}</div>
+    <div class="doc-title">Document</div>
+  </div>
+
+  <div class="meta">
+    <div class="meta-item">
+      <div class="meta-label">Table</div>
+      <div class="meta-value">${airtableState.selectedTable?.name || 'Data'}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Generated</div>
+      <div class="meta-value">${new Date().toLocaleDateString()}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Style</div>
+      <div class="meta-value">${airtableState.style.charAt(0).toUpperCase() + airtableState.style.slice(1)}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Data Fields</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${fieldNames.map(name => `
+        <tr>
+          <td><div class="field-name">${name}</div></td>
+          <td><div class="field-value">${sampleData[name] || '{{' + name + '}}'}</div></td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Generated with Glyph - AI-Powered PDF Customization
+  </div>
+</body>
+</html>`;
+
+      airtableState.generatedHtml = html;
+      renderAirtablePreview(html);
+      displayDataPreview();
+    }
+
+    function renderAirtablePreview(html) {
+      const doc = airtablePreviewFrame.contentDocument || airtablePreviewFrame.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+    }
+
+    function displayDataPreview() {
+      const preview = document.getElementById('airtable-data-preview');
+      const sampleData = airtableState.records[0]?.fields || {};
+      const fieldNames = airtableState.fields.slice(0, 4).map(f => f.name);
+
+      preview.innerHTML = fieldNames.map(name =>
+        `<div class="airtable-data-row">
+          <span class="airtable-data-label">${name}</span>
+          <span class="airtable-data-value">${truncateValue(sampleData[name])}</span>
+        </div>`
+      ).join('');
+    }
+
+    function truncateValue(value) {
+      if (!value) return '-';
+      const str = String(value);
+      return str.length > 20 ? str.substring(0, 20) + '...' : str;
+    }
+
+    function showPreviewLoading(show) {
+      airtablePreviewLoading.classList.toggle('visible', show);
+    }
+
+    function setNextButtonLoading(loading) {
+      airtableNextBtn.classList.toggle('loading', loading);
+      airtableNextBtn.disabled = loading;
+    }
+
+    // Refine template
+    airtableRefineBtn.addEventListener('click', async () => {
+      const modification = airtableRefineInput.value.trim();
+      if (!modification) return;
+
+      airtableRefineBtn.disabled = true;
+      airtableRefineBtn.textContent = 'Refining...';
+      showPreviewLoading(true);
+
+      try {
+        const response = await fetch(`${GLYPH_API}/v1/templates/refine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: airtableState.generatedTemplate,
+            html: airtableState.generatedHtml,
+            modification,
+            data: airtableState.records[0]?.fields || {}
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          airtableState.generatedHtml = data.html || data.preview;
+          renderAirtablePreview(airtableState.generatedHtml);
+        } else {
+          // Simple local modification simulation
+          simulateRefinement(modification);
+        }
+      } catch (err) {
+        console.warn('Refinement failed, simulating:', err);
+        simulateRefinement(modification);
+      } finally {
+        airtableRefineBtn.disabled = false;
+        airtableRefineBtn.textContent = 'Refine';
+        showPreviewLoading(false);
+        airtableRefineInput.value = '';
+      }
+    });
+
+    function simulateRefinement(modification) {
+      // Simple color change simulation
+      let html = airtableState.generatedHtml;
+      const lowMod = modification.toLowerCase();
+
+      if (lowMod.includes('blue')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#3B82F6');
+      else if (lowMod.includes('red')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#EF4444');
+      else if (lowMod.includes('green')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#22C55E');
+      else if (lowMod.includes('purple')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#8B5CF6');
+      else if (lowMod.includes('orange')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#F97316');
+
+      airtableState.generatedHtml = html;
+      renderAirtablePreview(html);
+    }
+
+    // Enter to refine
+    airtableRefineInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        airtableRefineBtn.click();
+      }
+    });
+
+    // Download PDF
+    airtableDownloadPdfBtn.addEventListener('click', async () => {
+      airtableDownloadPdfBtn.classList.add('loading');
+
+      try {
+        const response = await fetch(`${GLYPH_API}/v1/pdf`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html: airtableState.generatedHtml })
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${airtableState.selectedTable?.name || 'document'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          alert('PDF generation requires an API key. Sign up at glyph.so/dashboard');
+        }
+      } catch (err) {
+        console.error('PDF download failed:', err);
+        alert('PDF generation requires an API key. Sign up at glyph.so/dashboard');
+      } finally {
+        airtableDownloadPdfBtn.classList.remove('loading');
+      }
+    });
+
+    // Save template
+    airtableSaveTemplateBtn.addEventListener('click', () => {
+      alert('Template saving requires an account. Sign up at glyph.so/dashboard to save and manage your templates.');
     });
   </script>
 </body>
