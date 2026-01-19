@@ -2433,6 +2433,110 @@
       animation: spin 0.8s linear infinite;
     }
 
+    /* Batch Generation Styles */
+    .airtable-batch-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .airtable-batch-description {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+
+    .airtable-batch-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .airtable-batch-select-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .airtable-batch-select-row label {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      min-width: 60px;
+    }
+
+    .airtable-batch-select,
+    .airtable-batch-input {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 6px;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+
+    .airtable-batch-select:focus,
+    .airtable-batch-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    .airtable-batch-count {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      text-align: center;
+      padding: 8px;
+      background: var(--color-bg);
+      border-radius: 6px;
+    }
+
+    .airtable-batch-count span {
+      font-weight: 600;
+      color: var(--color-primary-bright);
+    }
+
+    .airtable-btn--batch {
+      width: 100%;
+      background: linear-gradient(135deg, var(--color-primary), #8B5CF6);
+      color: white;
+      font-weight: 600;
+    }
+
+    .airtable-btn--batch:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-primary-bright), #A78BFA);
+    }
+
+    .airtable-batch-progress {
+      margin-top: 16px;
+    }
+
+    .airtable-progress-bar {
+      height: 8px;
+      background: var(--color-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .airtable-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-primary), #8B5CF6);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .airtable-progress-text {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .airtable-progress-text span {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
     /* Modal Footer */
     .airtable-modal__footer {
       display: flex;
@@ -3780,6 +3884,51 @@
                   </svg>
                   Save Template
                 </button>
+              </div>
+
+              <!-- Batch Generation Section -->
+              <div class="airtable-batch-section">
+                <div class="airtable-info-card__title">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                  </svg>
+                  Batch Generate
+                </div>
+                <p class="airtable-batch-description">Generate PDFs for all records in your table at once</p>
+
+                <div class="airtable-batch-controls">
+                  <div class="airtable-batch-select-row">
+                    <label for="batch-view-select">View:</label>
+                    <select id="batch-view-select" class="airtable-batch-select">
+                      <option value="">All records</option>
+                    </select>
+                  </div>
+
+                  <div class="airtable-batch-select-row">
+                    <label for="batch-filename">Filename:</label>
+                    <input type="text" id="batch-filename" class="airtable-batch-input" placeholder="invoice-{{fields.Invoice Number}}.pdf" />
+                  </div>
+
+                  <div class="airtable-batch-count">
+                    <span id="batch-record-count">0</span> records will be generated
+                  </div>
+                </div>
+
+                <button class="airtable-btn airtable-btn--batch" id="batch-generate-btn" disabled>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                  </svg>
+                  <span id="batch-btn-text">Generate All PDFs</span>
+                </button>
+
+                <div class="airtable-batch-progress" id="batch-progress" style="display: none;">
+                  <div class="airtable-progress-bar">
+                    <div class="airtable-progress-fill" id="batch-progress-fill" style="width: 0%"></div>
+                  </div>
+                  <div class="airtable-progress-text">
+                    <span id="batch-completed">0</span> / <span id="batch-total">0</span> complete
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -5171,6 +5320,251 @@
     airtableSaveTemplateBtn.addEventListener('click', () => {
       alert('Template saving requires an account. Sign up at glyph.so/dashboard to save and manage your templates.');
     });
+
+    // ==============================================
+    // Batch Generation
+    // ==============================================
+    const batchViewSelect = document.getElementById('batch-view-select');
+    const batchFilenameInput = document.getElementById('batch-filename');
+    const batchRecordCount = document.getElementById('batch-record-count');
+    const batchGenerateBtn = document.getElementById('batch-generate-btn');
+    const batchBtnText = document.getElementById('batch-btn-text');
+    const batchProgress = document.getElementById('batch-progress');
+    const batchProgressFill = document.getElementById('batch-progress-fill');
+    const batchCompleted = document.getElementById('batch-completed');
+    const batchTotal = document.getElementById('batch-total');
+
+    let batchJobId = null;
+    let batchPollInterval = null;
+
+    // Load views when entering step 4
+    async function loadBatchViews() {
+      if (!airtableState.apiKey || !airtableState.selectedBase || !airtableState.selectedTable) {
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({
+          apiKey: airtableState.apiKey,
+          baseId: airtableState.selectedBase.id,
+          tableId: airtableState.selectedTable.id
+        });
+
+        const response = await fetch(`${GLYPH_API}/v1/templates/views?${params}`);
+        if (response.ok) {
+          const data = await response.json();
+          batchViewSelect.innerHTML = '<option value="">All records</option>';
+          (data.views || []).forEach(view => {
+            const option = document.createElement('option');
+            option.value = view.name;
+            option.textContent = view.name;
+            batchViewSelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load views:', err);
+      }
+
+      // Set default filename based on table name
+      if (airtableState.selectedTable) {
+        batchFilenameInput.value = `${airtableState.selectedTable.name.toLowerCase().replace(/\s+/g, '-')}-{{fields.Name}}.pdf`;
+      }
+
+      // Load initial record count
+      await updateRecordCount();
+    }
+
+    // Update record count when view changes
+    batchViewSelect.addEventListener('change', updateRecordCount);
+
+    async function updateRecordCount() {
+      if (!airtableState.apiKey || !airtableState.selectedBase || !airtableState.selectedTable) {
+        batchRecordCount.textContent = '0';
+        batchGenerateBtn.disabled = true;
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({
+          apiKey: airtableState.apiKey,
+          baseId: airtableState.selectedBase.id,
+          tableId: airtableState.selectedTable.id
+        });
+        if (batchViewSelect.value) {
+          params.append('view', batchViewSelect.value);
+        }
+
+        const response = await fetch(`${GLYPH_API}/v1/templates/count?${params}`);
+        if (response.ok) {
+          const data = await response.json();
+          batchRecordCount.textContent = data.count || 0;
+          batchGenerateBtn.disabled = (data.count || 0) === 0;
+          batchBtnText.textContent = `Generate All PDFs (${data.count} records)`;
+        }
+      } catch (err) {
+        console.warn('Failed to get record count:', err);
+        batchRecordCount.textContent = '?';
+      }
+    }
+
+    // Generate batch PDFs
+    batchGenerateBtn.addEventListener('click', async () => {
+      if (!airtableState.generatedHtml || !airtableState.apiKey) {
+        alert('Please generate a template first');
+        return;
+      }
+
+      const recordCount = parseInt(batchRecordCount.textContent) || 0;
+      if (recordCount === 0) {
+        alert('No records to generate');
+        return;
+      }
+
+      // Disable button and show progress
+      batchGenerateBtn.disabled = true;
+      batchGenerateBtn.classList.add('loading');
+      batchBtnText.textContent = 'Starting...';
+      batchProgress.style.display = 'block';
+      batchProgressFill.style.width = '0%';
+      batchCompleted.textContent = '0';
+      batchTotal.textContent = recordCount;
+
+      const requestBody = {
+        template: airtableState.generatedHtml,
+        airtable: {
+          apiKey: airtableState.apiKey,
+          baseId: airtableState.selectedBase.id,
+          tableId: airtableState.selectedTable.id,
+          view: batchViewSelect.value || undefined,
+          maxRecords: recordCount
+        },
+        output: {
+          filename: batchFilenameInput.value || `document-{{record.id}}.pdf`
+        }
+      };
+
+      try {
+        // For small batches (<=20), use sync endpoint
+        if (recordCount <= 20) {
+          batchBtnText.textContent = 'Generating...';
+          const response = await fetch(`${GLYPH_API}/v1/templates/batch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            downloadBlob(blob, `batch-${Date.now()}.zip`);
+            batchProgressFill.style.width = '100%';
+            batchCompleted.textContent = recordCount;
+            batchBtnText.textContent = 'Download Complete!';
+          } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Batch generation failed');
+          }
+        } else {
+          // For large batches, use async endpoint with polling
+          batchBtnText.textContent = 'Starting batch job...';
+          const startResponse = await fetch(`${GLYPH_API}/v1/templates/batch/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!startResponse.ok) {
+            const error = await startResponse.json();
+            throw new Error(error.error || 'Failed to start batch job');
+          }
+
+          const startData = await startResponse.json();
+          batchJobId = startData.jobId;
+          batchBtnText.textContent = 'Processing...';
+
+          // Start polling for status
+          batchPollInterval = setInterval(pollBatchStatus, 2000);
+        }
+      } catch (err) {
+        console.error('Batch generation error:', err);
+        alert(err.message || 'Batch generation failed');
+        resetBatchUI();
+      }
+    });
+
+    async function pollBatchStatus() {
+      if (!batchJobId) return;
+
+      try {
+        const response = await fetch(`${GLYPH_API}/v1/templates/batch/${batchJobId}`);
+        if (!response.ok) {
+          throw new Error('Failed to get job status');
+        }
+
+        const data = await response.json();
+
+        // Update progress
+        batchCompleted.textContent = data.completed;
+        batchTotal.textContent = data.total;
+        batchProgressFill.style.width = `${data.progress}%`;
+        batchBtnText.textContent = `Processing... ${data.progress}%`;
+
+        if (data.status === 'completed') {
+          clearInterval(batchPollInterval);
+          batchBtnText.textContent = 'Downloading...';
+
+          // Download the ZIP
+          const downloadResponse = await fetch(`${GLYPH_API}/v1/templates/batch/${batchJobId}/download`);
+          if (downloadResponse.ok) {
+            const blob = await downloadResponse.blob();
+            downloadBlob(blob, `batch-${batchJobId}.zip`);
+            batchBtnText.textContent = 'Download Complete!';
+          }
+
+          setTimeout(resetBatchUI, 3000);
+        } else if (data.status === 'failed') {
+          clearInterval(batchPollInterval);
+          throw new Error('Batch job failed');
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+        clearInterval(batchPollInterval);
+        alert('Batch processing failed');
+        resetBatchUI();
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function resetBatchUI() {
+      batchGenerateBtn.disabled = false;
+      batchGenerateBtn.classList.remove('loading');
+      const count = batchRecordCount.textContent;
+      batchBtnText.textContent = `Generate All PDFs (${count} records)`;
+      batchProgress.style.display = 'none';
+      batchJobId = null;
+      if (batchPollInterval) {
+        clearInterval(batchPollInterval);
+        batchPollInterval = null;
+      }
+    }
+
+    // Extend goToStep to load batch views when entering step 4
+    const originalGoToStep = goToStep;
+    goToStep = function(step) {
+      originalGoToStep(step);
+      if (step === 4) {
+        loadBatchViews();
+      }
+    };
   </script>
 </body>
 </html>

@@ -63,7 +63,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.3.0",
+    version: "0.4.0",
     timestamp: new Date().toISOString(),
   });
 });
@@ -72,7 +72,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.3.0",
+    version: "0.4.0",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",
@@ -91,6 +91,13 @@ app.get("/", (c) => {
       templateRefine: "POST /v1/templates/refine",
       templatePreview: "POST /v1/templates/preview",
       templateStyles: "GET /v1/templates/styles",
+      // Batch PDF generation
+      batchSync: "POST /v1/templates/batch",
+      batchStart: "POST /v1/templates/batch/start",
+      batchStatus: "GET /v1/templates/batch/:jobId",
+      batchDownload: "GET /v1/templates/batch/:jobId/download",
+      views: "GET /v1/templates/views",
+      recordCount: "GET /v1/templates/count",
     },
   });
 });
@@ -155,7 +162,7 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.3.0              ║
+  ║         Glyph API v0.4.0              ║
   ║   Document Generation & AI Editing    ║
   ╚═══════════════════════════════════════╝
 
@@ -180,6 +187,14 @@ console.log(`
     POST /v1/templates/refine    - Modify with natural language
     POST /v1/templates/preview   - Render with data
     GET  /v1/templates/styles    - List style presets
+
+  Batch PDF Generation:
+    POST /v1/templates/batch              - Generate PDFs (small batches, returns ZIP)
+    POST /v1/templates/batch/start        - Start async batch job
+    GET  /v1/templates/batch/:jobId       - Get job status
+    GET  /v1/templates/batch/:jobId/download - Download completed ZIP
+    GET  /v1/templates/views              - Get table views
+    GET  /v1/templates/count              - Get record count
 `);
 
 // Also export for Bun compatibility
