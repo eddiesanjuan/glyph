@@ -23,6 +23,7 @@ import dashboard from "./routes/dashboard.js";
 import keys from "./routes/keys.js";
 import airtable from "./routes/airtable.js";
 import templates from "./routes/templates.js";
+import webhooks from "./routes/webhooks.js";
 
 const app = new Hono();
 
@@ -53,6 +54,13 @@ app.use(
   })
 );
 
+// Public webhook routes BEFORE auth middleware
+// Import public webhook handlers from the webhooks route file
+import webhooksPublic from "./routes/webhooks-public.js";
+
+// Mount public webhook routes BEFORE auth middleware
+app.route("/v1/webhooks", webhooksPublic);
+
 // Authentication first (to get tier info for rate limiting)
 app.use("/v1/*", authMiddleware);
 
@@ -63,7 +71,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.4.0",
+    version: "0.5.0",
     timestamp: new Date().toISOString(),
   });
 });
@@ -72,7 +80,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.4.0",
+    version: "0.5.0",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",
@@ -98,6 +106,14 @@ app.get("/", (c) => {
       batchDownload: "GET /v1/templates/batch/:jobId/download",
       views: "GET /v1/templates/views",
       recordCount: "GET /v1/templates/count",
+      // Webhook automation
+      webhookCreate: "POST /v1/webhooks",
+      webhookList: "GET /v1/webhooks",
+      webhookGet: "GET /v1/webhooks/:id",
+      webhookDelete: "DELETE /v1/webhooks/:id",
+      webhookReceive: "POST /v1/webhooks/airtable/:id",
+      webhookPdf: "GET /v1/webhooks/pdfs/:id",
+      webhookTest: "GET /v1/webhooks/test/:id",
     },
   });
 });
@@ -115,6 +131,8 @@ app.route("/v1/keys", keys);
 app.route("/v1/airtable", airtable);
 // AI-powered template generation
 app.route("/v1/templates", templates);
+// Webhook automation
+app.route("/v1/webhooks", webhooks);
 
 // 404 handler
 app.notFound((c) => {
@@ -162,7 +180,7 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.4.0              ║
+  ║         Glyph API v0.5.0              ║
   ║   Document Generation & AI Editing    ║
   ╚═══════════════════════════════════════╝
 
@@ -195,6 +213,15 @@ console.log(`
     GET  /v1/templates/batch/:jobId/download - Download completed ZIP
     GET  /v1/templates/views              - Get table views
     GET  /v1/templates/count              - Get record count
+
+  Webhook Automation:
+    POST /v1/webhooks                     - Create webhook configuration
+    GET  /v1/webhooks                     - List all webhooks
+    GET  /v1/webhooks/:id                 - Get webhook details
+    DELETE /v1/webhooks/:id               - Delete webhook
+    POST /v1/webhooks/airtable/:id        - Receive Airtable trigger (public)
+    GET  /v1/webhooks/pdfs/:id            - Download generated PDF
+    GET  /v1/webhooks/test/:id            - Test webhook with sample data
 `);
 
 // Also export for Bun compatibility

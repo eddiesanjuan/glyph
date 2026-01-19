@@ -81,3 +81,80 @@ export interface ApiError {
   code: string;
   details?: unknown;
 }
+
+// =============================================================================
+// Webhook Types
+// =============================================================================
+
+export interface WebhookConfig {
+  id: string;                          // webhook_xxx
+  templateHtml: string;                // Saved template with Mustache placeholders
+  airtable: {
+    baseId: string;
+    tableId: string;
+    apiKey?: string;                   // Optional: stored encrypted for auto-fetch
+  };
+  filenameTemplate: string;            // e.g., "invoice-{{fields.Invoice Number}}.pdf"
+  actions: ('created' | 'updated')[];  // Which actions trigger PDF generation
+  delivery: {
+    type: 'url' | 'email' | 'storage';
+    destination?: string;              // URL to POST, email address, or storage path
+  };
+  pdfOptions?: {
+    format?: 'letter' | 'a4';
+    landscape?: boolean;
+    scale?: number;
+  };
+  createdAt: Date;
+  lastTriggeredAt?: Date;
+  triggerCount: number;
+}
+
+export interface WebhookCreateRequest {
+  template: string;                    // HTML template with Mustache placeholders
+  airtable: {
+    baseId: string;
+    tableId: string;
+    apiKey?: string;                   // Optional: for auto-fetching full record
+  };
+  filenameTemplate?: string;           // Default: "document-{{record.id}}.pdf"
+  actions?: ('created' | 'updated')[];
+  delivery?: {
+    type: 'url' | 'email' | 'storage';
+    destination?: string;
+  };
+  pdfOptions?: {
+    format?: 'letter' | 'a4';
+    landscape?: boolean;
+    scale?: number;
+  };
+}
+
+export interface WebhookCreateResponse {
+  id: string;
+  webhookUrl: string;
+  instructions: {
+    summary: string;
+    steps: string[];
+    airtableScript: string;
+  };
+}
+
+export interface AirtableWebhookPayload {
+  base?: { id: string };
+  table?: { id: string };
+  record: {
+    id: string;
+    fields: Record<string, unknown>;
+  };
+  action?: 'created' | 'updated';
+  timestamp?: string;
+}
+
+export interface WebhookResponse {
+  success: boolean;
+  pdfUrl?: string;
+  filename?: string;
+  error?: string;
+  processingTimeMs?: number;
+}
