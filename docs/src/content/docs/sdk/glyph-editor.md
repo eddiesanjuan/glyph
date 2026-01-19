@@ -257,7 +257,7 @@ The component handles errors gracefully:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quote Generator</title>
-  <script src="https://cdn.glyph.so/v1.js"></script>
+  <script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
   <style>
     body {
       font-family: system-ui, sans-serif;

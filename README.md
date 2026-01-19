@@ -5,7 +5,7 @@ AI-powered PDF customization. 2 lines of code. Unlimited possibilities.
 ## Quick Start
 
 ```html
-<script src="https://cdn.glyph.so/v1.js"></script>
+<script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
 <glyph-editor api-key="gk_xxx" template="quote-modern" :data="quoteData" />
 ```
 
