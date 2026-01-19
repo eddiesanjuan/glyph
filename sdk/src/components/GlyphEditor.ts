@@ -764,6 +764,13 @@ export class GlyphEditor extends HTMLElement {
       this.currentHtml = result.html;
       this.renderPreview();
 
+      // Clear region selection after successful modification
+      this.selectedRegion = null;
+      const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+      if (input) {
+        input.placeholder = 'Describe what you want to change...';
+      }
+
       // Show success state on pill
       if (pillElement) {
         pillElement.classList.remove('loading');
@@ -775,7 +782,7 @@ export class GlyphEditor extends HTMLElement {
 
       const changeMessage = result.changes?.[0] || 'Changes applied successfully';
       this.showToast(changeMessage);
-      this.emit('glyph:modified', { command, changes: result.changes, region: this.selectedRegion });
+      this.emit('glyph:modified', { command, changes: result.changes });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to apply changes';
       this.showToast(message, true);
