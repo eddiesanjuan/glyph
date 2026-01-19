@@ -4538,16 +4538,16 @@
         td { border-bottom: 1px solid #d2d2d7; }
       ` : '';
 
-      return \`<!DOCTYPE html>
+      return `<!DOCTYPE html>
 <html>
 <head>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; position: relative; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid \${accentColor}; margin-bottom: 20px; }
-  .company { font-size: 18px; font-weight: 700; color: \${accentColor}; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid ${accentColor}; margin-bottom: 20px; }
+  .company { font-size: 18px; font-weight: 700; color: ${accentColor}; }
   .company-address { font-size: 11px; color: #666; margin-top: 4px; white-space: pre-line; }
-  .title { font-size: 24px; font-weight: 700; color: \${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
+  .title { font-size: 24px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
   .meta { display: flex; gap: 32px; background: #f9fafb; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; }
   .meta-item { text-align: center; }
   .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 4px; }
@@ -4558,7 +4558,7 @@
   .client-company { color: #666; margin-top: 4px; }
   .client-email { color: #666; font-size: 11px; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: \${accentColor}; color: white; padding: 10px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  th { background: ${accentColor}; color: white; padding: 10px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
   th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: right; }
   td { padding: 12px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
   td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align: right; }
@@ -4567,45 +4567,45 @@
   .totals { display: flex; justify-content: flex-end; margin-top: 20px; }
   .totals-table { width: 200px; }
   .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
-  .totals-row.total { border-top: 2px solid \${accentColor}; border-bottom: none; padding-top: 10px; margin-top: 4px; }
+  .totals-row.total { border-top: 2px solid ${accentColor}; border-bottom: none; padding-top: 10px; margin-top: 4px; }
   .totals-label { color: #666; }
   .totals-value { font-weight: 500; }
-  .totals-row.total .totals-label, .totals-row.total .totals-value { font-weight: 700; color: \${accentColor}; }
-  \${stripeStyles}
-  \${appleStyles}
+  .totals-row.total .totals-label, .totals-row.total .totals-value { font-weight: 700; color: ${accentColor}; }
+  ${stripeStyles}
+  ${appleStyles}
 </style>
 </head>
 <body>
-  \${watermarkHtml}
-  \${qrCodeHtml}
+  ${watermarkHtml}
+  ${qrCodeHtml}
   <div class="header">
     <div>
-      <div class="company">\${data.branding.companyName}</div>
-      <div class="company-address">\${data.branding.companyAddress}</div>
+      <div class="company">${data.branding.companyName}</div>
+      <div class="company-address">${data.branding.companyAddress}</div>
     </div>
-    <div class="title">\${isStripe ? 'Invoice' : 'Quote'}</div>
+    <div class="title">${isStripe ? 'Invoice' : 'Quote'}</div>
   </div>
 
   <div class="meta">
     <div class="meta-item">
       <div class="meta-label">Quote Number</div>
-      <div class="meta-value">\${data.meta.quoteNumber}</div>
+      <div class="meta-value">${data.meta.quoteNumber}</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">Date</div>
-      <div class="meta-value">\${data.meta.date}</div>
+      <div class="meta-value">${data.meta.date}</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">Valid Until</div>
-      <div class="meta-value">\${data.meta.validUntil}</div>
+      <div class="meta-value">${data.meta.validUntil}</div>
     </div>
   </div>
 
   <div class="client">
     <div class="client-label">Prepared For</div>
-    <div class="client-name">\${data.client.name}</div>
-    <div class="client-company">\${data.client.company}</div>
-    <div class="client-email">\${data.client.email}</div>
+    <div class="client-name">${data.client.name}</div>
+    <div class="client-company">${data.client.company}</div>
+    <div class="client-email">${data.client.email}</div>
   </div>
 
   <table>
@@ -4618,17 +4618,17 @@
       </tr>
     </thead>
     <tbody>
-      \${data.lineItems.map(item => \`
+      ${data.lineItems.map(item => `
       <tr>
         <td>
-          <div class="item-desc">\${item.description}</div>
-          <div class="item-details">\${item.details}</div>
+          <div class="item-desc">${item.description}</div>
+          <div class="item-details">${item.details}</div>
         </td>
-        <td>\${item.quantity}</td>
-        <td>$\${item.unitPrice}</td>
-        <td>$\${item.total}</td>
+        <td>${item.quantity}</td>
+        <td>$${item.unitPrice}</td>
+        <td>$${item.total}</td>
       </tr>
-      \`).join('')}
+      `).join('')}
     </tbody>
   </table>
 
@@ -4636,20 +4636,20 @@
     <div class="totals-table">
       <div class="totals-row">
         <span class="totals-label">Subtotal</span>
-        <span class="totals-value">$\${data.totals.subtotal}</span>
+        <span class="totals-value">$${data.totals.subtotal}</span>
       </div>
       <div class="totals-row total">
         <span class="totals-label">Total</span>
-        <span class="totals-value">$\${data.totals.total}</span>
+        <span class="totals-value">$${data.totals.total}</span>
       </div>
     </div>
   </div>
 
-  \${progressBarHtml}
-  \${termsHtml}
-  \${signatureHtml}
+  ${progressBarHtml}
+  ${termsHtml}
+  ${signatureHtml}
 </body>
-</html>\`;
+</html>`;
     }
 
     // Template switching
