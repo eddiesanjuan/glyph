@@ -108,9 +108,9 @@ export function validateModification(
   const issues: string[] = [];
 
   // Check all data-glyph-region attributes are preserved
-  const originalRegions =
+  const originalRegions: string[] =
     originalHtml.match(/data-glyph-region="[^"]+"/g) || [];
-  const modifiedRegions =
+  const modifiedRegions: string[] =
     modifiedHtml.match(/data-glyph-region="[^"]+"/g) || [];
 
   for (const region of originalRegions) {

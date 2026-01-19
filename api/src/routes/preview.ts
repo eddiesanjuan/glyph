@@ -9,6 +9,7 @@ import { zValidator } from "@hono/zod-validator";
 import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { QuoteData, PreviewResponse, ApiError } from "../lib/types.js";
+import "../types/hono.js"; // Import type extensions
 
 const preview = new Hono();
 
@@ -66,6 +67,8 @@ preview.post(
       };
       return c.json(error, 400);
     }
+    // Validation passed - continue to handler
+    return;
   }),
   async (c) => {
     try {

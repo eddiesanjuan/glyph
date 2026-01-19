@@ -7,8 +7,7 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getSupabase, supabase } from "../lib/supabase.js";
-import { generateApiKey } from "../middleware/auth.js";
-import { createHash } from "crypto";
+import "../types/hono.js"; // Import type extensions
 
 const dashboard = new Hono();
 
@@ -18,7 +17,6 @@ const dashboard = new Hono();
  */
 dashboard.get("/", async (c) => {
   const apiKeyId = c.get("apiKeyId");
-  const tier = c.get("tier");
   const monthlyLimit = c.get("monthlyLimit");
   const currentUsage = c.get("currentUsage");
 

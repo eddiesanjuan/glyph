@@ -21,6 +21,7 @@ import {
 } from "../services/guardrails.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
+import "../types/hono.js"; // Import type extensions
 
 const modify = new Hono();
 
