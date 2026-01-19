@@ -14,6 +14,11 @@ import {
   modifyHtml,
   validateModification,
 } from "../services/ai.js";
+import {
+  validatePrompt,
+  validateModification as validateGuardrails,
+  sanitizeHtml,
+} from "../services/guardrails.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
 
@@ -85,19 +90,56 @@ modify.post("/", async (c) => {
         return c.json({ error: "Session not found" }, 404);
       }
 
+      // GUARDRAIL: Validate prompt before calling AI
+      const promptValidation = validatePrompt(prompt);
+      if (!promptValidation.valid) {
+        const error: ApiError = {
+          error: promptValidation.reason || "Invalid prompt",
+          code: "GUARDRAIL_VIOLATION",
+          details: { category: promptValidation.category },
+        };
+        return c.json(error, 400);
+      }
+
       // Call Claude to modify
       const result = await modifyTemplate(session.current_html, prompt, region);
 
-      // Validate the modification
+      // GUARDRAIL: Validate the AI output
       const validation = validateModification(
         session.original_html,
         result.html
       );
 
-      if (!validation.valid) {
-        console.warn("Modification validation warnings:", validation.issues);
-        // Still return the result but log the warning
-        // In production, might want to reject or auto-fix
+      // Additional comprehensive guardrail validation
+      const guardrailValidation = validateGuardrails(
+        session.original_html,
+        result.html
+      );
+
+      // Combine validation results
+      const allIssues = [
+        ...validation.issues,
+        ...guardrailValidation.violations,
+      ];
+      const isFullyValid = validation.valid && guardrailValidation.valid;
+
+      if (!isFullyValid) {
+        console.warn("Guardrail violations detected:", allIssues);
+
+        // For critical violations (security), reject the modification
+        const criticalViolations = guardrailValidation.violations.filter(
+          (v) =>
+            v.includes("Script") ||
+            v.includes("JavaScript") ||
+            v.includes("iframe") ||
+            v.includes("event handler")
+        );
+
+        if (criticalViolations.length > 0) {
+          // Sanitize and use sanitized version
+          result.html = sanitizeHtml(result.html);
+          console.warn("Applied HTML sanitization due to:", criticalViolations);
+        }
       }
 
       // Update session with new HTML and modification history
@@ -144,8 +186,7 @@ modify.post("/", async (c) => {
         html: result.html,
         changes: result.changes,
         tokensUsed: result.tokensUsed,
-        validationWarnings:
-          validation.issues.length > 0 ? validation.issues : undefined,
+        validationWarnings: allIssues.length > 0 ? allIssues : undefined,
       });
     } else {
       // Direct HTML modification (legacy mode)
@@ -161,12 +202,46 @@ modify.post("/", async (c) => {
 
       const { html, instruction, context } = parsed.data;
 
+      // GUARDRAIL: Validate prompt before calling AI
+      const promptValidation = validatePrompt(instruction);
+      if (!promptValidation.valid) {
+        const error: ApiError = {
+          error: promptValidation.reason || "Invalid instruction",
+          code: "GUARDRAIL_VIOLATION",
+          details: { category: promptValidation.category },
+        };
+        return c.json(error, 400);
+      }
+
       // Call AI service to modify HTML
       const result = await modifyHtml({
         html,
         instruction,
         context,
       });
+
+      // GUARDRAIL: Validate the AI output
+      const guardrailValidation = validateGuardrails(html, result.html);
+
+      if (!guardrailValidation.valid) {
+        console.warn(
+          "Direct mode guardrail violations:",
+          guardrailValidation.violations
+        );
+
+        // For critical violations, sanitize
+        const criticalViolations = guardrailValidation.violations.filter(
+          (v) =>
+            v.includes("Script") ||
+            v.includes("JavaScript") ||
+            v.includes("iframe") ||
+            v.includes("event handler")
+        );
+
+        if (criticalViolations.length > 0) {
+          result.html = sanitizeHtml(result.html);
+        }
+      }
 
       // Track usage if Supabase is configured
       const apiKeyId = c.get("apiKeyId") as string | undefined;
@@ -185,7 +260,14 @@ modify.post("/", async (c) => {
           });
       }
 
-      return c.json(result);
+      return c.json({
+        html: result.html,
+        changes: result.changes,
+        validationWarnings:
+          guardrailValidation.violations.length > 0
+            ? guardrailValidation.violations
+            : undefined,
+      });
     }
   } catch (err) {
     console.error("Modify error:", err);

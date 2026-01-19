@@ -34,8 +34,23 @@ export const templateMetadata: Record<string, TemplateMetadata> = {
     regions: ['header', 'meta', 'client-info', 'line-items', 'totals', 'notes', 'footer'],
     schemaUrl: '/templates/quote-modern/schema.json',
   },
+  'quote-professional': {
+    id: 'quote-professional',
+    name: 'Professional Quote',
+    description: 'Traditional business style with formal serif typography, structured grid layout, and professional footer.',
+    category: 'quote',
+    regions: ['header', 'meta', 'client-info', 'line-items', 'totals', 'notes', 'footer'],
+    schemaUrl: '/templates/quote-professional/schema.json',
+  },
+  'quote-bold': {
+    id: 'quote-bold',
+    name: 'Bold Quote',
+    description: 'High-impact modern design with dark header, bold typography, and strong visual hierarchy.',
+    category: 'quote',
+    regions: ['header', 'meta', 'client-info', 'line-items', 'totals', 'notes', 'footer'],
+    schemaUrl: '/templates/quote-bold/schema.json',
+  },
   // Future templates:
-  // 'quote-classic': { ... },
   // 'invoice-modern': { ... },
   // 'proposal-executive': { ... },
 };
@@ -57,6 +72,34 @@ export const templateLoaders = {
       css: cssModule.default,
       schema: schemaModule.default,
       metadata: templateMetadata['quote-modern'],
+    };
+  },
+  'quote-professional': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./quote-professional/template.html?raw'),
+      import('./quote-professional/styles.css?raw'),
+      import('./quote-professional/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['quote-professional'],
+    };
+  },
+  'quote-bold': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./quote-bold/template.html?raw'),
+      import('./quote-bold/styles.css?raw'),
+      import('./quote-bold/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['quote-bold'],
     };
   },
 };

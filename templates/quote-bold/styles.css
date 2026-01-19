@@ -1,0 +1,250 @@
+/**
+ * Quote Bold Template Styles
+ *
+ * High-impact modern design with:
+ * - Dark header with bold typography
+ * - Strong visual hierarchy
+ * - Large totals emphasis
+ * - Impactful accent colors (blue #3b82f6)
+ * - Sans-serif fonts (Inter/SF Pro)
+ * - Minimal but powerful aesthetic
+ */
+
+@page {
+  size: letter;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #1f2937;
+  background: #fff;
+}
+
+.quote-document {
+  max-width: 8.5in;
+  margin: 0 auto;
+}
+
+/* Header - Dark, Bold */
+header[data-glyph-region="header"] {
+  background: #0f172a;
+  color: white;
+  padding: 40px 50px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.company-brand h1 {
+  font-size: 32pt;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.company-brand .tagline {
+  font-size: 11pt;
+  opacity: 0.7;
+  font-weight: 300;
+}
+
+.quote-badge {
+  background: #3b82f6;
+  padding: 15px 30px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.quote-badge .label {
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.quote-badge .number {
+  font-size: 20pt;
+  font-weight: 700;
+}
+
+/* Content Area */
+.content-area {
+  padding: 40px 50px;
+}
+
+/* Meta Strip */
+.meta-strip[data-glyph-region="meta"] {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.meta-item {
+  flex: 1;
+}
+
+.meta-item .label {
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.meta-item .value {
+  font-size: 14pt;
+  font-weight: 600;
+}
+
+/* Client Info Card */
+section[data-glyph-region="client-info"] {
+  background: #f8fafc;
+  padding: 25px 30px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+}
+
+.client-info .section-title {
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.client-info .client-name {
+  font-size: 18pt;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.client-info p {
+  color: #4b5563;
+}
+
+/* Line Items Table */
+table[data-glyph-region="line-items"] {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+}
+
+table th {
+  text-align: left;
+  padding: 15px 0;
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6b7280;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+table th:last-child,
+table td:last-child {
+  text-align: right;
+}
+
+table td {
+  padding: 20px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 12pt;
+}
+
+table td:first-child {
+  font-weight: 500;
+}
+
+table tr:hover td {
+  background: #f9fafb;
+}
+
+/* Totals Section - High Impact */
+section[data-glyph-region="totals"] {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  padding: 30px 40px;
+  border-radius: 16px;
+  margin-bottom: 40px;
+}
+
+.totals-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.totals-breakdown {
+  opacity: 0.9;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 60px;
+  margin-bottom: 8px;
+  font-size: 11pt;
+}
+
+.grand-total {
+  text-align: right;
+}
+
+.grand-total .label {
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.grand-total .amount {
+  font-size: 42pt;
+  font-weight: 800;
+  letter-spacing: -2px;
+  color: #3b82f6;
+}
+
+/* Notes Section */
+section[data-glyph-region="notes"] {
+  padding: 20px;
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 40px;
+}
+
+.notes .title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Footer */
+footer[data-glyph-region="footer"] {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 10pt;
+  padding: 30px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Print Optimization */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

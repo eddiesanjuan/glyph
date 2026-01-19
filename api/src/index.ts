@@ -11,7 +11,10 @@ import { HTTPException } from "hono/http-exception";
 import { serve } from "@hono/node-server";
 
 import { authMiddleware } from "./middleware/auth.js";
-import { rateLimitMiddleware, generateRateLimit, modifyRateLimit } from "./middleware/rateLimit.js";
+import {
+  rateLimitMiddleware,
+  monthlyLimitMiddleware,
+} from "./middleware/rateLimit.js";
 
 import preview from "./routes/preview.js";
 import modify from "./routes/modify.js";
@@ -25,18 +28,32 @@ app.use("*", prettyJSON());
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "https://*.glyph.dev"],
+    origin: (origin) => {
+      // Allow requests with no origin (like curl, mobile apps)
+      if (!origin) return origin;
+
+      // Allow localhost for development
+      if (origin.includes("localhost")) return origin;
+
+      // Allow glyph domains
+      if (origin.includes("glyph.so") || origin.includes("glyph.dev"))
+        return origin;
+
+      // In production, could restrict further
+      return origin; // Allow all for now during beta
+    },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
     maxAge: 86400,
   })
 );
 
-// Rate limiting
-app.use("/v1/*", rateLimitMiddleware());
-
-// Authentication (after rate limiting so we can rate limit by IP for auth errors)
+// Authentication first (to get tier info for rate limiting)
 app.use("/v1/*", authMiddleware);
+
+// Tier-based rate limiting (after auth so we have tier info)
+app.use("/v1/*", rateLimitMiddleware);
 
 // Health check (no auth required)
 app.get("/health", (c) => {
@@ -62,11 +79,11 @@ app.get("/", (c) => {
   });
 });
 
-// Mount routes with specific rate limits
+// Mount routes
 app.route("/v1/preview", preview);
-app.use("/v1/modify", modifyRateLimit);
 app.route("/v1/modify", modify);
-app.use("/v1/generate", generateRateLimit);
+// Apply monthly limit check before generate (actual PDF creation)
+app.use("/v1/generate", monthlyLimitMiddleware);
 app.route("/v1/generate", generate);
 
 // 404 handler

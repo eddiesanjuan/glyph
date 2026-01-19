@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.so/schemas/quote-professional.json",
+  "title": "QuoteData",
+  "description": "Data schema for the quote-professional template - traditional business style with formal typography",
+  "type": "object",
+  "required": ["meta", "client", "lineItems", "totals", "branding"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Quote metadata",
+      "required": ["quoteNumber", "date", "validUntil"],
+      "properties": {
+        "quoteNumber": {
+          "type": "string",
+          "description": "Unique quote identifier",
+          "examples": ["Q-2024-001", "12345"]
+        },
+        "date": {
+          "type": "string",
+          "description": "Quote creation date",
+          "examples": ["January 15, 2024", "2024-01-15"]
+        },
+        "validUntil": {
+          "type": "string",
+          "description": "Quote expiration date",
+          "examples": ["February 15, 2024", "2024-02-15"]
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or special instructions"
+        },
+        "terms": {
+          "type": "string",
+          "description": "Terms and conditions text"
+        },
+        "showSignature": {
+          "type": "boolean",
+          "description": "Whether to show signature lines",
+          "default": false
+        }
+      }
+    },
+    "client": {
+      "type": "object",
+      "description": "Client/recipient information",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Client name (person or business)",
+          "examples": ["John Smith", "Acme Corporation"]
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name (if different from name)"
+        },
+        "address": {
+          "type": "string",
+          "description": "Client address (supports multi-line with \\n)"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Client email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Client phone number"
+        }
+      }
+    },
+    "lineItems": {
+      "type": "array",
+      "description": "List of quoted items or services",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "quantity", "unitPrice", "total"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Item or service description"
+          },
+          "details": {
+            "type": "string",
+            "description": "Additional details or specifications"
+          },
+          "quantity": {
+            "type": ["number", "string"],
+            "description": "Quantity (number or formatted string)",
+            "examples": [1, 2.5, "10 hours"]
+          },
+          "unitPrice": {
+            "type": ["number", "string"],
+            "description": "Price per unit (number or formatted)",
+            "examples": [100, "100.00", "1,500.00"]
+          },
+          "total": {
+            "type": ["number", "string"],
+            "description": "Line total (quantity * unitPrice)",
+            "examples": [100, "100.00", "1,500.00"]
+          }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "description": "Quote totals and calculations",
+      "required": ["subtotal", "total"],
+      "properties": {
+        "subtotal": {
+          "type": ["number", "string"],
+          "description": "Sum of all line items before adjustments"
+        },
+        "discount": {
+          "type": ["number", "string"],
+          "description": "Discount amount (optional)"
+        },
+        "discountPercent": {
+          "type": "number",
+          "description": "Discount percentage for display"
+        },
+        "tax": {
+          "type": ["number", "string"],
+          "description": "Tax amount (optional)"
+        },
+        "taxRate": {
+          "type": "number",
+          "description": "Tax rate percentage for display",
+          "examples": [8.25, 10]
+        },
+        "total": {
+          "type": ["number", "string"],
+          "description": "Final total after all adjustments"
+        }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "description": "Company branding information",
+      "required": ["companyName"],
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to company logo image"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Company name to display"
+        },
+        "companyAddress": {
+          "type": "string",
+          "description": "Company address (supports multi-line with \\n)"
+        }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "description": "Optional style customizations",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "description": "Primary accent color (CSS color value)",
+          "default": "#1a365d",
+          "examples": ["#1a365d", "#2c3e50", "#1e3a5f"]
+        },
+        "fontFamily": {
+          "type": "string",
+          "description": "Font family override (default: Georgia, Times New Roman, serif)"
+        },
+        "fontSize": {
+          "type": "string",
+          "description": "Base font size",
+          "default": "11pt"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "meta": {
+        "quoteNumber": "Q-2024-001",
+        "date": "January 15, 2024",
+        "validUntil": "February 15, 2024",
+        "notes": "Price includes standard shipping. Express shipping available upon request.",
+        "terms": "Payment due within 30 days of invoice date. All prices in USD.",
+        "showSignature": false
+      },
+      "client": {
+        "name": "John Smith",
+        "company": "Acme Corporation",
+        "address": "123 Main Street\nSuite 400\nNew York, NY 10001",
+        "email": "john@acme.com",
+        "phone": "(555) 123-4567"
+      },
+      "lineItems": [
+        {
+          "description": "Consulting Services",
+          "details": "Strategic business analysis and recommendations",
+          "quantity": 20,
+          "unitPrice": "250.00",
+          "total": "5,000.00"
+        },
+        {
+          "description": "Implementation Support",
+          "details": "On-site implementation assistance",
+          "quantity": 40,
+          "unitPrice": "175.00",
+          "total": "7,000.00"
+        },
+        {
+          "description": "Training Sessions",
+          "quantity": 3,
+          "unitPrice": "1,500.00",
+          "total": "4,500.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "16,500.00",
+        "discount": "825.00",
+        "tax": "1,254.00",
+        "taxRate": 8,
+        "total": "16,929.00"
+      },
+      "branding": {
+        "logoUrl": "https://example.com/logo.png",
+        "companyName": "Professional Services Inc.",
+        "companyAddress": "789 Business Boulevard\nChicago, IL 60601"
+      },
+      "styles": {
+        "accentColor": "#1a365d"
+      }
+    }
+  ]
+}

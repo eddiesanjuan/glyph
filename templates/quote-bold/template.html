@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: letter;
+      margin: 0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #1f2937;
+      background: #fff;
+    }
+    .quote-document {
+      max-width: 8.5in;
+      margin: 0 auto;
+    }
+
+    header[data-glyph-region="header"] {
+      background: #0f172a;
+      color: white;
+      padding: 40px 50px;
+    }
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .company-brand h1 {
+      font-size: 32pt;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+    .company-brand .tagline {
+      font-size: 11pt;
+      opacity: 0.7;
+      font-weight: 300;
+    }
+    .quote-badge {
+      background: #3b82f6;
+      padding: 15px 30px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .quote-badge .label {
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.8;
+    }
+    .quote-badge .number {
+      font-size: 20pt;
+      font-weight: 700;
+    }
+
+    .content-area {
+      padding: 40px 50px;
+    }
+
+    .meta-strip[data-glyph-region="meta"] {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .meta-item {
+      flex: 1;
+    }
+    .meta-item .label {
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .meta-item .value {
+      font-size: 14pt;
+      font-weight: 600;
+    }
+
+    section[data-glyph-region="client-info"] {
+      background: #f8fafc;
+      padding: 25px 30px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .client-info .section-title {
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+    .client-info .client-name {
+      font-size: 18pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .client-info p {
+      color: #4b5563;
+    }
+
+    table[data-glyph-region="line-items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    table th {
+      text-align: left;
+      padding: 15px 0;
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #6b7280;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    table th:last-child,
+    table td:last-child { text-align: right; }
+    table td {
+      padding: 20px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 12pt;
+    }
+    table td:first-child {
+      font-weight: 500;
+    }
+    table tr:hover td {
+      background: #f9fafb;
+    }
+
+    section[data-glyph-region="totals"] {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      margin-bottom: 40px;
+    }
+    .totals-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .totals-breakdown {
+      opacity: 0.9;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 60px;
+      margin-bottom: 8px;
+      font-size: 11pt;
+    }
+    .grand-total {
+      text-align: right;
+    }
+    .grand-total .label {
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+    .grand-total .amount {
+      font-size: 42pt;
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: #3b82f6;
+    }
+
+    section[data-glyph-region="notes"] {
+      padding: 20px;
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 40px;
+    }
+    .notes .title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    footer[data-glyph-region="footer"] {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 10pt;
+      padding: 30px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="quote-document">
+    <header data-glyph-region="header">
+      <div class="header-content">
+        <div class="company-brand">
+          {{#branding.logoUrl}}<img src="{{branding.logoUrl}}" alt="" style="max-height: 50px; margin-bottom: 15px; filter: brightness(0) invert(1);">{{/branding.logoUrl}}
+          <h1>{{branding.companyName}}</h1>
+          <p class="tagline">{{branding.companyAddress}}</p>
+        </div>
+        <div class="quote-badge">
+          <div class="label">Quote</div>
+          <div class="number">{{meta.quoteNumber}}</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="meta-strip" data-glyph-region="meta">
+        <div class="meta-item">
+          <div class="label">Issue Date</div>
+          <div class="value">{{meta.date}}</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Valid Until</div>
+          <div class="value">{{meta.validUntil}}</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Payment Terms</div>
+          <div class="value">Net 30</div>
+        </div>
+      </div>
+
+      <section data-glyph-region="client-info" class="client-info">
+        <div class="section-title">Prepared For</div>
+        <p class="client-name">{{client.name}}</p>
+        {{#client.company}}<p>{{client.company}}</p>{{/client.company}}
+        {{#client.address}}<p>{{client.address}}</p>{{/client.address}}
+        {{#client.email}}<p>{{client.email}}</p>{{/client.email}}
+      </section>
+
+      <table data-glyph-region="line-items">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#lineItems}}
+          <tr>
+            <td>{{description}}</td>
+            <td>{{quantity}}</td>
+            <td>${{unitPrice}}</td>
+            <td>${{total}}</td>
+          </tr>
+          {{/lineItems}}
+        </tbody>
+      </table>
+
+      <section data-glyph-region="totals">
+        <div class="totals-grid">
+          <div class="totals-breakdown">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span>${{totals.subtotal}}</span>
+            </div>
+            {{#totals.discount}}
+            <div class="totals-row">
+              <span>Discount</span>
+              <span>-${{totals.discount}}</span>
+            </div>
+            {{/totals.discount}}
+            {{#totals.tax}}
+            <div class="totals-row">
+              <span>Tax</span>
+              <span>${{totals.tax}}</span>
+            </div>
+            {{/totals.tax}}
+          </div>
+          <div class="grand-total">
+            <div class="label">Total</div>
+            <div class="amount">${{totals.total}}</div>
+          </div>
+        </div>
+      </section>
+
+      {{#meta.notes}}
+      <section data-glyph-region="notes" class="notes">
+        <p class="title">Note</p>
+        <p>{{meta.notes}}</p>
+      </section>
+      {{/meta.notes}}
+
+      <footer data-glyph-region="footer">
+        {{#meta.terms}}<p>{{meta.terms}}</p>{{/meta.terms}}
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

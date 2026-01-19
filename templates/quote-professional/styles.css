@@ -1,0 +1,114 @@
+/**
+ * Quote Professional - Supplementary Styles
+ *
+ * Traditional business style with formal typography.
+ * Primary styles are embedded in template.html for self-contained rendering.
+ * This file provides optional utility classes and customization hooks.
+ */
+
+/* Color customization via CSS custom properties */
+:root {
+  --glyph-accent: #1a365d;
+  --glyph-accent-light: #2c5282;
+  --glyph-text-primary: #333;
+  --glyph-text-secondary: #666;
+  --glyph-border: #e5e7eb;
+  --glyph-background-alt: #f8f9fa;
+  --glyph-background-stripe: #f9fafb;
+}
+
+/* Alternative accent color schemes */
+.theme-navy {
+  --glyph-accent: #1a365d;
+  --glyph-accent-light: #2c5282;
+}
+
+.theme-charcoal {
+  --glyph-accent: #2d3748;
+  --glyph-accent-light: #4a5568;
+}
+
+.theme-slate {
+  --glyph-accent: #334155;
+  --glyph-accent-light: #475569;
+}
+
+/* Line item detail styling */
+.line-item-details {
+  font-size: 9pt;
+  color: var(--glyph-text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Optional signature block */
+.signature-block {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 60px;
+  padding-top: 20px;
+}
+
+.signature-line {
+  width: 45%;
+  text-align: center;
+}
+
+.signature-line .line {
+  border-top: 1px solid var(--glyph-text-primary);
+  margin-bottom: 8px;
+}
+
+.signature-line label {
+  font-size: 9pt;
+  color: var(--glyph-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Print optimizations */
+@media print {
+  .quote-document {
+    padding: 0;
+  }
+
+  /* Ensure header stays together */
+  header[data-glyph-region="header"] {
+    page-break-inside: avoid;
+  }
+
+  /* Avoid breaking inside line items */
+  table[data-glyph-region="line-items"] tr {
+    page-break-inside: avoid;
+  }
+
+  /* Keep totals together */
+  section[data-glyph-region="totals"] {
+    page-break-inside: avoid;
+  }
+
+  /* Keep notes with footer if possible */
+  section[data-glyph-region="notes"],
+  footer[data-glyph-region="footer"] {
+    page-break-inside: avoid;
+  }
+}
+
+/* Utility: condensed table for many line items */
+.table-condensed td,
+.table-condensed th {
+  padding: 8px 10px;
+  font-size: 10pt;
+}
+
+/* Utility: highlighted row */
+.row-highlight td {
+  background: #fef3c7 !important;
+  font-weight: bold;
+}
+
+/* Utility: strike-through for replaced items */
+.row-replaced td {
+  text-decoration: line-through;
+  color: var(--glyph-text-secondary);
+}
