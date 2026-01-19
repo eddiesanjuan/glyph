@@ -649,6 +649,192 @@
       color: var(--color-text-subtle);
     }
 
+    /* Playground input wrapper for autocomplete positioning */
+    .playground__input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+    }
+
+    /* Field Autocomplete Dropdown */
+    .playground-autocomplete {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 380px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      border: 1px solid #374151;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.5),
+                  0 4px 12px -4px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      animation: autocomplete-appear 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      scrollbar-width: thin;
+      scrollbar-color: #4b5563 transparent;
+    }
+
+    .playground-autocomplete::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .playground-autocomplete::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .playground-autocomplete::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+
+    @keyframes autocomplete-appear {
+      from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .autocomplete-category {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9ca3af;
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      border-bottom: 1px solid #374151;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .autocomplete-category-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary-bright);
+    }
+
+    .autocomplete-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+      background: linear-gradient(90deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
+    }
+
+    .autocomplete-item-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .autocomplete-item-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: rgba(20, 184, 166, 0.15);
+      border-radius: 6px;
+      color: var(--color-primary-bright);
+      flex-shrink: 0;
+    }
+
+    .autocomplete-item.selected .autocomplete-item-icon {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .autocomplete-item-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .autocomplete-item-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #f3f4f6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .autocomplete-item-path {
+      font-size: 11px;
+      font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
+      color: var(--color-primary-bright);
+      background: rgba(20, 184, 166, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      max-width: fit-content;
+    }
+
+    .autocomplete-item.selected .autocomplete-item-path {
+      background: rgba(20, 184, 166, 0.25);
+    }
+
+    .autocomplete-item-example {
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+      text-align: right;
+      flex-shrink: 0;
+      font-style: italic;
+    }
+
+    .autocomplete-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 14px;
+      background: #111827;
+      border-top: 1px solid #374151;
+      font-size: 11px;
+      color: #6b7280;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .autocomplete-hint kbd {
+      background: #374151;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+
     .playground__suggestions {
       display: flex;
       flex-wrap: wrap;
@@ -3251,11 +3437,15 @@
           <div class="playground__input-area">
             <div class="playground__prompt">
               <label class="playground__prompt-label">What would you like to change?</label>
-              <textarea
-                class="playground__input"
-                id="prompt-input"
-                placeholder="Try something wild: 'Add a QR code for payment' or 'Make this look like Apple' or 'Add a DRAFT watermark'"
-              ></textarea>
+              <div class="playground__input-wrapper" id="playground-input-wrapper">
+                <textarea
+                  class="playground__input"
+                  id="prompt-input"
+                  placeholder="Type 'add' or '{{' for field suggestions, or describe any change..."
+                  aria-autocomplete="list"
+                  aria-controls="playground-autocomplete"
+                ></textarea>
+              </div>
               <div class="playground__suggestions">
                 <button class="playground__suggestion" data-prompt="Make this look like a Stripe invoice - clean, minimal, with their signature purple">Stripe style</button>
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code</button>
@@ -4222,6 +4412,7 @@
     // ============================================
     const playgroundTabs = document.querySelectorAll('.playground__tab');
     const promptInput = document.getElementById('prompt-input');
+    const playgroundInputWrapper = document.getElementById('playground-input-wrapper');
     const suggestions = document.querySelectorAll('.playground__suggestion');
     const applyBtn = document.getElementById('apply-btn');
     const generateBtn = document.getElementById('generate-btn');
@@ -4229,6 +4420,311 @@
     const previewContainer = document.getElementById('preview-container');
     const previewLoading = document.getElementById('preview-loading');
     const previewStatus = document.querySelector('.playground__preview-status');
+
+    // ============================================
+    // Field Autocomplete System
+    // ============================================
+    const AUTOCOMPLETE_FIELDS = [
+      // Client fields
+      { category: 'Client', name: 'Client Name', path: 'client.name', example: 'John Smith', icon: 'user' },
+      { category: 'Client', name: 'Company', path: 'client.company', example: 'TechStart Inc.', icon: 'user' },
+      { category: 'Client', name: 'Email', path: 'client.email', example: 'john@techstart.io', icon: 'user' },
+      { category: 'Client', name: 'Phone', path: 'client.phone', example: '(555) 123-4567', icon: 'user' },
+      { category: 'Client', name: 'Address', path: 'client.address', example: '123 Main Street', icon: 'user' },
+
+      // Quote Info fields
+      { category: 'Quote Info', name: 'Quote Number', path: 'meta.quoteNumber', example: 'Q-2024-001', icon: 'doc' },
+      { category: 'Quote Info', name: 'Date', path: 'meta.date', example: 'January 15, 2024', icon: 'doc' },
+      { category: 'Quote Info', name: 'Valid Until', path: 'meta.validUntil', example: 'February 15, 2024', icon: 'doc' },
+      { category: 'Quote Info', name: 'Notes', path: 'meta.notes', example: 'Thank you!', icon: 'doc' },
+      { category: 'Quote Info', name: 'Terms', path: 'meta.terms', example: 'Net 30 days', icon: 'doc' },
+
+      // Company fields
+      { category: 'Company', name: 'Company Name', path: 'branding.companyName', example: 'Acme Corp', icon: 'building' },
+      { category: 'Company', name: 'Logo URL', path: 'branding.logoUrl', example: 'https://...', icon: 'building' },
+      { category: 'Company', name: 'Company Address', path: 'branding.companyAddress', example: '456 Business Ave', icon: 'building' },
+
+      // Totals fields
+      { category: 'Totals', name: 'Subtotal', path: 'totals.subtotal', example: '10,000.00', icon: 'dollar' },
+      { category: 'Totals', name: 'Discount', path: 'totals.discount', example: '500.00', icon: 'dollar' },
+      { category: 'Totals', name: 'Tax', path: 'totals.tax', example: '760.00', icon: 'dollar' },
+      { category: 'Totals', name: 'Total', path: 'totals.total', example: '10,260.00', icon: 'dollar' },
+
+      // Line Items fields
+      { category: 'Line Items', name: 'Description', path: 'lineItems[].description', example: 'Service item', icon: 'list' },
+      { category: 'Line Items', name: 'Details', path: 'lineItems[].details', example: 'Item details', icon: 'list' },
+      { category: 'Line Items', name: 'Quantity', path: 'lineItems[].quantity', example: '1', icon: 'list' },
+      { category: 'Line Items', name: 'Unit Price', path: 'lineItems[].unitPrice', example: '100.00', icon: 'list' },
+      { category: 'Line Items', name: 'Line Total', path: 'lineItems[].total', example: '100.00', icon: 'list' },
+
+      // Style fields
+      { category: 'Styles', name: 'Accent Color', path: 'styles.accentColor', example: '#14B8A6', icon: 'settings' },
+    ];
+
+    const CATEGORY_ICONS = {
+      'Client': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      'Quote Info': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      'Company': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      'Totals': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      'Line Items': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+      'Styles': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    };
+
+    const TYPE_ICONS = {
+      'user': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      'doc': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      'building': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      'dollar': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>',
+      'list': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      'settings': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>',
+    };
+
+    // Autocomplete state
+    let autocompleteVisible = false;
+    let autocompleteSelectedIndex = 0;
+    let filteredFields = [];
+    let autocompleteDropdown = null;
+
+    // Create autocomplete dropdown
+    function createAutocompleteDropdown() {
+      autocompleteDropdown = document.createElement('div');
+      autocompleteDropdown.className = 'playground-autocomplete';
+      autocompleteDropdown.id = 'playground-autocomplete';
+      autocompleteDropdown.style.display = 'none';
+      playgroundInputWrapper.appendChild(autocompleteDropdown);
+    }
+
+    // Filter fields based on search term
+    function filterFields(searchTerm) {
+      if (!searchTerm) return AUTOCOMPLETE_FIELDS;
+      const term = searchTerm.toLowerCase();
+      return AUTOCOMPLETE_FIELDS.filter(field =>
+        field.name.toLowerCase().includes(term) ||
+        field.path.toLowerCase().includes(term) ||
+        field.category.toLowerCase().includes(term)
+      );
+    }
+
+    // Group fields by category
+    function groupByCategory(fields) {
+      const grouped = {};
+      for (const field of fields) {
+        if (!grouped[field.category]) {
+          grouped[field.category] = [];
+        }
+        grouped[field.category].push(field);
+      }
+      return grouped;
+    }
+
+    // Render autocomplete dropdown
+    function renderAutocomplete() {
+      if (!autocompleteDropdown) return;
+
+      const grouped = groupByCategory(filteredFields);
+      let html = '';
+      let globalIndex = 0;
+
+      for (const [category, fields] of Object.entries(grouped)) {
+        const icon = CATEGORY_ICONS[category] || '';
+        html += `
+          <div class="autocomplete-category">
+            <span class="autocomplete-category-icon">${icon}</span>
+            <span>${escapeHtml(category)}</span>
+          </div>
+        `;
+
+        for (const field of fields) {
+          const isSelected = globalIndex === autocompleteSelectedIndex;
+          const typeIcon = TYPE_ICONS[field.icon] || TYPE_ICONS['user'];
+
+          html += `
+            <div class="autocomplete-item ${isSelected ? 'selected' : ''}"
+                 data-index="${globalIndex}"
+                 data-path="${escapeHtml(field.path)}">
+              <div class="autocomplete-item-main">
+                <span class="autocomplete-item-icon">${typeIcon}</span>
+                <div class="autocomplete-item-content">
+                  <span class="autocomplete-item-name">${escapeHtml(field.name)}</span>
+                  <span class="autocomplete-item-path">{{${escapeHtml(field.path)}}}</span>
+                </div>
+              </div>
+              ${field.example ? `<span class="autocomplete-item-example">${escapeHtml(field.example)}</span>` : ''}
+            </div>
+          `;
+          globalIndex++;
+        }
+      }
+
+      html += `
+        <div class="autocomplete-hint">
+          <span><kbd>↑↓</kbd> Navigate</span>
+          <span><kbd>Enter</kbd> Select</span>
+          <span><kbd>Esc</kbd> Close</span>
+        </div>
+      `;
+
+      autocompleteDropdown.innerHTML = html;
+
+      // Add click handlers
+      autocompleteDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const index = parseInt(item.getAttribute('data-index') || '0', 10);
+          selectAutocompleteItem(filteredFields[index]);
+        });
+
+        item.addEventListener('mouseenter', () => {
+          const index = parseInt(item.getAttribute('data-index') || '0', 10);
+          autocompleteSelectedIndex = index;
+          updateAutocompleteSelection();
+        });
+      });
+    }
+
+    // Show autocomplete
+    function showAutocomplete(searchTerm) {
+      filteredFields = filterFields(searchTerm);
+      if (filteredFields.length === 0) {
+        hideAutocomplete();
+        return;
+      }
+
+      autocompleteSelectedIndex = 0;
+      renderAutocomplete();
+      autocompleteDropdown.style.display = 'block';
+      autocompleteVisible = true;
+    }
+
+    // Hide autocomplete
+    function hideAutocomplete() {
+      if (autocompleteDropdown) {
+        autocompleteDropdown.style.display = 'none';
+      }
+      autocompleteVisible = false;
+      autocompleteSelectedIndex = 0;
+    }
+
+    // Update selection UI
+    function updateAutocompleteSelection() {
+      if (!autocompleteDropdown) return;
+      const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+      items.forEach((item, index) => {
+        item.classList.toggle('selected', index === autocompleteSelectedIndex);
+      });
+
+      // Scroll to selected
+      const selectedItem = autocompleteDropdown.querySelector('.autocomplete-item.selected');
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+
+    // Select autocomplete item
+    function selectAutocompleteItem(field) {
+      if (!field) return;
+
+      // Create a smart prompt
+      const contextMap = {
+        'client.email': 'Add {{client.email}} below the client name',
+        'client.phone': 'Add {{client.phone}} next to the client contact info',
+        'client.address': 'Add {{client.address}} in the client section',
+        'meta.notes': 'Add {{meta.notes}} at the bottom of the document',
+        'meta.terms': 'Add {{meta.terms}} in the footer section',
+        'branding.logoUrl': 'Add the company logo {{branding.logoUrl}} in the header',
+        'totals.discount': 'Add a discount row showing {{totals.discount}} in the totals section',
+        'totals.tax': 'Add the tax amount {{totals.tax}} to the totals',
+      };
+
+      const composedPrompt = contextMap[field.path] || `Add {{${field.path}}} to the document`;
+
+      promptInput.value = composedPrompt;
+      promptInput.focus();
+      promptInput.setSelectionRange(promptInput.value.length, promptInput.value.length);
+
+      hideAutocomplete();
+    }
+
+    // Check for trigger patterns
+    function checkAutocompleteTrigger(value) {
+      const cursorPosition = promptInput.selectionStart || value.length;
+      const textBeforeCursor = value.substring(0, cursorPosition);
+
+      // Trigger on {{ at cursor position
+      if (textBeforeCursor.endsWith('{{')) {
+        showAutocomplete('');
+        return;
+      }
+
+      // Trigger on "add " prefix
+      const addMatch = textBeforeCursor.match(/^add\s+(.*)$/i);
+      if (addMatch) {
+        showAutocomplete(addMatch[1].trim());
+        return;
+      }
+
+      // Trigger on field-related keywords
+      const keywordMatch = textBeforeCursor.match(/\b(field|value|phone|email|address|company|client|name|date|quote|total|price|subtotal|tax|discount|notes|terms|logo)\s*$/i);
+      if (keywordMatch) {
+        showAutocomplete(keywordMatch[1]);
+        return;
+      }
+
+      hideAutocomplete();
+    }
+
+    // Escape HTML for security
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize autocomplete
+    createAutocompleteDropdown();
+
+    // Autocomplete event listeners
+    promptInput.addEventListener('input', () => {
+      checkAutocompleteTrigger(promptInput.value);
+    });
+
+    promptInput.addEventListener('focus', () => {
+      checkAutocompleteTrigger(promptInput.value);
+    });
+
+    promptInput.addEventListener('blur', () => {
+      // Delay to allow click on dropdown
+      setTimeout(() => hideAutocomplete(), 150);
+    });
+
+    promptInput.addEventListener('keydown', (e) => {
+      if (!autocompleteVisible) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        autocompleteSelectedIndex = (autocompleteSelectedIndex + 1) % filteredFields.length;
+        updateAutocompleteSelection();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        autocompleteSelectedIndex = (autocompleteSelectedIndex - 1 + filteredFields.length) % filteredFields.length;
+        updateAutocompleteSelection();
+      } else if (e.key === 'Enter' && autocompleteVisible) {
+        e.preventDefault();
+        selectAutocompleteItem(filteredFields[autocompleteSelectedIndex]);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        hideAutocomplete();
+      } else if (e.key === 'Tab' && autocompleteVisible) {
+        e.preventDefault();
+        selectAutocompleteItem(filteredFields[autocompleteSelectedIndex]);
+      }
+    });
+
+    // Prevent dropdown click from blurring input
+    if (autocompleteDropdown) {
+      autocompleteDropdown.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+    }
 
     // Sample quote data for demo
     const sampleQuoteData = {

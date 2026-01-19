@@ -14,6 +14,7 @@
 import { GlyphAPI } from '../lib/api';
 import type { GlyphEditorProps, QuoteData, GlyphTheme } from '../lib/types';
 import { baseStyles } from '../styles/base';
+import { FieldAutocomplete, type FieldDefinition } from './FieldAutocomplete';
 
 export class GlyphEditor extends HTMLElement {
   private api: GlyphAPI | null = null;
@@ -42,6 +43,9 @@ export class GlyphEditor extends HTMLElement {
 
   // Reduced motion preference
   private prefersReducedMotion: boolean = false;
+
+  // Field autocomplete instance
+  private fieldAutocomplete: FieldAutocomplete | null = null;
 
   // Event callbacks for programmatic usage
   public onSave?: GlyphEditorProps['onSave'];
@@ -72,6 +76,10 @@ export class GlyphEditor extends HTMLElement {
     // Cleanup: remove any pending timers or listeners
     if (this.commandDebounceTimer) {
       clearTimeout(this.commandDebounceTimer);
+    }
+    if (this.fieldAutocomplete) {
+      this.fieldAutocomplete.destroy();
+      this.fieldAutocomplete = null;
     }
     this.api = null;
     this.sessionId = null;
@@ -991,90 +999,10 @@ export class GlyphEditor extends HTMLElement {
           height: 16px;
         }
 
-        /* Field Picker */
-        .glyph-field-picker-wrapper {
+        /* Command wrapper for autocomplete positioning */
+        .glyph-command-wrapper {
           position: relative;
-        }
-
-        .glyph-field-picker-btn {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--glyph-bg);
-          border: 1px solid var(--glyph-border);
-          border-radius: var(--glyph-radius);
-          cursor: pointer;
-          font-size: 20px;
-          color: var(--glyph-text);
-          transition: all 0.15s ease;
-          margin-right: 8px;
-        }
-
-        .glyph-field-picker-btn:hover {
-          background: #f1f5f9;
-          border-color: var(--glyph-primary);
-          color: var(--glyph-primary);
-        }
-
-        .glyph-field-picker-dropdown {
-          position: absolute;
-          bottom: calc(100% + 8px);
-          left: 0;
-          width: 280px;
-          max-height: 300px;
-          overflow-y: auto;
-          background: var(--glyph-bg);
-          border: 1px solid var(--glyph-border);
-          border-radius: var(--glyph-radius);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-          z-index: 100;
-          animation: glyph-fade-in 0.2s ease-out;
-        }
-
-        .glyph-field-picker-dropdown.hidden {
-          display: none;
-        }
-
-        .glyph-field-category {
-          padding: 8px 12px;
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: var(--glyph-text-muted);
-          background: #f8fafc;
-          border-bottom: 1px solid var(--glyph-border);
-        }
-
-        .glyph-field-option {
-          padding: 10px 12px;
-          font-size: 13px;
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #f1f5f9;
-          transition: background 0.1s ease;
-        }
-
-        .glyph-field-option:hover {
-          background: #f8fafc;
-        }
-
-        .glyph-field-option:last-child {
-          border-bottom: none;
-        }
-
-        .glyph-field-name {
-          color: var(--glyph-text);
-        }
-
-        .glyph-field-path {
-          font-size: 11px;
-          color: var(--glyph-text-muted);
-          font-family: ui-monospace, monospace;
+          flex: 1;
         }
 
         /* Region Quick Actions (context-specific pills) */
@@ -1133,10 +1061,6 @@ export class GlyphEditor extends HTMLElement {
             width: 28px;
             height: 28px;
           }
-
-          .glyph-field-picker-dropdown {
-            width: 240px;
-          }
         }
       </style>
       <div class="glyph-container" role="application" aria-label="Glyph PDF Editor">
@@ -1187,11 +1111,9 @@ export class GlyphEditor extends HTMLElement {
                 </svg>
               </button>
             </div>
-            <div class="glyph-field-picker-wrapper">
-              <button class="glyph-field-picker-btn" id="glyph-field-picker" aria-label="Insert data field" aria-haspopup="listbox" aria-expanded="false" title="Insert field (+)">+</button>
-              <div class="glyph-field-picker-dropdown hidden" id="glyph-field-dropdown" role="listbox" aria-label="Available data fields"></div>
+            <div class="glyph-command-wrapper" id="glyph-command-wrapper">
+              <input type="text" class="glyph-command-input" placeholder="Type 'add' or '{{' for field suggestions..." aria-label="Type an edit command and press Enter" id="glyph-command-input" aria-autocomplete="list" aria-controls="glyph-autocomplete-dropdown" />
             </div>
-            <input type="text" class="glyph-command-input" placeholder="Describe what you want to change..." aria-label="Type an edit command and press Enter" id="glyph-command-input" />
             <button class="glyph-btn glyph-btn-secondary" id="glyph-download" aria-label="Download document as PDF" title="Download PDF">Download</button>
           </div>
         </div>
@@ -1238,9 +1160,32 @@ export class GlyphEditor extends HTMLElement {
 
     // Command input - Enter key with debounce
     const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
-    if (input) {
+    const commandWrapper = this.shadow.getElementById('glyph-command-wrapper');
+
+    if (input && commandWrapper) {
+      // Initialize field autocomplete
+      this.fieldAutocomplete = new FieldAutocomplete({
+        inputElement: input,
+        container: commandWrapper,
+        onSelect: (_field: FieldDefinition, composedPrompt: string) => {
+          // Set the composed prompt in the input (field available if needed for future enhancements)
+          input.value = composedPrompt;
+          input.focus();
+          // Position cursor at end
+          input.setSelectionRange(input.value.length, input.value.length);
+        },
+        accentColor: '#14B8A6',
+      });
+
       input.addEventListener('keydown', (e) => {
+        // Don't handle Enter if autocomplete is handling it
         if (e.key === 'Enter' && input.value.trim() && !this.isLoading) {
+          // Check if autocomplete dropdown is visible - if so, let it handle Enter
+          const autocompleteDropdown = commandWrapper.querySelector('.glyph-autocomplete-dropdown') as HTMLElement;
+          if (autocompleteDropdown && autocompleteDropdown.style.display !== 'none') {
+            return; // Let autocomplete handle it
+          }
+
           // Debounce rapid Enter presses
           if (this.commandDebounceTimer) {
             clearTimeout(this.commandDebounceTimer);
@@ -1255,7 +1200,7 @@ export class GlyphEditor extends HTMLElement {
           input.value = '';
           this.selectedRegion = null;
           this.hideRegionActions();
-          input.placeholder = 'Describe what you want to change...';
+          input.placeholder = "Type 'add' or '{{' for field suggestions...";
         }
       });
     }
@@ -1289,34 +1234,6 @@ export class GlyphEditor extends HTMLElement {
       }
     });
 
-    // Field picker with accessibility
-    const fieldPickerBtn = this.shadow.getElementById('glyph-field-picker');
-    const fieldDropdown = this.shadow.getElementById('glyph-field-dropdown');
-    if (fieldPickerBtn && fieldDropdown) {
-      fieldPickerBtn.addEventListener('click', () => {
-        const isHidden = fieldDropdown.classList.toggle('hidden');
-        fieldPickerBtn.setAttribute('aria-expanded', (!isHidden).toString());
-        if (!isHidden) {
-          this.populateFieldPicker();
-        }
-      });
-
-      // Keyboard support for field picker
-      fieldPickerBtn.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          fieldDropdown.classList.add('hidden');
-          fieldPickerBtn.setAttribute('aria-expanded', 'false');
-        }
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!fieldPickerBtn.contains(e.target as Node) && !fieldDropdown.contains(e.target as Node)) {
-          fieldDropdown.classList.add('hidden');
-          fieldPickerBtn.setAttribute('aria-expanded', 'false');
-        }
-      });
-    }
   }
 
   /**
@@ -1340,6 +1257,10 @@ export class GlyphEditor extends HTMLElement {
   private async executeCommand(command: string, pillElement?: HTMLElement) {
     if (!this.api || !this.sessionId || this.isLoading) return;
 
+    // CRITICAL: Save current state to history BEFORE modification
+    // This ensures we can undo even if AI regenerates/wipes content
+    this.saveToHistory();
+
     // Add processing state to input
     const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
     if (input) {
@@ -1359,7 +1280,7 @@ export class GlyphEditor extends HTMLElement {
       );
 
       this.currentHtml = result.html;
-      this.saveToHistory();
+      this.saveToHistory(); // Also save the new state so we can redo
       this.renderPreview();
 
       // Clear region selection after successful modification
@@ -1367,7 +1288,7 @@ export class GlyphEditor extends HTMLElement {
       this.hideRegionActions();
       const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
       if (input) {
-        input.placeholder = 'Describe what you want to change...';
+        input.placeholder = "Type 'add' or '{{' for field suggestions...";
       }
 
       // Show success state on pill
@@ -1608,7 +1529,7 @@ export class GlyphEditor extends HTMLElement {
 
     const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
     if (input) {
-      input.placeholder = 'Describe what you want to change...';
+      input.placeholder = "Type 'add' or '{{' for field suggestions...";
     }
   }
 
@@ -1679,95 +1600,6 @@ export class GlyphEditor extends HTMLElement {
     if (redoBtn) {
       redoBtn.disabled = this.historyIndex >= this.history.length - 1;
     }
-  }
-
-  // ============================================
-  // FIELD PICKER SYSTEM
-  // ============================================
-
-  /**
-   * Get available fields from template schema
-   */
-  private getAvailableFields(): Array<{ category: string; name: string; path: string; description: string }> {
-    // These are the fields from quote-modern schema
-    return [
-      // Branding fields
-      { category: 'Branding', name: 'Company Name', path: 'branding.companyName', description: 'Your company name' },
-      { category: 'Branding', name: 'Logo', path: 'branding.logoUrl', description: 'Company logo URL' },
-      { category: 'Branding', name: 'Company Address', path: 'branding.companyAddress', description: 'Business address' },
-
-      // Client fields
-      { category: 'Client', name: 'Client Name', path: 'client.name', description: 'Client full name' },
-      { category: 'Client', name: 'Company', path: 'client.company', description: 'Client company' },
-      { category: 'Client', name: 'Email', path: 'client.email', description: 'Client email address' },
-      { category: 'Client', name: 'Phone', path: 'client.phone', description: 'Client phone number' },
-      { category: 'Client', name: 'Address', path: 'client.address', description: 'Client address' },
-
-      // Meta fields
-      { category: 'Quote Info', name: 'Quote Number', path: 'meta.quoteNumber', description: 'Unique quote ID' },
-      { category: 'Quote Info', name: 'Date', path: 'meta.date', description: 'Quote date' },
-      { category: 'Quote Info', name: 'Valid Until', path: 'meta.validUntil', description: 'Expiration date' },
-      { category: 'Quote Info', name: 'Notes', path: 'meta.notes', description: 'Additional notes' },
-      { category: 'Quote Info', name: 'Terms', path: 'meta.terms', description: 'Terms and conditions' },
-
-      // Totals fields
-      { category: 'Totals', name: 'Subtotal', path: 'totals.subtotal', description: 'Sum before adjustments' },
-      { category: 'Totals', name: 'Discount', path: 'totals.discount', description: 'Discount amount' },
-      { category: 'Totals', name: 'Tax', path: 'totals.tax', description: 'Tax amount' },
-      { category: 'Totals', name: 'Tax Rate', path: 'totals.taxRate', description: 'Tax percentage' },
-      { category: 'Totals', name: 'Total', path: 'totals.total', description: 'Final total' },
-    ];
-  }
-
-  /**
-   * Populate the field picker dropdown
-   */
-  private populateFieldPicker() {
-    const dropdown = this.shadow.getElementById('glyph-field-dropdown');
-    if (!dropdown) return;
-
-    const fields = this.getAvailableFields();
-    const categories = [...new Set(fields.map(f => f.category))];
-
-    let html = '';
-    for (const category of categories) {
-      html += `<div class="glyph-field-category">${this.escapeHtml(category)}</div>`;
-      const categoryFields = fields.filter(f => f.category === category);
-      for (const field of categoryFields) {
-        html += `
-          <div class="glyph-field-option" data-path="${this.escapeHtml(field.path)}">
-            <span class="glyph-field-name">${this.escapeHtml(field.name)}</span>
-            <span class="glyph-field-path">{{${this.escapeHtml(field.path)}}}</span>
-          </div>
-        `;
-      }
-    }
-
-    dropdown.innerHTML = html;
-
-    // Add click handlers
-    dropdown.querySelectorAll('.glyph-field-option').forEach(option => {
-      option.addEventListener('click', () => {
-        const path = option.getAttribute('data-path');
-        if (path) {
-          this.insertFieldCommand(path);
-          dropdown.classList.add('hidden');
-        }
-      });
-    });
-  }
-
-  /**
-   * Insert field into command input
-   */
-  private insertFieldCommand(fieldPath: string) {
-    const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
-    if (!input) return;
-
-    const regionContext = this.selectedRegion ? ` to the ${this.selectedRegion}` : '';
-    input.value = `Add {{${fieldPath}}}${regionContext}`;
-    input.focus();
-    input.setSelectionRange(input.value.length, input.value.length);
   }
 
   // ============================================

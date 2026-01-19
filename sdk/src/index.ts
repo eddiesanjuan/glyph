@@ -9,6 +9,8 @@
 import { GlyphEditor } from './components/GlyphEditor';
 import { GlyphPreview } from './components/Preview';
 import { GlyphChat } from './components/Chat';
+import { FieldAutocomplete, autocompleteStyles } from './components/FieldAutocomplete';
+import type { FieldDefinition, FieldAutocompleteOptions } from './components/FieldAutocomplete';
 
 // API Client
 import { GlyphApiClient, GlyphAPI, createApiClient } from './lib/api';
@@ -36,13 +38,15 @@ import type {
 } from './lib/types';
 
 // Version
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 // Export components
 export {
   GlyphEditor,
   GlyphPreview,
   GlyphChat,
+  FieldAutocomplete,
+  autocompleteStyles,
   GlyphApiClient,
   GlyphAPI,
   createApiClient,
@@ -68,7 +72,9 @@ export type {
   ChatMessage,
   GeneratePdfOptions,
   QuoteData,
-  QuoteLineItem
+  QuoteLineItem,
+  FieldDefinition,
+  FieldAutocompleteOptions
 };
 
 // Expose on window for IIFE/CDN usage
@@ -78,6 +84,7 @@ if (typeof window !== 'undefined') {
     GlyphEditor,
     GlyphPreview,
     GlyphChat,
+    FieldAutocomplete,
     GlyphAPI,
     createApiClient
   };
