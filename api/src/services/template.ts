@@ -100,7 +100,7 @@ export class TemplateEngine {
         companyAddress: data.branding?.companyAddress || null,
       },
       styles: {
-        accentColor: "#2563eb", // Default blue accent
+        accentColor: data.styles?.accentColor || "#14B8A6", // Teal brand color
       },
     };
   }
@@ -248,7 +248,7 @@ export function renderTemplate(data: QuoteData, templateId?: string): string {
       companyAddress: data.branding?.companyAddress || null,
     },
     styles: {
-      accentColor: "#2563eb",
+      accentColor: data.styles?.accentColor || "#14B8A6", // Teal brand color
     },
   };
 

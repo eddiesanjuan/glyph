@@ -61,7 +61,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.1.1",
+    version: "0.1.2",
     timestamp: new Date().toISOString(),
   });
 });
@@ -70,7 +70,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.1.1",
+    version: "0.1.2",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",

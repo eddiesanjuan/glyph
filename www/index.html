@@ -1391,6 +1391,227 @@
       height: 20px;
       border-width: 2px;
     }
+
+    /* ============================================
+       Modal Component
+       ============================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-smooth), visibility var(--transition-smooth);
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      max-width: 420px;
+      width: calc(100% - 48px);
+      transform: scale(0.95) translateY(20px);
+      transition: transform var(--transition-smooth);
+      text-align: center;
+    }
+
+    .modal-overlay.visible .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal__icon {
+      width: 56px;
+      height: 56px;
+      background: var(--color-primary-subtle);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .modal__icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--color-primary-bright);
+    }
+
+    .modal__title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--color-text);
+    }
+
+    .modal__description {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .modal__actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal__btn {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
+      font-family: var(--font-sans);
+    }
+
+    .modal__btn--primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .modal__btn--primary:hover {
+      background: var(--color-primary-bright);
+    }
+
+    .modal__btn--secondary {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .modal__btn--secondary:hover {
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    /* ============================================
+       Mobile Hamburger Menu
+       ============================================ */
+    .nav__hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      padding: 8px;
+      transition: border-color var(--transition-fast);
+    }
+
+    .nav__hamburger:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    .nav__hamburger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--color-text);
+      transition: transform var(--transition-fast), opacity var(--transition-fast);
+    }
+
+    .nav__hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .nav__hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav__hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    .nav__mobile-menu {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding: 24px;
+      transform: translateY(-100%);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform var(--transition-smooth), opacity var(--transition-smooth), visibility var(--transition-smooth);
+      z-index: 99;
+    }
+
+    .nav__mobile-menu.visible {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .nav__mobile-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav__mobile-links a {
+      display: block;
+      padding: 12px 16px;
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition-fast), color var(--transition-fast);
+    }
+
+    .nav__mobile-links a:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .nav__mobile-cta {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px 24px;
+      background: var(--color-primary);
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+    }
+
+    .nav__mobile-cta:hover {
+      background: var(--color-primary-bright);
+    }
+
+    @media (max-width: 768px) {
+      .nav__hamburger {
+        display: flex;
+      }
+
+      .nav__cta {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1421,8 +1642,24 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
         </svg>
       </a>
+      <button class="nav__hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- Mobile Menu -->
+  <div class="nav__mobile-menu" id="mobile-menu">
+    <ul class="nav__mobile-links">
+      <li><a href="#playground">Playground</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="/docs">Docs</a></li>
+    </ul>
+    <a href="/dashboard" class="nav__mobile-cta">Get API Key</a>
+  </div>
 
   <!-- Hero Section -->
   <section class="hero">
@@ -1501,7 +1738,7 @@
               <svg class="demo-command__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
               </svg>
-              <span class="demo-command__text" id="typing-text">Make the header blue</span>
+              <span class="demo-command__text" id="typing-text">Make the header teal</span>
               <span class="demo-command__cursor"></span>
             </div>
           </div>
@@ -1554,7 +1791,7 @@
                 placeholder="Try: 'Make the header green' or 'Add a 10% discount' or 'Change the company name to TechStart'"
               ></textarea>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Make the header navy blue">Make header blue</button>
+                <button class="playground__suggestion" data-prompt="Make the header a deep teal">Make header teal</button>
                 <button class="playground__suggestion" data-prompt="Add a 15% early payment discount">Add discount</button>
                 <button class="playground__suggestion" data-prompt="Change the accent color to teal">Change to teal</button>
                 <button class="playground__suggestion" data-prompt="Make the font size larger">Larger text</button>
@@ -1617,7 +1854,7 @@
             </div>
             <h3 class="feature-card__title">Natural Language Editing</h3>
             <p class="feature-card__description">
-              Your users simply describe what they want. "Make the header blue"
+              Your users simply describe what they want. "Make the header teal"
               just works. No complex UI, no training required.
             </p>
           </div>
@@ -1971,6 +2208,25 @@
     </div>
   </footer>
 
+  <!-- Modal for API Key Prompt -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal__icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+      </div>
+      <h3 class="modal__title">Get Your API Key</h3>
+      <p class="modal__description">
+        PDF generation requires an API key. Sign up for free to generate unlimited PDFs and customize your documents with AI.
+      </p>
+      <div class="modal__actions">
+        <button class="modal__btn modal__btn--secondary" id="modal-close">Maybe Later</button>
+        <a href="/dashboard" class="modal__btn modal__btn--primary">Get Free API Key</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script>
     // ============================================
@@ -2004,10 +2260,10 @@
     const typingText = document.getElementById('typing-text');
     const heroDemo = document.getElementById('hero-demo');
     const commands = [
-      { text: 'Make the header blue', color: '#3B82F6' },
-      { text: 'Change accent to teal', color: '#14B8A6' },
-      { text: 'Use a green theme', color: '#22C55E' },
-      { text: 'Try orange accent', color: '#F97316' }
+      { text: 'Make the header teal', color: '#14B8A6' },
+      { text: 'Use a purple theme', color: '#8B5CF6' },
+      { text: 'Try a green accent', color: '#22C55E' },
+      { text: 'Switch to orange', color: '#F97316' }
     ];
     let commandIndex = 0;
     let charIndex = 0;
@@ -2098,14 +2354,14 @@
         address: '456 Startup Lane\nPalo Alto, CA 94301'
       },
       lineItems: [
-        { description: 'Enterprise License', details: 'Annual subscription with all features', quantity: 1, unitPrice: '2,400.00', total: '2,400.00' },
-        { description: 'Premium Support', details: '24/7 dedicated support channel', quantity: 12, unitPrice: '100.00', total: '1,200.00' }
+        { description: 'Enterprise License', details: 'Annual subscription with all features', quantity: 1, unitPrice: 2400.00, total: 2400.00 },
+        { description: 'Premium Support', details: '24/7 dedicated support channel', quantity: 12, unitPrice: 100.00, total: 1200.00 }
       ],
       totals: {
-        subtotal: '3,600.00',
-        tax: '',
-        discount: '',
-        total: '3,600.00'
+        subtotal: 3600.00,
+        tax: 0,
+        discount: 0,
+        total: 3600.00
       },
       styles: {
         accentColor: '#14B8A6'
@@ -2423,8 +2679,49 @@
       setTimeout(() => {
         generateBtn.innerHTML = originalText;
         generateBtn.disabled = false;
-        alert('PDF generation requires a valid API key. Sign up to get started!');
+        showModal();
       }, 1500);
+    });
+
+    // Modal functionality
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalClose = document.getElementById('modal-close');
+
+    function showModal() {
+      modalOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideModal() {
+      modalOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', hideModal);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) hideModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalOverlay.classList.contains('visible')) {
+        hideModal();
+      }
+    });
+
+    // Mobile hamburger menu
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      mobileMenu.classList.toggle('visible');
+    });
+
+    // Close mobile menu when clicking a link
+    document.querySelectorAll('.nav__mobile-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        mobileMenu.classList.remove('visible');
+      });
     });
 
     // Initialize on load
