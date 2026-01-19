@@ -1005,7 +1005,7 @@ export class GlyphEditor extends HTMLElement {
   }
 
   /**
-   * Show error state in preview area
+   * Show error state in preview area with retry button
    */
   private showError(message: string) {
     const previewArea = this.shadow.querySelector('.glyph-preview-area');
@@ -1014,8 +1014,17 @@ export class GlyphEditor extends HTMLElement {
         <div class="glyph-error">
           <div class="glyph-error-icon">!</div>
           <div class="glyph-error-message">${this.escapeHtml(message)}</div>
+          <button class="glyph-error-retry">Try Again</button>
         </div>
       `;
+
+      // Add retry button handler
+      const retryBtn = previewArea.querySelector('.glyph-error-retry');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          this.initialize();
+        });
+      }
     }
     this.emit('glyph:error', { error: message });
   }

@@ -166,62 +166,151 @@ export function createApiClient(config: ApiClientConfig): GlyphApiClient {
 export class GlyphAPI {
   private apiKey: string;
   private baseUrl: string;
+  private defaultTimeout: number;
 
-  constructor(apiKey: string, baseUrl = DEFAULT_API_URL) {
+  constructor(apiKey: string, baseUrl = DEFAULT_API_URL, timeout = 30000) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.defaultTimeout = timeout;
   }
 
   /**
-   * Make authenticated request with error handling
+   * Create an AbortController with timeout
+   */
+  private createTimeoutController(timeoutMs: number): { controller: AbortController; timeoutId: ReturnType<typeof setTimeout> } {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    return { controller, timeoutId };
+  }
+
+  /**
+   * Map HTTP status codes to user-friendly messages
+   */
+  private getErrorMessage(status: number, serverError?: string): string {
+    if (serverError) return serverError;
+
+    switch (status) {
+      case 400:
+        return 'Invalid request. Please check your input and try again.';
+      case 401:
+        return 'Invalid API key. Please verify your credentials.';
+      case 403:
+        return 'Access denied. Your API key may be deactivated or lacks permissions.';
+      case 404:
+        return 'Resource not found. The session may have expired.';
+      case 410:
+        return 'Session expired. Please reload to start a new session.';
+      case 429:
+        return 'Rate limit exceeded. Please wait a moment and try again.';
+      case 500:
+        return 'Server error. Our team has been notified. Please try again.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Service temporarily unavailable. Please try again in a moment.';
+      default:
+        return `Request failed (Error ${status}). Please try again.`;
+    }
+  }
+
+  /**
+   * Make authenticated request with error handling and timeout
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeout?: number
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const { controller, timeoutId } = this.createTimeoutController(timeout || this.defaultTimeout);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${this.apiKey}`);
     headers.set('Content-Type', 'application/json');
 
-    const response = await fetch(url, {
-      ...options,
-      headers
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = this.getErrorMessage(response.status, errorData.error || errorData.message);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      if (err instanceof Error) {
+        // Handle abort/timeout
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out. The server may be busy - please try again.');
+        }
+        // Handle network errors
+        if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+          throw new Error('Network error. Please check your connection and try again.');
+        }
+        // Re-throw formatted errors
+        throw err;
+      }
+
+      throw new Error('An unexpected error occurred. Please try again.');
     }
-
-    return response.json();
   }
 
   /**
    * Make request that returns a Blob (for PDF generation)
+   * Uses longer timeout (60s) for PDF generation which can be slow
    */
   private async requestBlob(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeout = 60000
   ): Promise<Blob> {
     const url = `${this.baseUrl}${endpoint}`;
+    const { controller, timeoutId } = this.createTimeoutController(timeout);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${this.apiKey}`);
     headers.set('Content-Type', 'application/json');
 
-    const response = await fetch(url, {
-      ...options,
-      headers
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(error.error || error.message || `Request failed with status ${response.status}`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = this.getErrorMessage(response.status, errorData.error || errorData.message);
+        throw new Error(errorMessage);
+      }
+
+      return response.blob();
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          throw new Error('PDF generation timed out. Please try again with a simpler document.');
+        }
+        if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+          throw new Error('Network error during PDF generation. Please check your connection.');
+        }
+        throw err;
+      }
+
+      throw new Error('Failed to generate PDF. Please try again.');
     }
-
-    return response.blob();
   }
 
   /**
@@ -241,16 +330,21 @@ export class GlyphAPI {
   /**
    * Modify the current session with an AI prompt
    * Optionally target a specific region of the document
+   * Uses 45s timeout since AI modifications can take longer
    */
   async modify(
     sessionId: string,
     prompt: string,
     region?: string
   ): Promise<{ html: string; changes: string[] }> {
-    return this.request<{ html: string; changes: string[] }>('/v1/modify', {
-      method: 'POST',
-      body: JSON.stringify({ sessionId, prompt, region })
-    });
+    return this.request<{ html: string; changes: string[] }>(
+      '/v1/modify',
+      {
+        method: 'POST',
+        body: JSON.stringify({ sessionId, prompt, region })
+      },
+      45000 // 45s timeout for AI operations
+    );
   }
 
   /**
