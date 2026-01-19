@@ -1,16 +1,17 @@
 /**
  * Authentication Middleware
- * Validates API keys from Authorization header
+ * Validates API keys from Authorization header against Supabase
  */
 
 import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { createHash } from "crypto";
+import { supabase, getSupabase } from "../lib/supabase.js";
 
-// In production, validate against Supabase
-const VALID_API_KEYS = new Set([
-  process.env.GLYPH_API_KEY,
-  process.env.GLYPH_TEST_API_KEY,
-].filter(Boolean));
+// For development mode when Supabase isn't configured
+const DEV_API_KEYS = new Set(
+  [process.env.GLYPH_API_KEY, process.env.GLYPH_TEST_API_KEY].filter(Boolean)
+);
 
 export async function authMiddleware(c: Context, next: Next) {
   // Skip auth for health check
@@ -34,21 +35,96 @@ export async function authMiddleware(c: Context, next: Next) {
     });
   }
 
-  // In development, allow any key if no keys configured
-  if (VALID_API_KEYS.size === 0) {
-    console.warn("No API keys configured. Allowing all requests in development.");
+  // Validate key format
+  if (!token.startsWith("gk_")) {
+    throw new HTTPException(401, {
+      message: "Invalid API key format. Keys should start with 'gk_'",
+    });
+  }
+
+  // If Supabase is configured, validate against database
+  if (supabase) {
+    try {
+      // Hash the key to look up
+      const keyHash = createHash("sha256").update(token).digest("hex");
+
+      const { data: keyRecord, error } = await getSupabase()
+        .from("api_keys")
+        .select("id, tier, monthly_limit, is_active")
+        .eq("key_hash", keyHash)
+        .single();
+
+      if (error || !keyRecord) {
+        throw new HTTPException(401, {
+          message: "Invalid API key",
+        });
+      }
+
+      if (!keyRecord.is_active) {
+        throw new HTTPException(403, {
+          message: "API key is deactivated",
+        });
+      }
+
+      // Check monthly usage limits
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const { count } = await getSupabase()
+        .from("usage")
+        .select("*", { count: "exact", head: true })
+        .eq("api_key_id", keyRecord.id)
+        .gte("created_at", monthStart.toISOString());
+
+      if (count !== null && count >= keyRecord.monthly_limit) {
+        throw new HTTPException(429, {
+          message: `Monthly API limit exceeded (${keyRecord.monthly_limit} requests)`,
+        });
+      }
+
+      // Set context for downstream handlers
+      c.set("apiKeyId", keyRecord.id);
+      c.set("tier", keyRecord.tier);
+      c.set("monthlyLimit", keyRecord.monthly_limit);
+      c.set("currentUsage", count || 0);
+
+      // Update last_used_at (fire and forget)
+      getSupabase()
+        .from("api_keys")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("id", keyRecord.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Error updating last_used_at:", error);
+          }
+        });
+
+      return next();
+    } catch (err) {
+      if (err instanceof HTTPException) {
+        throw err;
+      }
+      console.error("Auth middleware error:", err);
+      throw new HTTPException(500, {
+        message: "Authentication service error",
+      });
+    }
+  }
+
+  // Fallback: Development mode when Supabase isn't configured
+  if (DEV_API_KEYS.size === 0) {
+    console.warn(
+      "No Supabase or API keys configured. Allowing all requests in development."
+    );
     return next();
   }
 
-  if (!VALID_API_KEYS.has(token)) {
+  if (!DEV_API_KEYS.has(token)) {
     throw new HTTPException(403, {
       message: "Invalid API key",
     });
   }
-
-  // TODO: Look up API key in Supabase to get user/org context
-  // c.set('userId', keyRecord.userId);
-  // c.set('orgId', keyRecord.orgId);
 
   return next();
 }
@@ -61,4 +137,23 @@ export function extractApiKey(c: Context): string | null {
   if (type !== "Bearer") return null;
 
   return token || null;
+}
+
+/**
+ * Helper function to generate a new API key
+ * Returns both the raw key (to give to user) and the hash (to store in DB)
+ */
+export function generateApiKey(): { key: string; hash: string; prefix: string } {
+  // Generate random bytes and convert to base64
+  const randomBytes = crypto.getRandomValues(new Uint8Array(24));
+  const randomString = Buffer.from(randomBytes)
+    .toString("base64")
+    .replace(/[+/=]/g, "")
+    .slice(0, 24);
+
+  const key = `gk_${randomString}`;
+  const hash = createHash("sha256").update(key).digest("hex");
+  const prefix = key.slice(0, 11); // "gk_" + first 8 chars
+
+  return { key, hash, prefix };
 }

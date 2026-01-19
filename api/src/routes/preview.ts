@@ -5,13 +5,16 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { renderTemplate } from "../services/template.js";
+import { zValidator } from "@hono/zod-validator";
+import { templateEngine } from "../services/template.js";
+import { supabase, getSupabase } from "../lib/supabase.js";
 import type { QuoteData, PreviewResponse, ApiError } from "../lib/types.js";
 
 const preview = new Hono();
 
 // Request validation schema
-const previewSchema = z.object({
+const previewRequestSchema = z.object({
+  template: z.string().min(1).default("quote-modern"),
   data: z.object({
     client: z.object({
       name: z.string().min(1),
@@ -50,39 +53,98 @@ const previewSchema = z.object({
       })
       .optional(),
   }),
-  templateId: z.string().optional(),
 });
 
-preview.post("/", async (c) => {
-  try {
-    const body = await c.req.json();
-
-    // Validate request
-    const parsed = previewSchema.safeParse(body);
-    if (!parsed.success) {
+preview.post(
+  "/",
+  zValidator("json", previewRequestSchema, (result, c) => {
+    if (!result.success) {
       const error: ApiError = {
         error: "Validation failed",
         code: "VALIDATION_ERROR",
-        details: parsed.error.issues,
+        details: result.error.issues,
       };
       return c.json(error, 400);
     }
+  }),
+  async (c) => {
+    try {
+      const { template, data } = c.req.valid("json");
+      const apiKeyId = c.get("apiKeyId") as string | undefined;
 
-    const { data, templateId } = parsed.data;
+      // Render template using Mustache engine
+      const result = await templateEngine.render(template, data as QuoteData);
 
-    // Render template
-    const html = renderTemplate(data as QuoteData, templateId);
+      // Build response
+      const response: PreviewResponse & { sessionId?: string } = {
+        html: result.html,
+      };
 
-    const response: PreviewResponse = {
-      html,
-      // previewUrl will be added when we implement hosted previews
-    };
+      // If Supabase is configured and we have an API key, create session and track usage
+      if (supabase && apiKeyId) {
+        try {
+          // Create session in Supabase
+          const { data: session, error: sessionError } = await getSupabase()
+            .from("sessions")
+            .insert({
+              api_key_id: apiKeyId,
+              template,
+              current_html: result.html,
+              original_html: result.html,
+              data,
+              modifications: [],
+            })
+            .select("id")
+            .single();
 
-    return c.json(response);
+          if (sessionError) {
+            console.error("Session creation error:", sessionError);
+            // Don't fail the request, just skip session tracking
+          } else if (session) {
+            response.sessionId = session.id;
+          }
+
+          // Track usage (fire and forget)
+          getSupabase()
+            .from("usage")
+            .insert({
+              api_key_id: apiKeyId,
+              endpoint: "preview",
+              template,
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error("Usage tracking error:", error);
+              }
+            });
+        } catch (dbError) {
+          console.error("Database error:", dbError);
+          // Continue without session tracking
+        }
+      }
+
+      return c.json(response);
+    } catch (err) {
+      console.error("Preview error:", err);
+
+      const error: ApiError = {
+        error: err instanceof Error ? err.message : "Unknown error",
+        code: "PREVIEW_ERROR",
+      };
+      return c.json(error, 500);
+    }
+  }
+);
+
+// GET endpoint to list available templates
+preview.get("/templates", async (c) => {
+  try {
+    const templates = templateEngine.getAvailableTemplates();
+    return c.json({ templates });
   } catch (err) {
     const error: ApiError = {
       error: err instanceof Error ? err.message : "Unknown error",
-      code: "PREVIEW_ERROR",
+      code: "TEMPLATES_ERROR",
     };
     return c.json(error, 500);
   }

@@ -4,71 +4,154 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import type { ModifyRequest, ModifyResponse } from "../lib/types.js";
 
-const anthropic = new Anthropic();
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-const SYSTEM_PROMPT = `You are an expert HTML/CSS editor. You receive HTML documents and modification instructions.
+export interface ModifyResult {
+  html: string;
+  changes: string[];
+  tokensUsed: number;
+}
 
-Your job is to:
-1. Understand the user's modification request
-2. Apply the changes to the HTML
-3. Return the modified HTML along with a summary of changes
+const SYSTEM_PROMPT = `You are an expert HTML/CSS developer modifying a PDF document template.
 
-Rules:
-- Preserve the overall structure unless explicitly asked to change it
-- Keep all existing content unless told to remove it
-- Use inline styles or add to existing <style> blocks
-- Ensure the HTML remains valid and well-formed
-- Focus on visual and structural changes, not adding JavaScript
+CRITICAL RULES:
+1. NEVER change data values (prices, quantities, names, dates, etc.) - these use Mustache syntax like {{client.name}}
+2. NEVER remove required sections (header, line-items, totals, footer)
+3. ONLY modify styling, layout, colors, fonts, spacing
+4. Keep all data-glyph-region attributes intact
+5. Output ONLY the complete modified HTML document, nothing else
+6. Preserve all Mustache placeholders exactly as they appear
 
-Return your response in this exact JSON format:
-{
-  "html": "the complete modified HTML document",
-  "changes": ["list", "of", "changes", "made"]
-}`;
+You may:
+- Change colors, backgrounds, borders
+- Modify fonts, sizes, weights
+- Adjust spacing, margins, padding
+- Rearrange layout within sections
+- Add visual elements (borders, shadows, gradients)
+- Modify table styling
+- Add or change CSS classes`;
 
-export async function modifyHtml(request: ModifyRequest): Promise<ModifyResponse> {
-  const { html, instruction, context } = request;
+export async function modifyTemplate(
+  currentHtml: string,
+  userPrompt: string,
+  region?: string
+): Promise<ModifyResult> {
+  const contextPrompt = region
+    ? `The user selected the "${region}" section and wants: ${userPrompt}`
+    : userPrompt;
 
-  const userMessage = `Here is the HTML document to modify:
-
-\`\`\`html
-${html}
-\`\`\`
-
-${context ? `Context about the document data: ${JSON.stringify(context, null, 2)}` : ""}
-
-Modification request: ${instruction}
-
-Apply the requested changes and return the result as JSON.`;
-
-  const response = await anthropic.messages.create({
+  const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 8192,
     system: SYSTEM_PROMPT,
     messages: [
       {
         role: "user",
-        content: userMessage,
+        content: `Current HTML document:
+
+\`\`\`html
+${currentHtml}
+\`\`\`
+
+Modification request: ${contextPrompt}
+
+Output the complete modified HTML document. After the HTML, on a new line, write "CHANGES:" followed by a brief bullet list of what you changed.`,
       },
     ],
   });
 
-  // Extract text content
-  const textContent = response.content.find((block) => block.type === "text");
-  if (!textContent || textContent.type !== "text") {
-    throw new Error("No text response from Claude");
+  const responseText =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
+  // Parse response - extract HTML and changes
+  const htmlMatch = responseText.match(/```html\n([\s\S]*?)\n```/);
+  let html = htmlMatch ? htmlMatch[1] : responseText;
+
+  // If no code block, try to extract HTML directly
+  if (!htmlMatch) {
+    const docStart =
+      responseText.indexOf("<!DOCTYPE html>") !== -1
+        ? responseText.indexOf("<!DOCTYPE html>")
+        : responseText.indexOf("<html");
+    const docEnd = responseText.lastIndexOf("</html>") + 7;
+    if (docStart !== -1 && docEnd > docStart) {
+      html = responseText.slice(docStart, docEnd);
+    }
   }
 
-  // Parse JSON from response
-  const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Could not parse JSON response from Claude");
+  // Extract changes list
+  const changesMatch = responseText.match(/CHANGES:\s*([\s\S]*?)(?:$|```)/);
+  const changes: string[] = [];
+  if (changesMatch) {
+    const changeLines = changesMatch[1].trim().split("\n");
+    for (const line of changeLines) {
+      const cleanLine = line.replace(/^[-*•]\s*/, "").trim();
+      if (cleanLine) changes.push(cleanLine);
+    }
   }
 
-  const result = JSON.parse(jsonMatch[0]) as ModifyResponse;
-  return result;
+  return {
+    html,
+    changes: changes.length > 0 ? changes : ["Template modified as requested"],
+    tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
+  };
+}
+
+// Validate that modification didn't break critical elements
+export function validateModification(
+  originalHtml: string,
+  modifiedHtml: string
+): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+
+  // Check all data-glyph-region attributes are preserved
+  const originalRegions =
+    originalHtml.match(/data-glyph-region="[^"]+"/g) || [];
+  const modifiedRegions =
+    modifiedHtml.match(/data-glyph-region="[^"]+"/g) || [];
+
+  for (const region of originalRegions) {
+    if (!modifiedRegions.includes(region)) {
+      issues.push(`Missing region: ${region}`);
+    }
+  }
+
+  // Check Mustache placeholders are preserved
+  const originalPlaceholders = originalHtml.match(/\{\{[^}]+\}\}/g) || [];
+  const modifiedPlaceholders = modifiedHtml.match(/\{\{[^}]+\}\}/g) || [];
+
+  const originalSet = new Set(originalPlaceholders);
+  const modifiedSet = new Set(modifiedPlaceholders);
+
+  for (const placeholder of originalSet) {
+    if (!modifiedSet.has(placeholder)) {
+      // Allow removal of conditional blocks but not data placeholders
+      if (!placeholder.startsWith("{{#") && !placeholder.startsWith("{{/")) {
+        issues.push(`Missing placeholder: ${placeholder}`);
+      }
+    }
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
+}
+
+// Legacy function for backwards compatibility
+export async function modifyHtml(request: {
+  html: string;
+  instruction: string;
+  context?: unknown;
+}): Promise<{ html: string; changes: string[] }> {
+  const result = await modifyTemplate(request.html, request.instruction);
+  return {
+    html: result.html,
+    changes: result.changes,
+  };
 }
 
 export async function generateHtmlFromPrompt(prompt: string): Promise<string> {

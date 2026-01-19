@@ -1,119 +1,159 @@
 /**
  * PDF Generation Service
- * Uses Playwright for HTML to PDF conversion
- *
- * Note: Playwright requires separate installation.
- * For production, consider using a dedicated PDF service or
- * running Playwright in a container with browsers pre-installed.
+ * Uses Playwright for HTML to PDF conversion with browser pooling for performance
  */
 
+import { chromium, Browser, Page } from 'playwright';
 import type { GenerateRequest, GenerateResponse } from "../lib/types.js";
 
-// Playwright types (optional dependency)
-interface PlaywrightBrowser {
-  newPage(): Promise<PlaywrightPage>;
-  close(): Promise<void>;
-}
+// Browser instance (reused across requests)
+let browser: Browser | null = null;
 
-interface PlaywrightPage {
-  setContent(html: string, options?: { waitUntil?: string }): Promise<void>;
-  pdf(options?: Record<string, unknown>): Promise<Uint8Array>;
-  screenshot(options?: Record<string, unknown>): Promise<Uint8Array>;
-}
+// Page pool for better performance
+const pagePool: Page[] = [];
+const MAX_POOL_SIZE = 3;
 
-interface PlaywrightModule {
-  chromium: {
-    launch(options?: { headless?: boolean }): Promise<PlaywrightBrowser>;
-  };
-}
-
-// Lazy import Playwright to handle cases where it's not installed
-let playwright: PlaywrightModule | null = null;
-
-async function getPlaywright(): Promise<PlaywrightModule> {
-  if (!playwright) {
-    try {
-      // Dynamic import to handle optional dependency
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const dynamicImport = new Function("modulePath", "return import(modulePath)");
-      playwright = await dynamicImport("playwright") as PlaywrightModule;
-    } catch {
-      throw new Error(
-        "Playwright is not installed. Run: bun add playwright && npx playwright install chromium"
-      );
-    }
+/**
+ * Get or create browser instance
+ */
+async function getBrowser(): Promise<Browser> {
+  if (!browser || !browser.isConnected()) {
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
   }
-  return playwright;
+  return browser;
 }
 
-export async function generatePdf(
-  html: string,
-  options?: GenerateRequest["options"]
-): Promise<Buffer> {
-  const pw = await getPlaywright();
+/**
+ * Get a page from pool or create new one
+ */
+async function getPage(): Promise<Page> {
+  const b = await getBrowser();
 
-  const browser = await pw.chromium.launch({
-    headless: true,
+  // Try to get a page from pool
+  if (pagePool.length > 0) {
+    const page = pagePool.pop()!;
+    return page;
+  }
+
+  // Create new page with letter size viewport at 96 DPI
+  const context = await b.newContext({
+    viewport: { width: 816, height: 1056 },
   });
+  return context.newPage();
+}
+
+/**
+ * Return page to pool for reuse
+ */
+function returnPage(page: Page): void {
+  if (pagePool.length < MAX_POOL_SIZE) {
+    pagePool.push(page);
+  } else {
+    page.close().catch(() => {});
+  }
+}
+
+export interface PDFOptions {
+  format?: 'letter' | 'a4';
+  landscape?: boolean;
+  margin?: {
+    top?: string;
+    bottom?: string;
+    left?: string;
+    right?: string;
+  };
+  scale?: number;
+}
+
+export interface PNGOptions {
+  width?: number;
+  height?: number;
+  scale?: number;
+}
+
+/**
+ * Generate PDF from HTML content
+ */
+export async function generatePDF(
+  html: string,
+  options: PDFOptions = {}
+): Promise<Buffer> {
+  const page = await getPage();
 
   try {
-    const page = await browser.newPage();
-
+    // Set content
     await page.setContent(html, {
-      waitUntil: "networkidle",
+      waitUntil: 'networkidle',
+      timeout: 30000,
     });
 
+    // Wait for fonts to load
+    await page.waitForTimeout(500);
+
+    // Generate PDF
     const pdf = await page.pdf({
-      format: "Letter",
+      format: options.format === 'a4' ? 'A4' : 'Letter',
+      landscape: options.landscape || false,
       printBackground: true,
       margin: {
-        top: "0.5in",
-        right: "0.5in",
-        bottom: "0.5in",
-        left: "0.5in",
+        top: options.margin?.top || '0.5in',
+        bottom: options.margin?.bottom || '0.5in',
+        left: options.margin?.left || '0.5in',
+        right: options.margin?.right || '0.5in',
       },
-      scale: options?.scale || 1,
+      scale: options.scale || 1,
     });
 
     return Buffer.from(pdf);
   } finally {
-    await browser.close();
+    returnPage(page);
   }
 }
 
-export async function generatePng(
-  html: string,
-  options?: GenerateRequest["options"]
-): Promise<Buffer> {
-  const pw = await getPlaywright();
-
-  const browser = await pw.chromium.launch({
-    headless: true,
-  });
+/**
+ * Generate PNG screenshot from HTML content
+ */
+export async function generatePNG(html: string, options: PNGOptions = {}): Promise<Buffer> {
+  const page = await getPage();
 
   try {
-    const page = await browser.newPage();
+    // Set viewport if dimensions specified
+    if (options.width || options.height) {
+      await page.setViewportSize({
+        width: options.width || 800,
+        height: options.height || 1000,
+      });
+    }
 
     await page.setContent(html, {
-      waitUntil: "networkidle",
+      waitUntil: 'networkidle',
+      timeout: 30000,
     });
+
+    // Wait for fonts to load
+    await page.waitForTimeout(500);
 
     const screenshot = await page.screenshot({
       fullPage: true,
-      type: "png",
-      scale: "device",
-      viewport: {
-        width: options?.width || 800,
-        height: options?.height || 1000,
-      },
+      type: 'png',
     });
 
     return Buffer.from(screenshot);
   } finally {
-    await browser.close();
+    returnPage(page);
   }
 }
 
+// Keep old function names for backwards compatibility
+export const generatePdf = generatePDF;
+export const generatePng = generatePNG;
+
+/**
+ * Generate document (wrapper for both PDF and PNG)
+ */
 export async function generate(
   request: GenerateRequest
 ): Promise<GenerateResponse> {
@@ -122,13 +162,10 @@ export async function generate(
   let buffer: Buffer;
 
   if (format === "pdf") {
-    buffer = await generatePdf(html, options);
+    buffer = await generatePDF(html, { scale: options?.scale });
   } else {
-    buffer = await generatePng(html, options);
+    buffer = await generatePNG(html, options);
   }
-
-  // TODO: Upload to Supabase Storage and return URL
-  // For now, we'll need to handle this at the route level
 
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + 24);
@@ -141,4 +178,29 @@ export async function generate(
   };
 }
 
-export { generatePdf as toPdf, generatePng as toPng };
+// Alias exports
+export { generatePDF as toPdf, generatePNG as toPng };
+
+// Cleanup on process exit
+process.on('beforeExit', async () => {
+  for (const page of pagePool) {
+    await page.close().catch(() => {});
+  }
+  if (browser) {
+    await browser.close().catch(() => {});
+  }
+});
+
+// Also handle SIGINT/SIGTERM for graceful shutdown
+const cleanup = async () => {
+  console.log('Cleaning up Playwright resources...');
+  for (const page of pagePool) {
+    await page.close().catch(() => {});
+  }
+  if (browser) {
+    await browser.close().catch(() => {});
+  }
+};
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);

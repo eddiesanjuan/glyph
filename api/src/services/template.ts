@@ -1,17 +1,251 @@
 /**
  * Template Engine Service
- * Handles HTML template rendering with QuoteData
+ * Handles HTML template rendering with Mustache
  */
 
+import Mustache from "mustache";
+import { readFileSync, existsSync, readdirSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import type { QuoteData } from "../lib/types.js";
 
-const DEFAULT_TEMPLATE = `
+// Get directory of current module for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Templates are stored relative to the api folder
+const TEMPLATES_DIR = join(__dirname, "../../../templates");
+
+interface TemplateResult {
+  html: string;
+  templateName: string;
+}
+
+export class TemplateEngine {
+  private templateCache: Map<string, string> = new Map();
+
+  /**
+   * Render a template with the provided data
+   */
+  async render(templateName: string, data: QuoteData): Promise<TemplateResult> {
+    const templateHtml = await this.loadTemplate(templateName);
+
+    // Prepare data for Mustache rendering
+    // Mustache needs flat access or proper nested objects
+    const renderData = this.prepareData(data);
+
+    // Render Mustache template
+    const html = Mustache.render(templateHtml, renderData);
+
+    return { html, templateName };
+  }
+
+  /**
+   * Prepare data for Mustache template
+   * Handles currency formatting and default values
+   */
+  private prepareData(data: QuoteData): Record<string, unknown> {
+    return {
+      client: {
+        name: data.client.name,
+        email: data.client.email || null,
+        address: data.client.address || null,
+        company: data.client.company || null,
+      },
+      lineItems: data.lineItems.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: this.formatNumber(item.unitPrice),
+        total: this.formatNumber(item.total),
+      })),
+      totals: {
+        subtotal: this.formatNumber(data.totals.subtotal),
+        tax: data.totals.tax ? this.formatNumber(data.totals.tax) : null,
+        discount: data.totals.discount
+          ? this.formatNumber(data.totals.discount)
+          : null,
+        total: this.formatNumber(data.totals.total),
+        taxRate: data.totals.tax
+          ? Math.round((data.totals.tax / data.totals.subtotal) * 100)
+          : null,
+      },
+      meta: {
+        quoteNumber: data.meta?.quoteNumber || "001",
+        date: data.meta?.date || new Date().toLocaleDateString(),
+        validUntil: data.meta?.validUntil || "",
+        notes: data.meta?.notes || null,
+        terms: data.meta?.terms || null,
+        showSignature: false, // Can be enabled via data
+      },
+      branding: {
+        logoUrl: data.branding?.logoUrl || null,
+        companyName: data.branding?.companyName || "Your Company",
+        companyAddress: data.branding?.companyAddress || null,
+      },
+      styles: {
+        accentColor: "#2563eb", // Default blue accent
+      },
+    };
+  }
+
+  /**
+   * Format number as string without currency symbol (template adds $)
+   */
+  private formatNumber(amount: number): string {
+    return amount.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /**
+   * Load a template from the filesystem
+   */
+  private async loadTemplate(name: string): Promise<string> {
+    // Check cache first
+    if (this.templateCache.has(name)) {
+      return this.templateCache.get(name)!;
+    }
+
+    const templatePath = join(TEMPLATES_DIR, name, "template.html");
+
+    if (!existsSync(templatePath)) {
+      throw new Error(`Template not found: ${name}`);
+    }
+
+    const template = readFileSync(templatePath, "utf-8");
+    this.templateCache.set(name, template);
+
+    return template;
+  }
+
+  /**
+   * Get list of available templates by scanning templates directory
+   */
+  getAvailableTemplates(): string[] {
+    if (!existsSync(TEMPLATES_DIR)) {
+      console.warn(`Templates directory not found: ${TEMPLATES_DIR}`);
+      return [];
+    }
+
+    try {
+      const entries = readdirSync(TEMPLATES_DIR, { withFileTypes: true });
+      return entries
+        .filter((entry) => {
+          // Only directories that contain a template.html
+          if (!entry.isDirectory()) return false;
+          if (entry.name.startsWith("_")) return false; // Skip _shared etc
+          const templatePath = join(TEMPLATES_DIR, entry.name, "template.html");
+          return existsSync(templatePath);
+        })
+        .map((entry) => entry.name);
+    } catch (error) {
+      console.error("Error reading templates directory:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Clear the template cache (useful for development)
+   */
+  clearCache(): void {
+    this.templateCache.clear();
+  }
+}
+
+// Export singleton instance
+export const templateEngine = new TemplateEngine();
+
+// Legacy export for backwards compatibility
+export function renderTemplate(data: QuoteData, templateId?: string): string {
+  const templateName = templateId || "quote-modern";
+
+  // Synchronous version for legacy compatibility
+  const TEMPLATES_DIR_LEGACY = join(__dirname, "../../../templates");
+  const templatePath = join(TEMPLATES_DIR_LEGACY, templateName, "template.html");
+
+  let template: string;
+  if (existsSync(templatePath)) {
+    template = readFileSync(templatePath, "utf-8");
+  } else {
+    // Fallback to default inline template if file not found
+    template = getDefaultTemplate();
+  }
+
+  // Prepare data
+  const renderData = {
+    client: {
+      name: data.client.name,
+      email: data.client.email || null,
+      address: data.client.address || null,
+      company: data.client.company || null,
+    },
+    lineItems: data.lineItems.map((item) => ({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      total: item.total.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    })),
+    totals: {
+      subtotal: data.totals.subtotal.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      tax: data.totals.tax
+        ? data.totals.tax.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        : null,
+      discount: data.totals.discount
+        ? data.totals.discount.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        : null,
+      total: data.totals.total.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      taxRate: data.totals.tax
+        ? Math.round((data.totals.tax / data.totals.subtotal) * 100)
+        : null,
+    },
+    meta: {
+      quoteNumber: data.meta?.quoteNumber || "001",
+      date: data.meta?.date || new Date().toLocaleDateString(),
+      validUntil: data.meta?.validUntil || "",
+      notes: data.meta?.notes || null,
+      terms: data.meta?.terms || null,
+      showSignature: false,
+    },
+    branding: {
+      logoUrl: data.branding?.logoUrl || null,
+      companyName: data.branding?.companyName || "Your Company",
+      companyAddress: data.branding?.companyAddress || null,
+    },
+    styles: {
+      accentColor: "#2563eb",
+    },
+  };
+
+  return Mustache.render(template, renderData);
+}
+
+function getDefaultTemplate(): string {
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quote - {{quoteNumber}}</title>
+  <title>Quote - {{meta.quoteNumber}}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
@@ -31,20 +265,20 @@ const DEFAULT_TEMPLATE = `
 </head>
 <body>
   <div class="header">
-    <div class="company">{{companyName}}</div>
+    <div class="company">{{branding.companyName}}</div>
     <div class="quote-info">
-      <div>Quote #{{quoteNumber}}</div>
-      <div>Date: {{date}}</div>
-      <div>Valid Until: {{validUntil}}</div>
+      <div>Quote #{{meta.quoteNumber}}</div>
+      <div>Date: {{meta.date}}</div>
+      {{#meta.validUntil}}<div>Valid Until: {{meta.validUntil}}</div>{{/meta.validUntil}}
     </div>
   </div>
 
   <div class="client">
     <h3>Bill To:</h3>
-    <div>{{clientName}}</div>
-    {{#clientCompany}}<div>{{clientCompany}}</div>{{/clientCompany}}
-    {{#clientAddress}}<div>{{clientAddress}}</div>{{/clientAddress}}
-    {{#clientEmail}}<div>{{clientEmail}}</div>{{/clientEmail}}
+    <div>{{client.name}}</div>
+    {{#client.company}}<div>{{client.company}}</div>{{/client.company}}
+    {{#client.address}}<div>{{client.address}}</div>{{/client.address}}
+    {{#client.email}}<div>{{client.email}}</div>{{/client.email}}
   </div>
 
   <table>
@@ -61,103 +295,27 @@ const DEFAULT_TEMPLATE = `
       <tr>
         <td>{{description}}</td>
         <td>{{quantity}}</td>
-        <td>{{unitPrice}}</td>
-        <td>{{total}}</td>
+        <td>\${{unitPrice}}</td>
+        <td>\${{total}}</td>
       </tr>
       {{/lineItems}}
     </tbody>
   </table>
 
   <div class="totals">
-    <div class="row"><span>Subtotal:</span> <span>{{subtotal}}</span></div>
-    {{#tax}}<div class="row"><span>Tax:</span> <span>{{tax}}</span></div>{{/tax}}
-    {{#discount}}<div class="row"><span>Discount:</span> <span>-{{discount}}</span></div>{{/discount}}
-    <div class="row total"><span>Total:</span> <span>{{total}}</span></div>
+    <div class="row"><span>Subtotal:</span> <span>\${{totals.subtotal}}</span></div>
+    {{#totals.tax}}<div class="row"><span>Tax:</span> <span>\${{totals.tax}}</span></div>{{/totals.tax}}
+    {{#totals.discount}}<div class="row"><span>Discount:</span> <span>-\${{totals.discount}}</span></div>{{/totals.discount}}
+    <div class="row total"><span>Total:</span> <span>\${{totals.total}}</span></div>
   </div>
 
-  {{#notes}}
+  {{#meta.notes}}
   <div class="notes">
     <strong>Notes:</strong>
-    <p>{{notes}}</p>
+    <p>{{meta.notes}}</p>
   </div>
-  {{/notes}}
+  {{/meta.notes}}
 </body>
 </html>
 `;
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
-
-function simpleTemplate(template: string, data: Record<string, unknown>): string {
-  let result = template;
-
-  // Handle simple replacements {{key}}
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === "string" || typeof value === "number") {
-      result = result.replace(new RegExp(`{{${key}}}`, "g"), String(value));
-    }
-  }
-
-  // Handle conditionals {{#key}}...{{/key}}
-  for (const [key, value] of Object.entries(data)) {
-    const conditionalRegex = new RegExp(`{{#${key}}}([\\s\\S]*?){{/${key}}}`, "g");
-    if (value) {
-      result = result.replace(conditionalRegex, "$1");
-    } else {
-      result = result.replace(conditionalRegex, "");
-    }
-  }
-
-  return result;
-}
-
-export function renderTemplate(data: QuoteData, _templateId?: string): string {
-  // For now, use default template. Later, fetch from database by templateId
-  const template = DEFAULT_TEMPLATE;
-
-  // Flatten data for template
-  const flatData: Record<string, unknown> = {
-    companyName: data.branding?.companyName || "Your Company",
-    quoteNumber: data.meta?.quoteNumber || "001",
-    date: data.meta?.date || new Date().toLocaleDateString(),
-    validUntil: data.meta?.validUntil || "",
-    clientName: data.client.name,
-    clientCompany: data.client.company,
-    clientAddress: data.client.address,
-    clientEmail: data.client.email,
-    subtotal: formatCurrency(data.totals.subtotal),
-    tax: data.totals.tax ? formatCurrency(data.totals.tax) : null,
-    discount: data.totals.discount ? formatCurrency(data.totals.discount) : null,
-    total: formatCurrency(data.totals.total),
-    notes: data.meta?.notes,
-  };
-
-  // Render line items
-  const lineItemsHtml = data.lineItems
-    .map(
-      (item) => `
-      <tr>
-        <td>${item.description}</td>
-        <td>${item.quantity}</td>
-        <td>${formatCurrency(item.unitPrice)}</td>
-        <td>${formatCurrency(item.total)}</td>
-      </tr>
-    `
-    )
-    .join("");
-
-  let result = simpleTemplate(template, flatData);
-  result = result.replace(/{{#lineItems}}[\s\S]*?{{\/lineItems}}/, lineItemsHtml);
-
-  return result;
-}
-
-export async function getTemplate(templateId: string): Promise<string | null> {
-  // TODO: Fetch template from Supabase
-  console.log(`Template requested: ${templateId}`);
-  return DEFAULT_TEMPLATE;
 }
