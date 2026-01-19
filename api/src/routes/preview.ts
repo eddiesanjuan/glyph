@@ -10,7 +10,6 @@ import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { QuoteData, PreviewResponse, ApiError } from "../lib/types.js";
 import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
-import "../types/hono.js"; // Import type extensions
 
 const preview = new Hono();
 

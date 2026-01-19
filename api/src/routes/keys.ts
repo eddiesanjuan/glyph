@@ -7,7 +7,6 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getSupabase, supabase } from "../lib/supabase.js";
 import { generateApiKey } from "../middleware/auth.js";
-import "../types/hono.js"; // Import type extensions
 
 const keys = new Hono();
 

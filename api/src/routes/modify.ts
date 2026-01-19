@@ -22,7 +22,6 @@ import {
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
 import { getDevSession, updateDevSession, isDevSessionId } from "../lib/devSessions.js";
-import "../types/hono.js"; // Import type extensions
 
 const modify = new Hono();
 
