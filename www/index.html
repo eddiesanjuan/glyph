@@ -673,6 +673,13 @@
       transform: translateY(-1px);
     }
 
+    .playground__hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--color-text-subtle);
+      font-style: italic;
+    }
+
     .playground__preview-area {
       padding: 24px;
       background: var(--color-bg-elevated);
@@ -3058,7 +3065,7 @@
               <svg class="demo-command__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
               </svg>
-              <span class="demo-command__text" id="typing-text">Make the header teal</span>
+              <span class="demo-command__text" id="typing-text">Add a diagonal DRAFT watermark</span>
               <span class="demo-command__cursor"></span>
             </div>
           </div>
@@ -3108,14 +3115,17 @@
               <textarea
                 class="playground__input"
                 id="prompt-input"
-                placeholder="Try: 'Make the header green' or 'Add a 10% discount' or 'Change the company name to TechStart'"
+                placeholder="Try something wild: 'Add a QR code for payment' or 'Make this look like Apple' or 'Add a DRAFT watermark'"
               ></textarea>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Make the header a deep teal">Make header teal</button>
-                <button class="playground__suggestion" data-prompt="Add a 15% early payment discount">Add discount</button>
-                <button class="playground__suggestion" data-prompt="Change the accent color to teal">Change to teal</button>
-                <button class="playground__suggestion" data-prompt="Make the font size larger">Larger text</button>
+                <button class="playground__suggestion" data-prompt="Make this look like a Stripe invoice - clean, minimal, with their signature purple">Stripe style</button>
+                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code</button>
+                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark</button>
+                <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms</button>
+                <button class="playground__suggestion" data-prompt="Add a thank you message and signature line at the bottom with the current date">Add signature</button>
+                <button class="playground__suggestion" data-prompt="Add a progress bar showing 50% deposit already paid">Show progress</button>
               </div>
+              <p class="playground__hint">Try something wild - the AI understands complex requests</p>
               <button class="playground__apply-btn" id="apply-btn">
                 Apply Changes
               </button>
@@ -3179,10 +3189,10 @@
             </p>
           </div>
           <div class="feature-card__visual">
-            <div class="code-line code-line--highlight">"Add a 10% discount for early payment"</div>
-            <div class="code-line" style="margin-top: 12px; color: var(--color-text-subtle);">// AI understands context and applies changes</div>
-            <div class="code-line" style="color: var(--color-success); margin-top: 8px;">+ Discount row added: -$240.00</div>
-            <div class="code-line" style="color: var(--color-success);">+ Total updated: $2,160.00</div>
+            <div class="code-line code-line--highlight">"Add a QR code and DRAFT watermark"</div>
+            <div class="code-line" style="margin-top: 12px; color: var(--color-text-subtle);">// AI understands complex, multi-part requests</div>
+            <div class="code-line" style="color: var(--color-success); margin-top: 8px;">+ QR code added: top-right corner</div>
+            <div class="code-line" style="color: var(--color-success);">+ Watermark applied: 45deg diagonal</div>
           </div>
         </div>
 
@@ -4007,10 +4017,11 @@
     const typingText = document.getElementById('typing-text');
     const heroDemo = document.getElementById('hero-demo');
     const commands = [
-      { text: 'Make the header teal', color: '#14B8A6' },
-      { text: 'Use a purple theme', color: '#8B5CF6' },
-      { text: 'Try a green accent', color: '#22C55E' },
-      { text: 'Switch to orange', color: '#F97316' }
+      { text: 'Add a diagonal DRAFT watermark', color: '#14B8A6', effect: 'watermark' },
+      { text: 'Make this look like a Stripe invoice', color: '#635BFF', effect: 'stripe' },
+      { text: 'Add a QR code for instant payment', color: '#14B8A6', effect: 'qrcode' },
+      { text: 'Add payment terms: Net 30', color: '#22C55E', effect: 'terms' },
+      { text: 'Add a signature line with date', color: '#F97316', effect: 'signature' }
     ];
     let commandIndex = 0;
     let charIndex = 0;
@@ -4361,7 +4372,8 @@
     // Simulate modification for demo when API unavailable
     function simulateModification(prompt) {
       const lowPrompt = prompt.toLowerCase();
-      let newColor = '#14B8A6';
+      let newColor = sampleQuoteData.styles.accentColor || '#14B8A6';
+      let extras = { watermark: null, qrCode: null, terms: null, signature: null, progressBar: null, style: null };
 
       // Detect color changes
       if (lowPrompt.includes('blue')) newColor = '#3B82F6';
@@ -4373,9 +4385,45 @@
       else if (lowPrompt.includes('navy')) newColor = '#1E40AF';
       else if (lowPrompt.includes('purple') || lowPrompt.includes('violet')) newColor = '#8B5CF6';
 
-      // Update demo data and re-render
+      // Detect Stripe style
+      if (lowPrompt.includes('stripe')) {
+        newColor = '#635BFF';
+        extras.style = 'stripe';
+      }
+      // Detect Apple style
+      if (lowPrompt.includes('apple')) {
+        newColor = '#1D1D1F';
+        extras.style = 'apple';
+      }
+
+      // Detect watermark
+      if (lowPrompt.includes('watermark') || lowPrompt.includes('draft')) {
+        extras.watermark = lowPrompt.includes('paid') ? 'PAID' : 'DRAFT';
+      }
+
+      // Detect QR code
+      if (lowPrompt.includes('qr')) {
+        extras.qrCode = true;
+      }
+
+      // Detect payment terms
+      if (lowPrompt.includes('terms') || lowPrompt.includes('net 30') || lowPrompt.includes('payment')) {
+        extras.terms = 'Net 30 days. 2% discount if paid within 10 days.';
+      }
+
+      // Detect signature
+      if (lowPrompt.includes('signature') || lowPrompt.includes('sign')) {
+        extras.signature = true;
+      }
+
+      // Detect progress bar
+      if (lowPrompt.includes('progress') || lowPrompt.includes('deposit') || lowPrompt.includes('50%')) {
+        extras.progressBar = 50;
+      }
+
+      // Update demo data and re-render with extras
       sampleQuoteData.styles.accentColor = newColor;
-      currentHtml = generateStaticHtml(sampleQuoteData, newColor);
+      currentHtml = generateEnhancedHtml(sampleQuoteData, newColor, extras);
       renderPreview(currentHtml);
 
       previewContainer.classList.add('success');
@@ -4383,6 +4431,225 @@
 
       setStatus('Demo: Updated!');
       setTimeout(() => setStatus('Demo Mode'), 2000);
+    }
+
+    // Generate enhanced HTML with impressive features
+    function generateEnhancedHtml(data, accentColor, extras) {
+      const isStripe = extras.style === 'stripe';
+      const isApple = extras.style === 'apple';
+
+      const watermarkHtml = extras.watermark ? `
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; font-weight: 900; color: rgba(0,0,0,0.06); pointer-events: none; white-space: nowrap; z-index: 1;">${extras.watermark}</div>
+      ` : '';
+
+      const qrCodeHtml = extras.qrCode ? `
+        <div style="position: absolute; top: 20px; right: 20px; width: 80px; height: 80px; background: white; border: 1px solid #e5e5e5; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px;">
+          <svg viewBox="0 0 100 100" width="50" height="50">
+            <rect x="10" y="10" width="25" height="25" fill="#1a1a1a"/>
+            <rect x="15" y="15" width="15" height="15" fill="white"/>
+            <rect x="18" y="18" width="9" height="9" fill="#1a1a1a"/>
+            <rect x="65" y="10" width="25" height="25" fill="#1a1a1a"/>
+            <rect x="70" y="15" width="15" height="15" fill="white"/>
+            <rect x="73" y="18" width="9" height="9" fill="#1a1a1a"/>
+            <rect x="10" y="65" width="25" height="25" fill="#1a1a1a"/>
+            <rect x="15" y="70" width="15" height="15" fill="white"/>
+            <rect x="18" y="73" width="9" height="9" fill="#1a1a1a"/>
+            <rect x="40" y="10" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="50" y="10" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="40" y="20" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="45" y="25" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="40" y="40" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="45" y="45" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="50" y="40" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="55" y="45" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="10" y="45" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="20" y="50" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="65" y="45" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="75" y="50" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="85" y="55" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="65" y="65" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="75" y="75" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="85" y="85" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="45" y="65" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="55" y="75" width="5" height="5" fill="#1a1a1a"/>
+            <rect x="45" y="85" width="5" height="5" fill="#1a1a1a"/>
+          </svg>
+          <div style="font-size: 7px; color: #666; margin-top: 4px;">Scan to pay</div>
+        </div>
+      ` : '';
+
+      const termsHtml = extras.terms ? `
+        <div style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${accentColor};">
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; font-weight: 600;">Payment Terms</div>
+          <div style="font-size: 12px; color: #1a1a1a;">${extras.terms}</div>
+        </div>
+      ` : '';
+
+      const signatureHtml = extras.signature ? `
+        <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div style="flex: 1;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 8px;">Thank you for your business!</div>
+            <div style="border-bottom: 1px solid #1a1a1a; width: 200px; margin-bottom: 4px;"></div>
+            <div style="font-size: 10px; color: #666;">Authorized Signature</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+      ` : '';
+
+      const progressBarHtml = extras.progressBar ? `
+        <div style="margin-top: 20px; padding: 16px; background: linear-gradient(135deg, ${accentColor}15, ${accentColor}05); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 600; color: ${accentColor};">Payment Progress</span>
+            <span style="font-size: 11px; font-weight: 600; color: ${accentColor};">${extras.progressBar}% Paid</span>
+          </div>
+          <div style="height: 8px; background: #e5e5e5; border-radius: 4px; overflow: hidden;">
+            <div style="height: 100%; width: ${extras.progressBar}%; background: linear-gradient(90deg, ${accentColor}, ${accentColor}cc); border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 10px; color: #666; margin-top: 6px;">$${(data.totals.total * extras.progressBar / 100).toFixed(2)} of $${data.totals.total.toFixed(2)} received</div>
+        </div>
+      ` : '';
+
+      // Stripe-specific styling
+      const stripeStyles = isStripe ? `
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .header { border-bottom: none; padding-bottom: 0; margin-bottom: 32px; }
+        .company { font-size: 14px; font-weight: 500; color: #1a1a1a; letter-spacing: -0.01em; }
+        .title { font-size: 32px; font-weight: 600; color: #1a1a1a; text-transform: none; letter-spacing: -0.02em; }
+        .meta { background: transparent; padding: 0; gap: 48px; }
+        .meta-item { text-align: left; }
+        .meta-label { font-size: 12px; color: #697386; text-transform: none; letter-spacing: 0; }
+        .meta-value { font-size: 14px; }
+        th { background: transparent; color: #697386; font-size: 12px; text-transform: none; letter-spacing: 0; border-bottom: 1px solid #e6e6e6; }
+        td { border-bottom: 1px solid #e6e6e6; }
+        .totals-row.total { border-top: 1px solid #e6e6e6; }
+        .totals-row.total .totals-label, .totals-row.total .totals-value { color: #1a1a1a; }
+      ` : '';
+
+      // Apple-specific styling
+      const appleStyles = isApple ? `
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; }
+        .header { border-bottom: none; }
+        .company { font-size: 13px; font-weight: 400; color: #86868b; }
+        .title { font-size: 40px; font-weight: 600; color: #1d1d1f; text-transform: none; letter-spacing: -0.025em; }
+        .meta { background: transparent; border-radius: 0; }
+        th { background: transparent; color: #86868b; border-bottom: 1px solid #d2d2d7; }
+        td { border-bottom: 1px solid #d2d2d7; }
+      ` : '';
+
+      return \`<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; position: relative; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid \${accentColor}; margin-bottom: 20px; }
+  .company { font-size: 18px; font-weight: 700; color: \${accentColor}; }
+  .company-address { font-size: 11px; color: #666; margin-top: 4px; white-space: pre-line; }
+  .title { font-size: 24px; font-weight: 700; color: \${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta { display: flex; gap: 32px; background: #f9fafb; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; }
+  .meta-item { text-align: center; }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 4px; }
+  .meta-value { font-weight: 600; }
+  .client { margin-bottom: 24px; }
+  .client-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; font-weight: 600; }
+  .client-name { font-weight: 600; font-size: 14px; }
+  .client-company { color: #666; margin-top: 4px; }
+  .client-email { color: #666; font-size: 11px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: \${accentColor}; color: white; padding: 10px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: right; }
+  td { padding: 12px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+  td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align: right; }
+  .item-desc { font-weight: 500; }
+  .item-details { font-size: 11px; color: #666; margin-top: 4px; }
+  .totals { display: flex; justify-content: flex-end; margin-top: 20px; }
+  .totals-table { width: 200px; }
+  .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
+  .totals-row.total { border-top: 2px solid \${accentColor}; border-bottom: none; padding-top: 10px; margin-top: 4px; }
+  .totals-label { color: #666; }
+  .totals-value { font-weight: 500; }
+  .totals-row.total .totals-label, .totals-row.total .totals-value { font-weight: 700; color: \${accentColor}; }
+  \${stripeStyles}
+  \${appleStyles}
+</style>
+</head>
+<body>
+  \${watermarkHtml}
+  \${qrCodeHtml}
+  <div class="header">
+    <div>
+      <div class="company">\${data.branding.companyName}</div>
+      <div class="company-address">\${data.branding.companyAddress}</div>
+    </div>
+    <div class="title">\${isStripe ? 'Invoice' : 'Quote'}</div>
+  </div>
+
+  <div class="meta">
+    <div class="meta-item">
+      <div class="meta-label">Quote Number</div>
+      <div class="meta-value">\${data.meta.quoteNumber}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Date</div>
+      <div class="meta-value">\${data.meta.date}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Valid Until</div>
+      <div class="meta-value">\${data.meta.validUntil}</div>
+    </div>
+  </div>
+
+  <div class="client">
+    <div class="client-label">Prepared For</div>
+    <div class="client-name">\${data.client.name}</div>
+    <div class="client-company">\${data.client.company}</div>
+    <div class="client-email">\${data.client.email}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      \${data.lineItems.map(item => \`
+      <tr>
+        <td>
+          <div class="item-desc">\${item.description}</div>
+          <div class="item-details">\${item.details}</div>
+        </td>
+        <td>\${item.quantity}</td>
+        <td>$\${item.unitPrice}</td>
+        <td>$\${item.total}</td>
+      </tr>
+      \`).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-table">
+      <div class="totals-row">
+        <span class="totals-label">Subtotal</span>
+        <span class="totals-value">$\${data.totals.subtotal}</span>
+      </div>
+      <div class="totals-row total">
+        <span class="totals-label">Total</span>
+        <span class="totals-value">$\${data.totals.total}</span>
+      </div>
+    </div>
+  </div>
+
+  \${progressBarHtml}
+  \${termsHtml}
+  \${signatureHtml}
+</body>
+</html>\`;
     }
 
     // Template switching
