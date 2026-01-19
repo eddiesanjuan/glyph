@@ -4288,9 +4288,34 @@
       previewStatus.innerHTML = `<span class="status-dot"></span>${text}`;
     }
 
-    // Show/hide loading
+    // Show/hide loading with animated progress messages
+    const loadingMessages = [
+      'Understanding your request...',
+      'Analyzing document structure...',
+      'Applying your changes...',
+      'Almost there...'
+    ];
+    let loadingMessageInterval = null;
+
     function showLoading(show) {
       previewLoading.classList.toggle('visible', show);
+      const loadingText = previewLoading.querySelector('.playground__loading-text');
+
+      if (show) {
+        let msgIndex = 0;
+        loadingText.textContent = loadingMessages[0];
+
+        // Cycle through messages every 800ms for perceived speed
+        loadingMessageInterval = setInterval(() => {
+          msgIndex = (msgIndex + 1) % loadingMessages.length;
+          loadingText.textContent = loadingMessages[msgIndex];
+        }, 800);
+      } else {
+        if (loadingMessageInterval) {
+          clearInterval(loadingMessageInterval);
+          loadingMessageInterval = null;
+        }
+      }
     }
 
     // Apply modifications via API
@@ -4301,6 +4326,8 @@
       setStatus('Applying...');
       applyBtn.classList.add('loading');
       applyBtn.disabled = true;
+
+      const startTime = Date.now();
 
       try {
         // Try session-based modification if we have sessionId
@@ -4318,6 +4345,7 @@
           });
 
           if (response.ok) {
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const data = await response.json();
             currentHtml = data.html;
             renderPreview(currentHtml);
@@ -4326,7 +4354,8 @@
             previewContainer.classList.add('success');
             setTimeout(() => previewContainer.classList.remove('success'), 500);
 
-            setStatus('Updated!');
+            setStatus(`Done in ${elapsed}s`);
+            console.log(`[Glyph] Modification completed in ${elapsed}s`);
             setTimeout(() => setStatus('Ready'), 2000);
             return;
           }
@@ -4349,6 +4378,7 @@
           throw new Error('Modification failed');
         }
 
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         const data = await response.json();
         currentHtml = data.html;
         renderPreview(currentHtml);
@@ -4356,7 +4386,8 @@
         previewContainer.classList.add('success');
         setTimeout(() => previewContainer.classList.remove('success'), 500);
 
-        setStatus('Updated!');
+        setStatus(`Done in ${elapsed}s`);
+        console.log(`[Glyph] Modification completed in ${elapsed}s`);
         setTimeout(() => setStatus('Ready'), 2000);
 
       } catch (err) {

@@ -774,6 +774,42 @@ function detectAndEnhanceFieldRequest(userPrompt: string): { enhancedPrompt: str
       enhancement: "Ensure the discount row uses {{totals.discount}} and is wrapped with {{#totals.discount}}...{{/totals.discount}}."
     },
 
+    // QR Code pattern - CRITICAL for speed
+    {
+      pattern: /qr\s*code|add.*qr|qr.*payment|scan.*pay/i,
+      intent: "add_qr_code",
+      enhancement: `Add a QR code in the top-right corner. Use this EXACT HTML structure:
+<div style="position:absolute;top:20px;right:20px;width:80px;height:80px;background:white;border:1px solid #e5e5e5;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;">
+  <svg viewBox="0 0 100 100" width="50" height="50">
+    <rect x="10" y="10" width="25" height="25" fill="#1a1a1a"/>
+    <rect x="15" y="15" width="15" height="15" fill="white"/>
+    <rect x="18" y="18" width="9" height="9" fill="#1a1a1a"/>
+    <rect x="65" y="10" width="25" height="25" fill="#1a1a1a"/>
+    <rect x="70" y="15" width="15" height="15" fill="white"/>
+    <rect x="73" y="18" width="9" height="9" fill="#1a1a1a"/>
+    <rect x="10" y="65" width="25" height="25" fill="#1a1a1a"/>
+    <rect x="15" y="70" width="15" height="15" fill="white"/>
+    <rect x="18" y="73" width="9" height="9" fill="#1a1a1a"/>
+    <rect x="40" y="40" width="20" height="20" fill="#1a1a1a"/>
+    <rect x="65" y="65" width="8" height="8" fill="#1a1a1a"/>
+    <rect x="77" y="65" width="8" height="8" fill="#1a1a1a"/>
+    <rect x="65" y="77" width="8" height="8" fill="#1a1a1a"/>
+    <rect x="77" y="77" width="8" height="8" fill="#1a1a1a"/>
+  </svg>
+  <span style="font-size:7px;color:#666;margin-top:4px;">Scan to pay</span>
+</div>
+IMPORTANT: Add position:relative to the body element if not already present.`
+    },
+
+    // Watermark pattern - CRITICAL for speed
+    {
+      pattern: /watermark|add.*draft|draft.*watermark/i,
+      intent: "add_watermark",
+      enhancement: `Add a diagonal watermark overlay. Use this EXACT HTML after <body>:
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);pointer-events:none;white-space:nowrap;z-index:1;">DRAFT</div>
+IMPORTANT: Add position:relative to the body element if not already present. Change "DRAFT" to "PAID" if the user mentions "paid".`
+    },
+
     // Layout patterns
     {
       pattern: /two\s*columns?|split.*header|side\s*by\s*side.*header/i,
@@ -872,6 +908,45 @@ ${guidance}
   return `\n\nThe user selected the "${region}" region for editing. Focus your modifications on that section while preserving the rest of the document.`;
 }
 
+/**
+ * Fast system prompt for quick modifications (Haiku)
+ * Much smaller than the full architect prompt - optimized for speed
+ */
+const FAST_MODIFY_PROMPT = `You modify HTML documents. Rules:
+1. Return COMPLETE HTML (<!DOCTYPE html> to </html>)
+2. Preserve ALL {{mustache}} placeholders exactly
+3. Preserve ALL data-glyph-region attributes
+4. End with "CHANGES:" and bullet list
+
+SPECIAL PATTERNS:
+- QR code: Add <div style="position:absolute;top:20px;right:20px;width:80px;height:80px;background:white;border:1px solid #e5e5e5;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;"><svg viewBox="0 0 100 100" width="50" height="50"><rect x="10" y="10" width="25" height="25" fill="#1a1a1a"/><rect x="15" y="15" width="15" height="15" fill="white"/><rect x="18" y="18" width="9" height="9" fill="#1a1a1a"/><rect x="65" y="10" width="25" height="25" fill="#1a1a1a"/><rect x="70" y="15" width="15" height="15" fill="white"/><rect x="73" y="18" width="9" height="9" fill="#1a1a1a"/><rect x="10" y="65" width="25" height="25" fill="#1a1a1a"/><rect x="15" y="70" width="15" height="15" fill="white"/><rect x="18" y="73" width="9" height="9" fill="#1a1a1a"/><rect x="40" y="40" width="20" height="20" fill="#1a1a1a"/><rect x="65" y="65" width="8" height="8" fill="#1a1a1a"/><rect x="77" y="65" width="8" height="8" fill="#1a1a1a"/><rect x="65" y="77" width="8" height="8" fill="#1a1a1a"/><rect x="77" y="77" width="8" height="8" fill="#1a1a1a"/><rect x="40" y="10" width="8" height="8" fill="#1a1a1a"/><rect x="10" y="40" width="8" height="8" fill="#1a1a1a"/><rect x="52" y="40" width="8" height="8" fill="#1a1a1a"/><rect x="40" y="52" width="8" height="8" fill="#1a1a1a"/></svg><span style="font-size:7px;color:#666;margin-top:4px;">Scan to pay</span></div>
+- Watermark: Add <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);pointer-events:none;white-space:nowrap;z-index:1;">TEXT</div>
+- Make body position:relative if adding positioned elements`;
+
+/**
+ * Determine if a modification is "simple" and can use the fast model
+ */
+function isSimpleModification(prompt: string): boolean {
+  const lowPrompt = prompt.toLowerCase();
+  // Simple modifications that don't require deep understanding
+  const simplePatterns = [
+    /add.*qr/i,
+    /add.*watermark/i,
+    /change.*color/i,
+    /make.*blue|red|green|purple|orange|teal/i,
+    /add.*logo/i,
+    /add.*phone/i,
+    /add.*email/i,
+    /add.*terms/i,
+    /add.*signature/i,
+    /add.*draft/i,
+    /remove.*section/i,
+    /hide.*section/i,
+    /move.*left|right|center/i,
+  ];
+  return simplePatterns.some(p => p.test(lowPrompt));
+}
+
 export async function modifyTemplate(
   currentHtml: string,
   userPrompt: string,
@@ -891,10 +966,19 @@ export async function modifyTemplate(
     console.log(`[AI] Detected intent: ${detectedIntent}`);
   }
 
+  // Use Haiku for speed on simple modifications, Sonnet for complex ones
+  const useHaiku = isSimpleModification(userPrompt);
+  const model = useHaiku ? "claude-3-5-haiku-20241022" : "claude-sonnet-4-20250514";
+  const systemPrompt = useHaiku ? FAST_MODIFY_PROMPT : DOCUMENT_ARCHITECT_PROMPT;
+  const maxTokens = useHaiku ? 8192 : 16384;
+
+  console.log(`[AI] Using ${model} for: "${userPrompt.substring(0, 50)}..."`);
+  const startTime = Date.now();
+
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 16384,
-    system: DOCUMENT_ARCHITECT_PROMPT,
+    model,
+    max_tokens: maxTokens,
+    system: systemPrompt,
     messages: [
       {
         role: "user",
@@ -915,6 +999,8 @@ INSTRUCTIONS:
       },
     ],
   });
+
+  console.log(`[AI] Response in ${Date.now() - startTime}ms`);
 
   const responseText =
     message.content[0].type === "text" ? message.content[0].text : "";
