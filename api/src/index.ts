@@ -74,7 +74,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.8.0",
+    version: "0.9.0",
     timestamp: new Date().toISOString(),
   });
 });
@@ -83,7 +83,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.8.0",
+    version: "0.9.0",
     documentation: "https://docs.glyph.dev",
     endpoints: {
       health: "GET /health",
@@ -183,8 +183,9 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.8.2              ║
+  ║         Glyph API v0.9.0              ║
   ║   Document Generation & AI Editing    ║
+  ║      + Self-Checking Validator        ║
   ╚═══════════════════════════════════════╝
 
   Glyph API running on http://localhost:${port}

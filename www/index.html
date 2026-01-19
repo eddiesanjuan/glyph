@@ -2738,9 +2738,148 @@
       color: #f87171;
     }
 
+    .airtable-toast--warning svg {
+      color: var(--color-warning);
+    }
+
     .airtable-toast span {
       font-size: 14px;
       color: var(--color-text);
+    }
+
+    /* Validation Toast - for self-check warnings */
+    .validation-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-width: 320px;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1001;
+    }
+
+    .validation-toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .validation-toast__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .validation-toast__icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .validation-toast__icon--warning {
+      color: var(--color-warning);
+    }
+
+    .validation-toast__icon--success {
+      color: var(--color-success);
+    }
+
+    .validation-toast__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .validation-toast__close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background var(--transition-fast);
+    }
+
+    .validation-toast__close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .validation-toast__issues {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .validation-toast__issue {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .validation-toast__issue::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    .validation-toast__issue--critical::before {
+      background: var(--color-error);
+    }
+
+    .validation-toast__issue--warning::before {
+      background: var(--color-warning);
+    }
+
+    .validation-toast__actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .validation-toast__btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .validation-toast__btn--primary {
+      background: var(--color-primary);
+      color: white;
+      border: none;
+    }
+
+    .validation-toast__btn--primary:hover {
+      background: var(--color-primary-bright);
+    }
+
+    .validation-toast__btn--secondary {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .validation-toast__btn--secondary:hover {
+      border-color: var(--color-text-muted);
     }
 
     /* Connect Button in Airtable Section */
@@ -4357,6 +4496,11 @@
             setStatus(`Done in ${elapsed}s`);
             console.log(`[Glyph] Modification completed in ${elapsed}s`);
             setTimeout(() => setStatus('Ready'), 2000);
+
+            // Start background validation polling
+            if (sessionId) {
+              startValidationPolling(sessionId);
+            }
             return;
           }
         }
@@ -4397,6 +4541,228 @@
         showLoading(false);
         applyBtn.classList.remove('loading');
         applyBtn.disabled = false;
+      }
+    }
+
+    // ========================================
+    // Self-Check Validation System
+    // ========================================
+
+    let validationPollInterval = null;
+    let currentValidationToast = null;
+
+    /**
+     * Start polling for validation results after a modification
+     * The server runs validation in the background - we poll to get results
+     */
+    function startValidationPolling(sessionId) {
+      // Clear any existing polling
+      if (validationPollInterval) {
+        clearInterval(validationPollInterval);
+      }
+
+      // Poll every 1 second for up to 10 seconds
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      validationPollInterval = setInterval(async () => {
+        attempts++;
+
+        try {
+          const response = await fetch(
+            `${API_URL}/v1/modify/validation-status?sessionId=${encodeURIComponent(sessionId)}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${DEMO_API_KEY}`
+              }
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+
+            // Check if validation has completed
+            if (data.validationResult) {
+              clearInterval(validationPollInterval);
+              validationPollInterval = null;
+
+              // Show toast if there are issues
+              if (!data.validationResult.passed || data.validationResult.warningCount > 0) {
+                showValidationToast(data.validationResult, data.hasAutoFix, sessionId);
+              } else {
+                console.log('[Glyph] Self-check passed - no issues detected');
+              }
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('[Glyph] Validation poll error:', err);
+        }
+
+        // Stop polling after max attempts
+        if (attempts >= maxAttempts) {
+          clearInterval(validationPollInterval);
+          validationPollInterval = null;
+          console.log('[Glyph] Validation poll timeout - no issues reported');
+        }
+      }, 1000);
+    }
+
+    /**
+     * Show validation toast with issues and optional auto-fix button
+     */
+    function showValidationToast(result, hasAutoFix, sessionId) {
+      // Remove existing toast if any
+      if (currentValidationToast) {
+        currentValidationToast.remove();
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'validation-toast';
+
+      // Determine icon based on severity
+      const hasCritical = result.criticalCount > 0;
+      const iconClass = hasCritical ? 'validation-toast__icon--warning' : 'validation-toast__icon--warning';
+      const iconSvg = hasCritical
+        ? `<svg class="validation-toast__icon ${iconClass}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>`
+        : `<svg class="validation-toast__icon ${iconClass}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>`;
+
+      // Build issues list (max 3)
+      const issuesList = (result.issues || [])
+        .slice(0, 3)
+        .map(issue => {
+          const severityClass = issue.severity === 'critical' ? 'critical' : 'warning';
+          return `<div class="validation-toast__issue validation-toast__issue--${severityClass}">${issue.description}</div>`;
+        })
+        .join('');
+
+      // Build toast HTML
+      toast.innerHTML = `
+        <div class="validation-toast__header">
+          ${iconSvg}
+          <span class="validation-toast__title">
+            ${hasCritical ? 'Issues Detected' : 'Suggestions Available'}
+          </span>
+          <button class="validation-toast__close" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="validation-toast__issues">
+          ${issuesList}
+        </div>
+        ${hasAutoFix ? `
+          <div class="validation-toast__actions">
+            <button class="validation-toast__btn validation-toast__btn--primary" data-action="apply-fix">
+              Apply Fix
+            </button>
+            <button class="validation-toast__btn validation-toast__btn--secondary" data-action="dismiss">
+              Dismiss
+            </button>
+          </div>
+        ` : `
+          <div class="validation-toast__actions">
+            <button class="validation-toast__btn validation-toast__btn--secondary" data-action="dismiss">
+              Got it
+            </button>
+          </div>
+        `}
+      `;
+
+      // Add event listeners
+      toast.querySelector('.validation-toast__close').addEventListener('click', () => {
+        dismissValidationToast(toast);
+      });
+
+      toast.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const action = e.target.dataset.action;
+          if (action === 'apply-fix') {
+            applyValidationFix(sessionId, toast);
+          } else {
+            dismissValidationToast(toast);
+          }
+        });
+      });
+
+      // Add to DOM
+      document.body.appendChild(toast);
+      currentValidationToast = toast;
+
+      // Animate in
+      requestAnimationFrame(() => {
+        toast.classList.add('visible');
+      });
+
+      // Auto-dismiss after 15 seconds if no action taken
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          dismissValidationToast(toast);
+        }
+      }, 15000);
+    }
+
+    /**
+     * Dismiss the validation toast
+     */
+    function dismissValidationToast(toast) {
+      toast.classList.remove('visible');
+      setTimeout(() => {
+        toast.remove();
+        if (currentValidationToast === toast) {
+          currentValidationToast = null;
+        }
+      }, 300);
+    }
+
+    /**
+     * Apply the auto-fix from the server
+     */
+    async function applyValidationFix(sessionId, toast) {
+      const btn = toast.querySelector('[data-action="apply-fix"]');
+      btn.textContent = 'Applying...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_URL}/v1/modify/apply-fix`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEMO_API_KEY}`
+          },
+          body: JSON.stringify({ sessionId })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          currentHtml = data.html;
+          renderPreview(currentHtml);
+
+          // Show success briefly
+          btn.textContent = 'Fixed!';
+          btn.style.background = 'var(--color-success)';
+
+          // Add success animation to preview
+          previewContainer.classList.add('success');
+          setTimeout(() => previewContainer.classList.remove('success'), 500);
+
+          setTimeout(() => {
+            dismissValidationToast(toast);
+          }, 1000);
+        } else {
+          btn.textContent = 'Failed';
+          btn.style.background = 'var(--color-error)';
+          setTimeout(() => {
+            btn.textContent = 'Apply Fix';
+            btn.style.background = '';
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('[Glyph] Apply fix error:', err);
+        btn.textContent = 'Error';
+        btn.disabled = false;
       }
     }
 

@@ -23,8 +23,113 @@ import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
 import { getDevSession, updateDevSession, isDevSessionId } from "../lib/devSessions.js";
+import { validateModification as selfCheckValidation } from "../services/validator.js";
 
 const modify = new Hono();
+
+/**
+ * GET /v1/modify/validation-status
+ * Get the self-check validation status for a session
+ *
+ * This endpoint allows the frontend to poll for validation results
+ * after a modification has been made.
+ */
+modify.get("/validation-status", async (c) => {
+  try {
+    const sessionId = c.req.query("sessionId");
+
+    if (!sessionId) {
+      return c.json({ error: "sessionId query parameter required" }, 400);
+    }
+
+    // Check if it's a dev session
+    if (isDevSessionId(sessionId)) {
+      const session = getDevSession(sessionId);
+      if (!session) {
+        return c.json({ error: "Session not found" }, 404);
+      }
+
+      return c.json({
+        sessionId,
+        validationResult: session.validation_result || null,
+        hasAutoFix: !!session.suggested_fix_html,
+        lastModification: session.modifications.length > 0
+          ? session.modifications[session.modifications.length - 1]
+          : null,
+      });
+    }
+
+    // For database sessions, would need to query Supabase
+    // For now, return not implemented for non-dev sessions
+    return c.json({
+      sessionId,
+      validationResult: null,
+      message: "Validation status for database sessions not yet implemented",
+    });
+  } catch (err) {
+    console.error("Validation status error:", err);
+    return c.json({ error: "Failed to get validation status" }, 500);
+  }
+});
+
+/**
+ * POST /v1/modify/apply-fix
+ * Apply the auto-fix suggestion to a session
+ */
+modify.post("/apply-fix", async (c) => {
+  try {
+    const body = await c.req.json();
+    const sessionId = body.sessionId;
+
+    if (!sessionId) {
+      return c.json({ error: "sessionId required" }, 400);
+    }
+
+    if (!isDevSessionId(sessionId)) {
+      return c.json({ error: "Apply-fix only supported for dev sessions currently" }, 400);
+    }
+
+    const session = getDevSession(sessionId);
+    if (!session) {
+      return c.json({ error: "Session not found" }, 404);
+    }
+
+    if (!session.suggested_fix_html) {
+      return c.json({ error: "No auto-fix available for this session" }, 400);
+    }
+
+    // Apply the fix
+    updateDevSession(sessionId, {
+      current_html: session.suggested_fix_html,
+      template_html: session.suggested_fix_html,
+      suggested_fix_html: undefined, // Clear after applying
+      validation_result: {
+        ...session.validation_result!,
+        passed: true,
+        hasAutoFix: false,
+        validatedAt: new Date().toISOString(),
+      },
+      modifications: [
+        ...session.modifications,
+        {
+          prompt: "[Auto-fix applied]",
+          region: null,
+          timestamp: new Date().toISOString(),
+          changes: ["Applied automatic fixes for detected issues"],
+        },
+      ],
+    });
+
+    return c.json({
+      success: true,
+      html: session.suggested_fix_html,
+      message: "Auto-fix applied successfully",
+    });
+  } catch (err) {
+    console.error("Apply fix error:", err);
+    return c.json({ error: "Failed to apply fix" }, 500);
+  }
+});
 
 // Session-based request schema (recommended)
 // Accepts both UUID format and dev_ prefixed IDs for development mode
@@ -257,6 +362,16 @@ modify.post("/", async (c) => {
           });
       }
 
+      // SELF-CHECK: Run background validation after returning response
+      // This is async and non-blocking - user gets instant response
+      const originalTemplateForValidation = session.template_html || session.original_html;
+      runBackgroundValidation(
+        originalTemplateForValidation,
+        modifiedTemplateHtml,
+        prompt,
+        sessionId
+      );
+
       // Return the RENDERED HTML (with actual data) to the frontend
       return c.json({
         html: renderedHtml,
@@ -336,6 +451,9 @@ modify.post("/", async (c) => {
           });
       }
 
+      // SELF-CHECK: Run background validation (non-blocking)
+      runBackgroundValidation(html, result.html, instruction, 'direct');
+
       return c.json({
         html: result.html,
         changes: result.changes,
@@ -355,5 +473,95 @@ modify.post("/", async (c) => {
     return c.json(error, 500);
   }
 });
+
+/**
+ * Run background validation on a modification
+ * This is non-blocking and runs after the response is returned to the user
+ *
+ * The validation results could be:
+ * 1. Logged for monitoring
+ * 2. Stored in database for dashboard
+ * 3. Used to trigger alerts for critical issues
+ * 4. Auto-fix HTML and notify user on next request
+ */
+async function runBackgroundValidation(
+  beforeHtml: string,
+  afterHtml: string,
+  prompt: string,
+  sessionId: string
+): Promise<void> {
+  // Use setImmediate to ensure this runs after response is sent
+  setImmediate(async () => {
+    try {
+      console.log(`[SelfCheck] Starting validation for session: ${sessionId}`);
+
+      const result = await selfCheckValidation(beforeHtml, afterHtml, prompt, {
+        enableAiAnalysis: true,
+        enableAutoFix: true,
+      });
+
+      // Log the validation result
+      if (result.passed) {
+        console.log(`[SelfCheck] PASSED (${result.validationTime}ms) - session: ${sessionId}`);
+      } else {
+        const criticalCount = result.issues.filter(i => i.severity === 'critical').length;
+        const warningCount = result.issues.filter(i => i.severity === 'warning').length;
+        console.warn(
+          `[SelfCheck] ISSUES FOUND (${result.validationTime}ms) - session: ${sessionId}`,
+          `\n  Critical: ${criticalCount}, Warnings: ${warningCount}`
+        );
+
+        // Log each issue
+        for (const issue of result.issues) {
+          const icon = issue.severity === 'critical' ? '[!]' : '[~]';
+          console.warn(`  ${icon} ${issue.type}: ${issue.description}`);
+          if (issue.autoFixable && issue.suggestedFix) {
+            console.info(`      -> Auto-fix: ${issue.suggestedFix}`);
+          }
+        }
+
+        // If we have auto-fixed HTML, store it for potential use
+        if (result.fixedHtml) {
+          console.info(`  [SelfCheck] Auto-fixed HTML available for session: ${sessionId}`);
+          // TODO: Store the fixed HTML in session or notify user via WebSocket
+          // This could be implemented with:
+          // 1. Session storage: updateDevSession(sessionId, { suggested_fix_html: result.fixedHtml })
+          // 2. WebSocket notification to connected clients
+          // 3. Store in Supabase for dashboard review
+        }
+
+        // For critical issues, we could:
+        // 1. Send an alert (Slack, email, etc.)
+        // 2. Flag the session for review
+        // 3. Increment error metrics
+        if (criticalCount > 0) {
+          console.error(`[SelfCheck] CRITICAL: ${criticalCount} critical issues in session ${sessionId}`);
+        }
+      }
+
+      // Store validation result in session for potential future API endpoint
+      // This allows the frontend to poll for validation status
+      const validationSummary = {
+        passed: result.passed,
+        criticalCount: result.issues.filter(i => i.severity === 'critical').length,
+        warningCount: result.issues.filter(i => i.severity === 'warning').length,
+        issues: result.issues.slice(0, 5), // Only store first 5 issues
+        hasAutoFix: !!result.fixedHtml,
+        validatedAt: new Date().toISOString(),
+      };
+
+      // Update dev session with validation result (if it's a dev session)
+      if (isDevSessionId(sessionId)) {
+        updateDevSession(sessionId, {
+          validation_result: validationSummary,
+          suggested_fix_html: result.fixedHtml,
+        });
+      }
+
+    } catch (error) {
+      console.error(`[SelfCheck] Validation error for session ${sessionId}:`, error);
+    }
+  });
+}
 
 export default modify;

@@ -7,6 +7,21 @@
  * WARNING: Sessions are lost on server restart.
  */
 
+export interface ValidationSummary {
+  passed: boolean;
+  criticalCount: number;
+  warningCount: number;
+  issues: Array<{
+    type: string;
+    severity: string;
+    description: string;
+    autoFixable: boolean;
+    suggestedFix?: string;
+  }>;
+  hasAutoFix: boolean;
+  validatedAt: string;
+}
+
 export interface DevSession {
   id: string;
   current_html: string;
@@ -24,6 +39,10 @@ export interface DevSession {
   template: string;
   created_at: string;
   expires_at: string;
+  /** Self-check validation result from background validator */
+  validation_result?: ValidationSummary;
+  /** Auto-fixed HTML suggestion if issues were found and fixable */
+  suggested_fix_html?: string;
 }
 
 // In-memory storage for development sessions
@@ -85,7 +104,7 @@ export function getDevSession(sessionId: string): DevSession | null {
  */
 export function updateDevSession(
   sessionId: string,
-  updates: Partial<Pick<DevSession, 'current_html' | 'template_html' | 'modifications'>>
+  updates: Partial<Pick<DevSession, 'current_html' | 'template_html' | 'modifications' | 'validation_result' | 'suggested_fix_html'>>
 ): DevSession | null {
   const session = devSessions.get(sessionId);
 
