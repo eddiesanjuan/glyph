@@ -50,7 +50,7 @@ export async function authMiddleware(c: Context, next: Next) {
 
       const { data: keyRecord, error } = await getSupabase()
         .from("api_keys")
-        .select("id, tier, monthly_limit, is_active")
+        .select("id, tier, monthly_limit, is_active, expires_at")
         .eq("key_hash", keyHash)
         .single();
 
@@ -60,9 +60,17 @@ export async function authMiddleware(c: Context, next: Next) {
         });
       }
 
+      // Check if key is active
       if (!keyRecord.is_active) {
         throw new HTTPException(403, {
-          message: "API key is deactivated",
+          message: "API key is deactivated. Please contact support to reactivate.",
+        });
+      }
+
+      // Check if key has expired
+      if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
+        throw new HTTPException(403, {
+          message: "API key has expired. Please renew your subscription or generate a new key.",
         });
       }
 

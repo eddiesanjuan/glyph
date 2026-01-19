@@ -9,6 +9,7 @@ import { zValidator } from "@hono/zod-validator";
 import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { QuoteData, PreviewResponse, ApiError } from "../lib/types.js";
+import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
 import "../types/hono.js"; // Import type extensions
 
 const preview = new Hono();
@@ -86,6 +87,9 @@ preview.post(
       // If Supabase is configured and we have an API key, create session and track usage
       if (supabase && apiKeyId) {
         try {
+          // Calculate session expiration (1 hour from now)
+          const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
           // Create session in Supabase
           const { data: session, error: sessionError } = await getSupabase()
             .from("sessions")
@@ -96,6 +100,7 @@ preview.post(
               original_html: result.html,
               data,
               modifications: [],
+              expires_at: expiresAt,
             })
             .select("id")
             .single();
@@ -124,6 +129,12 @@ preview.post(
           console.error("Database error:", dbError);
           // Continue without session tracking
         }
+      } else if (!supabase) {
+        // Development mode: Create a session in memory storage
+        // This allows the SDK to work without database configuration
+        const devSessionId = generateDevSessionId();
+        createDevSession(devSessionId, template, result.html);
+        response.sessionId = devSessionId;
       }
 
       return c.json(response);

@@ -21,13 +21,18 @@ import {
 } from "../services/guardrails.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
+import { getDevSession, updateDevSession, isDevSessionId } from "../lib/devSessions.js";
 import "../types/hono.js"; // Import type extensions
 
 const modify = new Hono();
 
 // Session-based request schema (recommended)
+// Accepts both UUID format and dev_ prefixed IDs for development mode
 const sessionModifySchema = z.object({
-  sessionId: z.string().uuid(),
+  sessionId: z.string().min(1).refine(
+    (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) || val.startsWith('dev_'),
+    { message: "Session ID must be a UUID or development session ID" }
+  ),
   prompt: z.string().min(1).max(1000),
   region: z.string().optional(),
 });
@@ -60,34 +65,69 @@ modify.post("/", async (c) => {
 
       const { sessionId, prompt, region } = parsed.data;
       const apiKeyId = c.get("apiKeyId") as string | undefined;
+      const isDevSession = isDevSessionId(sessionId);
 
-      // Supabase required for session mode
-      if (!supabase) {
+      // Get session from database (if Supabase) or dev storage
+      let session: {
+        current_html: string;
+        original_html: string;
+        modifications: Array<{ prompt: string; region: string | null; timestamp: string; changes: string[] }>;
+        template: string;
+        api_key_id?: string;
+        expires_at?: string;
+      } | null = null;
+
+      if (isDevSession) {
+        // Get from in-memory storage (returns null if expired or not found)
+        const devSession = getDevSession(sessionId);
+        if (!devSession) {
+          const error: ApiError = {
+            error: "Development session not found or expired. In dev mode, sessions are stored in memory and may have been lost on server restart. Please create a new preview.",
+            code: "DEV_SESSION_NOT_FOUND",
+          };
+          return c.json(error, 404);
+        }
+        session = devSession;
+      } else if (supabase) {
+        // Get from Supabase
+        const { data, error: sessionError } = await getSupabase()
+          .from("sessions")
+          .select("*")
+          .eq("id", sessionId)
+          .single();
+
+        if (sessionError || !data) {
+          const error: ApiError = {
+            error: "Session not found. It may have expired or been deleted.",
+            code: "SESSION_NOT_FOUND",
+          };
+          return c.json(error, 404);
+        }
+        session = data;
+      } else {
+        // No Supabase and not a dev session
         const error: ApiError = {
-          error: "Session mode requires database configuration",
+          error: "Database not configured. Use a development session ID (dev_*) for local testing.",
           code: "CONFIG_ERROR",
         };
         return c.json(error, 503);
       }
 
-      // Get session
-      const { data: session, error: sessionError } = await getSupabase()
-        .from("sessions")
-        .select("*")
-        .eq("id", sessionId)
-        .single();
-
-      if (sessionError || !session) {
+      if (!session) {
         return c.json({ error: "Session not found" }, 404);
       }
 
       // Check session not expired (sessions expire after 1 hour by default)
       if (session.expires_at && new Date(session.expires_at) < new Date()) {
-        return c.json({ error: "Session expired" }, 410);
+        const error: ApiError = {
+          error: "Session has expired. Please create a new preview to continue editing.",
+          code: "SESSION_EXPIRED",
+        };
+        return c.json(error, 410);
       }
 
-      // Verify session belongs to this API key (if we have auth)
-      if (apiKeyId && session.api_key_id !== apiKeyId) {
+      // Verify session belongs to this API key (if we have auth and it's not a dev session)
+      if (!isDevSession && apiKeyId && session.api_key_id !== apiKeyId) {
         return c.json({ error: "Session not found" }, 404);
       }
 
@@ -154,20 +194,29 @@ modify.post("/", async (c) => {
         },
       ];
 
-      const { error: updateError } = await getSupabase()
-        .from("sessions")
-        .update({
+      // Update session in appropriate storage
+      if (isDevSession) {
+        // Update in-memory dev session
+        updateDevSession(sessionId, {
           current_html: result.html,
           modifications,
-        })
-        .eq("id", sessionId);
+        });
+      } else if (supabase) {
+        const { error: updateError } = await getSupabase()
+          .from("sessions")
+          .update({
+            current_html: result.html,
+            modifications,
+          })
+          .eq("id", sessionId);
 
-      if (updateError) {
-        console.error("Session update error:", updateError);
+        if (updateError) {
+          console.error("Session update error:", updateError);
+        }
       }
 
-      // Track usage
-      if (apiKeyId) {
+      // Track usage (only for database sessions)
+      if (!isDevSession && apiKeyId && supabase) {
         getSupabase()
           .from("usage")
           .insert({
