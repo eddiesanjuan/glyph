@@ -36,18 +36,60 @@
   --sl-color-accent: #8b5cf6;
   --sl-color-accent-high: #ddd6fe;
 
-  --sl-color-white: #0f172a;
-  --sl-color-gray-1: #1e293b;
-  --sl-color-gray-2: #334155;
-  --sl-color-gray-3: #475569;
-  --sl-color-gray-4: #64748b;
-  --sl-color-gray-5: #94a3b8;
-  --sl-color-gray-6: #cbd5e1;
-  --sl-color-black: #f8fafc;
-
+  /* Dark backgrounds */
   --sl-color-bg: #0f172a;
   --sl-color-bg-nav: #1e293b;
   --sl-color-bg-sidebar: #1e293b;
+
+  /* Text colors - light text on dark bg */
+  --sl-color-text: #f1f5f9;
+  --sl-color-text-accent: #e2e8f0;
+
+  /* Gray scale for dark mode */
+  --sl-color-gray-1: #1e293b;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-3: #475569;
+  --sl-color-gray-4: #94a3b8;
+  --sl-color-gray-5: #cbd5e1;
+  --sl-color-gray-6: #f1f5f9;
+
+  /* Fix text readability */
+  --sl-color-white: #f8fafc;
+  --sl-color-black: #0f172a;
+}
+
+/* Force readable text in dark mode */
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] p,
+:root[data-theme='dark'] li,
+:root[data-theme='dark'] span,
+:root[data-theme='dark'] .card-grid .card {
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .hero h1 {
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] .hero p {
+  color: #cbd5e1;
+}
+
+:root[data-theme='dark'] .sl-link-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:root[data-theme='dark'] .sl-link-card:hover {
+  border-color: #8b5cf6;
+}
+
+:root[data-theme='dark'] .sl-link-card h2,
+:root[data-theme='dark'] .sl-link-card p {
+  color: #f1f5f9;
 }
 
 /* Logo styling */
