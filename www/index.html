@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Glyph - AI-Powered PDF Customization</title>
-  <meta name="description" content="Let your customers personalize documents with natural language. Ship in minutes with 2 lines of code.">
+  <title>Glyph - Natural Language PDF Customization | MCP, CLI, SDK</title>
+  <meta name="description" content="Natural language PDF customization. Works with Claude Code, Cursor, Windsurf via MCP. CLI and SDK available. Vibe code your documents.">
 
   <!-- Fonts - Geist for premium developer tool aesthetic -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -500,6 +500,191 @@
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    /* ============================================
+       Integration Options Section (below hero)
+       ============================================ */
+    .integration-options {
+      position: relative;
+      padding: 80px 0 100px;
+      z-index: 2;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .integration-options__header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .integration-options__title {
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+      margin-bottom: 12px;
+    }
+
+    .integration-options__subtitle {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    .integration-options__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .integration-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      text-align: center;
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .integration-card:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-4px);
+    }
+
+    .integration-card__icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 20px;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .integration-card__icon svg {
+      width: 24px;
+      height: 24px;
+      color: var(--color-primary-bright);
+    }
+
+    .integration-card__label {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+
+    .integration-card__desc {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .integration-card__code {
+      position: relative;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .integration-card__code:hover {
+      border-color: var(--color-primary);
+    }
+
+    .integration-card__code-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .integration-card__copy {
+      flex-shrink: 0;
+      color: var(--color-text-subtle);
+      transition: color var(--transition-fast);
+    }
+
+    .integration-card__code:hover .integration-card__copy {
+      color: var(--color-primary-bright);
+    }
+
+    .integration-card__copy svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .integration-card__tools {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .integration-card__tool {
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      padding: 4px 10px;
+      background: var(--color-surface);
+      border-radius: 100px;
+    }
+
+    /* Toast notification for copy */
+    .copy-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-primary);
+      color: var(--color-text);
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .copy-toast svg {
+      width: 16px;
+      height: 16px;
+      color: var(--color-success);
+    }
+
+    @media (max-width: 768px) {
+      .integration-options__grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+      }
+
+      .integration-options {
+        padding: 60px 0 80px;
       }
     }
 
@@ -3378,13 +3563,13 @@
     <div class="container">
       <div class="hero__content">
         <div class="hero__text">
-          <div class="hero__badge">Now in Public Beta</div>
+          <div class="hero__badge">Vibe Code Your PDFs</div>
           <h1 class="hero__title">
-            AI-Powered<br><span>PDF Customization</span>
+            Natural Language<br><span>PDF Customization</span>
           </h1>
           <p class="hero__subtitle">
-            Let your customers personalize documents with natural language.
-            Ship in minutes with just 2 lines of code.
+            Describe what you want in plain English. Glyph handles the rest.
+            Works with Claude Code, Cursor, Windsurf, or any MCP-compatible tool.
           </p>
           <div class="hero__actions">
             <a href="#playground" class="btn btn--primary">
@@ -3394,8 +3579,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </a>
-            <a href="/dashboard" class="btn btn--secondary">
-              Get API Key
+            <a href="/docs" class="btn btn--secondary">
+              Read the Docs
             </a>
           </div>
         </div>
@@ -3458,6 +3643,97 @@
       </div>
     </div>
   </section>
+
+  <!-- Integration Options Section -->
+  <section class="integration-options">
+    <div class="container">
+      <div class="integration-options__header">
+        <div class="integration-options__title">Choose Your Workflow</div>
+        <div class="integration-options__subtitle">Three ways to integrate Glyph</div>
+      </div>
+
+      <div class="integration-options__grid">
+        <!-- MCP Server -->
+        <div class="integration-card">
+          <div class="integration-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="integration-card__label">MCP Server</div>
+          <div class="integration-card__desc">For AI-powered IDEs</div>
+          <div class="integration-card__code" onclick="copyToClipboard('npx @glyph-pdf/mcp', this)">
+            <span class="integration-card__code-text">npx @glyph-pdf/mcp</span>
+            <span class="integration-card__copy">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="integration-card__tools">
+            <span class="integration-card__tool">Claude Code</span>
+            <span class="integration-card__tool">Cursor</span>
+            <span class="integration-card__tool">Windsurf</span>
+          </div>
+        </div>
+
+        <!-- CLI -->
+        <div class="integration-card">
+          <div class="integration-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="integration-card__label">CLI</div>
+          <div class="integration-card__desc">For terminal workflows</div>
+          <div class="integration-card__code" onclick="copyToClipboard('npx @glyph-pdf/cli init', this)">
+            <span class="integration-card__code-text">npx @glyph-pdf/cli init</span>
+            <span class="integration-card__copy">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="integration-card__tools">
+            <span class="integration-card__tool">Schema detection</span>
+            <span class="integration-card__tool">12 doc types</span>
+          </div>
+        </div>
+
+        <!-- SDK -->
+        <div class="integration-card">
+          <div class="integration-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+          </div>
+          <div class="integration-card__label">SDK</div>
+          <div class="integration-card__desc">For web applications</div>
+          <div class="integration-card__code" onclick="copyToClipboard('&lt;script src=&quot;https://glyph-sdk.vercel.app/glyph.min.js&quot;&gt;&lt;/script&gt;', this)">
+            <span class="integration-card__code-text">&lt;script src="...glyph.min.js"&gt;</span>
+            <span class="integration-card__copy">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="integration-card__tools">
+            <span class="integration-card__tool">React</span>
+            <span class="integration-card__tool">Vue</span>
+            <span class="integration-card__tool">HTML</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Copy Toast Notification -->
+  <div class="copy-toast" id="copy-toast">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    Copied to clipboard
+  </div>
 
   <!-- Live Playground Section -->
   <section class="playground" id="playground">
@@ -4382,6 +4658,27 @@
       ? 'http://localhost:3000'
       : 'https://glyph-api-production-3f73.up.railway.app';
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
+
+    // ============================================
+    // Copy to Clipboard (Integration Cards)
+    // ============================================
+    function copyToClipboard(text, element) {
+      // Decode HTML entities for the SDK script tag
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = text;
+      const decodedText = textarea.value;
+
+      navigator.clipboard.writeText(decodedText).then(() => {
+        // Show toast
+        const toast = document.getElementById('copy-toast');
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
 
     // Current state
     let currentTemplate = 'quote-modern';
