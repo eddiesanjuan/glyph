@@ -371,7 +371,7 @@ function detectVisualIssues(html: string, beforeHtml: string): ValidationIssue[]
 async function aiAnalyzeModification(
   beforeHtml: string,
   afterHtml: string,
-  prompt: string
+  _prompt: string // Not used - we intentionally don't check if user request was fulfilled
 ): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = [];
 
@@ -379,8 +379,11 @@ async function aiAnalyzeModification(
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022', // Fast model for quick validation
       max_tokens: 1024,
-      system: `You are a QA agent that validates HTML document modifications.
-Analyze the before and after HTML to detect visual issues.
+      system: `You are a QA agent that validates HTML document modifications for VISUAL and STRUCTURAL issues ONLY.
+
+IMPORTANT: Your job is NOT to judge whether the user's request was fulfilled correctly.
+DO NOT report issues about styling preferences, colors, fonts, or design choices.
+Another AI already made the modification - your ONLY job is to check for TECHNICAL problems.
 
 ONLY report issues in this JSON format, nothing else:
 {
@@ -397,23 +400,27 @@ ONLY report issues in this JSON format, nothing else:
 
 If no issues found, return: {"issues": []}
 
-Check for:
-1. QR codes or watermarks overlapping important content areas
-2. Positioned elements (absolute/fixed) covering data regions
-3. Missing visual elements that were in the original
-4. Layout broken by the modification
-5. Text being obscured by overlays`,
+ONLY check for these TECHNICAL problems:
+1. QR codes or watermarks physically overlapping text (making it unreadable)
+2. Positioned elements (absolute/fixed) covering data fields users need to read
+3. Critical content/data regions completely missing or empty
+4. HTML structure broken (missing closing tags, invalid nesting)
+5. Text completely obscured by overlays (opacity too high)
+
+DO NOT report:
+- Whether colors/fonts/styles match the user's request (that's not your job)
+- Subjective design quality issues
+- "Request not fulfilled" type issues
+- Minor style inconsistencies`,
       messages: [{
         role: 'user',
-        content: `User request: "${prompt}"
-
-BEFORE HTML (relevant excerpts):
+        content: `BEFORE HTML (relevant excerpts):
 ${extractRelevantExcerpts(beforeHtml)}
 
 AFTER HTML (relevant excerpts):
 ${extractRelevantExcerpts(afterHtml)}
 
-Analyze for visual issues. Return JSON only.`
+Check for TECHNICAL visual issues only (overlaps, broken structure, missing content). Return JSON only.`
       }]
     });
 
@@ -426,7 +433,14 @@ Analyze for visual issues. Return JSON only.`
       if (Array.isArray(parsed.issues)) {
         for (const issue of parsed.issues) {
           if (isValidIssue(issue)) {
-            issues.push(issue as ValidationIssue);
+            const validatedIssue = issue as ValidationIssue;
+            // Filter out "request not fulfilled" type issues - these are false positives
+            // where the AI incorrectly reports that a user's request wasn't applied
+            if (isRequestFulfillmentIssue(validatedIssue)) {
+              console.log(`[Validator] Filtered out request-fulfillment issue: "${validatedIssue.description}"`);
+              continue;
+            }
+            issues.push(validatedIssue);
           }
         }
       }
@@ -465,6 +479,42 @@ function extractRelevantExcerpts(html: string): string {
   }
 
   return excerpts.join('\n\n---\n\n').slice(0, 3000);
+}
+
+/**
+ * Filter out AI-generated issues that are about "request not fulfilled"
+ * These are false positives where the AI validator incorrectly reports that
+ * a user's styling/modification request wasn't applied, even though it was.
+ *
+ * We only want to report actual TECHNICAL issues (broken layout, overlaps, etc.)
+ */
+function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
+  const description = issue.description.toLowerCase();
+
+  // Patterns that indicate the AI is checking if the user's request was fulfilled
+  // rather than checking for actual technical problems
+  const fulfillmentPatterns = [
+    /no\s+\w+\s+(styling|modifications?|changes?)\s+(were|was)\s+applied/i,
+    /despite\s+(user\s+)?request/i,
+    /(request|instruction)\s+(was\s+)?(not|wasn't)\s+(fulfilled|applied|completed)/i,
+    /user\s+(asked|requested|wanted)\s+(to|for)/i,
+    /should\s+(have\s+)?(been|be)\s+(applied|changed|modified)/i,
+    /expected\s+\w+\s+(color|style|font|background)/i,
+    /did\s+not\s+(apply|change|modify|update)/i,
+    /fail(ed|ure)?\s+to\s+(apply|implement|make)/i,
+    /color\s+(was\s+)?not\s+(changed|applied|updated)/i,
+    /styling\s+(was\s+)?not\s+(applied|visible)/i,
+    /modification\s+(was\s+)?not\s+(successful|applied)/i,
+    /no\s+(visible\s+)?(color|style|font|background)\s+(change|modification)/i,
+  ];
+
+  for (const pattern of fulfillmentPatterns) {
+    if (pattern.test(description)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
