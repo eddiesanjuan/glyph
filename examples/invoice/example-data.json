@@ -1,0 +1,86 @@
+{
+  "invoice": {
+    "number": "INV-2024-0042",
+    "date": "January 15, 2024",
+    "dueDate": "February 14, 2024",
+    "status": "sent",
+    "poNumber": "PO-78234"
+  },
+  "company": {
+    "name": "Horizon Digital Solutions",
+    "logo": "https://example.com/horizon-logo.png",
+    "address": "2847 Innovation Drive\nSuite 320\nAustin, TX 78701",
+    "email": "billing@horizondigital.io",
+    "phone": "(512) 555-0147",
+    "taxId": "EIN: 87-1234567",
+    "website": "horizondigital.io"
+  },
+  "client": {
+    "name": "Marcus Thompson",
+    "company": "Riverstone Manufacturing Co.",
+    "address": "1500 Industrial Parkway\nBuilding C\nHouston, TX 77001",
+    "email": "mthompson@riverstone-mfg.com",
+    "phone": "(713) 555-0298"
+  },
+  "lineItems": [
+    {
+      "description": "E-commerce Platform Development",
+      "details": "Custom B2B ordering portal with inventory integration",
+      "quantity": 120,
+      "unit": "hours",
+      "unitPrice": 175,
+      "total": 21000
+    },
+    {
+      "description": "Payment Gateway Integration",
+      "details": "Stripe and ACH payment processing setup",
+      "quantity": 24,
+      "unit": "hours",
+      "unitPrice": 175,
+      "total": 4200
+    },
+    {
+      "description": "ERP Data Migration",
+      "details": "Migration of 50,000+ product records from legacy system",
+      "quantity": 1,
+      "unit": "project",
+      "unitPrice": 8500,
+      "total": 8500
+    },
+    {
+      "description": "Staff Training Sessions",
+      "details": "3 virtual training sessions for operations team",
+      "quantity": 3,
+      "unit": "sessions",
+      "unitPrice": 750,
+      "total": 2250
+    },
+    {
+      "description": "Monthly Hosting & Support",
+      "details": "AWS infrastructure + 24/7 monitoring (Jan-Mar 2024)",
+      "quantity": 3,
+      "unit": "months",
+      "unitPrice": 1200,
+      "total": 3600
+    }
+  ],
+  "totals": {
+    "subtotal": 39550,
+    "discount": 1977.50,
+    "discountPercent": 5,
+    "tax": 3012.60,
+    "taxRate": 8.25,
+    "total": 40585.10,
+    "amountPaid": 15000,
+    "balanceDue": 25585.10
+  },
+  "payment": {
+    "methods": ["ACH", "Wire Transfer", "Check"],
+    "bankName": "First National Bank of Texas",
+    "accountNumber": "****4521",
+    "routingNumber": "111000614",
+    "instructions": "Please reference invoice number INV-2024-0042 with payment"
+  },
+  "notes": "Thank you for choosing Horizon Digital Solutions. The e-commerce platform is now live and performing well with 99.9% uptime since launch.",
+  "terms": "Payment due within 30 days. Late payments subject to 1.5% monthly interest. Questions? Contact billing@horizondigital.io"
+}

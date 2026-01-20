@@ -24,6 +24,7 @@ import keys from "./routes/keys.js";
 import airtable from "./routes/airtable.js";
 import templates from "./routes/templates.js";
 import webhooks from "./routes/webhooks.js";
+import analyze from "./routes/analyze.js";
 
 const app = new Hono();
 
@@ -92,6 +93,10 @@ app.get("/", (c) => {
       generate: "POST /v1/generate",
       dashboard: "GET /v1/dashboard",
       regenerateKey: "POST /v1/keys/regenerate",
+      // Schema detection (new!)
+      analyze: "POST /v1/analyze",
+      analyzePreviewAuto: "POST /v1/analyze/preview/auto",
+      analyzeMappings: "GET /v1/analyze/mappings",
       // Airtable integration
       airtableConnect: "POST /v1/airtable/connect",
       airtableTables: "GET /v1/airtable/bases/:baseId/tables",
@@ -136,6 +141,8 @@ app.route("/v1/airtable", airtable);
 app.route("/v1/templates", templates);
 // Webhook automation
 app.route("/v1/webhooks", webhooks);
+// Schema detection and auto-preview
+app.route("/v1/analyze", analyze);
 
 // 404 handler
 app.notFound((c) => {
@@ -197,6 +204,11 @@ console.log(`
     POST /v1/generate         - Generate PDF/PNG
     GET  /v1/dashboard        - API key usage metrics
     POST /v1/keys/regenerate  - Regenerate API key
+
+  Schema Detection (NEW!):
+    POST /v1/analyze              - Analyze data structure and detect document type
+    POST /v1/analyze/preview/auto - Auto-detect schema and create preview
+    GET  /v1/analyze/mappings     - Get field mapping reference
 
   Airtable Integration:
     POST /v1/airtable/connect                           - Connect with API key

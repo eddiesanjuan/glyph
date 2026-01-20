@@ -656,13 +656,13 @@
       display: flex;
     }
 
-    /* Field Autocomplete Dropdown */
+    /* Field Autocomplete Dropdown - Magical UI */
     .playground-autocomplete {
       position: absolute;
       top: calc(100% + 4px);
       left: 0;
       right: 0;
-      max-height: 380px;
+      max-height: 420px;
       overflow-y: auto;
       overflow-x: hidden;
       background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
@@ -717,6 +717,12 @@
       z-index: 1;
     }
 
+    /* Category color variants */
+    .autocomplete-category--recent .autocomplete-category-icon { color: #8b5cf6; }
+    .autocomplete-category--suggestions .autocomplete-category-icon { color: #f59e0b; }
+    .autocomplete-category--quick .autocomplete-category-icon { color: #14B8A6; }
+    .autocomplete-category--fields .autocomplete-category-icon { color: #3b82f6; }
+
     .autocomplete-category-icon {
       display: flex;
       align-items: center;
@@ -734,14 +740,50 @@
       border-bottom: 1px solid #1f2937;
     }
 
-    .autocomplete-item:last-child {
+    .autocomplete-item:last-of-type {
       border-bottom: none;
-      border-radius: 0 0 12px 12px;
     }
 
     .autocomplete-item:hover,
     .autocomplete-item.selected {
       background: linear-gradient(90deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
+    }
+
+    /* Type-specific styling */
+    .autocomplete-item--recent .autocomplete-item-icon {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+    .autocomplete-item--recent.selected .autocomplete-item-icon {
+      background: #8b5cf6;
+      color: white;
+    }
+
+    .autocomplete-item--suggestion .autocomplete-item-icon {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+    .autocomplete-item--suggestion.selected .autocomplete-item-icon {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .autocomplete-item--action .autocomplete-item-icon {
+      background: rgba(20, 184, 166, 0.15);
+      color: #14B8A6;
+    }
+    .autocomplete-item--action.selected .autocomplete-item-icon {
+      background: #14B8A6;
+      color: white;
+    }
+
+    .autocomplete-item--field .autocomplete-item-icon {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+    .autocomplete-item--field.selected .autocomplete-item-icon {
+      background: #3b82f6;
+      color: white;
     }
 
     .autocomplete-item-main {
@@ -756,8 +798,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       background: rgba(20, 184, 166, 0.15);
       border-radius: 6px;
       color: var(--color-primary-bright);
@@ -783,6 +825,24 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .autocomplete-item-description {
+      font-size: 11px;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .autocomplete-item--field .autocomplete-item-description {
+      font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.15);
+      padding: 1px 4px;
+      border-radius: 3px;
+      display: inline-block;
+      max-width: fit-content;
     }
 
     .autocomplete-item-path {
@@ -4422,67 +4482,183 @@
     const previewStatus = document.querySelector('.playground__preview-status');
 
     // ============================================
-    // Field Autocomplete System
+    // Magical Field Autocomplete System
     // ============================================
-    const AUTOCOMPLETE_FIELDS = [
-      // Client fields
-      { category: 'Client', name: 'Client Name', path: 'client.name', example: 'John Smith', icon: 'user' },
-      { category: 'Client', name: 'Company', path: 'client.company', example: 'TechStart Inc.', icon: 'user' },
-      { category: 'Client', name: 'Email', path: 'client.email', example: 'john@techstart.io', icon: 'user' },
-      { category: 'Client', name: 'Phone', path: 'client.phone', example: '(555) 123-4567', icon: 'user' },
-      { category: 'Client', name: 'Address', path: 'client.address', example: '123 Main Street', icon: 'user' },
 
-      // Quote Info fields
-      { category: 'Quote Info', name: 'Quote Number', path: 'meta.quoteNumber', example: 'Q-2024-001', icon: 'doc' },
-      { category: 'Quote Info', name: 'Date', path: 'meta.date', example: 'January 15, 2024', icon: 'doc' },
-      { category: 'Quote Info', name: 'Valid Until', path: 'meta.validUntil', example: 'February 15, 2024', icon: 'doc' },
-      { category: 'Quote Info', name: 'Notes', path: 'meta.notes', example: 'Thank you!', icon: 'doc' },
-      { category: 'Quote Info', name: 'Terms', path: 'meta.terms', example: 'Net 30 days', icon: 'doc' },
-
-      // Company fields
-      { category: 'Company', name: 'Company Name', path: 'branding.companyName', example: 'Acme Corp', icon: 'building' },
-      { category: 'Company', name: 'Logo URL', path: 'branding.logoUrl', example: 'https://...', icon: 'building' },
-      { category: 'Company', name: 'Company Address', path: 'branding.companyAddress', example: '456 Business Ave', icon: 'building' },
-
-      // Totals fields
-      { category: 'Totals', name: 'Subtotal', path: 'totals.subtotal', example: '10,000.00', icon: 'dollar' },
-      { category: 'Totals', name: 'Discount', path: 'totals.discount', example: '500.00', icon: 'dollar' },
-      { category: 'Totals', name: 'Tax', path: 'totals.tax', example: '760.00', icon: 'dollar' },
-      { category: 'Totals', name: 'Total', path: 'totals.total', example: '10,260.00', icon: 'dollar' },
-
-      // Line Items fields
-      { category: 'Line Items', name: 'Description', path: 'lineItems[].description', example: 'Service item', icon: 'list' },
-      { category: 'Line Items', name: 'Details', path: 'lineItems[].details', example: 'Item details', icon: 'list' },
-      { category: 'Line Items', name: 'Quantity', path: 'lineItems[].quantity', example: '1', icon: 'list' },
-      { category: 'Line Items', name: 'Unit Price', path: 'lineItems[].unitPrice', example: '100.00', icon: 'list' },
-      { category: 'Line Items', name: 'Line Total', path: 'lineItems[].total', example: '100.00', icon: 'list' },
-
-      // Style fields
-      { category: 'Styles', name: 'Accent Color', path: 'styles.accentColor', example: '#14B8A6', icon: 'settings' },
+    // Data Fields for template placeholders
+    const DATA_FIELDS = [
+      { category: 'Client', name: 'Client Name', path: 'client.name', example: 'John Smith', type: 'string' },
+      { category: 'Client', name: 'Company', path: 'client.company', example: 'TechStart Inc.', type: 'string' },
+      { category: 'Client', name: 'Email', path: 'client.email', example: 'john@techstart.io', type: 'string' },
+      { category: 'Client', name: 'Phone', path: 'client.phone', example: '(555) 123-4567', type: 'string' },
+      { category: 'Client', name: 'Address', path: 'client.address', example: '123 Main Street', type: 'string' },
+      { category: 'Quote Info', name: 'Quote Number', path: 'meta.quoteNumber', example: 'Q-2024-001', type: 'string' },
+      { category: 'Quote Info', name: 'Date', path: 'meta.date', example: 'January 15, 2024', type: 'date' },
+      { category: 'Quote Info', name: 'Valid Until', path: 'meta.validUntil', example: 'February 15, 2024', type: 'date' },
+      { category: 'Quote Info', name: 'Notes', path: 'meta.notes', example: 'Thank you!', type: 'string' },
+      { category: 'Quote Info', name: 'Terms', path: 'meta.terms', example: 'Net 30 days', type: 'string' },
+      { category: 'Company', name: 'Company Name', path: 'branding.companyName', example: 'Acme Corp', type: 'string' },
+      { category: 'Company', name: 'Logo URL', path: 'branding.logoUrl', example: 'https://...', type: 'string' },
+      { category: 'Company', name: 'Company Address', path: 'branding.companyAddress', example: '456 Business Ave', type: 'string' },
+      { category: 'Totals', name: 'Subtotal', path: 'totals.subtotal', example: '10,000.00', type: 'number' },
+      { category: 'Totals', name: 'Discount', path: 'totals.discount', example: '500.00', type: 'number' },
+      { category: 'Totals', name: 'Tax', path: 'totals.tax', example: '760.00', type: 'number' },
+      { category: 'Totals', name: 'Total', path: 'totals.total', example: '10,260.00', type: 'number' },
+      { category: 'Line Items', name: 'Description', path: 'lineItems[].description', example: 'Service item', type: 'string' },
+      { category: 'Styles', name: 'Accent Color', path: 'styles.accentColor', example: '#14B8A6', type: 'string' },
     ];
 
+    // Quick Actions - common design modifications
+    const QUICK_ACTIONS = [
+      { type: 'action', category: 'Quick Actions', icon: 'qr', label: 'Add QR code for payment', description: 'Easy mobile payment scanning', value: 'Add a QR code in the bottom right corner for easy mobile payment', score: 95 },
+      { type: 'action', category: 'Quick Actions', icon: 'image', label: 'Add company logo', description: 'Brand your document', value: 'Add the company logo in the header, sized appropriately', score: 94 },
+      { type: 'action', category: 'Quick Actions', icon: 'sparkles', label: 'Make design more professional', description: 'Enhance overall appearance', value: 'Make this design look more professional and polished with better typography and spacing', score: 93 },
+      { type: 'action', category: 'Quick Actions', icon: 'stamp', label: 'Add DRAFT watermark', description: 'Mark as work in progress', value: 'Add a subtle DRAFT watermark diagonally across the document', score: 85 },
+      { type: 'action', category: 'Quick Actions', icon: 'pen', label: 'Add signature line', description: 'Space for client approval', value: 'Add a signature line at the bottom with date field for client approval', score: 84 },
+      { type: 'action', category: 'Quick Actions', icon: 'layout', label: 'Make layout compact', description: 'Reduce whitespace', value: 'Make the layout more compact, reducing unnecessary whitespace while keeping it readable', score: 80 },
+    ];
+
+    // Intent-based suggestions
+    const MAKE_SUGGESTIONS = [
+      { type: 'action', category: 'Make Changes', icon: 'arrow-up', label: 'make header bigger', description: 'Increase header size', value: 'Make the header section bigger and more prominent', score: 90 },
+      { type: 'action', category: 'Make Changes', icon: 'dollar', label: 'make totals prominent', description: 'Highlight totals section', value: 'Make the totals section more prominent with larger text and better contrast', score: 89 },
+      { type: 'action', category: 'Make Changes', icon: 'compress', label: 'make layout compact', description: 'Reduce whitespace', value: 'Make the layout more compact with tighter spacing', score: 88 },
+      { type: 'action', category: 'Make Changes', icon: 'text', label: 'make text larger', description: 'Increase font size', value: 'Make all text slightly larger for better readability', score: 87 },
+      { type: 'action', category: 'Make Changes', icon: 'sparkles', label: 'make it look modern', description: 'Contemporary styling', value: 'Make this look more modern with clean lines and contemporary styling', score: 86 },
+      { type: 'action', category: 'Make Changes', icon: 'moon', label: 'make it dark mode', description: 'Dark theme', value: 'Make this a dark mode design with light text on dark background', score: 85 },
+    ];
+
+    const ADD_SUGGESTIONS = [
+      { type: 'action', category: 'Add Elements', icon: 'qr', label: 'add QR code', description: 'Payment QR code', value: 'Add a QR code in the bottom right for mobile payment', score: 95 },
+      { type: 'action', category: 'Add Elements', icon: 'image', label: 'add logo', description: 'Company logo', value: 'Add the company logo in the header', score: 94 },
+      { type: 'action', category: 'Add Elements', icon: 'stamp', label: 'add watermark', description: 'Background watermark', value: 'Add a subtle watermark to the document', score: 90 },
+      { type: 'action', category: 'Add Elements', icon: 'file-text', label: 'add terms', description: 'Payment terms', value: 'Add payment terms section at the bottom: Net 30 days', score: 89 },
+      { type: 'action', category: 'Add Elements', icon: 'heart', label: 'add thank you note', description: 'Appreciation message', value: 'Add a thank you note at the bottom of the document', score: 88 },
+      { type: 'action', category: 'Add Elements', icon: 'percent', label: 'add discount row', description: 'Discount in totals', value: 'Add a discount row to the totals section', score: 87 },
+      { type: 'action', category: 'Add Elements', icon: 'pen', label: 'add signature line', description: 'Approval signature', value: 'Add a signature line for client approval', score: 86 },
+    ];
+
+    const CHANGE_SUGGESTIONS = [
+      { type: 'action', category: 'Change Style', icon: 'palette', label: 'change colors', description: 'Modify color scheme', value: 'Change the accent color to a different shade', score: 90 },
+      { type: 'action', category: 'Change Style', icon: 'palette', label: 'change to blue', description: 'Blue color scheme', value: 'Change the accent color to a professional blue (#2563eb)', score: 89 },
+      { type: 'action', category: 'Change Style', icon: 'palette', label: 'change to purple', description: 'Purple color scheme', value: 'Change the accent color to a modern purple (#7c3aed)', score: 88 },
+      { type: 'action', category: 'Change Style', icon: 'type', label: 'change font', description: 'Different typography', value: 'Change the font family to something more modern', score: 86 },
+      { type: 'action', category: 'Change Style', icon: 'layout', label: 'change layout', description: 'Different arrangement', value: 'Change the overall layout to be more dynamic', score: 85 },
+    ];
+
+    // Category icons
     const CATEGORY_ICONS = {
-      'Client': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-      'Quote Info': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-      'Company': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-      'Totals': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-      'Line Items': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
-      'Styles': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      'Quick Actions': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      'Recent': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      'Suggestions': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>',
+      'Data Fields': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+      'Add Elements': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+      'Make Changes': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      'Change Style': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="13.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
     };
 
-    const TYPE_ICONS = {
-      'user': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-      'doc': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-      'building': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-      'dollar': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>',
-      'list': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-      'settings': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>',
+    // Suggestion icons
+    const SUGGESTION_ICONS = {
+      'qr': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>',
+      'image': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      'sparkles': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L14.5 8.5L20 9L15.5 13L17 19L12 16L7 19L8.5 13L4 9L9.5 8.5L12 3Z"/></svg>',
+      'stamp': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/></svg>',
+      'pen': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      'layout': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>',
+      'arrow-up': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>',
+      'dollar': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      'compress': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>',
+      'text': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+      'moon': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+      'file-text': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      'heart': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+      'percent': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+      'palette': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="13.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+      'type': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+      'clock': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      'lightbulb': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>',
+      'field': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     };
+
+    // Fuzzy matching shortcuts
+    const FUZZY_SHORTCUTS = {
+      'ph': ['phone', 'photo'],
+      'qr': ['QR code', 'QR'],
+      '$': ['total', 'subtotal', 'price', 'dollar'],
+      'em': ['email'],
+      'disc': ['discount'],
+      'sig': ['signature'],
+      'wat': ['watermark'],
+      'pro': ['professional'],
+    };
+
+    // Recent actions storage
+    const RECENT_ACTIONS_KEY = 'glyph_recent_actions';
+    const MAX_RECENT_ACTIONS = 5;
+
+    function getRecentActions() {
+      try {
+        const stored = localStorage.getItem(RECENT_ACTIONS_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) { return []; }
+    }
+
+    function saveRecentAction(label, value) {
+      try {
+        const recent = getRecentActions().filter(a => a.value !== value);
+        recent.unshift({ label, value, timestamp: Date.now() });
+        localStorage.setItem(RECENT_ACTIONS_KEY, JSON.stringify(recent.slice(0, MAX_RECENT_ACTIONS)));
+      } catch (e) {}
+    }
+
+    function formatTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`;
+      return `${Math.floor(seconds / 86400)} days ago`;
+    }
+
+    // Document context analysis
+    function analyzeDocumentContext() {
+      const html = currentHtml.toLowerCase();
+      return {
+        hasLogo: html.includes('logo') || (html.includes('<img') && html.includes('header')),
+        hasQrCode: html.includes('qr') || html.includes('qrcode'),
+        hasTerms: html.includes('terms') || html.includes('net 30') || html.includes('net 15'),
+        hasDiscount: html.includes('discount'),
+        hasSignature: html.includes('signature'),
+        hasTax: html.includes('tax'),
+        hasThankYouNote: html.includes('thank you'),
+      };
+    }
+
+    // Fuzzy match scoring
+    function fuzzyMatch(query, target) {
+      if (!query) return 50;
+      const q = query.toLowerCase();
+      const t = target.toLowerCase();
+      if (t === q) return 100;
+      if (t.startsWith(q)) return 95;
+      if (t.includes(q)) return 75;
+      return 0;
+    }
+
+    function applyFuzzyShortcuts(query) {
+      const q = query.toLowerCase();
+      const expansions = [query];
+      for (const [shortcut, targets] of Object.entries(FUZZY_SHORTCUTS)) {
+        if (q.startsWith(shortcut) || q === shortcut) {
+          expansions.push(...targets);
+        }
+      }
+      return expansions;
+    }
 
     // Autocomplete state
     let autocompleteVisible = false;
     let autocompleteSelectedIndex = 0;
-    let filteredFields = [];
+    let allSuggestions = [];
     let autocompleteDropdown = null;
 
     // Create autocomplete dropdown
@@ -4494,75 +4670,180 @@
       playgroundInputWrapper.appendChild(autocompleteDropdown);
     }
 
-    // Filter fields based on search term
-    function filterFields(searchTerm) {
-      if (!searchTerm) return AUTOCOMPLETE_FIELDS;
-      const term = searchTerm.toLowerCase();
-      return AUTOCOMPLETE_FIELDS.filter(field =>
-        field.name.toLowerCase().includes(term) ||
-        field.path.toLowerCase().includes(term) ||
-        field.category.toLowerCase().includes(term)
-      );
+    // Get contextual AI suggestions
+    function getContextualSuggestions() {
+      const context = analyzeDocumentContext();
+      const suggestions = [];
+
+      if (!context.hasQrCode) {
+        suggestions.push({ type: 'suggestion', category: 'Suggestions', icon: 'lightbulb', label: 'Add QR code for payment', description: 'Make it easy for clients to pay', value: 'Add a QR code in the bottom right for easy mobile payment', score: 92 });
+      }
+      if (!context.hasLogo) {
+        suggestions.push({ type: 'suggestion', category: 'Suggestions', icon: 'lightbulb', label: 'Add company logo', description: 'Brand your document professionally', value: 'Add the company logo in the header, sized appropriately', score: 91 });
+      }
+      if (!context.hasTerms) {
+        suggestions.push({ type: 'suggestion', category: 'Suggestions', icon: 'lightbulb', label: 'Add payment terms - Net 30?', description: 'Your invoice has no payment terms', value: 'Add payment terms at the bottom: Net 30 days', score: 88 });
+      }
+      if (!context.hasThankYouNote) {
+        suggestions.push({ type: 'suggestion', category: 'Suggestions', icon: 'lightbulb', label: 'Add a thank you note', description: 'Personal touch builds relationships', value: 'Add a thank you note at the bottom: "Thank you for your business!"', score: 80 });
+      }
+
+      return suggestions;
     }
 
-    // Group fields by category
-    function groupByCategory(fields) {
-      const grouped = {};
-      for (const field of fields) {
-        if (!grouped[field.category]) {
-          grouped[field.category] = [];
-        }
-        grouped[field.category].push(field);
+    // Generate all suggestions based on input
+    function generateSuggestions(inputValue) {
+      const text = inputValue.trim().toLowerCase();
+      const suggestions = [];
+
+      // Detect intent
+      const isMakeIntent = text.startsWith('make ');
+      const isAddIntent = text.startsWith('add ');
+      const isChangeIntent = text.startsWith('change ');
+      const isMustacheIntent = inputValue.endsWith('{{');
+
+      let searchTerm = text;
+      if (isMakeIntent) searchTerm = text.slice(5);
+      else if (isAddIntent) searchTerm = text.slice(4);
+      else if (isChangeIntent) searchTerm = text.slice(7);
+      else if (isMustacheIntent) searchTerm = '';
+
+      // 1. Add recent actions (when no/short input)
+      if (!text || text.length < 3) {
+        const recentActions = getRecentActions();
+        recentActions.forEach((action, i) => {
+          suggestions.push({
+            type: 'recent',
+            category: 'Recent',
+            icon: 'clock',
+            label: action.label,
+            description: formatTimeAgo(action.timestamp),
+            value: action.value,
+            score: 100 - i,
+          });
+        });
       }
-      return grouped;
+
+      // 2. Add contextual AI suggestions
+      if (!text || isAddIntent) {
+        suggestions.push(...getContextualSuggestions());
+      }
+
+      // 3. Add intent-specific suggestions
+      const filterByQuery = (items, query) => {
+        if (!query) return items;
+        const expansions = applyFuzzyShortcuts(query);
+        return items.filter(item => {
+          return expansions.some(q => {
+            const labelScore = fuzzyMatch(q, item.label);
+            const descScore = fuzzyMatch(q, item.description) * 0.7;
+            return Math.max(labelScore, descScore) > 30;
+          });
+        });
+      };
+
+      if (isMakeIntent) {
+        suggestions.push(...filterByQuery(MAKE_SUGGESTIONS, searchTerm));
+      } else if (isAddIntent) {
+        suggestions.push(...filterByQuery(ADD_SUGGESTIONS, searchTerm));
+      } else if (isChangeIntent) {
+        suggestions.push(...filterByQuery(CHANGE_SUGGESTIONS, searchTerm));
+      }
+
+      // 4. Add quick actions (when no specific intent)
+      if (!isMakeIntent && !isChangeIntent && !isMustacheIntent) {
+        suggestions.push(...filterByQuery(QUICK_ACTIONS, searchTerm));
+      }
+
+      // 5. Add data fields
+      const fieldSuggestions = DATA_FIELDS.map(field => {
+        const expansions = applyFuzzyShortcuts(searchTerm);
+        let bestScore = 0;
+        expansions.forEach(q => {
+          bestScore = Math.max(bestScore, fuzzyMatch(q, field.name), fuzzyMatch(q, field.path) * 0.9);
+        });
+        const baseScore = isMustacheIntent ? 85 : 60;
+        return {
+          type: 'field',
+          category: 'Data Fields',
+          icon: 'field',
+          label: field.name,
+          description: `{{${field.path}}}`,
+          value: `{{${field.path}}}`,
+          path: field.path,
+          example: field.example,
+          score: searchTerm ? baseScore * (bestScore / 100) : baseScore,
+        };
+      }).filter(s => !searchTerm || s.score > 15);
+
+      suggestions.push(...fieldSuggestions);
+
+      // Remove duplicates and sort by score
+      const seen = new Map();
+      suggestions.forEach(s => {
+        const key = s.value.toLowerCase();
+        if (!seen.has(key) || s.score > seen.get(key).score) {
+          seen.set(key, s);
+        }
+      });
+
+      return Array.from(seen.values()).sort((a, b) => b.score - a.score).slice(0, 15);
     }
 
     // Render autocomplete dropdown
     function renderAutocomplete() {
       if (!autocompleteDropdown) return;
 
-      const grouped = groupByCategory(filteredFields);
+      // Group by category with specific order
+      const categoryOrder = ['Recent', 'Suggestions', 'Quick Actions', 'Make Changes', 'Add Elements', 'Change Style', 'Data Fields'];
+      const grouped = {};
+      allSuggestions.forEach(s => {
+        if (!grouped[s.category]) grouped[s.category] = [];
+        grouped[s.category].push(s);
+      });
+
       let html = '';
       let globalIndex = 0;
 
-      for (const [category, fields] of Object.entries(grouped)) {
+      categoryOrder.forEach(category => {
+        const items = grouped[category];
+        if (!items || items.length === 0) return;
+
         const icon = CATEGORY_ICONS[category] || '';
-        html += `
-          <div class="autocomplete-category">
-            <span class="autocomplete-category-icon">${icon}</span>
-            <span>${escapeHtml(category)}</span>
-          </div>
-        `;
+        const categoryClass = category === 'Recent' ? 'autocomplete-category--recent' :
+                              category === 'Suggestions' ? 'autocomplete-category--suggestions' :
+                              category === 'Quick Actions' ? 'autocomplete-category--quick' :
+                              category === 'Data Fields' ? 'autocomplete-category--fields' : '';
 
-        for (const field of fields) {
+        html += `<div class="autocomplete-category ${categoryClass}">
+          <span class="autocomplete-category-icon">${icon}</span>
+          <span>${escapeHtml(category)}</span>
+        </div>`;
+
+        items.forEach(suggestion => {
           const isSelected = globalIndex === autocompleteSelectedIndex;
-          const typeIcon = TYPE_ICONS[field.icon] || TYPE_ICONS['user'];
+          const suggestionIcon = SUGGESTION_ICONS[suggestion.icon] || SUGGESTION_ICONS['field'];
+          const typeClass = `autocomplete-item--${suggestion.type}`;
 
-          html += `
-            <div class="autocomplete-item ${isSelected ? 'selected' : ''}"
-                 data-index="${globalIndex}"
-                 data-path="${escapeHtml(field.path)}">
-              <div class="autocomplete-item-main">
-                <span class="autocomplete-item-icon">${typeIcon}</span>
-                <div class="autocomplete-item-content">
-                  <span class="autocomplete-item-name">${escapeHtml(field.name)}</span>
-                  <span class="autocomplete-item-path">{{${escapeHtml(field.path)}}}</span>
-                </div>
+          html += `<div class="autocomplete-item ${typeClass} ${isSelected ? 'selected' : ''}" data-index="${globalIndex}">
+            <div class="autocomplete-item-main">
+              <span class="autocomplete-item-icon">${suggestionIcon}</span>
+              <div class="autocomplete-item-content">
+                <span class="autocomplete-item-name">${escapeHtml(suggestion.label)}</span>
+                <span class="autocomplete-item-description">${escapeHtml(suggestion.description)}</span>
               </div>
-              ${field.example ? `<span class="autocomplete-item-example">${escapeHtml(field.example)}</span>` : ''}
             </div>
-          `;
+            ${suggestion.example ? `<span class="autocomplete-item-example">${escapeHtml(suggestion.example)}</span>` : ''}
+          </div>`;
           globalIndex++;
-        }
-      }
+        });
+      });
 
-      html += `
-        <div class="autocomplete-hint">
-          <span><kbd>↑↓</kbd> Navigate</span>
-          <span><kbd>Enter</kbd> Select</span>
-          <span><kbd>Esc</kbd> Close</span>
-        </div>
-      `;
+      html += `<div class="autocomplete-hint">
+        <span><kbd>↑↓</kbd> Navigate</span>
+        <span><kbd>Enter</kbd> Select</span>
+        <span><kbd>Esc</kbd> Close</span>
+      </div>`;
 
       autocompleteDropdown.innerHTML = html;
 
@@ -4570,21 +4851,19 @@
       autocompleteDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
         item.addEventListener('click', () => {
           const index = parseInt(item.getAttribute('data-index') || '0', 10);
-          selectAutocompleteItem(filteredFields[index]);
+          selectAutocompleteSuggestion(allSuggestions[index]);
         });
-
         item.addEventListener('mouseenter', () => {
-          const index = parseInt(item.getAttribute('data-index') || '0', 10);
-          autocompleteSelectedIndex = index;
+          autocompleteSelectedIndex = parseInt(item.getAttribute('data-index') || '0', 10);
           updateAutocompleteSelection();
         });
       });
     }
 
     // Show autocomplete
-    function showAutocomplete(searchTerm) {
-      filteredFields = filterFields(searchTerm);
-      if (filteredFields.length === 0) {
+    function showAutocomplete() {
+      allSuggestions = generateSuggestions(promptInput.value);
+      if (allSuggestions.length === 0) {
         hideAutocomplete();
         return;
       }
@@ -4612,62 +4891,44 @@
         item.classList.toggle('selected', index === autocompleteSelectedIndex);
       });
 
-      // Scroll to selected
       const selectedItem = autocompleteDropdown.querySelector('.autocomplete-item.selected');
       if (selectedItem) {
         selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     }
 
-    // Select autocomplete item
-    function selectAutocompleteItem(field) {
-      if (!field) return;
+    // Select autocomplete suggestion
+    function selectAutocompleteSuggestion(suggestion) {
+      if (!suggestion) return;
 
-      // Create a smart prompt
-      const contextMap = {
-        'client.email': 'Add {{client.email}} below the client name',
-        'client.phone': 'Add {{client.phone}} next to the client contact info',
-        'client.address': 'Add {{client.address}} in the client section',
-        'meta.notes': 'Add {{meta.notes}} at the bottom of the document',
-        'meta.terms': 'Add {{meta.terms}} in the footer section',
-        'branding.logoUrl': 'Add the company logo {{branding.logoUrl}} in the header',
-        'totals.discount': 'Add a discount row showing {{totals.discount}} in the totals section',
-        'totals.tax': 'Add the tax amount {{totals.tax}} to the totals',
-      };
+      // Save to recent actions
+      saveRecentAction(suggestion.label, suggestion.value);
 
-      const composedPrompt = contextMap[field.path] || `Add {{${field.path}}} to the document`;
+      // Compose prompt based on type
+      let composedPrompt = suggestion.value;
+
+      if (suggestion.type === 'field' && suggestion.path) {
+        const currentValue = promptInput.value;
+        if (currentValue.endsWith('{{')) {
+          composedPrompt = currentValue.slice(0, -2) + `{{${suggestion.path}}}`;
+        } else if (currentValue.toLowerCase().startsWith('add ')) {
+          const contextMap = {
+            'client.email': 'Add {{client.email}} below the client name',
+            'client.phone': 'Add {{client.phone}} next to the client contact info',
+            'meta.notes': 'Add {{meta.notes}} at the bottom of the document',
+            'meta.terms': 'Add {{meta.terms}} in the footer section',
+            'branding.logoUrl': 'Add the company logo {{branding.logoUrl}} in the header',
+            'totals.discount': 'Add a discount row showing {{totals.discount}} in the totals section',
+          };
+          composedPrompt = contextMap[suggestion.path] || `Add {{${suggestion.path}}} to the document`;
+        } else {
+          composedPrompt = `Add {{${suggestion.path}}} to the document`;
+        }
+      }
 
       promptInput.value = composedPrompt;
       promptInput.focus();
       promptInput.setSelectionRange(promptInput.value.length, promptInput.value.length);
-
-      hideAutocomplete();
-    }
-
-    // Check for trigger patterns
-    function checkAutocompleteTrigger(value) {
-      const cursorPosition = promptInput.selectionStart || value.length;
-      const textBeforeCursor = value.substring(0, cursorPosition);
-
-      // Trigger on {{ at cursor position
-      if (textBeforeCursor.endsWith('{{')) {
-        showAutocomplete('');
-        return;
-      }
-
-      // Trigger on "add " prefix
-      const addMatch = textBeforeCursor.match(/^add\s+(.*)$/i);
-      if (addMatch) {
-        showAutocomplete(addMatch[1].trim());
-        return;
-      }
-
-      // Trigger on field-related keywords
-      const keywordMatch = textBeforeCursor.match(/\b(field|value|phone|email|address|company|client|name|date|quote|total|price|subtotal|tax|discount|notes|terms|logo)\s*$/i);
-      if (keywordMatch) {
-        showAutocomplete(keywordMatch[1]);
-        return;
-      }
 
       hideAutocomplete();
     }
@@ -4684,15 +4945,14 @@
 
     // Autocomplete event listeners
     promptInput.addEventListener('input', () => {
-      checkAutocompleteTrigger(promptInput.value);
+      showAutocomplete();
     });
 
     promptInput.addEventListener('focus', () => {
-      checkAutocompleteTrigger(promptInput.value);
+      showAutocomplete();
     });
 
     promptInput.addEventListener('blur', () => {
-      // Delay to allow click on dropdown
       setTimeout(() => hideAutocomplete(), 150);
     });
 
@@ -4701,21 +4961,21 @@
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        autocompleteSelectedIndex = (autocompleteSelectedIndex + 1) % filteredFields.length;
+        autocompleteSelectedIndex = (autocompleteSelectedIndex + 1) % allSuggestions.length;
         updateAutocompleteSelection();
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        autocompleteSelectedIndex = (autocompleteSelectedIndex - 1 + filteredFields.length) % filteredFields.length;
+        autocompleteSelectedIndex = (autocompleteSelectedIndex - 1 + allSuggestions.length) % allSuggestions.length;
         updateAutocompleteSelection();
       } else if (e.key === 'Enter' && autocompleteVisible) {
         e.preventDefault();
-        selectAutocompleteItem(filteredFields[autocompleteSelectedIndex]);
+        selectAutocompleteSuggestion(allSuggestions[autocompleteSelectedIndex]);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         hideAutocomplete();
       } else if (e.key === 'Tab' && autocompleteVisible) {
         e.preventDefault();
-        selectAutocompleteItem(filteredFields[autocompleteSelectedIndex]);
+        selectAutocompleteSuggestion(allSuggestions[autocompleteSelectedIndex]);
       }
     });
 

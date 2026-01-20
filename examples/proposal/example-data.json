@@ -1,0 +1,266 @@
+{
+  "proposal": {
+    "title": "E-Commerce Platform Modernization",
+    "number": "PROP-2025-0042",
+    "date": "January 22, 2025",
+    "validUntil": "February 21, 2025",
+    "type": "project",
+    "version": "1.0"
+  },
+  "company": {
+    "name": "Velocity Digital Partners",
+    "logo": "https://example.com/velocity-logo.png",
+    "tagline": "Transforming businesses through technology",
+    "address": "450 Pacific Avenue, 12th Floor\nSan Francisco, CA 94133",
+    "email": "proposals@velocitydigital.com",
+    "phone": "(415) 555-0198",
+    "website": "velocitydigital.com"
+  },
+  "client": {
+    "name": "Jennifer Martinez",
+    "company": "Artisan Home Goods Co.",
+    "title": "Chief Digital Officer",
+    "email": "jmartinez@artisanhomegoods.com"
+  },
+  "executiveSummary": "Artisan Home Goods has built a loyal customer base through exceptional product curation and customer service. However, your current e-commerce platform is limiting growth and creating operational inefficiencies. This proposal outlines a comprehensive platform modernization that will increase conversion rates, streamline operations, and position Artisan Home Goods for scalable growth.\n\nOur approach combines proven technology (Shopify Plus) with custom development to create a platform that reflects your brand while delivering the performance your business needs. The project will be completed in 16 weeks with minimal disruption to your current operations.",
+  "problemStatement": "Based on our discovery conversations, Artisan Home Goods faces several challenges with the current platform:\n\n- **Conversion Rate**: Currently 1.8% vs. industry average of 2.5-3.0%\n- **Mobile Experience**: Mobile bounce rate of 65% indicates poor mobile optimization\n- **Inventory Management**: Manual synchronization between online and retail locations\n- **Page Load Speed**: Average 6.2s on mobile (target: <3s)\n- **Integration Limitations**: Unable to connect with new vendors and fulfillment partners",
+  "solution": {
+    "overview": "We propose a complete platform migration to Shopify Plus, enhanced with custom applications for your unique business requirements. This solution provides enterprise-grade infrastructure with the flexibility to customize the customer experience and back-end operations.",
+    "features": [
+      {
+        "title": "Custom Storefront",
+        "description": "A fast, mobile-first storefront built with Hydrogen (Shopify's headless framework) that reflects the Artisan brand while delivering sub-2-second load times."
+      },
+      {
+        "title": "Unified Inventory",
+        "description": "Real-time inventory synchronization across e-commerce, retail POS, and warehouse management systems, eliminating oversells and manual reconciliation."
+      },
+      {
+        "title": "Personalized Shopping",
+        "description": "AI-powered product recommendations and personalized collections based on browsing behavior, purchase history, and customer preferences."
+      },
+      {
+        "title": "B2B Portal",
+        "description": "Dedicated wholesale ordering portal with custom pricing, net terms, and streamlined reordering for your retail partners."
+      }
+    ],
+    "differentiators": [
+      "Deep expertise in home goods and lifestyle brands",
+      "Proven Shopify Plus partnership with 50+ migrations completed",
+      "Full-stack team: strategy, design, and development under one roof",
+      "Post-launch support and optimization included"
+    ]
+  },
+  "scope": [
+    {
+      "phase": "Discovery & Strategy",
+      "description": "Deep dive into business requirements, customer journey mapping, and technical architecture planning.",
+      "deliverables": [
+        "Stakeholder interviews and requirements documentation",
+        "Customer journey maps for key personas",
+        "Technical architecture document",
+        "Migration and data mapping plan",
+        "Project timeline and resource plan"
+      ],
+      "duration": "2 weeks"
+    },
+    {
+      "phase": "Design",
+      "description": "Create a distinctive, conversion-optimized storefront design that elevates the Artisan brand.",
+      "deliverables": [
+        "Wireframes for key page templates",
+        "High-fidelity designs for desktop and mobile",
+        "Interactive prototype for user testing",
+        "Design system and component library",
+        "Two rounds of design revisions"
+      ],
+      "duration": "4 weeks"
+    },
+    {
+      "phase": "Development",
+      "description": "Build the custom storefront, integrations, and back-end systems.",
+      "deliverables": [
+        "Hydrogen storefront implementation",
+        "Shopify Plus configuration and customization",
+        "ERP integration (NetSuite)",
+        "POS integration (Shopify POS)",
+        "Custom B2B portal development",
+        "Product recommendation engine",
+        "Performance optimization"
+      ],
+      "duration": "8 weeks"
+    },
+    {
+      "phase": "Migration & Launch",
+      "description": "Migrate data, conduct thorough testing, and execute launch.",
+      "deliverables": [
+        "Product and customer data migration",
+        "URL redirect mapping",
+        "QA testing across devices and browsers",
+        "Load testing and performance verification",
+        "Staff training sessions (3)",
+        "Launch support and monitoring"
+      ],
+      "duration": "2 weeks"
+    }
+  ],
+  "timeline": {
+    "startDate": "February 24, 2025",
+    "endDate": "June 13, 2025",
+    "duration": "16 weeks",
+    "milestones": [
+      {
+        "name": "Project Kickoff",
+        "date": "February 24, 2025",
+        "deliverables": ["Kickoff meeting", "Project setup"]
+      },
+      {
+        "name": "Discovery Complete",
+        "date": "March 7, 2025",
+        "deliverables": ["Requirements doc", "Technical architecture"]
+      },
+      {
+        "name": "Design Approval",
+        "date": "April 4, 2025",
+        "deliverables": ["Final designs", "Prototype"]
+      },
+      {
+        "name": "Development Complete",
+        "date": "May 30, 2025",
+        "deliverables": ["Staging site", "All integrations"]
+      },
+      {
+        "name": "Go Live",
+        "date": "June 13, 2025",
+        "deliverables": ["Production launch", "Training complete"]
+      }
+    ]
+  },
+  "pricing": {
+    "model": "fixed",
+    "items": [
+      {
+        "description": "Discovery & Strategy",
+        "details": "Requirements, architecture, and project planning",
+        "price": 18000
+      },
+      {
+        "description": "Design",
+        "details": "UX/UI design, prototyping, and design system",
+        "price": 42000
+      },
+      {
+        "description": "Storefront Development",
+        "details": "Hydrogen storefront and Shopify Plus setup",
+        "price": 85000
+      },
+      {
+        "description": "Integrations",
+        "details": "NetSuite ERP, Shopify POS, and third-party apps",
+        "price": 35000
+      },
+      {
+        "description": "B2B Portal",
+        "details": "Custom wholesale ordering portal",
+        "price": 28000
+      },
+      {
+        "description": "Migration & Launch",
+        "details": "Data migration, QA, training, and launch support",
+        "price": 22000
+      },
+      {
+        "description": "3-Month Post-Launch Support",
+        "details": "Bug fixes, optimization, and priority support",
+        "price": 15000,
+        "optional": true
+      }
+    ],
+    "total": 245000,
+    "discount": 15000,
+    "discountNote": "Early commitment discount (sign by Feb 7)",
+    "paymentTerms": "Net 15 on all invoices",
+    "paymentSchedule": [
+      {"milestone": "Contract Signing", "percentage": 25, "amount": 57500},
+      {"milestone": "Design Approval", "percentage": 25, "amount": 57500},
+      {"milestone": "Development Complete", "percentage": 35, "amount": 80500},
+      {"milestone": "Go Live", "percentage": 15, "amount": 34500}
+    ]
+  },
+  "team": [
+    {
+      "name": "Alex Rivera",
+      "role": "Project Lead",
+      "bio": "12 years of e-commerce experience, previously led digital transformation at Williams-Sonoma.",
+      "experience": ["50+ Shopify Plus projects", "E-commerce strategy expert", "PMP certified"]
+    },
+    {
+      "name": "Sarah Kim",
+      "role": "Lead Designer",
+      "bio": "Award-winning designer specializing in luxury retail and lifestyle brands.",
+      "experience": ["Anthropologie", "Crate & Barrel", "Design leadership at 2 agencies"]
+    },
+    {
+      "name": "Marcus Chen",
+      "role": "Technical Lead",
+      "bio": "Full-stack architect with deep Shopify expertise and integration experience.",
+      "experience": ["Shopify Partner certification", "200+ integrations built", "Former Shopify engineer"]
+    }
+  ],
+  "caseStudies": [
+    {
+      "name": "Modern Farmhouse Decor",
+      "client": "Home Goods Retailer",
+      "description": "Complete platform migration from Magento to Shopify Plus with custom PIM integration.",
+      "results": [
+        "142% increase in mobile conversion rate",
+        "3.2s improvement in page load time",
+        "35% reduction in customer service tickets"
+      ],
+      "testimonial": {
+        "quote": "Velocity delivered beyond our expectations. The new platform has transformed our business.",
+        "author": "Emily Thompson",
+        "title": "CEO, Modern Farmhouse Decor"
+      }
+    }
+  ],
+  "whyUs": {
+    "heading": "Why Velocity Digital Partners?",
+    "points": [
+      "**Specialization**: We focus exclusively on e-commerce, specifically Shopify Plus. This depth creates efficiency and reduces risk.",
+      "**Proven Process**: Our methodology has been refined over 100+ successful projects. We know what works and what doesn't.",
+      "**Partnership Approach**: We're invested in your success beyond launch. Our team becomes an extension of yours.",
+      "**Results-Oriented**: We measure success by business outcomes, not just deliverables. Your goals become our KPIs."
+    ]
+  },
+  "terms": [
+    "This proposal is valid for 30 days from the date above",
+    "Pricing assumes project start within 45 days of contract signing",
+    "Changes to scope will be handled through a change order process",
+    "Client responsible for Shopify Plus subscription ($2,000/month)",
+    "Third-party app and service costs not included"
+  ],
+  "exclusions": [
+    "Content creation (copywriting, photography, video)",
+    "Ongoing marketing or SEO services",
+    "Third-party app subscription fees",
+    "Hardware (POS terminals, etc.)",
+    "Custom ERP development (integration only)"
+  ],
+  "assumptions": [
+    "Client will provide timely feedback within 3 business days",
+    "Product data and images are available in required formats",
+    "NetSuite API access and credentials will be provided",
+    "Key stakeholders available for discovery interviews"
+  ],
+  "nextSteps": [
+    {"step": 1, "description": "Review this proposal and share with stakeholders"},
+    {"step": 2, "description": "Schedule a call to discuss questions (link: calendly.com/velocity)"},
+    {"step": 3, "description": "Sign agreement and submit deposit to reserve start date"},
+    {"step": 4, "description": "Kick off discovery phase"}
+  ],
+  "acceptance": {
+    "showSignature": true,
+    "acceptanceText": "By signing below, you accept this proposal and authorize Velocity Digital Partners to proceed with the project as described. You agree to the terms, pricing, and payment schedule outlined above."
+  }
+}

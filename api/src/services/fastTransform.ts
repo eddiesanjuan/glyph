@@ -87,6 +87,18 @@ export function canFastTransform(prompt: string): boolean {
   // Background color for header
   if (/(header|title)\s*background\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
 
+  // Logo additions (fast-path to prevent AI regeneration)
+  if (/add\s+.*?logo/i.test(lower)) return true;
+
+  // Phone additions (fast-path to prevent AI regeneration)
+  if (/add\s+.*?phone/i.test(lower)) return true;
+
+  // Email additions (fast-path to prevent AI regeneration)
+  if (/add\s+.*?email/i.test(lower)) return true;
+
+  // Signature additions (fast-path to prevent AI regeneration)
+  if (/add\s+.*?signature/i.test(lower)) return true;
+
   return false;
 }
 
@@ -123,6 +135,26 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
     const target = colorMatch[3] || 'header';
     const color = colorMatch[6];
     return changeColor(html, target, color);
+  }
+
+  // === LOGO ADDITIONS (Fast-path to prevent AI regeneration) ===
+  if (/add\s+.*?logo/i.test(lower)) {
+    return addLogo(html);
+  }
+
+  // === PHONE ADDITIONS (Fast-path to prevent AI regeneration) ===
+  if (/add\s+.*?phone/i.test(lower)) {
+    return addPhone(html);
+  }
+
+  // === EMAIL ADDITIONS (Fast-path to prevent AI regeneration) ===
+  if (/add\s+.*?email/i.test(lower)) {
+    return addEmail(html);
+  }
+
+  // === SIGNATURE ADDITIONS (Fast-path to prevent AI regeneration) ===
+  if (/add\s+.*?signature/i.test(lower)) {
+    return addSignature(html);
   }
 
   // Not a fast-transformable request
@@ -421,6 +453,283 @@ function addPaymentTerms(html: string, termsText: string): FastTransformResult {
   return {
     html: modifiedHtml,
     changes: [`Added payment terms: ${termsText}`],
+    transformed: true,
+  };
+}
+
+/**
+ * Add logo placeholder to document header - INJECTS without replacing content
+ */
+function addLogo(html: string): FastTransformResult {
+  // Check if logo already exists
+  if (html.includes('{{branding.logoUrl}}') || html.includes('{{#branding.logoUrl}}') || html.includes('class="logo"')) {
+    return {
+      html,
+      changes: ['Logo placeholder already present'],
+      transformed: true,
+    };
+  }
+
+  const logoHtml = `{{#branding.logoUrl}}
+  <img src="{{branding.logoUrl}}" alt="Company Logo" class="logo" style="max-height: 60px; max-width: 200px; object-fit: contain;" />
+{{/branding.logoUrl}}`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Insert into header-left div if it exists
+  if (/class="header-left"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<div[^>]*class="header-left"[^>]*>)/i,
+      `$1\n${logoHtml}\n`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added logo placeholder in header-left'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert at start of header region if it exists
+  if (/data-glyph-region="header"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="header"[^>]*>)/i,
+      `$1\n${logoHtml}\n`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added logo placeholder in header region'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Insert after opening <header> tag
+  if (/<header[^>]*>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<header[^>]*>)/i,
+      `$1\n${logoHtml}\n`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added logo placeholder in header'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 4: Insert after <body> tag as fallback
+  if (/<body[^>]*>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<body[^>]*>)/i,
+      `$1\n${logoHtml}\n`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added logo placeholder after body'],
+      transformed: true,
+    };
+  }
+
+  // Could not find a suitable location
+  return { html, changes: [], transformed: false };
+}
+
+/**
+ * Add phone field to client section - INJECTS without replacing content
+ */
+function addPhone(html: string): FastTransformResult {
+  // Check if phone already exists
+  if (html.includes('{{client.phone}}') || html.includes('{{#client.phone}}')) {
+    return {
+      html,
+      changes: ['Phone field already present'],
+      transformed: true,
+    };
+  }
+
+  const phoneHtml = `{{#client.phone}}
+  <p class="client-phone" style="margin: 4px 0; font-size: 14px;">{{client.phone}}</p>
+{{/client.phone}}`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Insert after client email if it exists
+  if (/\{\{\/client\.email\}\}/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(\{\{\/client\.email\}\})/i,
+      `$1\n${phoneHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added phone field after email in client section'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert after client name if it exists
+  if (/\{\{\/client\.name\}\}/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(\{\{\/client\.name\}\})/i,
+      `$1\n${phoneHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added phone field after client name'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Insert after client.name simple variable
+  if (/\{\{client\.name\}\}/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(\{\{client\.name\}\}[^<]*<\/[^>]+>)/i,
+      `$1\n${phoneHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added phone field after client name'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 4: Insert in client-info region
+  if (/data-glyph-region="client-info"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="client-info"[^>]*>[\s\S]*?)(<\/[^>]+>\s*(?=<[^>]+data-glyph-region|<\/body|$))/i,
+      `$1\n${phoneHtml}\n$2`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added phone field in client-info region'],
+      transformed: true,
+    };
+  }
+
+  // Could not find a suitable location
+  return { html, changes: [], transformed: false };
+}
+
+/**
+ * Add email field to client section - INJECTS without replacing content
+ */
+function addEmail(html: string): FastTransformResult {
+  // Check if email already exists
+  if (html.includes('{{client.email}}') || html.includes('{{#client.email}}')) {
+    return {
+      html,
+      changes: ['Email field already present'],
+      transformed: true,
+    };
+  }
+
+  const emailHtml = `{{#client.email}}
+  <p class="client-email" style="margin: 4px 0; font-size: 14px;"><a href="mailto:{{client.email}}" style="color: inherit; text-decoration: none;">{{client.email}}</a></p>
+{{/client.email}}`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Insert after client name if it exists
+  if (/\{\{\/client\.name\}\}/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(\{\{\/client\.name\}\})/i,
+      `$1\n${emailHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added email field after client name'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert after client.name simple variable
+  if (/\{\{client\.name\}\}/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(\{\{client\.name\}\}[^<]*<\/[^>]+>)/i,
+      `$1\n${emailHtml}`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added email field after client name'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Insert in client-info region
+  if (/data-glyph-region="client-info"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="client-info"[^>]*>[\s\S]*?)(<\/[^>]+>\s*(?=<[^>]+data-glyph-region|<\/body|$))/i,
+      `$1\n${emailHtml}\n$2`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added email field in client-info region'],
+      transformed: true,
+    };
+  }
+
+  // Could not find a suitable location
+  return { html, changes: [], transformed: false };
+}
+
+/**
+ * Add signature line to footer - INJECTS without replacing content
+ */
+function addSignature(html: string): FastTransformResult {
+  // Check if signature already exists
+  if (html.includes('class="signature') || html.includes('signature-line') || html.includes('{{#meta.showSignature}}')) {
+    return {
+      html,
+      changes: ['Signature section already present'],
+      transformed: true,
+    };
+  }
+
+  const signatureHtml = `<div class="glyph-signature-section" style="margin-top: 40px; display: flex; justify-content: space-between; gap: 40px;">
+  <div class="signature-block" style="flex: 1;">
+    <div class="signature-line" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 40px;">
+      <span style="font-size: 12px; color: #666;">Client Signature</span>
+    </div>
+    <div style="font-size: 11px; color: #999; margin-top: 4px;">Date: _______________</div>
+  </div>
+  <div class="signature-block" style="flex: 1;">
+    <div class="signature-line" style="border-top: 1px solid #333; padding-top: 8px; margin-top: 40px;">
+      <span style="font-size: 12px; color: #666;">Company Representative</span>
+    </div>
+    <div style="font-size: 11px; color: #999; margin-top: 4px;">Date: _______________</div>
+  </div>
+</div>`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Insert in footer region if it exists
+  if (/data-glyph-region="footer"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="footer"[^>]*>[\s\S]*?)(<\/[^>]+>\s*(?=<[^>]+data-glyph-region|<\/body|$))/i,
+      `$1\n${signatureHtml}\n$2`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added signature lines in footer region'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert before closing </body> tag
+  if (/<\/body>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<\/body>/i,
+      `\n${signatureHtml}\n</body>`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added signature lines before footer'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Append to end of document
+  modifiedHtml = modifiedHtml + `\n${signatureHtml}`;
+  return {
+    html: modifiedHtml,
+    changes: ['Added signature lines'],
     transformed: true,
   };
 }

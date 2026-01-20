@@ -14,7 +14,7 @@
 import { GlyphAPI } from '../lib/api';
 import type { GlyphEditorProps, QuoteData, GlyphTheme } from '../lib/types';
 import { baseStyles } from '../styles/base';
-import { FieldAutocomplete, type FieldDefinition } from './FieldAutocomplete';
+import { FieldAutocomplete, type AutocompleteSuggestion } from './FieldAutocomplete';
 
 export class GlyphEditor extends HTMLElement {
   private api: GlyphAPI | null = null;
@@ -1167,14 +1167,19 @@ export class GlyphEditor extends HTMLElement {
       this.fieldAutocomplete = new FieldAutocomplete({
         inputElement: input,
         container: commandWrapper,
-        onSelect: (_field: FieldDefinition, composedPrompt: string) => {
-          // Set the composed prompt in the input (field available if needed for future enhancements)
+        onSelect: (_suggestion: AutocompleteSuggestion, composedPrompt: string) => {
+          // Set the composed prompt in the input (_suggestion available if needed for future enhancements)
           input.value = composedPrompt;
           input.focus();
           // Position cursor at end
           input.setSelectionRange(input.value.length, input.value.length);
         },
         accentColor: '#14B8A6',
+        getDocumentHtml: () => {
+          // Return current preview HTML for document context analysis
+          const preview = this.shadow.querySelector('.glyph-preview-content');
+          return preview ? preview.innerHTML : '';
+        },
       });
 
       input.addEventListener('keydown', (e) => {

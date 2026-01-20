@@ -1,0 +1,25 @@
+# Source files (dist is published)
+src/
+
+# TypeScript config
+tsconfig.json
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/
+
+# npm files
+node_modules/
+package-lock.json
+
+# Misc
+*.log
+.DS_Store

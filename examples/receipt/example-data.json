@@ -1,0 +1,97 @@
+{
+  "receipt": {
+    "number": "TXN-20240122-4521",
+    "date": "January 22, 2024",
+    "time": "2:34 PM",
+    "type": "sale"
+  },
+  "business": {
+    "name": "Evergreen Hardware & Home",
+    "logo": "https://example.com/evergreen-logo.png",
+    "location": "Downtown Store #12",
+    "address": "547 Oak Street\nPortland, OR 97205",
+    "phone": "(503) 555-0142",
+    "website": "evergreenhardware.com"
+  },
+  "customer": {
+    "name": "Robert Chen",
+    "email": "rchen@email.com",
+    "memberId": "EVG-78524"
+  },
+  "items": [
+    {
+      "name": "DeWalt 20V MAX Drill/Driver Kit",
+      "sku": "DWT-DCD771C2",
+      "quantity": 1,
+      "unitPrice": 169.99,
+      "total": 169.99
+    },
+    {
+      "name": "DeWalt 20V 2.0Ah Battery 2-Pack",
+      "sku": "DWT-DCB203-2",
+      "quantity": 1,
+      "unitPrice": 99.99,
+      "total": 99.99,
+      "discount": 15.00
+    },
+    {
+      "name": "IRWIN Titanium Drill Bit Set (15pc)",
+      "sku": "IRW-316015",
+      "quantity": 1,
+      "unitPrice": 34.99,
+      "total": 34.99
+    },
+    {
+      "name": "3M Safety Glasses - Clear",
+      "sku": "3M-11329",
+      "quantity": 2,
+      "unitPrice": 8.99,
+      "total": 17.98
+    },
+    {
+      "name": "Carhartt Work Gloves - Large",
+      "sku": "CHT-A659L",
+      "quantity": 1,
+      "unitPrice": 24.99,
+      "total": 24.99
+    }
+  ],
+  "totals": {
+    "subtotal": 347.94,
+    "discount": 15.00,
+    "discountCode": "MEMBER10",
+    "tax": 26.64,
+    "taxBreakdown": [
+      {
+        "name": "Oregon State Tax",
+        "rate": 0,
+        "amount": 0
+      },
+      {
+        "name": "Multnomah County Tax",
+        "rate": 8,
+        "amount": 26.64
+      }
+    ],
+    "total": 359.58
+  },
+  "payment": {
+    "method": "credit",
+    "cardType": "Visa",
+    "cardLast4": "4521",
+    "authCode": "847291"
+  },
+  "rewards": {
+    "pointsEarned": 360,
+    "pointsBalance": 2847,
+    "tier": "Gold Member"
+  },
+  "returnPolicy": "Returns accepted within 90 days with receipt. Power tools require original packaging. See store for details.",
+  "surveyUrl": "evergreenhardware.com/feedback",
+  "barcode": {
+    "type": "qr",
+    "value": "TXN-20240122-4521"
+  },
+  "notes": "Thank you for being a Gold Member! You saved $15.00 today.",
+  "footer": "Thank you for shopping at Evergreen Hardware & Home!\nQuestions? Call (503) 555-0142 or visit evergreenhardware.com"
+}

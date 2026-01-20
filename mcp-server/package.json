@@ -1,0 +1,48 @@
+{
+  "name": "@glyph-pdf/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for AI-native PDF generation with Glyph",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "glyph-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "pdf",
+    "glyph",
+    "ai",
+    "document-generation",
+    "claude",
+    "anthropic"
+  ],
+  "author": "Glyph",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/glyph-pdf/mcp-server"
+  },
+  "homepage": "https://glyph.so",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -15,7 +15,7 @@ export const baseStyles = `
   }
 
   /* ============================================
-     Field Autocomplete Styles - World-class UI
+     Field Autocomplete Styles - Magical UI
      ============================================ */
   .glyph-autocomplete-dropdown {
     position: absolute;
@@ -24,7 +24,7 @@ export const baseStyles = `
     border-radius: 12px;
     box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.15),
                 0 4px 12px -4px rgba(0, 0, 0, 0.1);
-    max-height: 380px;
+    max-height: 420px;
     overflow-y: auto;
     overflow-x: hidden;
     animation: glyph-autocomplete-appear 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -73,6 +73,23 @@ export const baseStyles = `
     z-index: 1;
   }
 
+  /* Category color variants */
+  .glyph-autocomplete-category--recent .glyph-autocomplete-category-icon {
+    color: #8b5cf6;
+  }
+
+  .glyph-autocomplete-category--suggestions .glyph-autocomplete-category-icon {
+    color: #f59e0b;
+  }
+
+  .glyph-autocomplete-category--quick .glyph-autocomplete-category-icon {
+    color: #14B8A6;
+  }
+
+  .glyph-autocomplete-category--fields .glyph-autocomplete-category-icon {
+    color: #3b82f6;
+  }
+
   .glyph-autocomplete-category-icon {
     display: flex;
     align-items: center;
@@ -95,9 +112,8 @@ export const baseStyles = `
     border-bottom: 1px solid #f3f4f6;
   }
 
-  .glyph-autocomplete-item:last-child {
+  .glyph-autocomplete-item:last-of-type {
     border-bottom: none;
-    border-radius: 0 0 12px 12px;
   }
 
   .glyph-autocomplete-item:hover,
@@ -107,6 +123,47 @@ export const baseStyles = `
 
   .glyph-autocomplete-item.selected {
     background: linear-gradient(90deg, rgba(20, 184, 166, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
+  }
+
+  /* Type-specific styling */
+  .glyph-autocomplete-item--recent .glyph-autocomplete-item-icon {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+  }
+
+  .glyph-autocomplete-item--recent.selected .glyph-autocomplete-item-icon {
+    background: #8b5cf6;
+    color: white;
+  }
+
+  .glyph-autocomplete-item--suggestion .glyph-autocomplete-item-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+
+  .glyph-autocomplete-item--suggestion.selected .glyph-autocomplete-item-icon {
+    background: #f59e0b;
+    color: white;
+  }
+
+  .glyph-autocomplete-item--action .glyph-autocomplete-item-icon {
+    background: rgba(20, 184, 166, 0.1);
+    color: #14B8A6;
+  }
+
+  .glyph-autocomplete-item--action.selected .glyph-autocomplete-item-icon {
+    background: #14B8A6;
+    color: white;
+  }
+
+  .glyph-autocomplete-item--field .glyph-autocomplete-item-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+
+  .glyph-autocomplete-item--field.selected .glyph-autocomplete-item-icon {
+    background: #3b82f6;
+    color: white;
   }
 
   .glyph-autocomplete-item-main {
@@ -121,8 +178,8 @@ export const baseStyles = `
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     background: rgba(20, 184, 166, 0.1);
     border-radius: 6px;
     color: #14B8A6;
@@ -150,6 +207,25 @@ export const baseStyles = `
     text-overflow: ellipsis;
   }
 
+  .glyph-autocomplete-item-description {
+    font-size: 11px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .glyph-autocomplete-item--field .glyph-autocomplete-item-description {
+    font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+    padding: 1px 4px;
+    border-radius: 3px;
+    display: inline-block;
+    max-width: fit-content;
+  }
+
+  /* Legacy path style for backwards compatibility */
   .glyph-autocomplete-item-path {
     font-size: 11px;
     font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
@@ -204,5 +280,64 @@ export const baseStyles = `
   .glyph-command-wrapper {
     position: relative;
     flex: 1;
+  }
+
+  /* Dark theme support */
+  @media (prefers-color-scheme: dark) {
+    .glyph-autocomplete-dropdown {
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      border-color: #374151;
+    }
+
+    .glyph-autocomplete-category {
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      border-color: #374151;
+      color: #9ca3af;
+    }
+
+    .glyph-autocomplete-item {
+      border-color: #1f2937;
+    }
+
+    .glyph-autocomplete-item:hover,
+    .glyph-autocomplete-item.selected {
+      background: linear-gradient(90deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
+    }
+
+    .glyph-autocomplete-item-name {
+      color: #f3f4f6;
+    }
+
+    .glyph-autocomplete-item-description {
+      color: #9ca3af;
+    }
+
+    .glyph-autocomplete-item--field .glyph-autocomplete-item-description {
+      background: rgba(59, 130, 246, 0.2);
+    }
+
+    .glyph-autocomplete-item-path {
+      background: rgba(20, 184, 166, 0.2);
+    }
+
+    .glyph-autocomplete-item-example {
+      color: #6b7280;
+    }
+
+    .glyph-autocomplete-hint {
+      background: #111827;
+      border-color: #374151;
+    }
+
+    .glyph-autocomplete-hint kbd {
+      background: #374151;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .glyph-autocomplete-dropdown {
+      animation: none;
+    }
   }
 `;

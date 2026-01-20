@@ -1,0 +1,181 @@
+{
+  "personal": {
+    "name": "Sarah Chen",
+    "title": "Senior Full-Stack Engineer",
+    "email": "sarah.chen@email.com",
+    "phone": "(415) 555-0192",
+    "location": "San Francisco, CA",
+    "website": "sarahchen.dev",
+    "linkedin": "linkedin.com/in/sarahchen",
+    "github": "github.com/sarahchen",
+    "summary": "Full-stack engineer with 8+ years of experience building scalable web applications and leading engineering teams. Passionate about developer experience, performance optimization, and mentoring junior engineers. Track record of delivering high-impact products at both startups and enterprise companies."
+  },
+  "experience": [
+    {
+      "company": "Stripe",
+      "title": "Senior Software Engineer",
+      "location": "San Francisco, CA",
+      "startDate": "January 2022",
+      "current": true,
+      "description": "Core member of the Payments Platform team, building infrastructure that processes billions of dollars in transactions.",
+      "highlights": [
+        "Led migration of legacy payment processing system to event-driven architecture, reducing latency by 40% and improving reliability to 99.99% uptime",
+        "Designed and implemented real-time fraud detection pipeline processing 50K+ transactions per second",
+        "Mentored 4 junior engineers through structured 1:1s and code review, with 2 promoted to mid-level within 18 months",
+        "Collaborated with product and design to ship payment methods expansion to 12 new countries, increasing merchant adoption by 35%"
+      ],
+      "technologies": ["Go", "Ruby", "PostgreSQL", "Kafka", "Kubernetes", "AWS"]
+    },
+    {
+      "company": "Airbnb",
+      "title": "Software Engineer II",
+      "location": "San Francisco, CA",
+      "startDate": "June 2019",
+      "endDate": "December 2021",
+      "highlights": [
+        "Built React component library used by 200+ engineers, reducing UI development time by 30%",
+        "Optimized search results page performance, improving Core Web Vitals scores from 45 to 92",
+        "Led cross-functional initiative to implement A/B testing framework, enabling 50+ concurrent experiments",
+        "On-call rotation lead for guest-facing services with 10M+ daily active users"
+      ],
+      "technologies": ["React", "TypeScript", "GraphQL", "Node.js", "Java", "Redis"]
+    },
+    {
+      "company": "Plaid",
+      "title": "Software Engineer",
+      "location": "San Francisco, CA",
+      "startDate": "August 2017",
+      "endDate": "May 2019",
+      "highlights": [
+        "Developed bank connection infrastructure supporting 11,000+ financial institutions",
+        "Implemented OAuth 2.0 authentication flows for 50+ bank integrations",
+        "Reduced API response times by 60% through database query optimization and caching strategies",
+        "Created internal dashboard for operations team, reducing manual account review time by 75%"
+      ],
+      "technologies": ["Python", "Flask", "PostgreSQL", "Redis", "Docker", "Terraform"]
+    },
+    {
+      "company": "Microsoft",
+      "title": "Software Development Intern",
+      "location": "Redmond, WA",
+      "startDate": "June 2016",
+      "endDate": "August 2016",
+      "highlights": [
+        "Built prototype for Azure DevOps feature that was later shipped to production",
+        "Received return offer and \"exceeds expectations\" rating"
+      ],
+      "technologies": ["C#", ".NET", "Azure"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of California, Berkeley",
+      "degree": "Bachelor of Science",
+      "field": "Computer Science",
+      "graduationDate": "May 2017",
+      "gpa": "3.8/4.0",
+      "highlights": [
+        "Dean's Honor List (6 semesters)",
+        "Teaching Assistant for CS 61B: Data Structures",
+        "HackBerkeley organizer and mentor"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "category": "Languages",
+      "items": ["TypeScript", "Python", "Go", "Ruby", "Java", "SQL"]
+    },
+    {
+      "category": "Frontend",
+      "items": ["React", "Next.js", "Vue.js", "Tailwind CSS", "GraphQL"]
+    },
+    {
+      "category": "Backend",
+      "items": ["Node.js", "Express", "FastAPI", "Ruby on Rails", "gRPC"]
+    },
+    {
+      "category": "Infrastructure",
+      "items": ["AWS", "GCP", "Kubernetes", "Docker", "Terraform", "Datadog"]
+    },
+    {
+      "category": "Databases",
+      "items": ["PostgreSQL", "MySQL", "Redis", "MongoDB", "DynamoDB"]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Solutions Architect - Professional",
+      "issuer": "Amazon Web Services",
+      "date": "March 2023",
+      "credentialId": "AWS-PSA-12345"
+    },
+    {
+      "name": "Certified Kubernetes Administrator",
+      "issuer": "CNCF",
+      "date": "October 2022",
+      "credentialId": "CKA-2022-10-5678"
+    }
+  ],
+  "projects": [
+    {
+      "name": "OpenMetrics",
+      "description": "Open-source observability platform for modern applications. Built with Go and React, deployed on Kubernetes.",
+      "url": "github.com/openmetrics/core",
+      "technologies": ["Go", "React", "Prometheus", "Grafana", "Kubernetes"],
+      "highlights": [
+        "2,400+ GitHub stars",
+        "Used in production by 50+ companies",
+        "Featured in CNCF landscape"
+      ]
+    },
+    {
+      "name": "DevSync",
+      "description": "Real-time collaborative code editor with vim keybindings. Side project exploring CRDTs and WebRTC.",
+      "url": "devsync.io",
+      "technologies": ["TypeScript", "WebRTC", "Yjs", "CodeMirror"],
+      "highlights": [
+        "1,000+ monthly active users",
+        "Featured on Hacker News front page"
+      ]
+    }
+  ],
+  "publications": [
+    {
+      "title": "Scaling Event-Driven Architectures: Lessons from Stripe",
+      "publisher": "InfoQ",
+      "date": "September 2023",
+      "url": "infoq.com/articles/stripe-event-driven"
+    }
+  ],
+  "awards": [
+    {
+      "name": "Engineering Excellence Award",
+      "issuer": "Stripe",
+      "date": "2023",
+      "description": "Quarterly award for exceptional technical contribution"
+    }
+  ],
+  "languages": [
+    {
+      "name": "English",
+      "proficiency": "native"
+    },
+    {
+      "name": "Mandarin Chinese",
+      "proficiency": "fluent"
+    },
+    {
+      "name": "Spanish",
+      "proficiency": "conversational"
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "Code2040",
+      "role": "Technical Mentor",
+      "startDate": "2020",
+      "description": "Mentor underrepresented engineers through career development and technical interview prep"
+    }
+  ]
+}

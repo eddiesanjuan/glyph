@@ -30,12 +30,27 @@
 - Demo playground: Fully functional ✓
 
 ## Git Status
-- Commit: 36e11da
-- Message: "feat(www): Complete UI overhaul - premium developer-focused design"
+- Latest Commit: 06f9c7f
+- Message: "fix(www): Fix JavaScript template literal syntax in PDF generator"
 - Branch: main
 - Pushed: Yes
+
+## Demo Verification (2026-01-19)
+All demo features tested and working:
+- [x] Add watermark - Creates diagonal "DRAFT" watermark
+- [x] Add QR code - Adds payment QR code box
+- [x] Stripe style - Transforms PDF to Stripe's purple invoice design
+- [x] Features stack correctly (watermark + QR + styling all work together)
+- [x] Loading states display correctly
+- [x] Preview updates in real-time
 
 ## Deployment Status
 - Code pushed to GitHub ✓
 - Vercel CLI token expired - manual deployment needed
 - Run `vercel --prod` in www/ folder after `vercel login`
+
+## Screenshots Captured
+- `/Users/eddiesanjuan/Projects/glyph/.playwright-mcp/glyph_landing_hero_final.png` - Landing page hero
+- `/Users/eddiesanjuan/Projects/glyph/.playwright-mcp/glyph_watermark_final.png` - Watermark demo
+- `/Users/eddiesanjuan/Projects/glyph/.playwright-mcp/glyph_qr_final.png` - QR code demo
+- `/Users/eddiesanjuan/Projects/glyph/.playwright-mcp/glyph_stripe_final2.png` - Stripe styling demo

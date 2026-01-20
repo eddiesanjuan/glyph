@@ -1,0 +1,188 @@
+{
+  "workOrder": {
+    "number": "WO-2025-04521",
+    "date": "January 22, 2025",
+    "scheduledDate": "January 23, 2025 - 9:00 AM",
+    "priority": "high",
+    "status": "completed",
+    "type": "repair",
+    "quoteNumber": "Q-2025-0892"
+  },
+  "company": {
+    "name": "Summit HVAC Services",
+    "logo": "https://example.com/summit-hvac-logo.png",
+    "address": "2847 Industrial Parkway\nDenver, CO 80216",
+    "phone": "(303) 555-0187",
+    "email": "service@summithvac.com",
+    "license": "CO HVAC License #MC-4521897"
+  },
+  "customer": {
+    "name": "Mountain View Office Complex",
+    "accountNumber": "CUST-78452",
+    "email": "facilities@mountainviewoffice.com",
+    "phone": "(303) 555-0245",
+    "billingAddress": "1200 Corporate Drive\nSuite 100\nDenver, CO 80203"
+  },
+  "location": {
+    "name": "Building A - Server Room",
+    "address": "1200 Corporate Drive\nBuilding A, 3rd Floor\nDenver, CO 80203",
+    "accessInstructions": "Check in at main lobby security desk. Escort required to server room. Building access hours: 6 AM - 10 PM.",
+    "accessCode": "Server room: #4521",
+    "siteContact": "Mike Rodriguez",
+    "siteContactPhone": "(303) 555-0246"
+  },
+  "job": {
+    "type": "HVAC Repair - Commercial",
+    "description": "Server room CRAC unit not cooling. Temperature rising, currently at 82°F. Critical infrastructure at risk.",
+    "problemDescription": "Customer reported CRAC unit stopped cooling around 6 PM yesterday. Unit is running but blowing warm air. No error codes displayed. Room temperature has risen from normal 68°F to 82°F.",
+    "specialInstructions": "Critical system - minimize downtime. Coordinate with IT before powering off unit. Secondary portable cooling available if needed.",
+    "equipment": {
+      "type": "Computer Room Air Conditioning (CRAC)",
+      "make": "Liebert",
+      "model": "DS077A",
+      "serialNumber": "LB-2019-78452-A",
+      "location": "Server Room A, northwest corner"
+    },
+    "safetyNotes": "High-voltage electrical. Lockout/tagout required. Refrigerant handling - EPA 608 certification required."
+  },
+  "technicians": [
+    {
+      "name": "Carlos Mendez",
+      "employeeId": "EMP-142",
+      "phone": "(303) 555-0301",
+      "certification": "EPA 608 Universal, NATE Certified"
+    },
+    {
+      "name": "James Wilson",
+      "employeeId": "EMP-087",
+      "phone": "(303) 555-0302",
+      "certification": "EPA 608 Universal"
+    }
+  ],
+  "labor": [
+    {
+      "technician": "Carlos Mendez",
+      "date": "January 23, 2025",
+      "startTime": "9:15 AM",
+      "endTime": "2:45 PM",
+      "hours": 5.5,
+      "type": "regular",
+      "rate": 125,
+      "description": "Diagnostics, compressor replacement, system testing"
+    },
+    {
+      "technician": "James Wilson",
+      "date": "January 23, 2025",
+      "startTime": "9:15 AM",
+      "endTime": "1:00 PM",
+      "hours": 3.75,
+      "type": "regular",
+      "rate": 95,
+      "description": "Assisted with compressor replacement and refrigerant handling"
+    },
+    {
+      "technician": "Carlos Mendez",
+      "date": "January 23, 2025",
+      "hours": 0.5,
+      "type": "travel",
+      "rate": 75,
+      "description": "Travel to site"
+    }
+  ],
+  "materials": [
+    {
+      "item": "Scroll Compressor - Liebert DS Series",
+      "partNumber": "LB-COMP-DS077",
+      "quantity": 1,
+      "unit": "each",
+      "unitPrice": 2847.50,
+      "warranty": false
+    },
+    {
+      "item": "R-410A Refrigerant",
+      "partNumber": "REF-410A-25",
+      "quantity": 18,
+      "unit": "lbs",
+      "unitPrice": 45,
+      "warranty": false
+    },
+    {
+      "item": "Compressor Contactor",
+      "partNumber": "CTR-40A-3P",
+      "quantity": 1,
+      "unit": "each",
+      "unitPrice": 87.50,
+      "warranty": false
+    },
+    {
+      "item": "Filter Drier",
+      "partNumber": "FD-307S",
+      "quantity": 1,
+      "unit": "each",
+      "unitPrice": 124.00,
+      "warranty": false
+    },
+    {
+      "item": "Misc. Fittings and Brazing Supplies",
+      "partNumber": "MISC-BRAZE",
+      "quantity": 1,
+      "unit": "lot",
+      "unitPrice": 65.00,
+      "warranty": false
+    }
+  ],
+  "workPerformed": {
+    "summary": "Diagnosed failed scroll compressor. Replaced compressor, contactor, and filter drier. Evacuated and recharged system with R-410A. System restored to normal operation.",
+    "details": [
+      "Arrived on site 9:15 AM, met with site contact Mike Rodriguez",
+      "Initial diagnostics: compressor not starting, checked electrical - contactor welded closed",
+      "Compressor windings tested - shorted to ground, confirmed compressor failure",
+      "Coordinated with IT for 2-hour maintenance window",
+      "Recovered 22 lbs R-410A refrigerant (documented per EPA requirements)",
+      "Removed failed compressor and contactor",
+      "Installed new scroll compressor and 40A contactor",
+      "Replaced filter drier as preventive measure",
+      "Pressure tested system at 500 PSI - no leaks detected",
+      "Evacuated system to 500 microns",
+      "Charged system with 18 lbs R-410A per manufacturer spec",
+      "Started system - all operating parameters within normal range",
+      "Monitored for 45 minutes - room temperature dropped to 68°F",
+      "Cleaned work area and provided walkthrough to site contact"
+    ],
+    "recommendations": [
+      "Schedule preventive maintenance quarterly - unit is 5 years old",
+      "Consider backup portable cooling for future emergencies",
+      "Air filters should be replaced - currently at 60% capacity"
+    ],
+    "deferredItems": [
+      "Air filter replacement - customer will order and schedule separately"
+    ]
+  },
+  "totals": {
+    "laborTotal": 1081.25,
+    "materialsTotal": 3934.00,
+    "travelCharges": 37.50,
+    "subtotal": 5052.75,
+    "tax": 316.55,
+    "taxRate": 6.27,
+    "total": 5369.30
+  },
+  "completion": {
+    "completedDate": "January 23, 2025",
+    "completedTime": "2:45 PM",
+    "resolution": "Replaced failed compressor and related components. System restored to full operation. Server room temperature returned to normal 68°F operating range.",
+    "followUpRequired": true,
+    "followUpNotes": "Schedule quarterly PM visit within 90 days. Customer to contact for filter replacement."
+  },
+  "signatures": {
+    "technician": {
+      "name": "Carlos Mendez",
+      "date": "January 23, 2025"
+    },
+    "customer": {
+      "name": "Mike Rodriguez",
+      "date": "January 23, 2025"
+    }
+  },
+  "terms": "Payment due within 30 days. Parts warranty: 1 year manufacturer warranty. Labor warranty: 90 days. Emergency service rates apply for after-hours calls. Full terms at summithvac.com/terms"
+}

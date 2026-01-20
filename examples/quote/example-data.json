@@ -1,0 +1,239 @@
+{
+  "quote": {
+    "number": "Q-2024-0187",
+    "date": "January 22, 2024",
+    "validUntil": "February 21, 2024",
+    "status": "sent",
+    "projectName": "Kitchen Renovation - Craftsman Bungalow"
+  },
+  "company": {
+    "name": "Summit Renovation & Design",
+    "logo": "https://example.com/summit-logo.png",
+    "address": "4521 Builders Lane\nDenver, CO 80202",
+    "email": "estimates@summitreno.com",
+    "phone": "(303) 555-0189",
+    "license": "CO Contractor License #RR-4521897",
+    "website": "summitreno.com"
+  },
+  "client": {
+    "name": "Jennifer & David Walsh",
+    "address": "892 Maple Street\nBoulder, CO 80302",
+    "email": "jwalsh@email.com",
+    "phone": "(303) 555-7742"
+  },
+  "jobSite": {
+    "name": "Walsh Residence",
+    "address": "892 Maple Street, Boulder, CO 80302",
+    "notes": "Access via side gate. Homeowners working from home - please ring doorbell on arrival."
+  },
+  "sections": [
+    {
+      "title": "Demolition & Preparation",
+      "description": "Removal of existing kitchen fixtures and preparation for new installation",
+      "items": [
+        {
+          "description": "Cabinet & Countertop Removal",
+          "details": "Remove existing cabinets, countertops, and backsplash. Haul away debris.",
+          "quantity": 1,
+          "unit": "lot",
+          "unitPrice": 2800,
+          "total": 2800
+        },
+        {
+          "description": "Flooring Removal",
+          "details": "Remove existing vinyl flooring and underlayment",
+          "quantity": 180,
+          "unit": "sq ft",
+          "unitPrice": 4.50,
+          "total": 810
+        },
+        {
+          "description": "Plumbing Rough-In Modification",
+          "details": "Relocate water supply and drain for new sink location",
+          "quantity": 1,
+          "unit": "job",
+          "unitPrice": 1850,
+          "total": 1850
+        }
+      ],
+      "subtotal": 5460
+    },
+    {
+      "title": "Cabinetry & Countertops",
+      "description": "Custom semi-custom cabinetry with quartz countertops",
+      "items": [
+        {
+          "description": "Semi-Custom Shaker Cabinets",
+          "details": "Maple wood, soft-close hinges and drawers, painted white",
+          "quantity": 28,
+          "unit": "linear ft",
+          "unitPrice": 425,
+          "total": 11900
+        },
+        {
+          "description": "Quartz Countertops",
+          "details": "Cambria Brittanicca, 3cm thickness, eased edge",
+          "quantity": 45,
+          "unit": "sq ft",
+          "unitPrice": 95,
+          "total": 4275
+        },
+        {
+          "description": "Cabinet Installation Labor",
+          "quantity": 24,
+          "unit": "hours",
+          "unitPrice": 85,
+          "total": 2040
+        }
+      ],
+      "subtotal": 18215
+    },
+    {
+      "title": "Appliances",
+      "description": "Professional-grade appliance package (client may self-source)",
+      "items": [
+        {
+          "description": "36\" Gas Range",
+          "details": "Wolf GR366 - 6 burner, stainless steel",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPrice": 7850,
+          "total": 7850
+        },
+        {
+          "description": "French Door Refrigerator",
+          "details": "Sub-Zero 42\" built-in, panel-ready",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPrice": 12500,
+          "total": 12500
+        },
+        {
+          "description": "Dishwasher",
+          "details": "Bosch 800 Series, panel-ready",
+          "quantity": 1,
+          "unit": "unit",
+          "unitPrice": 1450,
+          "total": 1450,
+          "optional": true
+        }
+      ],
+      "subtotal": 21800
+    },
+    {
+      "title": "Flooring & Backsplash",
+      "items": [
+        {
+          "description": "Engineered Hardwood Flooring",
+          "details": "5\" white oak, matte finish, includes installation",
+          "quantity": 180,
+          "unit": "sq ft",
+          "unitPrice": 14.50,
+          "total": 2610
+        },
+        {
+          "description": "Subway Tile Backsplash",
+          "details": "3x6 ceramic, herringbone pattern, grout included",
+          "quantity": 35,
+          "unit": "sq ft",
+          "unitPrice": 28,
+          "total": 980
+        }
+      ],
+      "subtotal": 3590
+    },
+    {
+      "title": "Electrical & Lighting",
+      "items": [
+        {
+          "description": "Electrical Panel Upgrade",
+          "details": "Upgrade to 200A service for appliance loads",
+          "quantity": 1,
+          "unit": "job",
+          "unitPrice": 2400,
+          "total": 2400
+        },
+        {
+          "description": "Under-Cabinet LED Lighting",
+          "details": "Hardwired LED strips with dimmer switch",
+          "quantity": 28,
+          "unit": "linear ft",
+          "unitPrice": 35,
+          "total": 980
+        },
+        {
+          "description": "Pendant Light Installation",
+          "details": "Installation of 3 pendant fixtures over island (fixtures by owner)",
+          "quantity": 3,
+          "unit": "fixtures",
+          "unitPrice": 175,
+          "total": 525
+        }
+      ],
+      "subtotal": 3905
+    }
+  ],
+  "totals": {
+    "subtotal": 52970,
+    "discount": 2648.50,
+    "discountPercent": 5,
+    "tax": 4025.72,
+    "taxRate": 8,
+    "total": 54347.22,
+    "depositRequired": 16304.17,
+    "depositPercent": 30
+  },
+  "scope": "Complete kitchen renovation including demolition of existing fixtures, installation of new cabinetry, countertops, flooring, backsplash, and appliances. Includes all necessary plumbing and electrical modifications.",
+  "exclusions": [
+    "Structural modifications or load-bearing wall removal",
+    "Permits and inspection fees (estimated $850 - will be billed separately)",
+    "Painting of adjacent rooms",
+    "Window replacement",
+    "HVAC modifications"
+  ],
+  "assumptions": [
+    "No hidden damage behind walls requiring additional repair",
+    "Existing subfloor is in good condition",
+    "Electrical service can be upgraded without utility company involvement",
+    "Appliances can be delivered within project timeline"
+  ],
+  "timeline": {
+    "startDate": "March 4, 2024",
+    "completionDate": "April 19, 2024",
+    "duration": "6-7 weeks",
+    "milestones": [
+      {
+        "name": "Demolition Complete",
+        "date": "March 8, 2024"
+      },
+      {
+        "name": "Rough-In Inspection",
+        "date": "March 15, 2024"
+      },
+      {
+        "name": "Cabinet Installation",
+        "date": "March 25, 2024"
+      },
+      {
+        "name": "Countertop Template",
+        "date": "March 29, 2024"
+      },
+      {
+        "name": "Final Walkthrough",
+        "date": "April 19, 2024"
+      }
+    ]
+  },
+  "terms": [
+    "30% deposit required to schedule project and order materials",
+    "40% due at cabinet installation",
+    "30% balance due upon completion",
+    "Change orders will be documented and priced separately",
+    "Warranty: 2 years labor, manufacturer warranty on materials"
+  ],
+  "notes": "Thank you for considering Summit Renovation & Design for your kitchen project. We're excited about the vision you've shared and confident we can deliver a beautiful, functional space. Please don't hesitate to reach out with any questions.",
+  "acceptance": {
+    "showSignature": true,
+    "acceptanceText": "By signing below, I accept this quote and authorize Summit Renovation & Design to proceed with the work described above. I understand the payment terms and agree to the scope, exclusions, and assumptions stated."
+  }
+}

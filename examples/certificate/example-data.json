@@ -1,0 +1,74 @@
+{
+  "certificate": {
+    "title": "Certificate of Completion",
+    "number": "CERT-2025-AWS-SAP-08742",
+    "issueDate": "January 22, 2025",
+    "expirationDate": "January 22, 2028",
+    "type": "completion"
+  },
+  "issuer": {
+    "name": "Amazon Web Services",
+    "logo": "https://example.com/aws-logo.png",
+    "tagline": "Cloud Skills Training",
+    "website": "aws.amazon.com/training",
+    "accreditation": "AWS Training and Certification Program"
+  },
+  "recipient": {
+    "name": "Jennifer Martinez",
+    "title": "Cloud Solutions Architect",
+    "organization": "Meridian Technologies Inc."
+  },
+  "achievement": {
+    "description": "Has successfully completed the requirements for AWS Certified Solutions Architect - Professional certification",
+    "details": "This certification validates advanced technical skills and experience in designing distributed systems on AWS. The candidate demonstrated expertise in designing and deploying dynamically scalable, highly available, fault-tolerant, and reliable applications.",
+    "credential": "AWS Certified Solutions Architect - Professional",
+    "level": "Professional",
+    "score": "892/1000",
+    "skills": [
+      "Design for Organizational Complexity",
+      "Design for New Solutions",
+      "Migration Planning",
+      "Cost Control",
+      "Continuous Improvement for Existing Solutions"
+    ]
+  },
+  "program": {
+    "name": "AWS Solutions Architect Professional Certification",
+    "description": "Advanced certification for solutions architects with 2+ years of hands-on AWS experience",
+    "duration": "Recommended 80+ hours preparation",
+    "instructor": "AWS Training and Certification",
+    "location": "Online Proctored Exam"
+  },
+  "signatures": [
+    {
+      "name": "Werner Vogels",
+      "title": "Chief Technology Officer",
+      "organization": "Amazon.com"
+    },
+    {
+      "name": "Maureen Lonergan",
+      "title": "Director, AWS Training and Certification",
+      "organization": "Amazon Web Services"
+    }
+  ],
+  "seal": {
+    "type": "official"
+  },
+  "verification": {
+    "url": "aws.amazon.com/verification",
+    "code": "VERIFY-2025-AWS-08742",
+    "qrCode": true
+  },
+  "badges": [
+    {
+      "name": "AWS Certified Solutions Architect - Professional",
+      "imageUrl": "https://example.com/aws-sap-badge.png"
+    }
+  ],
+  "renewal": {
+    "requirements": "Recertification required every 3 years",
+    "continuingEducation": "Pass current version of exam or higher-level certification",
+    "renewalUrl": "aws.amazon.com/certification/recertification"
+  },
+  "disclaimer": "This certification is valid for three years from the date of issue. AWS reserves the right to revoke certification if terms of the AWS Certification Program Agreement are violated."
+}

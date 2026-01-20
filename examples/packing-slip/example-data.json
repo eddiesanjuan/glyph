@@ -1,0 +1,129 @@
+{
+  "shipment": {
+    "number": "PKS-2025-08742",
+    "date": "January 22, 2025",
+    "orderNumber": "ORD-2025-14521",
+    "poNumber": "PO-78542",
+    "carrier": "UPS Ground",
+    "trackingNumber": "1Z999AA10123456784",
+    "packageCount": 2,
+    "weight": "28.4 lbs",
+    "expectedDelivery": "January 27, 2025"
+  },
+  "company": {
+    "name": "Pacific Coast Supply Co.",
+    "logo": "https://example.com/pcs-logo.png",
+    "address": "1847 Distribution Way\nWarehouse B\nSan Diego, CA 92154",
+    "phone": "(619) 555-0147",
+    "email": "shipping@pacificcoastsupply.com",
+    "website": "pacificcoastsupply.com"
+  },
+  "shipTo": {
+    "name": "Marcus Thompson",
+    "company": "Thompson Hardware",
+    "address": "4521 Main Street\nPhoenix, AZ 85004",
+    "phone": "(602) 555-0298",
+    "deliveryInstructions": "Deliver to rear loading dock. Business hours 7 AM - 5 PM."
+  },
+  "billTo": {
+    "name": "Thompson Hardware",
+    "company": "Accounts Payable",
+    "address": "4521 Main Street\nPhoenix, AZ 85004"
+  },
+  "items": [
+    {
+      "sku": "DWT-DCD771C2",
+      "description": "DeWalt 20V MAX Drill/Driver Kit",
+      "quantityOrdered": 6,
+      "quantityShipped": 6,
+      "unit": "each",
+      "location": "A-12-3"
+    },
+    {
+      "sku": "DWT-DCB203-2",
+      "description": "DeWalt 20V 2.0Ah Battery 2-Pack",
+      "quantityOrdered": 12,
+      "quantityShipped": 12,
+      "unit": "each",
+      "location": "A-12-4"
+    },
+    {
+      "sku": "MKT-HP2071",
+      "description": "Makita 18V LXT Hammer Drill",
+      "quantityOrdered": 4,
+      "quantityShipped": 4,
+      "unit": "each",
+      "location": "A-14-2"
+    },
+    {
+      "sku": "MKT-BL1850B-2",
+      "description": "Makita 18V 5.0Ah Battery 2-Pack",
+      "quantityOrdered": 8,
+      "quantityShipped": 6,
+      "quantityBackordered": 2,
+      "unit": "each",
+      "location": "A-14-3"
+    },
+    {
+      "sku": "BWH-35A-15",
+      "description": "Bosch 15-pc Drill Bit Set",
+      "quantityOrdered": 24,
+      "quantityShipped": 24,
+      "unit": "each",
+      "location": "B-02-1"
+    },
+    {
+      "sku": "IRW-1877482",
+      "description": "IRWIN Quick-Grip Clamp Set (6-pc)",
+      "quantityOrdered": 10,
+      "quantityShipped": 10,
+      "unit": "set",
+      "location": "C-05-2"
+    }
+  ],
+  "packages": [
+    {
+      "packageNumber": "1 of 2",
+      "trackingNumber": "1Z999AA10123456784",
+      "weight": "18.2 lbs",
+      "dimensions": "24\" x 18\" x 12\"",
+      "contents": [
+        {"sku": "DWT-DCD771C2", "quantity": 6},
+        {"sku": "DWT-DCB203-2", "quantity": 12}
+      ]
+    },
+    {
+      "packageNumber": "2 of 2",
+      "trackingNumber": "1Z999AA10123456785",
+      "weight": "10.2 lbs",
+      "dimensions": "20\" x 16\" x 10\"",
+      "contents": [
+        {"sku": "MKT-HP2071", "quantity": 4},
+        {"sku": "MKT-BL1850B-2", "quantity": 6},
+        {"sku": "BWH-35A-15", "quantity": 24},
+        {"sku": "IRW-1877482", "quantity": 10}
+      ]
+    }
+  ],
+  "summary": {
+    "totalOrdered": 64,
+    "totalShipped": 62,
+    "totalBackordered": 2,
+    "shipmentNumber": "1 of 1"
+  },
+  "specialInstructions": [
+    "FRAGILE - Handle with care",
+    "Keep dry - do not expose to moisture",
+    "Stack limit: 3 boxes"
+  ],
+  "returns": {
+    "policy": "Returns accepted within 30 days in original packaging. Defective items may be returned for replacement or refund. Opened power tools subject to 15% restocking fee.",
+    "instructions": "Contact customer service for RMA number before returning. Include packing slip copy with return.",
+    "includeReturnLabel": false
+  },
+  "notes": "Backordered items (2x Makita Battery 2-Pack) expected to ship January 29, 2025. You will receive tracking notification when shipped.",
+  "barcode": {
+    "type": "code128",
+    "value": "PKS-2025-08742"
+  }
+}

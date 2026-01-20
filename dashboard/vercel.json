@@ -6,6 +6,6 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
-    "VITE_API_URL": "https://api.glyph.you"
+    "VITE_API_URL": "https://glyph-api-production-3f73.up.railway.app"
   }
 }

@@ -1,0 +1,176 @@
+{
+  "statement": {
+    "number": "STMT-2025-01-78452",
+    "date": "January 31, 2025",
+    "periodStart": "January 1, 2025",
+    "periodEnd": "January 31, 2025",
+    "accountNumber": "ACCT-78452",
+    "type": "customer"
+  },
+  "company": {
+    "name": "Mountain Valley Building Supply",
+    "logo": "https://example.com/mvbs-logo.png",
+    "address": "4521 Commerce Drive\nDenver, CO 80216",
+    "phone": "(303) 555-0187",
+    "email": "accounts@mvbsupply.com",
+    "website": "mvbsupply.com"
+  },
+  "customer": {
+    "name": "Summit Construction LLC",
+    "accountNumber": "ACCT-78452",
+    "address": "2847 Builder's Way\nSuite 200\nBoulder, CO 80302",
+    "email": "ap@summitconstruction.com",
+    "phone": "(303) 555-0298"
+  },
+  "summary": {
+    "previousBalance": 12847.50,
+    "newCharges": 28459.23,
+    "payments": 15000.00,
+    "credits": 425.00,
+    "financeCharges": 0,
+    "currentBalance": 25881.73,
+    "minimumPayment": 8500.00,
+    "paymentDueDate": "February 15, 2025",
+    "pastDue": 0
+  },
+  "aging": {
+    "current": 22456.73,
+    "days1to30": 3425.00,
+    "days31to60": 0,
+    "days61to90": 0,
+    "over90": 0
+  },
+  "transactions": [
+    {
+      "date": "Jan 1",
+      "type": "charge",
+      "description": "Previous Balance Forward",
+      "charge": 12847.50,
+      "balance": 12847.50
+    },
+    {
+      "date": "Jan 3",
+      "type": "charge",
+      "reference": "INV-2025-0042",
+      "description": "Lumber order - Cedar decking materials",
+      "charge": 4521.00,
+      "balance": 17368.50
+    },
+    {
+      "date": "Jan 8",
+      "type": "payment",
+      "reference": "CHK-7845",
+      "description": "Payment received - Thank you",
+      "payment": 8000.00,
+      "balance": 9368.50
+    },
+    {
+      "date": "Jan 10",
+      "type": "charge",
+      "reference": "INV-2025-0089",
+      "description": "Hardware and fasteners",
+      "charge": 1247.85,
+      "balance": 10616.35
+    },
+    {
+      "date": "Jan 14",
+      "type": "charge",
+      "reference": "INV-2025-0112",
+      "description": "Framing lumber - 847 Pine Street project",
+      "charge": 8942.00,
+      "balance": 19558.35
+    },
+    {
+      "date": "Jan 15",
+      "type": "credit",
+      "reference": "CR-2025-0018",
+      "description": "Return credit - Defective material",
+      "payment": 425.00,
+      "balance": 19133.35
+    },
+    {
+      "date": "Jan 20",
+      "type": "charge",
+      "reference": "INV-2025-0156",
+      "description": "Roofing materials - Aspen Heights",
+      "charge": 7248.38,
+      "balance": 26381.73
+    },
+    {
+      "date": "Jan 22",
+      "type": "payment",
+      "reference": "ACH-4521",
+      "description": "ACH Payment received",
+      "payment": 7000.00,
+      "balance": 19381.73
+    },
+    {
+      "date": "Jan 28",
+      "type": "charge",
+      "reference": "INV-2025-0198",
+      "description": "Doors and windows order",
+      "charge": 6500.00,
+      "balance": 25881.73
+    }
+  ],
+  "openInvoices": [
+    {
+      "invoiceNumber": "INV-2025-0042",
+      "date": "January 3, 2025",
+      "originalAmount": 4521.00,
+      "amountPaid": 1096.00,
+      "balanceDue": 3425.00,
+      "dueDate": "February 2, 2025",
+      "daysPastDue": 0
+    },
+    {
+      "invoiceNumber": "INV-2025-0112",
+      "date": "January 14, 2025",
+      "originalAmount": 8942.00,
+      "amountPaid": 0,
+      "balanceDue": 8942.00,
+      "dueDate": "February 13, 2025",
+      "daysPastDue": 0
+    },
+    {
+      "invoiceNumber": "INV-2025-0156",
+      "date": "January 20, 2025",
+      "originalAmount": 7248.38,
+      "amountPaid": 0,
+      "balanceDue": 7248.38,
+      "dueDate": "February 19, 2025",
+      "daysPastDue": 0
+    },
+    {
+      "invoiceNumber": "INV-2025-0198",
+      "date": "January 28, 2025",
+      "originalAmount": 6500.00,
+      "amountPaid": 234.65,
+      "balanceDue": 6265.35,
+      "dueDate": "February 27, 2025",
+      "daysPastDue": 0
+    }
+  ],
+  "payment": {
+    "methods": ["Check", "ACH", "Credit Card", "Wire Transfer"],
+    "paymentUrl": "pay.mvbsupply.com",
+    "paymentAddress": "Mountain Valley Building Supply\nP.O. Box 78452\nDenver, CO 80217",
+    "includePaymentStub": true,
+    "payByPhone": "(303) 555-0189",
+    "autoPay": {
+      "enrolled": false
+    }
+  },
+  "messages": [
+    {
+      "type": "info",
+      "content": "Your account is in good standing. Thank you for your prompt payments!"
+    },
+    {
+      "type": "promotion",
+      "content": "Contractor Appreciation Month! 5% off all orders over $10,000 in February. Use code: CONTRACTOR5"
+    }
+  ],
+  "terms": "Net 30 terms. Finance charges of 1.5% per month (18% APR) will be applied to balances over 30 days past due. Discounts: 2% if paid within 10 days.",
+  "footer": "Questions about your statement? Contact Accounts Receivable at (303) 555-0187 or accounts@mvbsupply.com"
+}

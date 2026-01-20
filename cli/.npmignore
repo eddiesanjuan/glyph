@@ -1,0 +1,24 @@
+# Source files
+src/
+tsconfig.json
+
+# Development files
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/
+.nyc_output/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Other
+.git/
+.gitignore
+.env
+.env.*
+node_modules/
+*.log

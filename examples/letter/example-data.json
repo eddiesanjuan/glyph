@@ -1,0 +1,51 @@
+{
+  "letter": {
+    "date": "January 22, 2025",
+    "reference": "REF: 2025-EMP-0847",
+    "subject": "Offer of Employment - Senior Product Manager",
+    "type": "formal"
+  },
+  "sender": {
+    "name": "Jennifer Walsh",
+    "title": "Vice President, Human Resources",
+    "organization": "Meridian Technologies, Inc.",
+    "logo": "https://example.com/meridian-logo.png",
+    "address": "2400 Innovation Boulevard\nSuite 800\nSeattle, WA 98109",
+    "phone": "(206) 555-0147",
+    "email": "hr@meridiantech.com",
+    "website": "meridiantech.com"
+  },
+  "recipient": {
+    "name": "Michael Chen",
+    "address": "1847 Lakeside Drive\nApartment 12B\nBellevue, WA 98004"
+  },
+  "content": {
+    "salutation": "Dear Mr. Chen:",
+    "opening": "On behalf of Meridian Technologies, I am pleased to extend to you an offer of employment for the position of Senior Product Manager in our Consumer Products division. We were impressed by your background in product strategy and your demonstrated ability to lead cross-functional teams, and we believe you will be an excellent addition to our organization.",
+    "body": [
+      "The details of our offer are as follows:",
+      "**Position:** Senior Product Manager, Consumer Products\n**Start Date:** February 17, 2025\n**Reporting To:** David Park, VP of Product\n**Location:** Seattle Headquarters (Hybrid - 3 days in office)",
+      "**Compensation:**\n- Base Salary: $185,000 annually, paid semi-monthly\n- Annual Bonus: Target of 20% of base salary, based on company and individual performance\n- Sign-on Bonus: $25,000, payable within 30 days of start date\n- Equity: 15,000 stock options, vesting over 4 years with a 1-year cliff",
+      "**Benefits:**\n- Medical, dental, and vision insurance (effective first day of employment)\n- 401(k) with 4% company match (immediate vesting)\n- 20 days paid time off plus 10 company holidays\n- 12 weeks paid parental leave\n- Professional development budget: $5,000 annually\n- Home office stipend: $1,500 one-time",
+      "This offer is contingent upon successful completion of a background check and verification of your eligibility to work in the United States. Please note that employment at Meridian Technologies is at-will, meaning either you or the company may terminate the employment relationship at any time."
+    ],
+    "closing": "We are excited about the possibility of you joining our team and contributing to the future of Meridian Technologies. Please indicate your acceptance of this offer by signing and returning the enclosed copy by January 29, 2025. If you have any questions, please don't hesitate to reach out to me directly at (206) 555-0147 or jennifer.walsh@meridiantech.com.",
+    "signoff": "Sincerely,"
+  },
+  "signature": {
+    "showLine": true,
+    "name": "Jennifer Walsh",
+    "title": "Vice President, Human Resources"
+  },
+  "enclosures": [
+    "Duplicate offer letter for signature",
+    "Employee Handbook",
+    "Benefits Summary",
+    "Background Check Authorization Form",
+    "I-9 Employment Eligibility Verification"
+  ],
+  "cc": [
+    {"name": "David Park", "organization": "VP of Product"},
+    {"name": "HR Records", "organization": "Human Resources"}
+  ]
+}
