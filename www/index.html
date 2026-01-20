@@ -3709,7 +3709,7 @@
           </div>
           <div class="integration-card__label">SDK</div>
           <div class="integration-card__desc">For web applications</div>
-          <div class="integration-card__code" onclick="copyToClipboard('&lt;script src=&quot;https://glyph-sdk.vercel.app/glyph.min.js&quot;&gt;&lt;/script&gt;', this)">
+          <div class="integration-card__code" onclick="copyToClipboard('&lt;script src=&quot;https://glyph-sdk-production.up.railway.app/glyph.min.js&quot;&gt;&lt;/script&gt;', this)">
             <span class="integration-card__code-text">&lt;script src="...glyph.min.js"&gt;</span>
             <span class="integration-card__copy">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4089,7 +4089,7 @@
           <div class="code-content">
             <div class="code-block code-block--active" id="code-html">
               <pre><code><span class="code-comment">&lt;!-- Include the SDK --&gt;</span>
-<span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://glyph-sdk.vercel.app/glyph.min.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
+<span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://glyph-sdk-production.up.railway.app/glyph.min.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
 
 <span class="code-comment">&lt;!-- Add the editor component --&gt;</span>
 <span class="code-tag">&lt;glyph-editor</span>
@@ -4654,9 +4654,17 @@
     // ============================================
     // Configuration
     // ============================================
-    const API_URL = window.location.hostname === 'localhost'
-      ? 'http://localhost:3000'
-      : 'https://glyph-api-production-3f73.up.railway.app';
+    const API_URL = (() => {
+      if (window.location.hostname === 'localhost') {
+        return 'http://localhost:3000';
+      }
+      // Railway internal networking for speed
+      if (window.location.hostname.includes('.railway.app')) {
+        return 'https://glyph-api-production-3f73.up.railway.app'; // Same for now, internal later
+      }
+      // Custom domain fallback
+      return 'https://glyph-api-production-3f73.up.railway.app';
+    })();
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
 
     // ============================================

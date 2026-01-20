@@ -1,0 +1,20 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install serve globally
+RUN npm install -g serve
+
+# Copy SDK package files and install dependencies
+COPY sdk/package*.json ./
+RUN npm install
+
+# Copy SDK source and build
+COPY sdk/src ./src
+COPY sdk/vite.config.ts ./
+COPY sdk/tsconfig.json ./
+RUN npm run build
+
+# Expose port and serve from dist
+EXPOSE 3000
+CMD ["serve", "dist", "-s", "-l", "3000", "--cors"]

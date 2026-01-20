@@ -3,5 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-healthcheckPath = "/"
+healthcheckPath = "/glyph.min.js"
 healthcheckTimeout = 30
