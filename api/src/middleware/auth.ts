@@ -42,6 +42,15 @@ export async function authMiddleware(c: Context, next: Next) {
     });
   }
 
+  // Allow demo/test keys to bypass database validation
+  // This ensures the playground demo always works
+  if (DEV_API_KEYS.has(token)) {
+    c.set("tier", "demo");
+    c.set("monthlyLimit", 1000);
+    c.set("currentUsage", 0);
+    return next();
+  }
+
   // If Supabase is configured, validate against database
   if (supabase) {
     try {
