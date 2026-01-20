@@ -1,18 +1,13 @@
-FROM node:20-slim
-
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Install serve globally
-RUN npm install -g serve
-
-# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
-
-# Build the SDK
 COPY . .
 RUN npm run build
 
-# Expose port and serve from dist
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=builder /app/dist ./dist
 EXPOSE 3000
-CMD ["serve", "dist", "-s", "-l", "3000", "--cors"]
+CMD ["serve", "-s", "dist", "-l", "3000", "--cors"]
