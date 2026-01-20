@@ -2058,6 +2058,852 @@
     }
 
     /* ============================================
+       Change Diff Highlight Animation
+       Applied to elements inside the preview iframe
+       ============================================ */
+    @keyframes glyphChangeHighlight {
+      0% {
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.7), 0 0 20px rgba(124, 58, 237, 0.4);
+        background-color: rgba(124, 58, 237, 0.08);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.5), 0 0 30px rgba(124, 58, 237, 0.3);
+        background-color: rgba(124, 58, 237, 0.05);
+      }
+      100% {
+        box-shadow: 0 0 0 0px rgba(124, 58, 237, 0), 0 0 0px rgba(124, 58, 237, 0);
+        background-color: rgba(124, 58, 237, 0);
+      }
+    }
+
+    @keyframes glyphChangeShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ============================================
+       Save Version Button
+       ============================================ */
+    .playground__save-btn {
+      flex-shrink: 0;
+      width: 44px;
+      padding: 12px;
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .playground__save-btn:hover {
+      background: var(--color-primary-subtle);
+      color: var(--color-warning);
+      border-color: var(--color-warning);
+    }
+
+    .playground__save-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ============================================
+       Save Version Modal
+       ============================================ */
+    .save-version-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .save-version-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .save-version-modal {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      margin: 16px;
+      transform: scale(0.95);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .save-version-modal-overlay.active .save-version-modal {
+      transform: scale(1);
+    }
+
+    .save-version-modal__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .save-version-modal__title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--color-warning);
+    }
+
+    .save-version-modal__description {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .save-version-modal__input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      margin-bottom: 20px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .save-version-modal__input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .save-version-modal__input::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .save-version-modal__actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .save-version-modal__btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .save-version-modal__btn--cancel {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .save-version-modal__btn--cancel:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .save-version-modal__btn--save {
+      background: var(--color-warning);
+      color: #1a1a1a;
+      border: none;
+    }
+
+    .save-version-modal__btn--save:hover {
+      background: #fbbf24;
+    }
+
+    .save-version-modal__btn--save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ============================================
+       Saved Versions Section
+       ============================================ */
+    .saved-versions {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .saved-versions__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .saved-versions__title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .saved-versions__title svg {
+      width: 14px;
+      height: 14px;
+      color: var(--color-warning);
+    }
+
+    .saved-versions__count {
+      font-size: 11px;
+      color: var(--color-text-subtle);
+      background: var(--color-surface);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .saved-versions__list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .saved-versions__empty {
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      text-align: center;
+      padding: 14px;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--color-border-subtle);
+    }
+
+    .saved-version-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .saved-version-item:hover {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: var(--color-warning);
+    }
+
+    .saved-version-item__star {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--color-warning);
+    }
+
+    .saved-version-item__info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .saved-version-item__name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .saved-version-item__date {
+      font-size: 11px;
+      color: var(--color-text-subtle);
+    }
+
+    .saved-version-item__delete {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-subtle);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+      opacity: 0;
+    }
+
+    .saved-version-item:hover .saved-version-item__delete {
+      opacity: 1;
+    }
+
+    .saved-version-item__delete:hover {
+      background: var(--color-error);
+      color: white;
+    }
+
+    .saved-version-item__delete svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ============================================
+       Keyboard Shortcuts Bar
+       ============================================ */
+    .shortcuts-bar {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      animation: shortcutsSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes shortcutsSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .shortcuts-bar.hidden {
+      display: none;
+    }
+
+    .shortcuts-bar__title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+    }
+
+    .shortcuts-bar__items {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .shortcuts-bar__item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .shortcuts-bar__key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--color-text);
+    }
+
+    .shortcuts-bar__label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .shortcuts-bar__divider {
+      width: 1px;
+      height: 20px;
+      background: var(--color-border-subtle);
+    }
+
+    .shortcuts-bar__dismiss {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .shortcuts-bar__dismiss:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .shortcuts-bar__dismiss svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .shortcuts-bar {
+        display: none;
+      }
+    }
+
+    /* ============================================
+       Version History Panel (Timeline)
+       ============================================ */
+    .history-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .history-toggle-btn:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text);
+      border-color: var(--color-border-hover);
+    }
+
+    .history-toggle-btn.active {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-bright);
+      border-color: var(--color-primary);
+    }
+
+    .history-toggle-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .history-toggle-btn__count {
+      font-size: 11px;
+      padding: 1px 6px;
+      background: var(--color-border-subtle);
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .history-toggle-btn.active .history-toggle-btn__count {
+      background: var(--color-primary-bright);
+      color: white;
+    }
+
+    .history-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 320px;
+      height: 100vh;
+      background: rgba(17, 24, 39, 0.98);
+      border-left: 1px solid var(--color-border-subtle);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+    }
+
+    .history-panel.open {
+      transform: translateX(0);
+    }
+
+    .history-panel__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .history-panel__title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .history-panel__title svg {
+      width: 20px;
+      height: 20px;
+      color: var(--color-primary-bright);
+    }
+
+    .history-panel__close {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+
+    .history-panel__close:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .history-panel__close svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .history-panel__content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .history-panel__empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-subtle);
+    }
+
+    .history-panel__empty svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .history-panel__empty-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      margin-bottom: 4px;
+    }
+
+    .history-panel__empty-text {
+      font-size: 13px;
+    }
+
+    .history-timeline {
+      position: relative;
+    }
+
+    .history-timeline::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--color-border-subtle);
+    }
+
+    .history-entry {
+      position: relative;
+      padding: 16px;
+      padding-left: 36px;
+      margin-bottom: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .history-entry::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 20px;
+      width: 10px;
+      height: 10px;
+      background: var(--color-border-subtle);
+      border: 2px solid var(--color-bg-elevated);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .history-entry:hover {
+      background: rgba(37, 99, 235, 0.08);
+      border-color: var(--color-primary);
+    }
+
+    .history-entry:hover::before {
+      background: var(--color-primary);
+    }
+
+    .history-entry--current {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: var(--color-primary-bright);
+    }
+
+    .history-entry--current::before {
+      background: var(--color-primary-bright);
+    }
+
+    .history-entry--current::after {
+      content: 'Current';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      background: var(--color-primary-bright);
+      color: white;
+      border-radius: 4px;
+    }
+
+    .history-entry__time {
+      font-size: 11px;
+      color: var(--color-text-subtle);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .history-entry__prompt {
+      font-size: 13px;
+      color: var(--color-text);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .history-entry__restore {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--color-primary-bright);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all var(--transition-fast);
+    }
+
+    .history-entry:hover .history-entry__restore {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .history-entry__restore:hover {
+      background: var(--color-primary);
+    }
+
+    @media (max-width: 768px) {
+      .history-panel {
+        width: 100%;
+      }
+
+      .history-toggle-btn {
+        padding: 8px;
+      }
+
+      .history-toggle-btn span:first-child {
+        display: none;
+      }
+    }
+
+    /* ============================================
+       Toast Notification
+       ============================================ */
+    .glyph-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10001;
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .glyph-toast.active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .glyph-toast--success {
+      border-color: var(--color-success);
+    }
+
+    .glyph-toast--success .glyph-toast__icon {
+      color: var(--color-success);
+    }
+
+    .glyph-toast--error {
+      border-color: var(--color-error);
+    }
+
+    .glyph-toast--error .glyph-toast__icon {
+      color: var(--color-error);
+    }
+
+    .glyph-toast__icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .glyph-toast__message {
+      font-size: 14px;
+      color: var(--color-text);
+    }
+
+    /* ============================================
+       Delete Confirmation Modal
+       ============================================ */
+    .delete-confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .delete-confirm-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .delete-confirm-modal {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      margin: 16px;
+      transform: scale(0.95);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .delete-confirm-modal-overlay.active .delete-confirm-modal {
+      transform: scale(1);
+    }
+
+    .delete-confirm-modal__title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .delete-confirm-modal__message {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .delete-confirm-modal__name {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .delete-confirm-modal__actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .delete-confirm-modal__btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .delete-confirm-modal__btn--cancel {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .delete-confirm-modal__btn--cancel:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .delete-confirm-modal__btn--delete {
+      background: var(--color-error);
+      color: white;
+      border: none;
+    }
+
+    .delete-confirm-modal__btn--delete:hover {
+      background: #dc2626;
+    }
+    /* ============================================
        Features Section
        ============================================ */
     .features {
@@ -4921,6 +5767,13 @@
             <button class="playground__tab" data-template="quote-bold">Bold</button>
           </div>
           <div class="playground__actions">
+            <button class="history-toggle-btn" id="history-toggle-btn" title="View change history">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>History</span>
+              <span class="history-toggle-btn__count" id="history-count">0</span>
+            </button>
             <button class="btn btn--primary" id="generate-btn">
               <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -4961,6 +5814,28 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v0a5 5 0 01-5 5H8m-5-10l4-4m-4 4l4 4"/>
                   </svg>
                 </button>
+                <button class="playground__save-btn" id="save-version-btn" title="Save named version">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- Saved Versions Section -->
+              <div class="saved-versions" id="saved-versions-section">
+                <div class="saved-versions__header">
+                  <span class="saved-versions__title">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                    Saved Versions
+                  </span>
+                  <span class="saved-versions__count" id="saved-versions-count">0/10</span>
+                </div>
+                <div class="saved-versions__list" id="saved-versions-list">
+                  <div class="saved-versions__empty">
+                    Click the star to save a named version
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -6731,12 +7606,235 @@
       }
     }
 
-    // Render HTML in iframe
-    function renderPreview(html) {
+    // Render HTML in iframe with optional change highlighting
+    function renderPreview(html, options = {}) {
+      const { changes = [], previousHtml = null } = options;
       const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
       doc.open();
       doc.write(html);
       doc.close();
+
+      // If we have changes info, apply highlight animation to changed regions
+      if (changes.length > 0 || previousHtml) {
+        highlightChangedRegions(doc, changes, previousHtml, html);
+      }
+    }
+
+    /**
+     * Highlight regions that changed after AI modification
+     * Uses the changes array from API and/or HTML diffing
+     */
+    function highlightChangedRegions(doc, changes, previousHtml, currentHtml) {
+      // Inject the highlight CSS into the iframe
+      const styleId = 'glyph-change-highlight-styles';
+      if (!doc.getElementById(styleId)) {
+        const style = doc.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          .glyph-changed {
+            position: relative;
+            animation: glyphChangeHighlight 2.5s ease-out forwards;
+            border-radius: 4px;
+          }
+          .glyph-changed::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(124, 58, 237, 0.15),
+              transparent
+            );
+            background-size: 200% 100%;
+            animation: glyphChangeShimmer 1.5s ease-out;
+            pointer-events: none;
+            border-radius: inherit;
+          }
+          @keyframes glyphChangeHighlight {
+            0% {
+              box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.7), 0 0 20px rgba(124, 58, 237, 0.4);
+              background-color: rgba(124, 58, 237, 0.08);
+            }
+            50% {
+              box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.5), 0 0 30px rgba(124, 58, 237, 0.3);
+              background-color: rgba(124, 58, 237, 0.05);
+            }
+            100% {
+              box-shadow: 0 0 0 0px rgba(124, 58, 237, 0), 0 0 0px rgba(124, 58, 237, 0);
+              background-color: rgba(124, 58, 237, 0);
+            }
+          }
+          @keyframes glyphChangeShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+        `;
+        doc.head.appendChild(style);
+      }
+
+      // Strategy 1: Use data-glyph-region attributes if available
+      const regions = doc.querySelectorAll('[data-glyph-region]');
+      let highlightedCount = 0;
+
+      // Parse changes to identify which regions were affected
+      const changeKeywords = extractChangeKeywords(changes);
+
+      // Check each region for changes
+      regions.forEach(region => {
+        const regionName = region.getAttribute('data-glyph-region').toLowerCase();
+        const shouldHighlight = changeKeywords.some(keyword =>
+          regionName.includes(keyword) || keyword.includes(regionName)
+        );
+
+        if (shouldHighlight) {
+          applyHighlight(region);
+          highlightedCount++;
+        }
+      });
+
+      // Strategy 2: If no regions matched, use HTML diff to find changes
+      if (highlightedCount === 0 && previousHtml) {
+        highlightedCount = highlightByDiff(doc, previousHtml, currentHtml);
+      }
+
+      // Strategy 3: If still nothing and we have changes, highlight common elements
+      if (highlightedCount === 0 && changes.length > 0) {
+        highlightByKeywordSearch(doc, changeKeywords);
+      }
+
+      console.log(`[Glyph] Highlighted ${highlightedCount} changed regions`);
+    }
+
+    /**
+     * Extract keywords from change descriptions to match against elements
+     */
+    function extractChangeKeywords(changes) {
+      const keywords = [];
+      const keywordPatterns = [
+        /header/i, /footer/i, /title/i, /subtitle/i, /logo/i,
+        /color/i, /background/i, /font/i, /text/i, /border/i,
+        /button/i, /link/i, /image/i, /icon/i, /table/i,
+        /price/i, /total/i, /item/i, /product/i, /service/i,
+        /company/i, /contact/i, /address/i, /phone/i, /email/i,
+        /date/i, /number/i, /signature/i, /qr/i, /code/i,
+        /payment/i, /terms/i, /notes/i, /description/i
+      ];
+
+      changes.forEach(change => {
+        const lowerChange = change.toLowerCase();
+        keywordPatterns.forEach(pattern => {
+          const match = lowerChange.match(pattern);
+          if (match) {
+            keywords.push(match[0].toLowerCase());
+          }
+        });
+
+        // Also extract specific words that might be element classes/ids
+        const words = lowerChange.match(/\b[a-z]{4,}\b/gi) || [];
+        words.forEach(word => {
+          if (!['added', 'updated', 'changed', 'modified', 'removed', 'style', 'styling'].includes(word.toLowerCase())) {
+            keywords.push(word.toLowerCase());
+          }
+        });
+      });
+
+      return [...new Set(keywords)]; // Remove duplicates
+    }
+
+    /**
+     * Apply the highlight animation to an element
+     */
+    function applyHighlight(element) {
+      element.classList.add('glyph-changed');
+
+      // Remove the class after animation completes
+      setTimeout(() => {
+        element.classList.remove('glyph-changed');
+      }, 2500);
+    }
+
+    /**
+     * Highlight elements by searching for keywords in class names, IDs, and content
+     */
+    function highlightByKeywordSearch(doc, keywords) {
+      if (keywords.length === 0) return;
+
+      // Build selector for common element types
+      const selectors = [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'header', 'footer', 'section', 'article',
+        '.header', '.footer', '.title', '.subtitle',
+        '[class*="header"]', '[class*="title"]', '[class*="footer"]',
+        '[class*="logo"]', '[class*="price"]', '[class*="total"]'
+      ];
+
+      const elements = doc.querySelectorAll(selectors.join(', '));
+
+      elements.forEach(el => {
+        const elClass = (el.className || '').toLowerCase();
+        const elId = (el.id || '').toLowerCase();
+        const elText = (el.textContent || '').toLowerCase().substring(0, 100);
+
+        const matches = keywords.some(keyword =>
+          elClass.includes(keyword) ||
+          elId.includes(keyword) ||
+          elText.includes(keyword)
+        );
+
+        if (matches) {
+          applyHighlight(el);
+        }
+      });
+    }
+
+    /**
+     * Compare previous and current HTML to find changed elements
+     * Uses a simplified diff approach for performance
+     */
+    function highlightByDiff(doc, previousHtml, currentHtml) {
+      let highlightedCount = 0;
+
+      // Create temporary elements to parse HTML
+      const tempPrev = document.createElement('div');
+      const tempCurr = document.createElement('div');
+      tempPrev.innerHTML = previousHtml;
+      tempCurr.innerHTML = currentHtml;
+
+      // Get all elements with data-glyph-region in current doc
+      const regions = doc.querySelectorAll('[data-glyph-region]');
+
+      regions.forEach(region => {
+        const regionName = region.getAttribute('data-glyph-region');
+        const prevRegion = tempPrev.querySelector(`[data-glyph-region="${regionName}"]`);
+
+        // If region didn't exist before or content changed, highlight it
+        if (!prevRegion || prevRegion.innerHTML !== region.innerHTML) {
+          applyHighlight(region);
+          highlightedCount++;
+        }
+      });
+
+      // Also check for style changes on key elements
+      const checkElements = doc.querySelectorAll('h1, h2, h3, .header, .title, table, .total');
+      checkElements.forEach(el => {
+        // Simple check: if the element's outer HTML changed significantly
+        const prevMatches = tempPrev.querySelectorAll(el.tagName);
+        let found = false;
+        prevMatches.forEach(prev => {
+          if (prev.outerHTML === el.outerHTML) found = true;
+        });
+
+        if (!found && !el.classList.contains('glyph-changed')) {
+          applyHighlight(el);
+          highlightedCount++;
+        }
+      });
+
+      return highlightedCount;
     }
 
     // ============================================
@@ -6792,6 +7890,577 @@
       updateUndoButtonState();
     }
 
+
+    // ============================================
+    // Keyboard Shortcuts Bar
+    // ============================================
+    const shortcutsBar = document.getElementById('shortcuts-bar');
+    const shortcutsDismiss = document.getElementById('shortcuts-dismiss');
+    const SHORTCUTS_DISMISSED_KEY = 'glyph_shortcuts_dismissed';
+
+    // Detect platform (Mac vs Windows/Linux)
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const modKey = isMac ? '⌘' : 'Ctrl';
+
+    // Update shortcut labels based on platform
+    function initShortcutLabels() {
+      const modElements = document.querySelectorAll('#shortcut-mod, #shortcut-mod-2, #shortcut-mod-3');
+      modElements.forEach(el => {
+        if (el) el.textContent = modKey;
+      });
+    }
+
+    // Initialize shortcuts bar visibility
+    function initShortcutsBar() {
+      const dismissed = localStorage.getItem(SHORTCUTS_DISMISSED_KEY);
+      if (dismissed === 'true') {
+        shortcutsBar.classList.add('hidden');
+      }
+      initShortcutLabels();
+    }
+
+    // Dismiss shortcuts bar
+    if (shortcutsDismiss) {
+      shortcutsDismiss.addEventListener('click', () => {
+        shortcutsBar.classList.add('hidden');
+        localStorage.setItem(SHORTCUTS_DISMISSED_KEY, 'true');
+      });
+    }
+
+    // Redo history for redo functionality
+    let redoHistory = [];
+    const MAX_REDO_HISTORY = 20;
+
+    // Perform redo
+    function performRedo() {
+      if (redoHistory.length === 0) return;
+
+      // Save current state to undo history before redo
+      if (currentHtml) {
+        undoHistory.push(currentHtml);
+        if (undoHistory.length > MAX_UNDO_HISTORY) {
+          undoHistory.shift();
+        }
+      }
+
+      const nextHtml = redoHistory.pop();
+      currentHtml = nextHtml;
+      renderPreview(currentHtml);
+      updateUndoButtonState();
+    }
+
+    // Enhanced undo that saves to redo history
+    const originalPerformUndo = performUndo;
+    performUndo = function() {
+      if (undoHistory.length === 0) return;
+
+      // Save current state to redo history before undo
+      if (currentHtml) {
+        redoHistory.push(currentHtml);
+        if (redoHistory.length > MAX_REDO_HISTORY) {
+          redoHistory.shift();
+        }
+      }
+
+      const previousHtml = undoHistory.pop();
+      currentHtml = previousHtml;
+      renderPreview(currentHtml);
+      updateUndoButtonState();
+    };
+
+    // Keyboard shortcut handler
+    document.addEventListener('keydown', (e) => {
+      const isModKey = isMac ? e.metaKey : e.ctrlKey;
+
+      // Cmd/Ctrl + Z - Undo
+      if (isModKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+      }
+
+      // Cmd/Ctrl + Shift + Z - Redo
+      if (isModKey && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        performRedo();
+      }
+
+      // Cmd/Ctrl + Enter - Submit
+      if (isModKey && e.key === 'Enter') {
+        e.preventDefault();
+        const promptInput = document.getElementById('prompt-input');
+        if (promptInput && promptInput.value.trim()) {
+          applyModifications(promptInput.value.trim());
+        }
+      }
+
+      // Escape - Clear input
+      if (e.key === 'Escape') {
+        const promptInput = document.getElementById('prompt-input');
+        if (promptInput) {
+          promptInput.value = '';
+          promptInput.blur();
+        }
+      }
+    });
+
+    // Initialize shortcuts bar
+    initShortcutsBar();
+
+    // ============================================
+    // Version History Panel (Auto-tracking Timeline)
+    // ============================================
+    const historyToggleBtn = document.getElementById('history-toggle-btn');
+    const historyPanel = document.getElementById('history-panel');
+    const historyPanelClose = document.getElementById('history-panel-close');
+    const historyPanelContent = document.getElementById('history-panel-content');
+    const historyCountEl = document.getElementById('history-count');
+
+    // History entries - each modification creates an entry
+    let historyEntries = [];
+    let currentHistoryIndex = -1;
+    const MAX_HISTORY_ENTRIES = 50;
+
+    // Add entry to history when modification is made
+    function addHistoryEntry(prompt, html) {
+      const entry = {
+        id: Date.now(),
+        timestamp: new Date(),
+        prompt: prompt || 'Initial state',
+        html: html
+      };
+
+      // Remove any entries after current index (when user went back and made new change)
+      if (currentHistoryIndex < historyEntries.length - 1) {
+        historyEntries = historyEntries.slice(0, currentHistoryIndex + 1);
+      }
+
+      historyEntries.push(entry);
+      currentHistoryIndex = historyEntries.length - 1;
+
+      // Limit history size
+      if (historyEntries.length > MAX_HISTORY_ENTRIES) {
+        historyEntries.shift();
+        currentHistoryIndex--;
+      }
+
+      updateHistoryCount();
+      renderHistoryPanel();
+    }
+
+    // Update history count badge
+    function updateHistoryCount() {
+      if (historyCountEl) {
+        historyCountEl.textContent = historyEntries.length;
+      }
+    }
+
+    // Format timestamp for display
+    function formatHistoryTime(date) {
+      const now = new Date();
+      const diff = now - date;
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+
+      if (seconds < 60) return 'Just now';
+      if (minutes < 60) return `${minutes}m ago`;
+      if (hours < 24) return `${hours}h ago`;
+      return date.toLocaleDateString();
+    }
+
+    // Render the history panel content
+    function renderHistoryPanel() {
+      if (!historyPanelContent) return;
+
+      if (historyEntries.length === 0) {
+        historyPanelContent.innerHTML = `
+          <div class="history-panel__empty">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div class="history-panel__empty-title">No changes yet</div>
+            <div class="history-panel__empty-text">Apply some changes to see your edit history here</div>
+          </div>
+        `;
+        return;
+      }
+
+      const entriesHtml = historyEntries
+        .slice()
+        .reverse()
+        .map((entry, idx) => {
+          const actualIndex = historyEntries.length - 1 - idx;
+          const isCurrent = actualIndex === currentHistoryIndex;
+          return `
+            <div class="history-entry${isCurrent ? ' history-entry--current' : ''}" data-index="${actualIndex}">
+              <div class="history-entry__time">${formatHistoryTime(new Date(entry.timestamp))}</div>
+              <div class="history-entry__prompt">${escapeHtml(entry.prompt)}</div>
+              ${!isCurrent ? '<button class="history-entry__restore">Restore</button>' : ''}
+            </div>
+          `;
+        })
+        .join('');
+
+      historyPanelContent.innerHTML = `<div class="history-timeline">${entriesHtml}</div>`;
+
+      // Add click handlers for restore
+      historyPanelContent.querySelectorAll('.history-entry').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.classList.contains('history-entry__restore') || !el.classList.contains('history-entry--current')) {
+            const index = parseInt(el.dataset.index, 10);
+            restoreHistoryEntry(index);
+          }
+        });
+      });
+    }
+
+    // Helper to escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Restore a history entry
+    function restoreHistoryEntry(index) {
+      if (index < 0 || index >= historyEntries.length) return;
+
+      const entry = historyEntries[index];
+      currentHistoryIndex = index;
+      currentHtml = entry.html;
+      renderPreview(currentHtml);
+      renderHistoryPanel();
+      showToast(`Restored to "${entry.prompt.substring(0, 30)}${entry.prompt.length > 30 ? '...' : ''}"`);
+    }
+
+    // Toggle history panel
+    function toggleHistoryPanel() {
+      if (historyPanel) {
+        historyPanel.classList.toggle('open');
+        historyToggleBtn?.classList.toggle('active', historyPanel.classList.contains('open'));
+      }
+    }
+
+    // Close history panel
+    function closeHistoryPanel() {
+      if (historyPanel) {
+        historyPanel.classList.remove('open');
+        historyToggleBtn?.classList.remove('active');
+      }
+    }
+
+    // Event listeners for history panel
+    if (historyToggleBtn) {
+      historyToggleBtn.addEventListener('click', toggleHistoryPanel);
+    }
+
+    if (historyPanelClose) {
+      historyPanelClose.addEventListener('click', closeHistoryPanel);
+    }
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (historyPanel?.classList.contains('open') &&
+          !historyPanel.contains(e.target) &&
+          !historyToggleBtn?.contains(e.target)) {
+        closeHistoryPanel();
+      }
+    });
+
+    // ============================================
+    // Named Snapshots (Saved Versions)
+    // ============================================
+    const SAVED_VERSIONS_KEY = 'glyph_saved_versions';
+    const MAX_SAVED_VERSIONS = 10;
+    
+    // DOM elements for saved versions
+    const saveVersionBtn = document.getElementById('save-version-btn');
+    const saveVersionModal = document.getElementById('save-version-modal');
+    const versionNameInput = document.getElementById('version-name-input');
+    const saveVersionConfirm = document.getElementById('save-version-confirm');
+    const saveVersionCancel = document.getElementById('save-version-cancel');
+    const savedVersionsList = document.getElementById('saved-versions-list');
+    const savedVersionsCount = document.getElementById('saved-versions-count');
+    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+    const deleteVersionName = document.getElementById('delete-version-name');
+    const deleteConfirm = document.getElementById('delete-confirm');
+    const deleteCancel = document.getElementById('delete-cancel');
+    const glyphToast = document.getElementById('glyph-toast');
+    const toastMessage = document.getElementById('toast-message');
+    
+    let savedVersions = [];
+    let versionToDelete = null;
+    
+    // Load saved versions from localStorage
+    function loadSavedVersions() {
+      try {
+        const stored = localStorage.getItem(SAVED_VERSIONS_KEY);
+        savedVersions = stored ? JSON.parse(stored) : [];
+        renderSavedVersions();
+      } catch (e) {
+        console.error('[Glyph] Error loading saved versions:', e);
+        savedVersions = [];
+      }
+    }
+    
+    // Save versions to localStorage
+    function persistSavedVersions() {
+      try {
+        localStorage.setItem(SAVED_VERSIONS_KEY, JSON.stringify(savedVersions));
+      } catch (e) {
+        console.error('[Glyph] Error persisting saved versions:', e);
+      }
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'success') {
+      if (!glyphToast || !toastMessage) return;
+      
+      toastMessage.textContent = message;
+      glyphToast.className = 'glyph-toast glyph-toast--' + type;
+      
+      // Update icon based on type
+      const iconPath = glyphToast.querySelector('.glyph-toast__icon path');
+      if (iconPath) {
+        if (type === 'success') {
+          iconPath.setAttribute('d', 'M5 13l4 4L19 7');
+        } else if (type === 'error') {
+          iconPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        }
+      }
+      
+      glyphToast.classList.add('active');
+      
+      setTimeout(() => {
+        glyphToast.classList.remove('active');
+      }, 3000);
+    }
+    
+    // Format timestamp for display
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return diffMins + ' min ago';
+      if (diffHours < 24) return diffHours + ' hour' + (diffHours === 1 ? '' : 's') + ' ago';
+      if (diffDays < 7) return diffDays + ' day' + (diffDays === 1 ? '' : 's') + ' ago';
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    // Render saved versions list
+    function renderSavedVersions() {
+      if (!savedVersionsList || !savedVersionsCount) return;
+      
+      savedVersionsCount.textContent = savedVersions.length + '/10';
+      
+      if (savedVersions.length === 0) {
+        savedVersionsList.innerHTML = '<div class="saved-versions__empty">Click the star to save a named version</div>';
+        return;
+      }
+      
+      // Sort by timestamp (newest first)
+      const sorted = [...savedVersions].sort((a, b) => b.timestamp - a.timestamp);
+      
+      savedVersionsList.innerHTML = sorted.map(version => {
+        const item = document.createElement('div');
+        item.className = 'saved-version-item';
+        item.setAttribute('data-id', version.id);
+        item.innerHTML = '<svg class="saved-version-item__star" fill="currentColor" viewBox="0 0 24 24">' +
+          '<path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>' +
+          '</svg>' +
+          '<div class="saved-version-item__info">' +
+          '<div class="saved-version-item__name">' + escapeHtml(version.name) + '</div>' +
+          '<div class="saved-version-item__date">' + formatTimestamp(version.timestamp) + '</div>' +
+          '</div>' +
+          '<button class="saved-version-item__delete" data-id="' + version.id + '" title="Delete version">' +
+          '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>' +
+          '</svg>' +
+          '</button>';
+        return item.outerHTML;
+      }).join('');
+      
+      // Add click handlers
+      savedVersionsList.querySelectorAll('.saved-version-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // Don't restore if clicking delete button
+          if (e.target.closest('.saved-version-item__delete')) return;
+          
+          const id = item.getAttribute('data-id');
+          restoreSavedVersion(id);
+        });
+      });
+      
+      savedVersionsList.querySelectorAll('.saved-version-item__delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          confirmDeleteVersion(id);
+        });
+      });
+    }
+    
+    // Escape HTML for display
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Open save version modal
+    function openSaveVersionModal() {
+      if (!currentHtml) {
+        showToast('No document to save', 'error');
+        return;
+      }
+      
+      if (savedVersions.length >= MAX_SAVED_VERSIONS) {
+        showToast('Maximum 10 versions. Delete one first.', 'error');
+        return;
+      }
+      
+      versionNameInput.value = '';
+      saveVersionModal.classList.add('active');
+      setTimeout(() => versionNameInput.focus(), 100);
+    }
+    
+    // Close save version modal
+    function closeSaveVersionModal() {
+      saveVersionModal.classList.remove('active');
+      versionNameInput.value = '';
+    }
+    
+    // Save the current version
+    function saveCurrentVersion() {
+      const name = versionNameInput.value.trim();
+      
+      if (!name) {
+        showToast('Please enter a name', 'error');
+        return;
+      }
+      
+      if (!currentHtml) {
+        showToast('No document to save', 'error');
+        return;
+      }
+      
+      const newVersion = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        name: name,
+        html: currentHtml,
+        timestamp: Date.now()
+      };
+      
+      savedVersions.push(newVersion);
+      persistSavedVersions();
+      renderSavedVersions();
+      closeSaveVersionModal();
+      
+      showToast('Version saved as "' + name + '"', 'success');
+      console.log('[Glyph] Saved version:', name);
+    }
+    
+    // Restore a saved version
+    function restoreSavedVersion(id) {
+      const version = savedVersions.find(v => v.id === id);
+      if (!version) return;
+      
+      // Save current state to undo history before restoring
+      saveToUndoHistory();
+      
+      currentHtml = version.html;
+      renderPreview(currentHtml);
+      
+      // Success animation
+      previewContainer.classList.add('success');
+      setTimeout(() => previewContainer.classList.remove('success'), 500);
+      
+      setStatus('Restored');
+      setTimeout(() => setStatus('Ready'), 1500);
+      
+      showToast('Restored "' + version.name + '"', 'success');
+      console.log('[Glyph] Restored version:', version.name);
+    }
+    
+    // Confirm delete dialog
+    function confirmDeleteVersion(id) {
+      const version = savedVersions.find(v => v.id === id);
+      if (!version) return;
+      
+      versionToDelete = id;
+      deleteVersionName.textContent = version.name;
+      deleteConfirmModal.classList.add('active');
+    }
+    
+    // Close delete dialog
+    function closeDeleteModal() {
+      deleteConfirmModal.classList.remove('active');
+      versionToDelete = null;
+    }
+    
+    // Delete a saved version
+    function deleteSavedVersion() {
+      if (!versionToDelete) return;
+      
+      const version = savedVersions.find(v => v.id === versionToDelete);
+      const name = version ? version.name : 'version';
+      
+      savedVersions = savedVersions.filter(v => v.id !== versionToDelete);
+      persistSavedVersions();
+      renderSavedVersions();
+      closeDeleteModal();
+      
+      showToast('Deleted "' + name + '"', 'success');
+      console.log('[Glyph] Deleted version:', name);
+    }
+    
+    // Event listeners for saved versions
+    if (saveVersionBtn) {
+      saveVersionBtn.addEventListener('click', openSaveVersionModal);
+    }
+    
+    if (saveVersionCancel) {
+      saveVersionCancel.addEventListener('click', closeSaveVersionModal);
+    }
+    
+    if (saveVersionConfirm) {
+      saveVersionConfirm.addEventListener('click', saveCurrentVersion);
+    }
+    
+    if (saveVersionModal) {
+      saveVersionModal.addEventListener('click', (e) => {
+        if (e.target === saveVersionModal) closeSaveVersionModal();
+      });
+    }
+    
+    if (versionNameInput) {
+      versionNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveCurrentVersion();
+      });
+    }
+    
+    if (deleteCancel) {
+      deleteCancel.addEventListener('click', closeDeleteModal);
+    }
+    
+    if (deleteConfirm) {
+      deleteConfirm.addEventListener('click', deleteSavedVersion);
+    }
+    
+    if (deleteConfirmModal) {
+      deleteConfirmModal.addEventListener('click', (e) => {
+        if (e.target === deleteConfirmModal) closeDeleteModal();
+      });
+    }
+    
+    // Load saved versions on page load
+    loadSavedVersions();
     // Static demo fallback when API is not available
     function renderStaticDemo() {
       const staticHtml = generateStaticHtml(sampleQuoteData, '#1E3A5F');
@@ -6967,6 +8636,9 @@
         return;
       }
 
+      // Capture previous HTML for diff highlighting
+      const previousHtml = currentHtml;
+
       // Save current state to undo history before modification
       saveToUndoHistory();
 
@@ -6998,7 +8670,15 @@
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const data = await response.json();
             currentHtml = data.html;
-            renderPreview(currentHtml);
+
+            // Render preview with change highlighting
+            renderPreview(currentHtml, {
+              changes: data.changes || [],
+              previousHtml: previousHtml
+            });
+
+            // Add to version history
+            addHistoryEntry(prompt, currentHtml);
 
             // Success animation
             previewContainer.classList.add('success');
@@ -7036,7 +8716,15 @@
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         const data = await response.json();
         currentHtml = data.html;
-        renderPreview(currentHtml);
+
+        // Render preview with change highlighting
+        renderPreview(currentHtml, {
+          changes: data.changes || [],
+          previousHtml: previousHtml
+        });
+
+        // Add to version history
+        addHistoryEntry(prompt, currentHtml);
 
         previewContainer.classList.add('success');
         setTimeout(() => previewContainer.classList.remove('success'), 500);
@@ -7429,6 +9117,9 @@
       // Update the current HTML and re-render
       currentHtml = modifiedHtml;
       renderPreview(currentHtml);
+
+      // Add to version history
+      addToVersionHistory(currentHtml, prompt);
 
       previewContainer.classList.add('success');
       setTimeout(() => previewContainer.classList.remove('success'), 500);
@@ -8890,5 +10581,104 @@
     }
   })();
   </script>
+
+  <!-- Keyboard Shortcuts Bar -->
+  <div class="shortcuts-bar" id="shortcuts-bar">
+    <span class="shortcuts-bar__title">Shortcuts</span>
+    <div class="shortcuts-bar__items">
+      <div class="shortcuts-bar__item">
+        <span class="shortcuts-bar__key" id="shortcut-mod">⌘</span>
+        <span class="shortcuts-bar__key">Z</span>
+        <span class="shortcuts-bar__label">Undo</span>
+      </div>
+      <div class="shortcuts-bar__divider"></div>
+      <div class="shortcuts-bar__item">
+        <span class="shortcuts-bar__key" id="shortcut-mod-2">⌘</span>
+        <span class="shortcuts-bar__key">⇧</span>
+        <span class="shortcuts-bar__key">Z</span>
+        <span class="shortcuts-bar__label">Redo</span>
+      </div>
+      <div class="shortcuts-bar__divider"></div>
+      <div class="shortcuts-bar__item">
+        <span class="shortcuts-bar__key" id="shortcut-mod-3">⌘</span>
+        <span class="shortcuts-bar__key">↵</span>
+        <span class="shortcuts-bar__label">Submit</span>
+      </div>
+      <div class="shortcuts-bar__divider"></div>
+      <div class="shortcuts-bar__item">
+        <span class="shortcuts-bar__key">Esc</span>
+        <span class="shortcuts-bar__label">Clear</span>
+      </div>
+    </div>
+    <button class="shortcuts-bar__dismiss" id="shortcuts-dismiss" title="Dismiss">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Save Version Modal -->
+  <div class="save-version-modal-overlay" id="save-version-modal">
+    <div class="save-version-modal">
+      <div class="save-version-modal__title">
+        <svg fill="currentColor" viewBox="0 0 24 24">
+          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+        </svg>
+        Save Version
+      </div>
+      <p class="save-version-modal__description">Give this version a name so you can restore it later.</p>
+      <input type="text" class="save-version-modal__input" id="version-name-input" placeholder="e.g., After client feedback, Final v2" maxlength="50" autocomplete="off">
+      <div class="save-version-modal__actions">
+        <button class="save-version-modal__btn save-version-modal__btn--cancel" id="save-version-cancel">Cancel</button>
+        <button class="save-version-modal__btn save-version-modal__btn--save" id="save-version-confirm">Save Version</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Version History Panel -->
+  <div class="history-panel" id="history-panel">
+    <div class="history-panel__header">
+      <span class="history-panel__title">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Change History
+      </span>
+      <button class="history-panel__close" id="history-panel-close" title="Close">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="history-panel__content" id="history-panel-content">
+      <div class="history-panel__empty">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div class="history-panel__empty-title">No changes yet</div>
+        <div class="history-panel__empty-text">Apply some changes to see your edit history here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="delete-confirm-modal-overlay" id="delete-confirm-modal">
+    <div class="delete-confirm-modal">
+      <div class="delete-confirm-modal__title">Delete saved version?</div>
+      <p class="delete-confirm-modal__message">Are you sure you want to delete "<span class="delete-confirm-modal__name" id="delete-version-name"></span>"? This cannot be undone.</p>
+      <div class="delete-confirm-modal__actions">
+        <button class="delete-confirm-modal__btn delete-confirm-modal__btn--cancel" id="delete-cancel">Cancel</button>
+        <button class="delete-confirm-modal__btn delete-confirm-modal__btn--delete" id="delete-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="glyph-toast" id="glyph-toast">
+    <svg class="glyph-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span class="glyph-toast__message" id="toast-message"></span>
+  </div>
 </body>
 </html>
