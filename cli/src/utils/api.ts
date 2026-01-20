@@ -2,7 +2,7 @@
  * Glyph API Client for CLI
  */
 
-const DEFAULT_API_URL = 'https://api.glyph.so';
+const DEFAULT_API_URL = 'https://api.glyph.you';
 
 export interface GlyphApiConfig {
   apiKey: string;

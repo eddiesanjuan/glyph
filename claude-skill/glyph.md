@@ -28,7 +28,7 @@ npm install @glyph-pdf/core
 
 ### 2. Get API Key
 
-Sign up at https://glyph.so to get your API key.
+Sign up at https://glyph.you to get your API key.
 
 ### 3. Basic Usage
 
@@ -544,7 +544,7 @@ try {
 ### "Invalid API key"
 - Verify `GLYPH_API_KEY` environment variable is set
 - Check the key starts with `gk_live_` or `gk_test_`
-- Get a valid key from https://glyph.so/dashboard
+- Get a valid key from https://glyph.you/dashboard
 
 ### "Template not found"
 - Run `await glyph.getTemplates()` to list available templates
@@ -568,8 +568,8 @@ try {
 
 ## Links
 
-- Documentation: https://docs.glyph.so
-- Dashboard: https://glyph.so/dashboard
-- API Reference: https://api.glyph.so/docs
+- Documentation: https://docs.glyph.you
+- Dashboard: https://glyph.you/dashboard
+- API Reference: https://api.glyph.you/docs
 - GitHub: https://github.com/eddiesanjuan/glyph
-- Support: support@glyph.so
+- Support: support@glyph.you

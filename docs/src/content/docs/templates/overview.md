@@ -152,7 +152,7 @@ Create your own templates for complete control. See [Custom Templates](/template
 Get available templates via the API:
 
 ```javascript
-const response = await fetch('https://api.glyph.so/v1/preview/templates', {
+const response = await fetch('https://api.glyph.you/v1/preview/templates', {
   headers: { 'Authorization': 'Bearer gk_your_key' }
 });
 
@@ -173,7 +173,7 @@ Templates are organized by document type:
 | Report | `report-modern` | Planned |
 
 <Aside type="note">
-Want a specific template? Let us know at feedback@glyph.so
+Want a specific template? Let us know at feedback@glyph.you
 </Aside>
 
 ## Next Steps

@@ -85,7 +85,7 @@ app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
     version: "0.9.1",
-    documentation: "https://docs.glyph.dev",
+    documentation: "https://docs.glyph.you",
     endpoints: {
       health: "GET /health",
       preview: "POST /v1/preview",

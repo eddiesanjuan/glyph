@@ -35,7 +35,7 @@ import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
                               ▼
                      ┌─────────────────┐
                      │   Glyph API     │
-                     │  (glyph.so)     │
+                     │  (glyph.you)    │
                      └─────────────────┘
 ```
 
@@ -162,7 +162,7 @@ export async function generateQuotePdf(
   sessionId: string,
   options: PdfOptions
 ): Promise<Blob> {
-  const response = await fetch('https://api.glyph.so/v1/generate', {
+  const response = await fetch('https://api.glyph.you/v1/generate', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,

@@ -31,7 +31,7 @@ ${hasTypescript ? `interface GlyphPdfButtonProps {
 }
 
 ` : ''}const GLYPH_API_KEY = import.meta.env.VITE_GLYPH_API_KEY || process.env.REACT_APP_GLYPH_API_KEY;
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 
 export ${hasTypescript ? 'const GlyphPdfButton: FC<GlyphPdfButtonProps> = ' : 'function GlyphPdfButton'}({
   template,
@@ -158,7 +158,7 @@ interface UseGlyphReturn extends GlyphState {
   reset: () => void;
 }
 
-` : ''}const DEFAULT_API_URL = 'https://api.glyph.so';
+` : ''}const DEFAULT_API_URL = 'https://api.glyph.you';
 
 export function useGlyph(options${hasTypescript ? '?: UseGlyphOptions' : ''} = {})${hasTypescript ? ': UseGlyphReturn' : ''} {
   const apiKey = options${hasTypescript ? '?' : ''}.apiKey || import.meta.env.VITE_GLYPH_API_KEY || process.env.REACT_APP_GLYPH_API_KEY;

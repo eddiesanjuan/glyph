@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://glyph.so/schemas/quote-modern.json",
+  "$id": "https://glyph.you/schemas/quote-modern.json",
   "title": "QuoteData",
   "description": "Data schema for the quote-modern template",
   "type": "object",

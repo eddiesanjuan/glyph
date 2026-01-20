@@ -9,7 +9,7 @@ All Glyph API requests require authentication using an API key. This guide cover
 
 ## Getting an API Key
 
-1. Sign up at [glyph.so/dashboard](https://glyph.so/dashboard)
+1. Sign up at [dashboard.glyph.you](https://dashboard.glyph.you)
 2. Navigate to **API Keys** in the sidebar
 3. Click **Create New Key**
 4. Copy your key immediately - it won't be shown again
@@ -37,7 +37,7 @@ gk_xxxxxxxxxxxxxxxxxxxx
 Include your API key in the `Authorization` header with the `Bearer` scheme:
 
 ```bash
-curl -X POST https://api.glyph.so/v1/preview \
+curl -X POST https://api.glyph.you/v1/preview \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"template": "quote-modern", "data": {...}}'
@@ -46,7 +46,7 @@ curl -X POST https://api.glyph.so/v1/preview \
 ### JavaScript/TypeScript
 
 ```javascript
-const response = await fetch('https://api.glyph.so/v1/preview', {
+const response = await fetch('https://api.glyph.you/v1/preview', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,
@@ -63,7 +63,7 @@ import os
 import requests
 
 response = requests.post(
-    'https://api.glyph.so/v1/preview',
+    'https://api.glyph.you/v1/preview',
     headers={
         'Authorization': f'Bearer {os.environ["GLYPH_API_KEY"]}',
         'Content-Type': 'application/json'
@@ -218,7 +218,7 @@ Your API key is associated with a pricing tier that determines:
 | Scale | 120/min | 10,000 |
 | Enterprise | 300/min | Unlimited |
 
-Check your current tier and usage in the [dashboard](https://glyph.so/dashboard).
+Check your current tier and usage in the [dashboard](https://glyph.you/dashboard).
 
 ## Key Management
 
@@ -250,7 +250,7 @@ Revoked keys immediately stop working for all requests.
 Test if a key is valid:
 
 ```bash
-curl https://api.glyph.so/v1/auth/validate \
+curl https://api.glyph.you/v1/auth/validate \
   -H "Authorization: Bearer gk_your_api_key"
 ```
 

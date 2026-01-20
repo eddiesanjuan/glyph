@@ -22,14 +22,14 @@ info:
   version: 0.9.0
   contact:
     name: Glyph Support
-    url: https://glyph.so
-    email: support@glyph.so
+    url: https://glyph.you
+    email: support@glyph.you
   license:
     name: Proprietary
-    url: https://glyph.so/terms
+    url: https://glyph.you/terms
 
 servers:
-  - url: https://api.glyph.so
+  - url: https://api.glyph.you
     description: Production server
   - url: http://localhost:3000
     description: Local development

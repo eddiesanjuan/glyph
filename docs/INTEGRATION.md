@@ -17,7 +17,7 @@ You have an app that generates PDFs. Your users want to customize them. Instead 
 ### Step 1: Add the SDK (1 line)
 
 ```html
-<script src="https://glyph-sdk-production.up.railway.app/glyph.min.js"></script>
+<script src="https://sdk.glyph.you/glyph.min.js"></script>
 ```
 
 ### Step 2: Add the Editor (1 line)
@@ -377,7 +377,7 @@ editor.addEventListener('glyph:downloaded', (e) => {
 
 ## Get Started
 
-1. Get an API key at https://glyph.so/dashboard
+1. Get an API key at https://dashboard.glyph.you
 2. Add the SDK script tag
 3. Add the `<glyph-editor>` component
 4. Ship it

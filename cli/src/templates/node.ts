@@ -17,7 +17,7 @@ export const nodeScript = (hasTypescript: boolean) => {
 import { writeFileSync } from 'node:fs';
 
 const GLYPH_API_KEY = process.env.GLYPH_API_KEY;
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 
 ${hasTypescript ? `interface GenerateOptions {
   template: string;
@@ -120,7 +120,7 @@ export const nodeModule = (hasTypescript: boolean) => {
  * Reusable module for PDF generation
  */
 
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 
 ${hasTypescript ? `export interface GlyphClientConfig {
   apiKey: string;

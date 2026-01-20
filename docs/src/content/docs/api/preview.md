@@ -144,7 +144,7 @@ Save the `sessionId` - you'll need it for `/v1/modify` and `/v1/generate` calls.
 ### cURL
 
 ```bash
-curl -X POST https://api.glyph.so/v1/preview \
+curl -X POST https://api.glyph.you/v1/preview \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -160,7 +160,7 @@ curl -X POST https://api.glyph.so/v1/preview \
 ### JavaScript
 
 ```javascript
-const response = await fetch('https://api.glyph.so/v1/preview', {
+const response = await fetch('https://api.glyph.you/v1/preview', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer gk_your_api_key',
@@ -186,7 +186,7 @@ console.log('Session ID:', sessionId);
 import requests
 
 response = requests.post(
-    'https://api.glyph.so/v1/preview',
+    'https://api.glyph.you/v1/preview',
     headers={
         'Authorization': 'Bearer gk_your_api_key',
         'Content-Type': 'application/json'
@@ -210,7 +210,7 @@ print(f"Session ID: {data['sessionId']}")
 To list available templates:
 
 ```bash
-curl https://api.glyph.so/v1/preview/templates \
+curl https://api.glyph.you/v1/preview/templates \
   -H "Authorization: Bearer gk_your_api_key"
 ```
 

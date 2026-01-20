@@ -180,7 +180,7 @@ Monthly PDF generation limit exceeded.
   "limit": 100,
   "used": 100,
   "tier": "free",
-  "upgrade": "https://glyph.so/pricing"
+  "upgrade": "https://glyph.you/pricing"
 }
 ```
 
@@ -277,7 +277,7 @@ Modification failed.
 }
 ```
 
-**Solution:** Retry the request. If persistent, check status.glyph.so.
+**Solution:** Retry the request. If persistent, check status.glyph.you.
 
 ---
 
@@ -344,7 +344,7 @@ Endpoint not found.
 
 ```javascript
 async function callGlyph(endpoint, data) {
-  const response = await fetch(`https://api.glyph.so${endpoint}`, {
+  const response = await fetch(`https://api.glyph.you${endpoint}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,

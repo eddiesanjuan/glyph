@@ -18,7 +18,7 @@ The fastest way to get started is with the CDN:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quote Editor</title>
-  <script type="module" src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+  <script type="module" src="https://sdk.glyph.you/glyph.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -219,7 +219,7 @@ The fastest way to get started is with the CDN:
 <Tabs>
   <TabItem label="CDN (Recommended)">
     ```html
-    <script type="module" src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+    <script type="module" src="https://sdk.glyph.you/glyph.min.js"></script>
     ```
   </TabItem>
   <TabItem label="Self-Hosted">
@@ -352,7 +352,7 @@ A complete example with form inputs that update the preview in real-time:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quote Builder</title>
-  <script type="module" src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+  <script type="module" src="https://sdk.glyph.you/glyph.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {

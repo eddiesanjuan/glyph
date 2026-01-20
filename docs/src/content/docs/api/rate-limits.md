@@ -86,7 +86,7 @@ HTTP Status: `429 Too Many Requests`
   "limit": 100,
   "used": 100,
   "tier": "free",
-  "upgrade": "https://glyph.so/pricing"
+  "upgrade": "https://glyph.you/pricing"
 }
 ```
 
@@ -97,7 +97,7 @@ HTTP Status: `429 Too Many Requests`
 ```javascript
 async function callGlyphAPI(endpoint, data, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
-    const response = await fetch(`https://api.glyph.so${endpoint}`, {
+    const response = await fetch(`https://api.glyph.you${endpoint}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -130,7 +130,7 @@ from requests.exceptions import HTTPError
 def call_glyph_api(endpoint, data, max_retries=3):
     for i in range(max_retries):
         response = requests.post(
-            f'https://api.glyph.so{endpoint}',
+            f'https://api.glyph.you{endpoint}',
             headers={
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json'
@@ -255,17 +255,17 @@ async function batchModify(sessions, modifications) {
 
 If you're consistently hitting rate limits, consider upgrading:
 
-1. Go to [glyph.so/dashboard](https://glyph.so/dashboard)
+1. Go to [glyph.you/dashboard](https://dashboard.glyph.you)
 2. Navigate to **Billing**
 3. Select a higher tier
 4. Your new limits apply immediately
 
 <Aside type="tip">
-Enterprise customers can request custom rate limits. Contact sales@glyph.so for details.
+Enterprise customers can request custom rate limits. Contact sales@glyph.you for details.
 </Aside>
 
 ## Questions?
 
-- Check your current usage in the [dashboard](https://glyph.so/dashboard)
-- Contact support@glyph.so for rate limit increases
+- Check your current usage in the [dashboard](https://glyph.you/dashboard)
+- Contact support@glyph.you for rate limit increases
 - Enterprise customers: Contact your account manager

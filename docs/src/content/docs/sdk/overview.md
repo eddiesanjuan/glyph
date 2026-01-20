@@ -12,7 +12,7 @@ The Glyph SDK provides a drop-in web component for document editing and PDF gene
 ### CDN (Quickest)
 
 ```html
-<script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+<script src="https://sdk.glyph.you/glyph.min.js"></script>
 ```
 
 ### npm
@@ -51,7 +51,7 @@ import { GlyphEditor, GlyphAPI } from '@glyph/sdk';
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+  <script src="https://sdk.glyph.you/glyph.min.js"></script>
 </head>
 <body>
   <glyph-editor

@@ -129,7 +129,7 @@ export async function monthlyLimitMiddleware(c: Context, next: Next) {
         limit: monthlyLimit,
         used: currentUsage,
         tier,
-        upgrade: tier !== "enterprise" ? "https://glyph.so/pricing" : null,
+        upgrade: tier !== "enterprise" ? "https://glyph.you/pricing" : null,
       },
       429
     );

@@ -25,7 +25,7 @@ interface GenerateRequest {
     const { template, data }${typeAnnotations ? ': GenerateRequest' : ''} = await request.json();
 
     // Create preview session
-    const previewRes = await fetch('https://api.glyph.so/v1/preview', {
+    const previewRes = await fetch('https://api.glyph.you/v1/preview', {
       method: 'POST',
       headers: {
         'Authorization': \`Bearer \${process.env.GLYPH_API_KEY}\`,
@@ -41,7 +41,7 @@ interface GenerateRequest {
     const { sessionId } = await previewRes.json();
 
     // Generate PDF
-    const pdfRes = await fetch('https://api.glyph.so/v1/generate', {
+    const pdfRes = await fetch('https://api.glyph.you/v1/generate', {
       method: 'POST',
       headers: {
         'Authorization': \`Bearer \${process.env.GLYPH_API_KEY}\`,

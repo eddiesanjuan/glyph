@@ -8,7 +8,7 @@ The Glyph API provides programmatic access to document generation and AI-powered
 ## Base URL
 
 ```
-https://api.glyph.so
+https://api.glyph.you
 ```
 
 For self-hosted deployments, use your own domain.
@@ -22,7 +22,7 @@ The current API version is `v1`. All endpoints are prefixed with `/v1/`.
 All API requests require authentication via API key:
 
 ```bash
-curl -X POST https://api.glyph.so/v1/preview \
+curl -X POST https://api.glyph.you/v1/preview \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"template": "quote-modern", "data": {...}}'
@@ -112,7 +112,7 @@ See [Rate Limits](/api/rate-limits/) for details.
 Check API availability:
 
 ```bash
-curl https://api.glyph.so/health
+curl https://api.glyph.you/health
 ```
 
 Response:

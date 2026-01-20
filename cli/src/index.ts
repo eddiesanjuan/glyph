@@ -119,7 +119,7 @@ ${chalk.bold('Examples:')}
 
 ${chalk.bold('Documentation:')}
 
-  https://docs.glyph.so/cli
+  https://docs.glyph.you/cli
 `);
 
 program.parse();

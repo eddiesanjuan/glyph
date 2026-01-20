@@ -208,7 +208,7 @@ export function App() {
             </svg>
             <span class="logo-text">Glyph</span>
           </div>
-          <a href="https://docs.glyph.dev" target="_blank" class="docs-link">
+          <a href="https://docs.glyph.you" target="_blank" class="docs-link">
             {Icons.docs}
             <span>Docs</span>
           </a>
@@ -436,9 +436,9 @@ export function App() {
       <footer class="footer">
         <span>Glyph v0.1.0</span>
         <span class="footer-sep">|</span>
-        <a href="https://docs.glyph.dev">Documentation</a>
+        <a href="https://docs.glyph.you">Documentation</a>
         <span class="footer-sep">|</span>
-        <a href="https://glyph.dev">glyph.dev</a>
+        <a href="https://glyph.you">glyph.you</a>
       </footer>
     </div>
   )

@@ -5457,7 +5457,7 @@
               SLA & dedicated support
             </li>
           </ul>
-          <a href="mailto:hello@glyph.so" class="btn btn--secondary">Contact Sales</a>
+          <a href="mailto:hello@glyph.you" class="btn btn--secondary">Contact Sales</a>
         </div>
       </div>
     </div>
@@ -8392,11 +8392,11 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } else {
-          alert('PDF generation requires an API key. Sign up at glyph.so/dashboard');
+          alert('PDF generation requires an API key. Sign up at glyph.you/dashboard');
         }
       } catch (err) {
         console.error('PDF download failed:', err);
-        alert('PDF generation requires an API key. Sign up at glyph.so/dashboard');
+        alert('PDF generation requires an API key. Sign up at glyph.you/dashboard');
       } finally {
         airtableDownloadPdfBtn.classList.remove('loading');
       }
@@ -8404,7 +8404,7 @@
 
     // Save template
     airtableSaveTemplateBtn.addEventListener('click', () => {
-      alert('Template saving requires an account. Sign up at glyph.so/dashboard to save and manage your templates.');
+      alert('Template saving requires an account. Sign up at glyph.you/dashboard to save and manage your templates.');
     });
 
     // ==============================================

@@ -71,7 +71,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     subject,
     body,
     attachments,
-    from = process.env.EMAIL_FROM || 'Glyph Documents <documents@glyph.so>',
+    from = process.env.EMAIL_FROM || 'Glyph Documents <documents@glyph.you>',
     replyTo,
   } = options;
 

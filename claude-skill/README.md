@@ -92,7 +92,7 @@ curl -o ~/.claude/skills/glyph.md \
 
 ## Related Resources
 
-- [Glyph Documentation](https://docs.glyph.so)
-- [Glyph Dashboard](https://glyph.so/dashboard)
+- [Glyph Documentation](https://docs.glyph.you)
+- [Glyph Dashboard](https://glyph.you/dashboard)
 - [SDK on npm](https://www.npmjs.com/package/@glyph-pdf/core)
 - [Claude Code Skills Documentation](https://docs.anthropic.com/claude-code/skills)

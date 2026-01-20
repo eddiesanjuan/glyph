@@ -69,7 +69,7 @@ Add to your MCP configuration:
 
 ## Getting an API Key
 
-1. Visit [glyph.so](https://glyph.so)
+1. Visit [glyph.you](https://glyph.you)
 2. Sign up or log in
 3. Navigate to Settings > API Keys
 4. Create a new API key
@@ -237,7 +237,7 @@ Full API documentation: [docs.glyph.you](https://docs.glyph.you)
 
 - Documentation: [docs.glyph.you](https://docs.glyph.you)
 - Issues: [GitHub Issues](https://github.com/glyph-pdf/mcp-server/issues)
-- Email: support@glyph.so
+- Email: support@glyph.you
 
 ## License
 

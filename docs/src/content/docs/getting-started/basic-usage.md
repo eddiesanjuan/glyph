@@ -43,7 +43,7 @@ The editor is the main interface for document customization:
 |-----------|---------|-------------|
 | `template` | `"quote-modern"` | Template ID to use |
 | `theme` | `{}` | Theme customization object |
-| `api-url` | `"https://api.glyph.so"` | API endpoint (for self-hosted) |
+| `api-url` | `"https://api.glyph.you"` | API endpoint (for self-hosted) |
 
 ## Preparing Your Data
 

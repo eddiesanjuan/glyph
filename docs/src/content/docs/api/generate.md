@@ -109,7 +109,7 @@ When `Accept: application/json` is provided:
   "limit": 100,
   "used": 100,
   "tier": "free",
-  "upgrade": "https://glyph.so/pricing"
+  "upgrade": "https://glyph.you/pricing"
 }
 ```
 
@@ -130,7 +130,7 @@ When `Accept: application/json` is provided:
 ### cURL (Download PDF)
 
 ```bash
-curl -X POST https://api.glyph.so/v1/generate \
+curl -X POST https://api.glyph.you/v1/generate \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -143,7 +143,7 @@ curl -X POST https://api.glyph.so/v1/generate \
 ### cURL (Get JSON metadata)
 
 ```bash
-curl -X POST https://api.glyph.so/v1/generate \
+curl -X POST https://api.glyph.you/v1/generate \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -156,7 +156,7 @@ curl -X POST https://api.glyph.so/v1/generate \
 ### JavaScript (Browser Download)
 
 ```javascript
-const response = await fetch('https://api.glyph.so/v1/generate', {
+const response = await fetch('https://api.glyph.you/v1/generate', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer gk_your_api_key',
@@ -183,7 +183,7 @@ URL.revokeObjectURL(url);
 ```javascript
 import { writeFileSync } from 'fs';
 
-const response = await fetch('https://api.glyph.so/v1/generate', {
+const response = await fetch('https://api.glyph.you/v1/generate', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer gk_your_api_key',
@@ -205,7 +205,7 @@ writeFileSync('document.pdf', buffer);
 import requests
 
 response = requests.post(
-    'https://api.glyph.so/v1/generate',
+    'https://api.glyph.you/v1/generate',
     headers={
         'Authorization': 'Bearer gk_your_api_key',
         'Content-Type': 'application/json'

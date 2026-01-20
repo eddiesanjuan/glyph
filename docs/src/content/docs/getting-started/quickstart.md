@@ -7,7 +7,7 @@ This guide will walk you through creating your first AI-powered, customizable PD
 
 ## Prerequisites
 
-- A Glyph API key ([get one free](https://glyph.so/dashboard))
+- A Glyph API key ([get one free](https://glyph.you/dashboard))
 - A web page where you want to embed the editor
 
 ## Step 1: Add the Script
@@ -15,7 +15,7 @@ This guide will walk you through creating your first AI-powered, customizable PD
 Add the Glyph SDK to your HTML page:
 
 ```html
-<script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+<script src="https://sdk.glyph.you/glyph.min.js"></script>
 ```
 
 This loads the `<glyph-editor>` web component and makes it available for use.
@@ -52,7 +52,7 @@ Here's a complete HTML page you can copy and use:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quote Generator</title>
-  <script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+  <script src="https://sdk.glyph.you/glyph.min.js"></script>
   <style>
     body {
       font-family: system-ui, sans-serif;

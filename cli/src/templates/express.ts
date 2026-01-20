@@ -16,7 +16,7 @@ ${typeAnnotations ? `import { Router, Request, Response } from 'express';` : `co
 
 const router = Router();
 
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 const GLYPH_API_KEY = process.env.GLYPH_API_KEY;
 
 /**

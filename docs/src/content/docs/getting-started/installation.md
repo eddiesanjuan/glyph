@@ -10,7 +10,7 @@ Glyph can be integrated into your project in several ways, depending on your tec
 The simplest way to get started. No build step required:
 
 ```html
-<script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+<script src="https://sdk.glyph.you/glyph.min.js"></script>
 ```
 
 This loads the latest stable version and registers the `<glyph-editor>` web component globally.
@@ -20,7 +20,7 @@ This loads the latest stable version and registers the `<glyph-editor>` web comp
 For better page performance, load asynchronously:
 
 ```html
-<script src="https://glyph-sdk.vercel.app/glyph.min.js" async></script>
+<script src="https://sdk.glyph.you/glyph.min.js" async></script>
 ```
 
 When loading async, wait for the component to be defined:

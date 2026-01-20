@@ -190,7 +190,7 @@ Here are effective prompts for common modifications:
 ### cURL
 
 ```bash
-curl -X POST https://api.glyph.so/v1/modify \
+curl -X POST https://api.glyph.you/v1/modify \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -203,7 +203,7 @@ curl -X POST https://api.glyph.so/v1/modify \
 ### JavaScript
 
 ```javascript
-const response = await fetch('https://api.glyph.so/v1/modify', {
+const response = await fetch('https://api.glyph.you/v1/modify', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer gk_your_api_key',
@@ -226,7 +226,7 @@ console.log('Changes made:', changes);
 import requests
 
 response = requests.post(
-    'https://api.glyph.so/v1/modify',
+    'https://api.glyph.you/v1/modify',
     headers={
         'Authorization': 'Bearer gk_your_api_key',
         'Content-Type': 'application/json'

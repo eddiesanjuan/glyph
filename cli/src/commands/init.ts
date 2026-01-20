@@ -205,7 +205,7 @@ export async function init(options: InitOptions = {}): Promise<void> {
   }
 
   console.log(chalk.dim(`  ${options.skipInstall ? '1' : '2'}. Get your API key:`));
-  console.log(`     ${chalk.cyan('https://glyph.so/dashboard')}`);
+  console.log(`     ${chalk.cyan('https://glyph.you/dashboard')}`);
   console.log();
 
   console.log(chalk.dim(`  ${options.skipInstall ? '2' : '3'}. Add your key to .env:`));

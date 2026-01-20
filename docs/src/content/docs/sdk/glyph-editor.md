@@ -114,7 +114,7 @@ Override the API endpoint. Useful for self-hosted deployments.
 ></glyph-editor>
 ```
 
-Default: `https://api.glyph.so`
+Default: `https://api.glyph.you`
 
 ## Observed Attributes
 
@@ -257,7 +257,7 @@ The component handles errors gracefully:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quote Generator</title>
-  <script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+  <script src="https://sdk.glyph.you/glyph.min.js"></script>
   <style>
     body {
       font-family: system-ui, sans-serif;

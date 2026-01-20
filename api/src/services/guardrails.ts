@@ -189,6 +189,7 @@ function findExternalUrls(html: string): string[] {
 
   // Safe domains for external resources
   const safeDomains = [
+    "glyph.you",
     "glyph.so",
     "glyph.dev",
     "fonts.googleapis.com",

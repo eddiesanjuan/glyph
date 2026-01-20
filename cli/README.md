@@ -141,7 +141,7 @@ Or pass it to each command:
 glyph generate --api-key gk_xxx --data data.json
 ```
 
-Get your API key at [glyph.so/dashboard](https://glyph.so/dashboard).
+Get your API key at [dashboard.glyph.you](https://dashboard.glyph.you).
 
 ### API URL
 

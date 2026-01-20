@@ -76,7 +76,7 @@ export default defineConfig({
 					tag: 'meta',
 					attrs: {
 						property: 'og:image',
-						content: 'https://docs.glyph.so/og-image.png',
+						content: 'https://docs.glyph.you/og-image.png',
 					},
 				},
 				{

@@ -8,7 +8,7 @@
 import { writeFileSync } from 'node:fs';
 
 const GLYPH_API_KEY = process.env.GLYPH_API_KEY;
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 
 interface GenerateOptions {
   template: string;

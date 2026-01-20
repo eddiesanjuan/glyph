@@ -34,7 +34,7 @@
     "type": "git",
     "url": "https://github.com/glyph-pdf/mcp-server"
   },
-  "homepage": "https://glyph.so",
+  "homepage": "https://glyph.you",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   },

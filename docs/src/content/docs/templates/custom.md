@@ -272,7 +272,7 @@ Allow overrides via data:
 
 ### Glyph Cloud
 
-1. Go to your [dashboard](https://glyph.so/dashboard)
+1. Go to your [dashboard](https://glyph.you/dashboard)
 2. Navigate to **Templates**
 3. Click **Upload Template**
 4. Provide your files and metadata
@@ -375,5 +375,5 @@ Always generate a PDF to verify:
 ```
 
 <Aside type="tip">
-Need help creating a custom template? Our team can design and implement templates for Enterprise customers. Contact sales@glyph.so.
+Need help creating a custom template? Our team can design and implement templates for Enterprise customers. Contact sales@glyph.you.
 </Aside>

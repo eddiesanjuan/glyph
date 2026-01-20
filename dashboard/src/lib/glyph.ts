@@ -3,7 +3,7 @@
  * Reusable module for PDF generation
  */
 
-const GLYPH_API_URL = 'https://api.glyph.so';
+const GLYPH_API_URL = 'https://api.glyph.you';
 
 export interface GlyphClientConfig {
   apiKey: string;
