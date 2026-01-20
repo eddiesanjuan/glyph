@@ -275,15 +275,7 @@
     .nav__logo-mark {
       width: 36px;
       height: 36px;
-      background: var(--color-primary);
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-sans);
-      font-size: 20px;
-      font-weight: 600;
-      color: white;
+      flex-shrink: 0;
     }
 
     .nav__logo-text {
@@ -2615,15 +2607,7 @@
     .footer__logo-mark {
       width: 32px;
       height: 32px;
-      background: var(--color-primary);
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-sans);
-      font-size: 18px;
-      font-weight: 600;
-      color: white;
+      flex-shrink: 0;
     }
 
     .footer__logo-text {
@@ -4254,7 +4238,10 @@
   <nav class="nav" id="nav">
     <div class="container nav__inner">
       <a href="/" class="nav__logo">
-        <span class="nav__logo-mark">G</span>
+        <svg class="nav__logo-mark" width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="6" fill="#1E3A5F"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M18 8C12.477 8 8 12.477 8 18C8 23.523 12.477 28 18 28C23.523 28 28 23.523 28 18V16H18V19H24.75C24 22.25 21.3 25 18 25C14.134 25 11 21.866 11 18C11 14.134 14.134 11 18 11C20.625 11 22.95 12.6 24.375 14.875L27 13C24.975 9.65 21.75 8 18 8Z" fill="white"/>
+        </svg>
         <span class="nav__logo-text">Glyph</span>
       </a>
       <ul class="nav__links">
@@ -5338,7 +5325,10 @@
       <div class="footer__content">
         <div class="footer__brand">
           <a href="/" class="footer__logo">
-            <span class="footer__logo-mark">G</span>
+            <svg class="footer__logo-mark" width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="36" height="36" rx="6" fill="#1E3A5F"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M18 8C12.477 8 8 12.477 8 18C8 23.523 12.477 28 18 28C23.523 28 28 23.523 28 18V16H18V19H24.75C24 22.25 21.3 25 18 25C14.134 25 11 21.866 11 18C11 14.134 14.134 11 18 11C20.625 11 22.95 12.6 24.375 14.875L27 13C24.975 9.65 21.75 8 18 8Z" fill="white"/>
+            </svg>
             <span class="footer__logo-text">Glyph</span>
           </a>
           <p class="footer__tagline">
