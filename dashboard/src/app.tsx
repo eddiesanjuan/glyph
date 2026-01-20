@@ -24,8 +24,11 @@ interface DashboardData {
   }
 }
 
-// Config
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// Config - Use public URL for production, localhost for development
+// IMPORTANT: Railway internal URLs (*.railway.internal) don't work from browsers
+const API_URL = import.meta.env.DEV
+  ? 'http://localhost:3000'
+  : 'https://glyph-api-production-3f73.up.railway.app'
 
 // Icons as inline SVGs for zero dependencies
 const Icons = {
