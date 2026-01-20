@@ -922,6 +922,37 @@ You can apply VISUAL organization using CSS (alternating colors, section borders
 DO NOT create new Mustache loop structures like {{#categories}} or {{#groups}}.`
     },
 
+    // SIGNATURE AND THANK YOU PATTERNS - CRITICAL: Must preserve all document content
+    {
+      pattern: /add\s*(a\s+)?(thank\s*you|signature|sign.*line)|signature\s*(line|block|area)|thank\s*you\s*(message|note)/i,
+      intent: "add_signature_block",
+      enhancement: `Add a signature block and thank you message to the FOOTER region. Use this EXACT HTML structure, adding it INSIDE the existing footer:
+
+<div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+  <div style="flex: 1;">
+    <p style="font-size: 11px; color: #666; margin-bottom: 12px;">Thank you for your business!</p>
+    <div style="display: flex; gap: 40px;">
+      <div>
+        <div style="border-bottom: 1px solid #1a1a1a; width: 180px; margin-bottom: 4px;"></div>
+        <div style="font-size: 10px; color: #666;">Authorized Signature</div>
+      </div>
+      <div>
+        <div style="border-bottom: 1px solid #1a1a1a; width: 120px; margin-bottom: 4px;"></div>
+        <div style="font-size: 10px; color: #666;">Date</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+CRITICAL INSTRUCTIONS:
+1. Add this INSIDE the existing footer region (data-glyph-region="footer")
+2. DO NOT remove or replace ANY existing content in the document
+3. Keep ALL data-glyph-region attributes intact (header, meta, client-info, line-items, totals, notes, footer)
+4. Keep ALL existing Mustache placeholders exactly as they are
+5. Simply INSERT this signature block at the end of the footer content, before the closing </footer> or </section> tag
+6. The rest of the document (header, line items, totals, etc.) must remain COMPLETELY UNCHANGED`
+    },
+
     // BRAND STYLING PATTERNS - for "Make this look like X" requests
     {
       pattern: /look\s*like\s*(a\s+)?stripe|stripe\s*(style|invoice|aesthetic|design)|stripe's?\s*(look|style|design)/i,
@@ -1092,12 +1123,18 @@ function isSimpleModification(prompt: string): boolean {
     /add.*phone/i,
     /add.*email/i,
     /add.*terms/i,
-    /add.*signature/i,
     /add.*draft/i,
+    // REMOVED: /add.*signature/i - needs full Sonnet prompt to preserve document structure
     // REMOVED: /remove.*section/i - dangerous, can wipe content
     // REMOVED: /hide.*section/i - dangerous, can wipe content
     // REMOVED: /move.*left|right|center/i - complex layout changes need full prompts
   ];
+
+  // Signature/thank you patterns need full Sonnet model - they can wipe content if not handled carefully
+  if (/add.*(signature|thank\s*you)/i.test(lowPrompt)) {
+    return false;
+  }
+
   return simplePatterns.some(p => p.test(lowPrompt));
 }
 

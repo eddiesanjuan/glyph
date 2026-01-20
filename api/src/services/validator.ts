@@ -482,9 +482,11 @@ function extractRelevantExcerpts(html: string): string {
 }
 
 /**
- * Filter out AI-generated issues that are about "request not fulfilled"
- * These are false positives where the AI validator incorrectly reports that
- * a user's styling/modification request wasn't applied, even though it was.
+ * Filter out AI-generated issues that are false positives
+ * These include:
+ * 1. "Request not fulfilled" - AI incorrectly reports user's styling wasn't applied
+ * 2. "Incomplete HTML/tags" - AI incorrectly flags valid HTML structure
+ * 3. "Incomplete conditional" - AI incorrectly flags valid Mustache conditionals
  *
  * We only want to report actual TECHNICAL issues (broken layout, overlaps, etc.)
  */
@@ -508,7 +510,30 @@ function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
     /no\s+(visible\s+)?(color|style|font|background)\s+(change|modification)/i,
   ];
 
+  // Patterns for false positive "incomplete HTML/conditional" issues
+  // The AI incorrectly identifies valid HTML and Mustache templates as "incomplete"
+  const falsePositiveStructurePatterns = [
+    /incomplete\s+(html|tags?)/i,
+    /incomplete\s+(in\s+)?(multiple\s+)?sections?/i,
+    /incomplete\s+conditional/i,
+    /unfinished\s+conditional/i,
+    /unfinished\s+\{\{/i,
+    /potentially\s+incomplete/i,
+    /\{\{#\w+(\.\w+)?\}\}\s*(block|section|conditional)/i,
+    // Section names being flagged incorrectly
+    /\b(header-left|meta-item|client-info|line-items|totals|footer)\b.*incomplete/i,
+    /incomplete.*(header-left|meta-item|client-info|line-items|totals|footer)/i,
+    // General "incomplete" with region/section context
+    /incomplete\s+(rendering|structure)\s+(in|for)/i,
+  ];
+
   for (const pattern of fulfillmentPatterns) {
+    if (pattern.test(description)) {
+      return true;
+    }
+  }
+
+  for (const pattern of falsePositiveStructurePatterns) {
     if (pattern.test(description)) {
       return true;
     }
