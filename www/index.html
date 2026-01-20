@@ -8009,11 +8009,18 @@
     // ============================================
     // Version History Panel (Auto-tracking Timeline)
     // ============================================
-    const historyToggleBtn = document.getElementById('history-toggle-btn');
-    const historyPanel = document.getElementById('history-panel');
-    const historyPanelClose = document.getElementById('history-panel-close');
-    const historyPanelContent = document.getElementById('history-panel-content');
-    const historyCountEl = document.getElementById('history-count');
+    // Lazy-load DOM elements to ensure they exist when accessed
+    let historyToggleBtn, historyPanel, historyPanelClose, historyPanelContent, historyCountEl;
+
+    function getHistoryElements() {
+      if (!historyToggleBtn) {
+        historyToggleBtn = document.getElementById('history-toggle-btn');
+        historyPanel = document.getElementById('history-panel');
+        historyPanelClose = document.getElementById('history-panel-close');
+        historyPanelContent = document.getElementById('history-panel-content');
+        historyCountEl = document.getElementById('history-count');
+      }
+    }
 
     // History entries - each modification creates an entry
     let historyEntries = [];
@@ -8049,6 +8056,7 @@
 
     // Update history count badge
     function updateHistoryCount() {
+      getHistoryElements();
       if (historyCountEl) {
         historyCountEl.textContent = historyEntries.length;
       }
@@ -8070,6 +8078,7 @@
 
     // Render the history panel content
     function renderHistoryPanel() {
+      getHistoryElements();
       if (!historyPanelContent) return;
 
       if (historyEntries.length === 0) {
@@ -8135,6 +8144,7 @@
 
     // Toggle history panel
     function toggleHistoryPanel() {
+      getHistoryElements();
       if (historyPanel) {
         historyPanel.classList.toggle('open');
         historyToggleBtn?.classList.toggle('active', historyPanel.classList.contains('open'));
@@ -8149,23 +8159,34 @@
       }
     }
 
-    // Event listeners for history panel
-    if (historyToggleBtn) {
-      historyToggleBtn.addEventListener('click', toggleHistoryPanel);
-    }
-
-    if (historyPanelClose) {
-      historyPanelClose.addEventListener('click', closeHistoryPanel);
-    }
-
-    // Close panel when clicking outside
-    document.addEventListener('click', (e) => {
-      if (historyPanel?.classList.contains('open') &&
-          !historyPanel.contains(e.target) &&
-          !historyToggleBtn?.contains(e.target)) {
-        closeHistoryPanel();
+    // Event listeners for history panel - deferred until DOM is ready
+    function initHistoryPanelListeners() {
+      getHistoryElements();
+      if (historyToggleBtn) {
+        historyToggleBtn.addEventListener('click', toggleHistoryPanel);
       }
-    });
+
+      if (historyPanelClose) {
+        historyPanelClose.addEventListener('click', closeHistoryPanel);
+      }
+
+      // Close panel when clicking outside
+      document.addEventListener('click', (e) => {
+        getHistoryElements();
+        if (historyPanel?.classList.contains('open') &&
+            !historyPanel.contains(e.target) &&
+            !historyToggleBtn?.contains(e.target)) {
+          closeHistoryPanel();
+        }
+      });
+    }
+
+    // Initialize history panel when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHistoryPanelListeners);
+    } else {
+      initHistoryPanelListeners();
+    }
 
     // ============================================
     // Named Snapshots (Saved Versions)
