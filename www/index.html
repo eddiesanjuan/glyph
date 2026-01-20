@@ -11,33 +11,38 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Favicon - Teal accent -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2314B8A6'/><text y='.82em' x='50%' text-anchor='middle' font-size='65' fill='white' font-family='system-ui'>G</text></svg>">
+  <!-- Favicon - G lettermark -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
   <style>
     /* ============================================
        CSS Variables & Reset
        ============================================ */
     :root {
-      /* Backgrounds - Near-black with slight warmth (Linear-inspired) */
-      --color-bg: #0A0A0B;
-      --color-bg-elevated: #111113;
-      --color-bg-card: #18181B;
-      --color-surface: #1F1F23;
-      --color-border: rgba(20, 184, 166, 0.2);
-      --color-border-subtle: #27272A;
+      /* Backgrounds - Deep navy tones */
+      --color-bg: #0B1120;
+      --color-bg-elevated: #111827;
+      --color-bg-card: #1E293B;
+      --color-surface: #1E3A5F;
+      --color-border: rgba(30, 58, 95, 0.3);
+      --color-border-subtle: #1E293B;
 
-      /* Accent - Electric Teal (NOT purple) */
-      --color-primary: #14B8A6;
-      --color-primary-bright: #2DD4BF;
-      --color-primary-dark: #0D9488;
-      --color-primary-glow: rgba(20, 184, 166, 0.2);
-      --color-primary-subtle: rgba(20, 184, 166, 0.08);
+      /* Primary - Ink Navy */
+      --color-primary: #1E3A5F;
+      --color-primary-bright: #2563EB;
+      --color-primary-dark: #172554;
+      --color-primary-glow: rgba(30, 58, 95, 0.25);
+      --color-primary-subtle: rgba(30, 58, 95, 0.1);
 
-      /* Text - Zinc scale for warmth */
-      --color-text: #FAFAFA;
-      --color-text-muted: #A1A1AA;
-      --color-text-subtle: #71717A;
+      /* Accent - Slate */
+      --color-accent: #475569;
+      --color-accent-light: #64748B;
+      --color-accent-dark: #334155;
+
+      /* Text - keep light for dark backgrounds */
+      --color-text: #F8FAFC;
+      --color-text-muted: #94A3B8;
+      --color-text-subtle: #64748B;
 
       /* Semantic colors */
       --color-success: #22C55E;
@@ -84,18 +89,146 @@
     }
 
     /* ============================================
-       Background Effects - Clean and minimal
+       Background Effects - Premium Floating Orbs
        ============================================ */
     .gradient-mesh {
-      display: none; /* Removed gradient orbs per design brief */
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
     }
 
     .gradient-orb {
-      display: none;
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      will-change: transform;
+    }
+
+    .gradient-orb--1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, #1E3A5F 0%, transparent 70%);
+      top: -200px;
+      left: -100px;
+      animation: floatOrb1 25s ease-in-out infinite;
+    }
+
+    .gradient-orb--2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #14B8A6 0%, transparent 70%);
+      top: 40%;
+      right: -150px;
+      opacity: 0.1;
+      animation: floatOrb2 30s ease-in-out infinite;
+    }
+
+    .gradient-orb--3 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, #475569 0%, transparent 70%);
+      bottom: -100px;
+      left: 30%;
+      opacity: 0.12;
+      animation: floatOrb3 22s ease-in-out infinite;
+    }
+
+    @keyframes floatOrb1 {
+      0%, 100% {
+        transform: translate(0, 0) scale(1);
+      }
+      33% {
+        transform: translate(60px, 40px) scale(1.05);
+      }
+      66% {
+        transform: translate(-30px, 80px) scale(0.95);
+      }
+    }
+
+    @keyframes floatOrb2 {
+      0%, 100% {
+        transform: translate(0, 0) scale(1);
+      }
+      33% {
+        transform: translate(-50px, -60px) scale(1.08);
+      }
+      66% {
+        transform: translate(40px, 30px) scale(0.92);
+      }
+    }
+
+    @keyframes floatOrb3 {
+      0%, 100% {
+        transform: translate(0, 0) scale(1);
+      }
+      50% {
+        transform: translate(-40px, -50px) scale(1.1);
+      }
     }
 
     .noise-overlay {
-      display: none; /* Removed noise overlay per design brief */
+      display: none; /* Noise overlay disabled */
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .gradient-orb {
+        animation: none;
+      }
+    }
+
+    /* Simplify on mobile for performance */
+    @media (max-width: 768px) {
+      .gradient-orb {
+        filter: blur(60px);
+        opacity: 0.1;
+      }
+      .gradient-orb--2,
+      .gradient-orb--3 {
+        display: none;
+      }
+    }
+
+    /* ============================================
+       Mouse-Following Glow Effect
+       ============================================ */
+    .mouse-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(30, 58, 95, 0.15) 0%,
+        rgba(30, 58, 95, 0.05) 40%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 1;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .mouse-glow.active {
+      opacity: 1;
+    }
+
+    /* Reduce effect on mobile - touch devices don't have mouse hover */
+    @media (max-width: 768px) {
+      .mouse-glow {
+        display: none;
+      }
+    }
+
+    /* Respect reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      .mouse-glow {
+        display: none;
+      }
     }
 
     /* ============================================
@@ -374,7 +507,7 @@
       justify-content: space-between;
       align-items: flex-start;
       padding-bottom: 16px;
-      border-bottom: 2px solid var(--demo-accent, #14B8A6);
+      border-bottom: 2px solid var(--demo-accent, #1E3A5F);
       margin-bottom: 16px;
       transition: border-color 0.5s ease;
     }
@@ -382,14 +515,14 @@
     .demo-company {
       font-size: 16px;
       font-weight: 700;
-      color: var(--demo-accent, #14B8A6);
+      color: var(--demo-accent, #1E3A5F);
       transition: color 0.5s ease;
     }
 
     .demo-quote-title {
       font-size: 18px;
       font-weight: 700;
-      color: var(--demo-accent, #14B8A6);
+      color: var(--demo-accent, #1E3A5F);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       transition: color 0.5s ease;
@@ -426,7 +559,7 @@
     }
 
     .demo-table-header {
-      background: var(--demo-accent, #14B8A6);
+      background: var(--demo-accent, #1E3A5F);
       color: white;
       padding: 8px 12px;
       border-radius: 4px 4px 0 0;
@@ -905,7 +1038,7 @@
     /* Category color variants */
     .autocomplete-category--recent .autocomplete-category-icon { color: #8b5cf6; }
     .autocomplete-category--suggestions .autocomplete-category-icon { color: #f59e0b; }
-    .autocomplete-category--quick .autocomplete-category-icon { color: #14B8A6; }
+    .autocomplete-category--quick .autocomplete-category-icon { color: #1E3A5F; }
     .autocomplete-category--fields .autocomplete-category-icon { color: #3b82f6; }
 
     .autocomplete-category-icon {
@@ -931,7 +1064,7 @@
 
     .autocomplete-item:hover,
     .autocomplete-item.selected {
-      background: linear-gradient(90deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
+      background: linear-gradient(90deg, rgba(30, 58, 95, 0.15) 0%, rgba(30, 58, 95, 0.08) 100%);
     }
 
     /* Type-specific styling */
@@ -954,11 +1087,11 @@
     }
 
     .autocomplete-item--action .autocomplete-item-icon {
-      background: rgba(20, 184, 166, 0.15);
-      color: #14B8A6;
+      background: rgba(30, 58, 95, 0.15);
+      color: #1E3A5F;
     }
     .autocomplete-item--action.selected .autocomplete-item-icon {
-      background: #14B8A6;
+      background: #1E3A5F;
       color: white;
     }
 
@@ -985,7 +1118,7 @@
       justify-content: center;
       width: 28px;
       height: 28px;
-      background: rgba(20, 184, 166, 0.15);
+      background: rgba(30, 58, 95, 0.15);
       border-radius: 6px;
       color: var(--color-primary-bright);
       flex-shrink: 0;
@@ -1034,7 +1167,7 @@
       font-size: 11px;
       font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
       color: var(--color-primary-bright);
-      background: rgba(20, 184, 166, 0.2);
+      background: rgba(30, 58, 95, 0.2);
       padding: 2px 6px;
       border-radius: 4px;
       display: inline-block;
@@ -1042,7 +1175,7 @@
     }
 
     .autocomplete-item.selected .autocomplete-item-path {
-      background: rgba(20, 184, 166, 0.25);
+      background: rgba(30, 58, 95, 0.25);
     }
 
     .autocomplete-item-example {
@@ -1800,7 +1933,7 @@
       color: #1e3a5f;
       margin-bottom: 12px;
       padding-bottom: 8px;
-      border-bottom: 2px solid #14B8A6;
+      border-bottom: 2px solid #1E3A5F;
     }
 
     .airtable__demo-preview-doc .meta {
@@ -3516,6 +3649,7 @@
     <div class="gradient-orb gradient-orb--2"></div>
     <div class="gradient-orb gradient-orb--3"></div>
   </div>
+  <div class="mouse-glow" id="mouseGlow" aria-hidden="true"></div>
   <div class="noise-overlay" aria-hidden="true"></div>
 
   <!-- Navigation -->
@@ -4711,9 +4845,9 @@
     const typingText = document.getElementById('typing-text');
     const heroDemo = document.getElementById('hero-demo');
     const commands = [
-      { text: 'Add a diagonal DRAFT watermark', color: '#14B8A6', effect: 'watermark' },
+      { text: 'Add a diagonal DRAFT watermark', color: '#1E3A5F', effect: 'watermark' },
       { text: 'Make this look like a Stripe invoice', color: '#635BFF', effect: 'stripe' },
-      { text: 'Add a QR code for instant payment', color: '#14B8A6', effect: 'qrcode' },
+      { text: 'Add a QR code for instant payment', color: '#1E3A5F', effect: 'qrcode' },
       { text: 'Add payment terms: Net 30', color: '#22C55E', effect: 'terms' },
       { text: 'Add a signature line with date', color: '#F97316', effect: 'signature' }
     ];
@@ -4810,7 +4944,7 @@
       { category: 'Totals', name: 'Tax', path: 'totals.tax', example: '760.00', type: 'number' },
       { category: 'Totals', name: 'Total', path: 'totals.total', example: '10,260.00', type: 'number' },
       { category: 'Line Items', name: 'Description', path: 'lineItems[].description', example: 'Service item', type: 'string' },
-      { category: 'Styles', name: 'Accent Color', path: 'styles.accentColor', example: '#14B8A6', type: 'string' },
+      { category: 'Styles', name: 'Accent Color', path: 'styles.accentColor', example: '#1E3A5F', type: 'string' },
     ];
 
     // Quick Actions - common design modifications
@@ -5322,7 +5456,7 @@
         total: 3600.00
       },
       styles: {
-        accentColor: '#14B8A6'
+        accentColor: '#1E3A5F'
       }
     };
 
@@ -5370,7 +5504,7 @@
 
     // Static demo fallback when API is not available
     function renderStaticDemo() {
-      const staticHtml = generateStaticHtml(sampleQuoteData, '#14B8A6');
+      const staticHtml = generateStaticHtml(sampleQuoteData, '#1E3A5F');
       currentHtml = staticHtml;
       renderPreview(staticHtml);
     }
@@ -5881,9 +6015,9 @@
       // Replace CSS variable
       html = html.replace(/--accent-color:\s*[^;]+;/g, `--accent-color: ${newColor};`);
       // Replace inline accent colors (common patterns)
-      html = html.replace(/background(-color)?:\s*#14B8A6/gi, `background$1: ${newColor}`);
-      html = html.replace(/border(-color)?:\s*#14B8A6/gi, `border$1: ${newColor}`);
-      html = html.replace(/color:\s*#14B8A6/gi, `color: ${newColor}`);
+      html = html.replace(/background(-color)?:\s*#1E3A5F/gi, `background$1: ${newColor}`);
+      html = html.replace(/border(-color)?:\s*#1E3A5F/gi, `border$1: ${newColor}`);
+      html = html.replace(/color:\s*#1E3A5F/gi, `color: ${newColor}`);
       return html;
     }
 
@@ -6925,7 +7059,7 @@
     }
 
     function generateDemoTemplate() {
-      const accentColor = airtableState.style === 'modern' ? '#14B8A6' :
+      const accentColor = airtableState.style === 'modern' ? '#1E3A5F' :
                           airtableState.style === 'professional' ? '#1E40AF' : '#6B7280';
 
       const sampleData = airtableState.records[0]?.fields || {};
@@ -7086,11 +7220,11 @@
       let html = airtableState.generatedHtml;
       const lowMod = modification.toLowerCase();
 
-      if (lowMod.includes('blue')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#3B82F6');
-      else if (lowMod.includes('red')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#EF4444');
-      else if (lowMod.includes('green')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#22C55E');
-      else if (lowMod.includes('purple')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#8B5CF6');
-      else if (lowMod.includes('orange')) html = html.replace(/#14B8A6|#1E40AF|#6B7280/g, '#F97316');
+      if (lowMod.includes('blue')) html = html.replace(/#1E3A5F|#1E40AF|#6B7280/g, '#3B82F6');
+      else if (lowMod.includes('red')) html = html.replace(/#1E3A5F|#1E40AF|#6B7280/g, '#EF4444');
+      else if (lowMod.includes('green')) html = html.replace(/#1E3A5F|#1E40AF|#6B7280/g, '#22C55E');
+      else if (lowMod.includes('purple')) html = html.replace(/#1E3A5F|#1E40AF|#6B7280/g, '#8B5CF6');
+      else if (lowMod.includes('orange')) html = html.replace(/#1E3A5F|#1E40AF|#6B7280/g, '#F97316');
 
       airtableState.generatedHtml = html;
       renderAirtablePreview(html);
@@ -7384,6 +7518,45 @@
         loadBatchViews();
       }
     };
+  </script>
+
+  <!-- Mouse-Following Glow Effect -->
+  <script>
+  (function() {
+    const glow = document.getElementById('mouseGlow');
+    if (!glow) return;
+
+    let mouseX = 0, mouseY = 0;
+    let glowX = 0, glowY = 0;
+    let animationId = null;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      glow.classList.add('active');
+    });
+
+    document.addEventListener('mouseleave', () => {
+      glow.classList.remove('active');
+    });
+
+    // Smooth animation with requestAnimationFrame
+    function animate() {
+      // Ease the glow position towards mouse (creates smooth follow)
+      glowX += (mouseX - glowX) * 0.1;
+      glowY += (mouseY - glowY) * 0.1;
+
+      glow.style.left = glowX + 'px';
+      glow.style.top = glowY + 'px';
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Only start animation if not on touch device
+    if (window.matchMedia('(hover: hover)').matches) {
+      animate();
+    }
+  })();
   </script>
 </body>
 </html>
