@@ -1,0 +1,234 @@
+/**
+ * Glyph Shared Base Styles
+ *
+ * Common styles shared across all Glyph templates.
+ * These provide a consistent foundation and reset.
+ */
+
+/* Box Sizing Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margins and padding */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* Document defaults */
+html {
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: #1a1a1a;
+  background: white;
+}
+
+/* Typography reset */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+p {
+  line-height: 1.6;
+}
+
+/* List reset */
+ul, ol {
+  list-style: none;
+}
+
+/* Table reset */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Image reset */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Link reset */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Form reset */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Document container base */
+.glyph-document {
+  max-width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  padding: 0.75in;
+  background: white;
+}
+
+/* Region marker base styles */
+[data-glyph-region] {
+  position: relative;
+}
+
+/* Selection highlight for SDK interaction */
+[data-glyph-region].glyph-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+[data-glyph-region].glyph-hover {
+  outline: 2px dashed #93c5fd;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* Editable indicator */
+[data-glyph-region]::after {
+  content: attr(data-glyph-region);
+  position: absolute;
+  top: -1.5rem;
+  left: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.125rem 0.375rem;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+[data-glyph-region]:hover::after,
+[data-glyph-region].glyph-selected::after {
+  opacity: 1;
+}
+
+/* Hide region labels in print */
+@media print {
+  [data-glyph-region]::after {
+    display: none !important;
+  }
+
+  [data-glyph-region].glyph-selected,
+  [data-glyph-region].glyph-hover {
+    outline: none !important;
+  }
+}
+
+/* Common color variables */
+:root {
+  /* Neutral palette */
+  --glyph-white: #ffffff;
+  --glyph-gray-50: #f9fafb;
+  --glyph-gray-100: #f3f4f6;
+  --glyph-gray-200: #e5e7eb;
+  --glyph-gray-300: #d1d5db;
+  --glyph-gray-400: #9ca3af;
+  --glyph-gray-500: #6b7280;
+  --glyph-gray-600: #4b5563;
+  --glyph-gray-700: #374151;
+  --glyph-gray-800: #1f2937;
+  --glyph-gray-900: #111827;
+  --glyph-black: #000000;
+
+  /* Semantic colors */
+  --glyph-success: #059669;
+  --glyph-warning: #d97706;
+  --glyph-error: #dc2626;
+  --glyph-info: #2563eb;
+}
+
+/* Currency formatting helper */
+.currency::before {
+  content: '$';
+}
+
+/* Number formatting */
+.number-positive {
+  color: var(--glyph-success);
+}
+
+.number-negative {
+  color: var(--glyph-error);
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.status-badge--draft {
+  background: var(--glyph-gray-100);
+  color: var(--glyph-gray-600);
+}
+
+.status-badge--sent {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge--accepted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge--declined {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Visibility utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+}

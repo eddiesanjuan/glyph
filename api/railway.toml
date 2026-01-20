@@ -1,9 +1,8 @@
-# Force Railway to use the root Dockerfile instead of Nixpacks
-# The Dockerfile properly installs Playwright/Chromium for PDF generation
+# API Dockerfile with Playwright/Chromium for PDF generation
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "../Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/health"

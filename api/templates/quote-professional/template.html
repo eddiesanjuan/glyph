@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: letter;
+      margin: 0.75in;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #333;
+      background: #fff;
+    }
+    .quote-document {
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 0.5in;
+    }
+    header[data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #1a365d;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .company-info h1 {
+      font-size: 24pt;
+      color: #1a365d;
+      margin-bottom: 8px;
+    }
+    .company-info p {
+      color: #666;
+      font-size: 10pt;
+    }
+    .quote-meta-box {
+      text-align: right;
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border: 1px solid #e5e7eb;
+    }
+    .quote-meta-box h2 {
+      font-size: 14pt;
+      color: #1a365d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10pt;
+      margin: 4px 0;
+    }
+    .meta-label { color: #666; }
+    .meta-value { font-weight: bold; }
+
+    section[data-glyph-region="client-info"] {
+      margin-bottom: 30px;
+    }
+    .client-info h3 {
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+    .client-info p {
+      margin: 3px 0;
+    }
+    .client-name { font-weight: bold; font-size: 12pt; }
+
+    table[data-glyph-region="line-items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    table th {
+      background: #1a365d;
+      color: white;
+      text-transform: uppercase;
+      font-size: 9pt;
+      letter-spacing: 0.5px;
+      padding: 12px 10px;
+      text-align: left;
+    }
+    table th:last-child,
+    table td:last-child { text-align: right; }
+    table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    table tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    section[data-glyph-region="totals"] {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 40px;
+    }
+    .totals-box {
+      width: 280px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .totals-row.total {
+      background: #1a365d;
+      color: white;
+      margin: 10px -10px 0;
+      padding: 12px 10px;
+      font-size: 14pt;
+      font-weight: bold;
+    }
+
+    section[data-glyph-region="notes"] {
+      background: #f8f9fa;
+      border-left: 3px solid #1a365d;
+      padding: 15px 20px;
+      margin-bottom: 30px;
+    }
+    .notes h4 {
+      font-size: 10pt;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    footer[data-glyph-region="footer"] {
+      border-top: 1px solid #e5e7eb;
+      padding-top: 20px;
+      font-size: 9pt;
+      color: #666;
+      text-align: center;
+    }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="quote-document">
+    <header data-glyph-region="header">
+      <div class="company-info">
+        {{#branding.logoUrl}}<img src="{{branding.logoUrl}}" alt="Logo" style="max-height: 60px; margin-bottom: 10px;">{{/branding.logoUrl}}
+        <h1>{{branding.companyName}}</h1>
+        <p>{{branding.companyAddress}}</p>
+      </div>
+      <div class="quote-meta-box" data-glyph-region="meta">
+        <h2>Quote</h2>
+        <div class="meta-row">
+          <span class="meta-label">Number:</span>
+          <span class="meta-value">{{meta.quoteNumber}}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Date:</span>
+          <span class="meta-value">{{meta.date}}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Valid Until:</span>
+          <span class="meta-value">{{meta.validUntil}}</span>
+        </div>
+      </div>
+    </header>
+
+    <section data-glyph-region="client-info" class="client-info">
+      <h3>Bill To</h3>
+      <p class="client-name">{{client.name}}</p>
+      {{#client.company}}<p>{{client.company}}</p>{{/client.company}}
+      {{#client.address}}<p>{{client.address}}</p>{{/client.address}}
+      {{#client.email}}<p>{{client.email}}</p>{{/client.email}}
+    </section>
+
+    <table data-glyph-region="line-items">
+      <thead>
+        <tr>
+          <th style="width: 50%">Description</th>
+          <th style="width: 15%">Quantity</th>
+          <th style="width: 15%">Unit Price</th>
+          <th style="width: 20%">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#lineItems}}
+        <tr>
+          <td>{{description}}</td>
+          <td>{{quantity}}</td>
+          <td>${{unitPrice}}</td>
+          <td>${{total}}</td>
+        </tr>
+        {{/lineItems}}
+      </tbody>
+    </table>
+
+    <section data-glyph-region="totals">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span>Subtotal</span>
+          <span>${{totals.subtotal}}</span>
+        </div>
+        {{#totals.discount}}
+        <div class="totals-row">
+          <span>Discount</span>
+          <span>-${{totals.discount}}</span>
+        </div>
+        {{/totals.discount}}
+        {{#totals.tax}}
+        <div class="totals-row">
+          <span>Tax</span>
+          <span>${{totals.tax}}</span>
+        </div>
+        {{/totals.tax}}
+        <div class="totals-row total">
+          <span>Total Due</span>
+          <span>${{totals.total}}</span>
+        </div>
+      </div>
+    </section>
+
+    {{#meta.notes}}
+    <section data-glyph-region="notes" class="notes">
+      <h4>Notes</h4>
+      <p>{{meta.notes}}</p>
+    </section>
+    {{/meta.notes}}
+
+    <footer data-glyph-region="footer">
+      {{#meta.terms}}<p>{{meta.terms}}</p>{{/meta.terms}}
+      <p style="margin-top: 10px;">Thank you for your business.</p>
+    </footer>
+  </div>
+</body>
+</html>

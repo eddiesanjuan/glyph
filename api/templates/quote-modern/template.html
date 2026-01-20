@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote #{{meta.quoteNumber}}</title>
+  <style>
+    /* Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #1a1a1a;
+      --text-secondary: #666666;
+      --border-color: #e5e5e5;
+      --bg-light: #f9fafb;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    /* Document Container */
+    .quote-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+    }
+
+    /* Header Region */
+    [data-glyph-region="header"] {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid var(--accent-color);
+      margin-bottom: 2rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo {
+      max-height: 60px;
+      max-width: 180px;
+      object-fit: contain;
+    }
+
+    .company-info h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-bottom: 0.25rem;
+    }
+
+    .company-address {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      white-space: pre-line;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .document-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Meta Region */
+    [data-glyph-region="meta"] {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      background: var(--bg-light);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .meta-item {
+      text-align: center;
+    }
+
+    .meta-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Client Info Region */
+    [data-glyph-region="client-info"] {
+      margin-bottom: 2rem;
+    }
+
+    .client-info h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .client-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .client-company {
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .client-address,
+    .client-email,
+    .client-phone {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.125rem;
+    }
+
+    /* Line Items Region */
+    [data-glyph-region="line-items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    [data-glyph-region="line-items"] thead {
+      background: var(--accent-color);
+    }
+
+    [data-glyph-region="line-items"] th {
+      padding: 0.875rem 1rem;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: white;
+    }
+
+    [data-glyph-region="line-items"] th:nth-child(2),
+    [data-glyph-region="line-items"] th:nth-child(3),
+    [data-glyph-region="line-items"] th:nth-child(4) {
+      text-align: right;
+    }
+
+    [data-glyph-region="line-items"] td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    [data-glyph-region="line-items"] td:nth-child(2),
+    [data-glyph-region="line-items"] td:nth-child(3),
+    [data-glyph-region="line-items"] td:nth-child(4) {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .item-description {
+      font-weight: 500;
+    }
+
+    .item-details {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    [data-glyph-region="line-items"] tbody tr:hover {
+      background: var(--bg-light);
+    }
+
+    /* Totals Region */
+    [data-glyph-region="totals"] {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-bottom: 2rem;
+    }
+
+    .totals-table {
+      width: 280px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .totals-row.subtotal {
+      border-bottom: none;
+    }
+
+    .totals-row.discount .totals-value {
+      color: #059669;
+    }
+
+    .totals-row.total {
+      border-top: 2px solid var(--accent-color);
+      border-bottom: none;
+      padding-top: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .totals-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .totals-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .totals-row.total .totals-label,
+    .totals-row.total .totals-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Notes Region */
+    [data-glyph-region="notes"] {
+      background: var(--bg-light);
+      padding: 1.25rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    [data-glyph-region="notes"] h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    [data-glyph-region="notes"] p {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+    }
+
+    /* Footer Region */
+    [data-glyph-region="footer"] {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .terms {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .footer-signature {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      gap: 2rem;
+    }
+
+    .signature-block {
+      flex: 1;
+    }
+
+    .signature-line {
+      border-top: 1px solid var(--text-primary);
+      margin-top: 3rem;
+      padding-top: 0.5rem;
+    }
+
+    .signature-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .quote-document {
+        padding: 0;
+        max-width: none;
+        min-height: auto;
+      }
+
+      [data-glyph-region="line-items"] thead {
+        background: var(--accent-color) !important;
+      }
+
+      [data-glyph-region="line-items"] th {
+        color: white !important;
+      }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="quote-document">
+    <header data-glyph-region="header">
+      <div class="header-left">
+        {{#branding.logoUrl}}
+        <img src="{{branding.logoUrl}}" class="logo" alt="{{branding.companyName}} Logo" />
+        {{/branding.logoUrl}}
+        <div class="company-info">
+          <h1>{{branding.companyName}}</h1>
+          {{#branding.companyAddress}}
+          <p class="company-address">{{branding.companyAddress}}</p>
+          {{/branding.companyAddress}}
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="document-title">Quote</div>
+      </div>
+    </header>
+
+    <section data-glyph-region="meta" class="quote-meta">
+      <div class="meta-item">
+        <div class="meta-label">Quote Number</div>
+        <div class="meta-value">{{meta.quoteNumber}}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Date</div>
+        <div class="meta-value">{{meta.date}}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Valid Until</div>
+        <div class="meta-value">{{meta.validUntil}}</div>
+      </div>
+    </section>
+
+    <section data-glyph-region="client-info" class="client-info">
+      <h2>Prepared For</h2>
+      <p class="client-name">{{client.name}}</p>
+      {{#client.company}}
+      <p class="client-company">{{client.company}}</p>
+      {{/client.company}}
+      {{#client.address}}
+      <p class="client-address">{{client.address}}</p>
+      {{/client.address}}
+      {{#client.email}}
+      <p class="client-email">{{client.email}}</p>
+      {{/client.email}}
+      {{#client.phone}}
+      <p class="client-phone">{{client.phone}}</p>
+      {{/client.phone}}
+    </section>
+
+    <table data-glyph-region="line-items" class="line-items">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#lineItems}}
+        <tr>
+          <td>
+            <div class="item-description">{{description}}</div>
+            {{#details}}
+            <div class="item-details">{{details}}</div>
+            {{/details}}
+          </td>
+          <td>{{quantity}}</td>
+          <td>${{unitPrice}}</td>
+          <td>${{total}}</td>
+        </tr>
+        {{/lineItems}}
+      </tbody>
+    </table>
+
+    <section data-glyph-region="totals" class="totals">
+      <div class="totals-table">
+        <div class="totals-row subtotal">
+          <span class="totals-label">Subtotal</span>
+          <span class="totals-value">${{totals.subtotal}}</span>
+        </div>
+        {{#totals.discount}}
+        <div class="totals-row discount">
+          <span class="totals-label">Discount</span>
+          <span class="totals-value">-${{totals.discount}}</span>
+        </div>
+        {{/totals.discount}}
+        {{#totals.tax}}
+        <div class="totals-row tax">
+          <span class="totals-label">Tax ({{totals.taxRate}}%)</span>
+          <span class="totals-value">${{totals.tax}}</span>
+        </div>
+        {{/totals.tax}}
+        <div class="totals-row total">
+          <span class="totals-label">Total</span>
+          <span class="totals-value">${{totals.total}}</span>
+        </div>
+      </div>
+    </section>
+
+    {{#meta.notes}}
+    <section data-glyph-region="notes" class="notes">
+      <h3>Notes</h3>
+      <p>{{meta.notes}}</p>
+    </section>
+    {{/meta.notes}}
+
+    <footer data-glyph-region="footer" class="footer">
+      {{#meta.terms}}
+      <p class="terms">{{meta.terms}}</p>
+      {{/meta.terms}}
+
+      {{#meta.showSignature}}
+      <div class="footer-signature">
+        <div class="signature-block">
+          <div class="signature-line">
+            <span class="signature-label">Client Signature</span>
+          </div>
+        </div>
+        <div class="signature-block">
+          <div class="signature-line">
+            <span class="signature-label">Date</span>
+          </div>
+        </div>
+      </div>
+      {{/meta.showSignature}}
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,220 @@
+/**
+ * Glyph Print Styles
+ *
+ * Optimized styles for PDF generation and printing.
+ * Import this in templates that need print support.
+ */
+
+@media print {
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  @page :first {
+    margin-top: 0.5in;
+  }
+
+  /* A4 variant */
+  @page a4 {
+    size: A4;
+    margin: 15mm;
+  }
+
+  /* Landscape variant */
+  @page landscape {
+    size: letter landscape;
+    margin: 0.5in;
+  }
+
+  /* Force background colors and images */
+  * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Reset body */
+  html, body {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  /* Document container */
+  .glyph-document,
+  .quote-document,
+  .invoice-document,
+  .proposal-document {
+    max-width: none;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    background: white !important;
+  }
+
+  /* Prevent page breaks inside elements */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  p, li, blockquote {
+    orphans: 3;
+    widows: 3;
+  }
+
+  table, figure, img {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep table headers with content */
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force page breaks */
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Hide non-print elements */
+  .no-print,
+  .glyph-toolbar,
+  .glyph-editor-controls,
+  button,
+  nav,
+  .navigation {
+    display: none !important;
+  }
+
+  /* Remove shadows and decorative borders */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure links are visible */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  a[href^="#"]::after,
+  a[href^="javascript:"]::after,
+  a[href^="mailto:"]::after {
+    content: "";
+  }
+
+  /* Abbreviation expansion */
+  abbr[title]::after {
+    content: " (" attr(title) ")";
+  }
+
+  /* Table styling for print */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th {
+    background-color: #f3f4f6 !important;
+    color: #1a1a1a !important;
+  }
+
+  th, td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem;
+  }
+
+  /* Zebra striping for readability */
+  tbody tr:nth-child(even) {
+    background-color: #f9fafb !important;
+  }
+
+  /* Image handling */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Code blocks */
+  pre, code {
+    background-color: #f3f4f6 !important;
+    border: 1px solid #e5e7eb;
+    page-break-inside: avoid;
+  }
+
+  /* Footer positioning */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Header positioning */
+  .print-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Page numbers (requires JavaScript support in PDF renderer) */
+  .page-number::after {
+    content: counter(page);
+  }
+
+  .page-count::after {
+    content: counter(pages);
+  }
+}
+
+/* High contrast print mode */
+@media print and (prefers-contrast: high) {
+  * {
+    color: black !important;
+    background: white !important;
+  }
+
+  th {
+    background-color: black !important;
+    color: white !important;
+  }
+}
