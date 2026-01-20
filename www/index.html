@@ -822,6 +822,510 @@
     }
 
     /* ============================================
+       Social Proof Section
+       ============================================ */
+    .social-proof {
+      position: relative;
+      padding: 60px 0;
+      z-index: 2;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .social-proof__header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .social-proof__label {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+      margin-bottom: 8px;
+    }
+
+    .social-proof__title {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .social-proof__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .proof-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 24px 16px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .proof-item:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+
+    .proof-item__icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      color: var(--color-primary-bright);
+    }
+
+    .proof-item__icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .proof-item__stat {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .proof-item__label {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+
+    /* Integration badges row */
+    .social-proof__badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .proof-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      transition: border-color var(--transition-fast);
+    }
+
+    .proof-badge:hover {
+      border-color: var(--color-primary);
+    }
+
+    .proof-badge__icon {
+      width: 16px;
+      height: 16px;
+      color: var(--color-primary-bright);
+    }
+
+    .proof-badge--highlight {
+      background: var(--color-primary-subtle);
+      border-color: rgba(37, 99, 235, 0.3);
+      color: var(--color-primary-bright);
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .social-proof {
+        padding: 48px 0;
+      }
+
+      .social-proof__grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .proof-item {
+        padding: 20px 12px;
+      }
+
+      .proof-item__icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 12px;
+      }
+
+      .proof-item__icon svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .proof-item__stat {
+        font-size: 20px;
+      }
+
+      .proof-item__label {
+        font-size: 12px;
+      }
+
+      .social-proof__badges {
+        gap: 8px;
+        margin-top: 32px;
+        padding-top: 24px;
+      }
+
+      .proof-badge {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .social-proof__grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* ============================================
+       AI IDE Integration Section - HERO FEATURE
+       ============================================ */
+    .ai-ide {
+      position: relative;
+      padding: 100px 0 120px;
+      z-index: 2;
+      background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-elevated) 50%, var(--color-bg) 100%);
+      overflow: hidden;
+    }
+
+    .ai-ide::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+    }
+
+    .ai-ide__header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 64px;
+    }
+
+    .ai-ide__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(30, 58, 95, 0.15) 100%);
+      border: 1px solid var(--color-primary);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-primary-bright);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .ai-ide__badge svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .ai-ide__title {
+      font-family: var(--font-sans);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .ai-ide__title span {
+      background: linear-gradient(135deg, #60A5FA 0%, #2563EB 50%, #1E3A5F 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .ai-ide__subtitle {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .ai-ide__content {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 60px;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .ai-ide__ides {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .ai-ide__ide-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: all var(--transition-smooth);
+      cursor: default;
+    }
+
+    .ai-ide__ide-card:hover {
+      border-color: var(--color-primary);
+      transform: translateX(8px);
+      box-shadow: -8px 0 24px rgba(37, 99, 235, 0.15);
+    }
+
+    .ai-ide__ide-icon {
+      width: 56px;
+      height: 56px;
+      min-width: 56px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .ai-ide__ide-icon--claude {
+      background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+      color: white;
+    }
+
+    .ai-ide__ide-icon--cursor {
+      background: linear-gradient(135deg, #000 0%, #333 100%);
+      color: white;
+    }
+
+    .ai-ide__ide-icon--windsurf {
+      background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+      color: white;
+    }
+
+    .ai-ide__ide-info h4 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--color-text);
+    }
+
+    .ai-ide__ide-info p {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .ai-ide__ide-tag {
+      margin-left: auto;
+      padding: 6px 12px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-primary-bright);
+    }
+
+    .ai-ide__terminal {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .ai-ide__terminal-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      background: var(--color-bg-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .ai-ide__terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .ai-ide__terminal-dot--red { background: #EF4444; }
+    .ai-ide__terminal-dot--yellow { background: #F59E0B; }
+    .ai-ide__terminal-dot--green { background: #10B981; }
+
+    .ai-ide__terminal-title {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .ai-ide__terminal-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .ai-ide__terminal-comment {
+      color: var(--color-text-subtle);
+    }
+
+    .ai-ide__terminal-file {
+      color: var(--color-text-muted);
+      margin-bottom: 16px;
+    }
+
+    .ai-ide__terminal-code {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .ai-ide__terminal-json {
+      color: var(--color-text);
+    }
+
+    .ai-ide__terminal-key {
+      color: #60A5FA;
+    }
+
+    .ai-ide__terminal-string {
+      color: #34D399;
+    }
+
+    .ai-ide__terminal-prompt {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      margin-top: 20px;
+    }
+
+    .ai-ide__terminal-prompt-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--color-primary-bright);
+    }
+
+    .ai-ide__terminal-prompt-text {
+      flex: 1;
+      color: var(--color-text);
+    }
+
+    .ai-ide__terminal-prompt-cursor {
+      width: 2px;
+      height: 18px;
+      background: var(--color-primary-bright);
+      animation: blink 1s step-end infinite;
+    }
+
+    .ai-ide__terminal-output {
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ai-ide__terminal-output svg {
+      width: 20px;
+      height: 20px;
+      color: var(--color-success);
+    }
+
+    .ai-ide__terminal-output span {
+      color: var(--color-success);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1024px) {
+      .ai-ide__content {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .ai-ide__ides {
+        order: 2;
+      }
+
+      .ai-ide__terminal {
+        order: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .ai-ide {
+        padding: 60px 0 80px;
+      }
+
+      .ai-ide__ide-card {
+        padding: 16px;
+        gap: 14px;
+      }
+
+      .ai-ide__ide-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 18px;
+      }
+
+      .ai-ide__ide-info h4 {
+        font-size: 15px;
+      }
+
+      .ai-ide__ide-tag {
+        display: none;
+      }
+
+      .ai-ide__terminal-body {
+        padding: 16px;
+        font-size: 11px;
+      }
+    }
+
+    /* ============================================
        Live Playground Section - THE MAGIC
        ============================================ */
     .playground {
@@ -1981,6 +2485,100 @@
     @media (max-width: 768px) {
       .airtable__demo {
         display: none;
+      }
+    }
+
+    /* ============================================
+       Document Types Gallery
+       ============================================ */
+    .doc-types {
+      position: relative;
+      padding: var(--space-section) 0;
+      z-index: 2;
+    }
+
+    .doc-types__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .doc-type-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-align: center;
+      transition: all var(--transition-smooth);
+      cursor: default;
+    }
+
+    .doc-type-card:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px -8px rgba(30, 58, 95, 0.3);
+    }
+
+    .doc-type-card__icon {
+      width: 48px;
+      height: 48px;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: var(--color-primary-bright);
+    }
+
+    .doc-type-card__icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .doc-type-card__name {
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .doc-type-card__description {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1024px) {
+      .doc-types__grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .doc-types__grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .doc-type-card {
+        padding: 20px 16px;
+      }
+
+      .doc-type-card__icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 12px;
+      }
+
+      .doc-type-card__icon svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .doc-type-card__name {
+        font-size: 14px;
       }
     }
 
@@ -3660,9 +4258,9 @@
         <span class="nav__logo-text">Glyph</span>
       </a>
       <ul class="nav__links">
+        <li><a href="#ai-ide" class="nav__link">AI IDEs</a></li>
         <li><a href="#playground" class="nav__link">Playground</a></li>
         <li><a href="#features" class="nav__link">Features</a></li>
-        <li><a href="#airtable" class="nav__link">Airtable</a></li>
         <li><a href="#pricing" class="nav__link">Pricing</a></li>
         <li><a href="/docs" class="nav__link">Docs</a></li>
       </ul>
@@ -3683,9 +4281,9 @@
   <!-- Mobile Menu -->
   <div class="nav__mobile-menu" id="mobile-menu">
     <ul class="nav__mobile-links">
+      <li><a href="#ai-ide">AI IDEs</a></li>
       <li><a href="#playground">Playground</a></li>
       <li><a href="#features">Features</a></li>
-      <li><a href="#airtable">Airtable</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="/docs">Docs</a></li>
     </ul>
@@ -3778,6 +4376,109 @@
     </div>
   </section>
 
+  <!-- AI IDE Integration Section - THE DIFFERENTIATOR -->
+  <section class="ai-ide" id="ai-ide">
+    <div class="container">
+      <div class="ai-ide__header">
+        <div class="ai-ide__badge">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          First of its Kind
+        </div>
+        <h2 class="ai-ide__title">Built for <span>AI-Native Development</span></h2>
+        <p class="ai-ide__subtitle">
+          The only PDF SDK with native MCP integration. Generate and customize documents directly from your AI coding assistant using natural language.
+        </p>
+      </div>
+
+      <div class="ai-ide__content">
+        <!-- IDE Cards -->
+        <div class="ai-ide__ides">
+          <div class="ai-ide__ide-card">
+            <div class="ai-ide__ide-icon ai-ide__ide-icon--claude">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
+            </div>
+            <div class="ai-ide__ide-info">
+              <h4>Claude Code</h4>
+              <p>Generate PDFs with natural language in your terminal</p>
+            </div>
+            <span class="ai-ide__ide-tag">MCP Server</span>
+          </div>
+
+          <div class="ai-ide__ide-card">
+            <div class="ai-ide__ide-icon ai-ide__ide-icon--cursor">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.447 20.452h-16.894v-16.904h16.894v16.904zm-14.894-2h12.894v-12.904h-12.894v12.904z"/>
+                <path d="M8 8h8v2h-8zm0 4h8v2h-8z"/>
+              </svg>
+            </div>
+            <div class="ai-ide__ide-info">
+              <h4>Cursor</h4>
+              <p>AI-first code editor with Glyph superpowers</p>
+            </div>
+            <span class="ai-ide__ide-tag">MCP Server</span>
+          </div>
+
+          <div class="ai-ide__ide-card">
+            <div class="ai-ide__ide-icon ai-ide__ide-icon--windsurf">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+            </div>
+            <div class="ai-ide__ide-info">
+              <h4>Windsurf</h4>
+              <p>Seamless PDF generation in your flow state</p>
+            </div>
+            <span class="ai-ide__ide-tag">MCP Server</span>
+          </div>
+        </div>
+
+        <!-- Terminal Mockup -->
+        <div class="ai-ide__terminal">
+          <div class="ai-ide__terminal-header">
+            <span class="ai-ide__terminal-dot ai-ide__terminal-dot--red"></span>
+            <span class="ai-ide__terminal-dot ai-ide__terminal-dot--yellow"></span>
+            <span class="ai-ide__terminal-dot ai-ide__terminal-dot--green"></span>
+            <span class="ai-ide__terminal-title">~/.config/claude/mcp.json</span>
+          </div>
+          <div class="ai-ide__terminal-body">
+            <div class="ai-ide__terminal-comment">// Add Glyph to your MCP config</div>
+            <div class="ai-ide__terminal-code">
+              <div class="ai-ide__terminal-json">
+{<br>
+&nbsp;&nbsp;<span class="ai-ide__terminal-key">"mcpServers"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ai-ide__terminal-key">"glyph"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ai-ide__terminal-key">"command"</span>: <span class="ai-ide__terminal-string">"npx"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ai-ide__terminal-key">"args"</span>: [<span class="ai-ide__terminal-string">"-y"</span>, <span class="ai-ide__terminal-string">"@glyph-pdf/mcp-server"</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+              </div>
+            </div>
+
+            <div class="ai-ide__terminal-prompt">
+              <svg class="ai-ide__terminal-prompt-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              <span class="ai-ide__terminal-prompt-text">Create an invoice PDF for Acme Corp, $2,500, modern style</span>
+              <span class="ai-ide__terminal-prompt-cursor"></span>
+            </div>
+
+            <div class="ai-ide__terminal-output">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span>Generated invoice-acme-corp.pdf (1 page, 42KB)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Integration Options Section -->
   <section class="integration-options">
     <div class="container">
@@ -3856,6 +4557,96 @@
             <span class="integration-card__tool">Vue</span>
             <span class="integration-card__tool">HTML</span>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof Section -->
+  <section class="social-proof">
+    <div class="container">
+      <div class="social-proof__header">
+        <div class="social-proof__label">Built for Developers</div>
+        <div class="social-proof__title">Enterprise-grade PDF generation you can trust</div>
+      </div>
+
+      <div class="social-proof__grid">
+        <!-- TypeScript Native -->
+        <div class="proof-item">
+          <div class="proof-item__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+          </div>
+          <div class="proof-item__stat">100%</div>
+          <div class="proof-item__label">TypeScript Native</div>
+        </div>
+
+        <!-- Document Types -->
+        <div class="proof-item">
+          <div class="proof-item__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="proof-item__stat">12+</div>
+          <div class="proof-item__label">Document Types</div>
+        </div>
+
+        <!-- No Data Stored -->
+        <div class="proof-item">
+          <div class="proof-item__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+          <div class="proof-item__stat">Zero</div>
+          <div class="proof-item__label">Data Stored</div>
+        </div>
+
+        <!-- Open Source -->
+        <div class="proof-item">
+          <div class="proof-item__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="proof-item__stat">Open</div>
+          <div class="proof-item__label">Source MIT License</div>
+        </div>
+      </div>
+
+      <!-- Integration Badges -->
+      <div class="social-proof__badges">
+        <div class="proof-badge proof-badge--highlight">
+          <svg class="proof-badge__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Built with Claude AI
+        </div>
+        <div class="proof-badge">
+          <svg class="proof-badge__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+          </svg>
+          MCP Compatible
+        </div>
+        <div class="proof-badge">
+          <svg class="proof-badge__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Works with Claude Code
+        </div>
+        <div class="proof-badge">
+          <svg class="proof-badge__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Cursor & Windsurf Ready
+        </div>
+        <div class="proof-badge">
+          <svg class="proof-badge__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          GDPR Compliant
         </div>
       </div>
     </div>
@@ -4264,6 +5055,159 @@
     </div>
   </section>
 
+  <!-- Document Types Gallery -->
+  <section class="doc-types" id="doc-types">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Document Types
+        </div>
+        <h2 class="section-title">12 Document Types, One SDK</h2>
+        <p class="section-subtitle">
+          Generate any business document with the same simple API. From quotes to contracts, we've got you covered.
+        </p>
+      </div>
+
+      <div class="doc-types__grid">
+        <!-- Quote / Estimate -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Quote / Estimate</div>
+          <div class="doc-type-card__description">Price proposals for clients</div>
+        </div>
+
+        <!-- Invoice -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Invoice</div>
+          <div class="doc-type-card__description">Bills for completed work</div>
+        </div>
+
+        <!-- Receipt -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Receipt</div>
+          <div class="doc-type-card__description">Payment confirmations</div>
+        </div>
+
+        <!-- Contract -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Contract</div>
+          <div class="doc-type-card__description">Legal agreements</div>
+        </div>
+
+        <!-- Proposal -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Proposal</div>
+          <div class="doc-type-card__description">Project scope documents</div>
+        </div>
+
+        <!-- Work Order -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Work Order</div>
+          <div class="doc-type-card__description">Service authorization</div>
+        </div>
+
+        <!-- Packing Slip -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Packing Slip</div>
+          <div class="doc-type-card__description">Shipment contents list</div>
+        </div>
+
+        <!-- Purchase Order -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Purchase Order</div>
+          <div class="doc-type-card__description">Buyer order requests</div>
+        </div>
+
+        <!-- Statement -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Statement</div>
+          <div class="doc-type-card__description">Account summaries</div>
+        </div>
+
+        <!-- Credit Note -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Credit Note</div>
+          <div class="doc-type-card__description">Refund documentation</div>
+        </div>
+
+        <!-- Delivery Note -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Delivery Note</div>
+          <div class="doc-type-card__description">Proof of delivery</div>
+        </div>
+
+        <!-- Pro Forma Invoice -->
+        <div class="doc-type-card">
+          <div class="doc-type-card__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div class="doc-type-card__name">Pro Forma Invoice</div>
+          <div class="doc-type-card__description">Preliminary bills</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Pricing Section -->
   <section class="pricing" id="pricing">
     <div class="container">
@@ -4297,7 +5241,7 @@
             </li>
             <li>
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              All 3 templates
+              All 12 document types
             </li>
             <li>
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
