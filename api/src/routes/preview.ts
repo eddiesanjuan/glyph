@@ -83,8 +83,11 @@ preview.post(
         html: result.html,
       };
 
-      // If Supabase is configured and we have an API key, create session and track usage
-      if (supabase && apiKeyId) {
+      // Get tier to determine session handling
+      const tier = c.get("tier") as string | undefined;
+
+      // If Supabase is configured and we have an API key (not demo), create session and track usage
+      if (supabase && apiKeyId && tier !== "demo") {
         try {
           // Calculate session expiration (1 hour from now)
           const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
@@ -130,10 +133,10 @@ preview.post(
           console.error("Database error:", dbError);
           // Continue without session tracking
         }
-      } else if (!supabase) {
-        // Development mode: Create a session in memory storage
+      } else if (!supabase || tier === "demo") {
+        // Development mode OR demo tier: Create a session in memory storage
         // This allows the SDK to work without database configuration
-        // Store both rendered HTML and template HTML for AI modifications
+        // And allows demo playground to work without database entries
         const devSessionId = generateDevSessionId();
         createDevSession(
           devSessionId,
