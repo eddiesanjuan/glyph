@@ -1,0 +1,25 @@
+# Source files (dist is published)
+src/
+public/
+
+# Config files
+vite.config.ts
+tsconfig.json
+.gitkeep
+
+# Test files
+test/
+*.test.ts
+*.spec.ts
+
+# Development
+.vscode/
+.idea/
+*.log
+
+# Build artifacts not needed
+*.map
+
+# OS files
+.DS_Store
+Thumbs.db

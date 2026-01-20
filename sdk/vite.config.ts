@@ -7,8 +7,12 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'Glyph',
-      formats: ['es', 'iife'],
-      fileName: (format) => format === 'es' ? 'glyph.esm.js' : 'glyph.min.js'
+      formats: ['es', 'cjs', 'iife'],
+      fileName: (format) => {
+        if (format === 'es') return 'glyph.esm.js';
+        if (format === 'cjs') return 'glyph.cjs.js';
+        return 'glyph.min.js';
+      }
     },
     minify: 'esbuild',
     target: 'es2020',
@@ -21,7 +25,9 @@ export default defineConfig({
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'style.css') return 'style.css';
           return assetInfo.name || 'asset';
-        }
+        },
+        // Preserve exports for CJS
+        exports: 'named'
       }
     }
   },

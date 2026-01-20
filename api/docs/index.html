@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glyph API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css" />
+  <link rel="icon" type="image/png" href="https://glyph.so/favicon.ico">
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow-y: scroll;
+    }
+
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+
+    body {
+      margin: 0;
+      background: #fafafa;
+    }
+
+    .swagger-ui .topbar {
+      display: none;
+    }
+
+    .swagger-ui .info {
+      margin: 50px 0;
+    }
+
+    .swagger-ui .info .title {
+      font-size: 36px;
+      color: #1a1a2e;
+    }
+
+    .swagger-ui .info .description p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* Custom header */
+    .glyph-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px 40px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .glyph-header h1 {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .glyph-header nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    .glyph-header nav a:hover {
+      opacity: 1;
+    }
+
+    /* Customize tag colors */
+    .swagger-ui .opblock-tag {
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .swagger-ui .opblock.opblock-post {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .swagger-ui .opblock.opblock-post .opblock-summary-method {
+      background: #667eea;
+    }
+
+    .swagger-ui .opblock.opblock-get {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.1);
+    }
+
+    .swagger-ui .opblock.opblock-get .opblock-summary-method {
+      background: #22c55e;
+    }
+
+    .swagger-ui .opblock.opblock-delete {
+      border-color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+      background: #ef4444;
+    }
+
+    /* Footer */
+    .glyph-footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      border-top: 1px solid #e8e8e8;
+      margin-top: 40px;
+    }
+
+    .glyph-footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .glyph-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header class="glyph-header">
+    <h1>Glyph API</h1>
+    <nav>
+      <a href="https://glyph.so" target="_blank">Home</a>
+      <a href="https://glyph.so/dashboard" target="_blank">Dashboard</a>
+      <a href="https://github.com/glyph-so" target="_blank">GitHub</a>
+    </nav>
+  </header>
+
+  <div id="swagger-ui"></div>
+
+  <footer class="glyph-footer">
+    <p>
+      &copy; 2024 Glyph.
+      <a href="https://glyph.so/terms">Terms</a> &middot;
+      <a href="https://glyph.so/privacy">Privacy</a> &middot;
+      <a href="mailto:support@glyph.so">Support</a>
+    </p>
+  </footer>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "../openapi.yaml",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 2,
+        displayOperationId: false,
+        docExpansion: "list",
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        tryItOutEnabled: true,
+        persistAuthorization: true,
+        syntaxHighlight: {
+          activate: true,
+          theme: "nord"
+        }
+      });
+    };
+  </script>
+</body>
+</html>

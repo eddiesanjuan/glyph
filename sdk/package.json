@@ -1,37 +1,73 @@
 {
-  "name": "@glyph-pdf/core",
+  "name": "@glyph-pdf/sdk",
   "version": "0.5.1",
-  "description": "Embeddable PDF editor SDK with AI-powered document generation",
+  "description": "Embeddable PDF editor SDK with AI-powered document generation. Add professional PDF editing to any web app with a single web component.",
   "type": "module",
-  "main": "./dist/glyph.esm.js",
+  "main": "./dist/glyph.cjs.js",
   "module": "./dist/glyph.esm.js",
+  "browser": "./dist/glyph.esm.js",
+  "unpkg": "./dist/glyph.min.js",
+  "jsdelivr": "./dist/glyph.min.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/glyph.esm.js",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/glyph.esm.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/glyph.cjs.js"
+      }
     },
     "./style.css": "./dist/style.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "*.css"
   ],
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build && tsc --emitDeclarationOnly",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:serve": "node test/serve.js"
+    "test:serve": "node test/serve.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "pdf",
-    "editor",
+    "pdf-editor",
+    "pdf-generation",
     "web-component",
+    "custom-element",
     "ai",
-    "document-generation"
+    "ai-powered",
+    "document-generation",
+    "document-editor",
+    "embeddable",
+    "sdk",
+    "typescript",
+    "quote-generator",
+    "invoice-generator"
   ],
-  "author": "Glyph",
+  "author": {
+    "name": "Eddie San Juan",
+    "email": "eddie@glyphpdf.com"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eddiesanjuan/glyph.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://glyphpdf.com",
+  "bugs": {
+    "url": "https://github.com/eddiesanjuan/glyph/issues"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "typescript": "^5.3.0",
