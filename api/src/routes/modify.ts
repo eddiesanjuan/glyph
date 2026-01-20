@@ -12,7 +12,6 @@ import { z } from "zod";
 import {
   modifyTemplate,
   modifyHtml,
-  validateModification,
 } from "../services/ai.js";
 import {
   validatePrompt,
@@ -256,46 +255,20 @@ modify.post("/", async (c) => {
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
       const result = await modifyTemplate(templateToModify, prompt, region);
 
-      // GUARDRAIL: Validate the AI output against original template
-      const originalTemplate = session.template_html || session.original_html;
-      const validation = validateModification(
-        originalTemplate,
-        result.html
-      );
-
-      // Additional comprehensive guardrail validation
-      const guardrailValidation = validateGuardrails(
-        originalTemplate,
-        result.html
-      );
-
-      // Combine validation results
-      const allIssues = [
-        ...validation.issues,
-        ...guardrailValidation.violations,
-      ];
-      const isFullyValid = validation.valid && guardrailValidation.valid;
-
-      // Store the modified template HTML (still has Mustache vars)
+      // PERFORMANCE: Skip synchronous validation to return response faster
+      // Background validation at line ~365 will catch issues asynchronously
+      // Only do FAST security check for critical XSS/script injection
       let modifiedTemplateHtml = result.html;
 
-      if (!isFullyValid) {
-        console.warn("Guardrail violations detected:", allIssues);
+      // FAST security check - only check for script injection (< 1ms)
+      const hasScriptInjection = /<script/i.test(result.html) ||
+        /javascript:/i.test(result.html) ||
+        /<iframe/i.test(result.html) ||
+        /\son\w+\s*=/i.test(result.html);
 
-        // For critical violations (security), reject the modification
-        const criticalViolations = guardrailValidation.violations.filter(
-          (v) =>
-            v.includes("Script") ||
-            v.includes("JavaScript") ||
-            v.includes("iframe") ||
-            v.includes("event handler")
-        );
-
-        if (criticalViolations.length > 0) {
-          // Sanitize and use sanitized version
-          modifiedTemplateHtml = sanitizeHtml(result.html);
-          console.warn("Applied HTML sanitization due to:", criticalViolations);
-        }
+      if (hasScriptInjection) {
+        modifiedTemplateHtml = sanitizeHtml(result.html);
+        console.warn("[Security] Applied HTML sanitization for potential script injection");
       }
 
       // FIX: Re-render the modified template with the original data
@@ -373,11 +346,11 @@ modify.post("/", async (c) => {
       );
 
       // Return the RENDERED HTML (with actual data) to the frontend
+      // Note: Validation is now done asynchronously in background
       return c.json({
         html: renderedHtml,
         changes: result.changes,
         tokensUsed: result.tokensUsed,
-        validationWarnings: allIssues.length > 0 ? allIssues : undefined,
       });
     } else {
       // Direct HTML modification (legacy mode)

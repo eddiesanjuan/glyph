@@ -1090,50 +1090,116 @@ SPECIAL PATTERNS:
 - Make body position:relative if adding positioned elements`;
 
 /**
- * Determine if a modification is "simple" and can use the fast model
+ * Determine if a modification is "simple" and can use the fast model (Haiku)
+ *
+ * PERFORMANCE CRITICAL: Haiku is 2-5x faster than Sonnet
+ * - Haiku: ~1-3 seconds
+ * - Sonnet: ~4-10 seconds
+ *
+ * Be aggressive about using Haiku. Only use Sonnet for:
+ * 1. Brand styling (Stripe, Apple, etc.) - needs deep CSS knowledge
+ * 2. Complex layout restructuring
+ * 3. Multi-part requests that need coordination
  */
 function isSimpleModification(prompt: string): boolean {
   const lowPrompt = prompt.toLowerCase();
 
   // COMPLEX patterns that ALWAYS need full Sonnet AI (never Haiku)
-  // Brand styling requires deep CSS understanding and comprehensive changes
+  // These require deep understanding and comprehensive changes
   const complexPatterns = [
+    // Brand styling - needs holistic CSS overhaul
     /look\s*like\s*(a\s+)?(stripe|apple|shopify|airbnb|notion)/i,
-    /stripe|apple|shopify|airbnb|notion/i, // Brand names in general
-    /(brand|corporate|professional)\s*styl/i,
+    /stripe\s*(style|look|aesthetic|design|invoice)/i,
+    /apple\s*(style|look|aesthetic|design)/i,
+    /shopify\s*(style|look|aesthetic|design)/i,
+    /(brand|corporate)\s*styl/i,
     /complete\s*redesign/i,
     /overhaul/i,
+    // Complex styling that needs understanding of the whole document
     /make\s*(it|this)?\s*(look\s*)?(modern|clean|minimal|professional|sleek)/i,
+    // Layout restructuring
+    /restructure/i,
+    /reorganize.*layout/i,
+    /complete.*makeover/i,
   ];
 
-  // If it matches any complex pattern, it's NOT simple
+  // If it matches any complex pattern, use Sonnet
   if (complexPatterns.some(p => p.test(lowPrompt))) {
     return false;
   }
 
-  // Simple modifications that don't require deep understanding
-  // IMPORTANT: Only include patterns that INJECT content, not patterns that could
-  // remove, hide, or relocate existing content - those need full Sonnet prompts
+  // SIMPLE modifications - use fast Haiku model
+  // These are well-defined, focused changes that don't need deep reasoning
   const simplePatterns = [
-    /add.*qr/i,
-    /add.*watermark/i,
-    /change.*color/i,
-    /make.*(the\s+)?(header|accent|title)\s*(color\s+)?(blue|red|green|purple|orange|teal)/i, // Simple color only
-    /add.*logo/i,
-    /add.*phone/i,
-    /add.*email/i,
-    /add.*terms/i,
-    /add.*draft/i,
-    // REMOVED: /add.*signature/i - needs full Sonnet prompt to preserve document structure
-    // REMOVED: /remove.*section/i - dangerous, can wipe content
-    // REMOVED: /hide.*section/i - dangerous, can wipe content
-    // REMOVED: /move.*left|right|center/i - complex layout changes need full prompts
-  ];
+    // Visual additions (fast path handles many, but Haiku is backup)
+    /add\s*(a\s+)?qr/i,
+    /add\s*(a\s+)?watermark/i,
+    /add\s*(a\s+)?logo/i,
+    /add\s*(a\s+)?draft/i,
 
-  // Signature/thank you patterns need full Sonnet model - they can wipe content if not handled carefully
-  if (/add.*(signature|thank\s*you)/i.test(lowPrompt)) {
-    return false;
-  }
+    // Color changes - straightforward CSS updates
+    /change\s*(the\s+)?(.*\s+)?color/i,
+    /make\s*(the\s+)?(header|accent|title|text|background)\s*(color\s+)?\w+/i,
+    /(header|accent|title|background)\s*color/i,
+    /color\s*to\s*(blue|red|green|purple|orange|teal|pink|navy|black|white|gray|grey)/i,
+
+    // Field additions - inject content at known locations
+    /add\s*(a\s+)?(the\s+)?(client'?s?\s+)?(phone|email|fax|address)/i,
+    /add\s*(a\s+)?po\s*number/i,
+    /add\s*(a\s+)?purchase\s*order/i,
+    /add\s*(a\s+)?(payment\s*)?terms/i,
+    /add\s*(a\s+)?notes?\s*(section|field)?/i,
+    /add\s*(a\s+)?tax\s*(line|row|field)?/i,
+    /add\s*(a\s+)?shipping/i,
+    /add\s*(a\s+)?discount/i,
+    /add\s*(a\s+)?due\s*date/i,
+    /add\s*(a\s+)?project\s*name/i,
+
+    // Simple text/label changes
+    /change\s*(the\s+)?label/i,
+    /rename\s*(the\s+)?/i,
+    /change\s*"[^"]+"\s*to\s*"[^"]+"/i,
+    /"[^"]+"\s*to\s*"[^"]+"/i,
+
+    // Text formatting - simple CSS
+    /make\s*(the\s+)?\w+\s*(bold|italic|underline|larger|smaller)/i,
+    /bold\s*(the\s+)?/i,
+    /increase\s*(the\s+)?(font|text)\s*size/i,
+    /decrease\s*(the\s+)?(font|text)\s*size/i,
+
+    // Spacing adjustments - simple CSS
+    /add\s*(more\s+)?spacing/i,
+    /add\s*(more\s+)?padding/i,
+    /increase\s*(the\s+)?spacing/i,
+    /increase\s*(the\s+)?padding/i,
+    /reduce\s*(the\s+)?spacing/i,
+
+    // Table styling - focused CSS changes
+    /zebra\s*strip/i,
+    /alternate\s*row/i,
+    /striped\s*table/i,
+    /add\s*row\s*borders?/i,
+    /add\s*table\s*borders?/i,
+
+    // Border/visual tweaks
+    /add\s*(a\s+)?border/i,
+    /remove\s*(the\s+)?border/i,
+    /round\s*(the\s+)?corners/i,
+    /add\s*(a\s+)?shadow/i,
+
+    // Alignment - simple CSS
+    /center\s*(the\s+)?(title|header|text|logo)/i,
+    /align\s*(the\s+)?\w+\s*(left|right|center)/i,
+    /left\s*align/i,
+    /right\s*align/i,
+
+    // Show/hide simple elements (not complex restructuring)
+    /show\s*(the\s+)?(date|number|total|subtotal)/i,
+    /hide\s*(the\s+)?(date|number)/i,
+
+    // Signature - now safe with intent pattern guidance
+    /add\s*(a\s+)?(thank\s*you|signature)/i,
+  ];
 
   return simplePatterns.some(p => p.test(lowPrompt));
 }
@@ -1145,7 +1211,8 @@ export async function modifyTemplate(
 ): Promise<ModifyResult> {
   // FAST PATH: Try deterministic transformations first (no AI needed)
   // This handles QR codes, watermarks, and simple color changes in <100ms
-  if (!region && canFastTransform(userPrompt)) {
+  // Note: Fast transforms work regardless of region selection since they don't depend on region context
+  if (canFastTransform(userPrompt)) {
     const startTime = Date.now();
     const fastResult = fastTransform(currentHtml, userPrompt);
 

@@ -140,6 +140,15 @@ export function canFastTransform(prompt: string): boolean {
   // Patterns like "add signature" or "add a signature line" but NOT "add thank you and signature"
   if (/^add\s+(a\s+)?signature\s*(line|block|section)?$/i.test(lower)) return true;
 
+  // Thank you message additions
+  if (/add\s+(a\s+)?thank\s*you(\s+message|\s+note)?/i.test(lower)) return true;
+
+  // Zebra stripes / alternating row colors
+  if (/zebra\s*stripe/i.test(lower) || /striped\s*table/i.test(lower) || /alternate\s*(row\s*)?(color|colour)/i.test(lower)) return true;
+
+  // Table border additions
+  if (/add\s+(a\s+)?(table\s*)?border/i.test(lower)) return true;
+
   return false;
 }
 
@@ -206,6 +215,21 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
   // Only match simple signature requests, not compound ones
   if (/^add\s+(a\s+)?signature\s*(line|block|section)?$/i.test(lower)) {
     return addSignature(html);
+  }
+
+  // === THANK YOU MESSAGE ===
+  if (/add\s+(a\s+)?thank\s*you(\s+message|\s+note)?/i.test(lower)) {
+    return addThankYouMessage(html);
+  }
+
+  // === ZEBRA STRIPES / ALTERNATING ROW COLORS ===
+  if (/zebra\s*stripe/i.test(lower) || /striped\s*table/i.test(lower) || /alternate\s*(row\s*)?(color|colour)/i.test(lower)) {
+    return addZebraStripes(html);
+  }
+
+  // === TABLE BORDER ===
+  if (/add\s+(a\s+)?(table\s*)?border/i.test(lower)) {
+    return addTableBorder(html);
   }
 
   // Not a fast-transformable request
@@ -781,6 +805,249 @@ function addSignature(html: string): FastTransformResult {
   return {
     html: modifiedHtml,
     changes: ['Added signature lines'],
+    transformed: true,
+  };
+}
+
+/**
+ * Add thank you message to document - before footer or at end
+ */
+function addThankYouMessage(html: string): FastTransformResult {
+  // Check if thank you message already exists
+  if (html.includes('glyph-thank-you') || /thank\s*you\s*for\s*(your\s*)?business/i.test(html)) {
+    return {
+      html,
+      changes: ['Thank you message already present'],
+      transformed: true,
+    };
+  }
+
+  const thankYouHtml = `<div class="glyph-thank-you" style="margin-top: 24px; padding: 16px; text-align: center; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 8px; border: 1px solid #bae6fd;">
+  <p style="margin: 0; font-size: 14px; color: #0369a1; font-weight: 500;">Thank you for your business!</p>
+  <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">We appreciate your trust and look forward to serving you again.</p>
+</div>`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Insert before footer region if it exists
+  if (/data-glyph-region="footer"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<[^>]+data-glyph-region="footer")/i,
+      `${thankYouHtml}\n$1`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added thank you message before footer'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Insert before signature section if it exists
+  if (/class="glyph-signature-section"/i.test(modifiedHtml) || /class="signature/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<div[^>]*class="[^"]*signature)/i,
+      `${thankYouHtml}\n$1`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added thank you message before signature'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Insert before closing </body> tag
+  if (/<\/body>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<\/body>/i,
+      `\n${thankYouHtml}\n</body>`
+    );
+    return {
+      html: modifiedHtml,
+      changes: ['Added thank you message'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 4: Append to end of document
+  modifiedHtml = modifiedHtml + `\n${thankYouHtml}`;
+  return {
+    html: modifiedHtml,
+    changes: ['Added thank you message'],
+    transformed: true,
+  };
+}
+
+/**
+ * Add zebra stripes (alternating row colors) to tables
+ */
+function addZebraStripes(html: string): FastTransformResult {
+  // Check if zebra stripes already exist
+  if (/tr:nth-child\s*\(\s*(even|odd)\s*\)/i.test(html) || html.includes('glyph-zebra-stripes')) {
+    return {
+      html,
+      changes: ['Zebra stripes already present'],
+      transformed: true,
+    };
+  }
+
+  const zebraStripesCSS = `
+/* Glyph zebra stripes */
+.glyph-zebra-stripes tr:nth-child(even),
+table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+table thead tr,
+table tr:first-child {
+  background-color: #f1f5f9 !important;
+}`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Add CSS to existing <style> tag
+  if (/<style[^>]*>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<style[^>]*>)/i,
+      `$1${zebraStripesCSS}`
+    );
+
+    // Also add class to tables for specificity
+    modifiedHtml = modifiedHtml.replace(
+      /<table(?![^>]*glyph-zebra-stripes)/gi,
+      '<table class="glyph-zebra-stripes"'
+    );
+
+    return {
+      html: modifiedHtml,
+      changes: ['Added zebra stripes (alternating row colors) to tables'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Add <style> tag with zebra stripes before </head>
+  if (/<\/head>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<\/head>/i,
+      `<style>${zebraStripesCSS}</style>\n</head>`
+    );
+
+    // Also add class to tables
+    modifiedHtml = modifiedHtml.replace(
+      /<table(?![^>]*glyph-zebra-stripes)/gi,
+      '<table class="glyph-zebra-stripes"'
+    );
+
+    return {
+      html: modifiedHtml,
+      changes: ['Added zebra stripes (alternating row colors) to tables'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Add inline style tag at start of document
+  modifiedHtml = `<style>${zebraStripesCSS}</style>\n` + modifiedHtml;
+
+  // Also add class to tables
+  modifiedHtml = modifiedHtml.replace(
+    /<table(?![^>]*glyph-zebra-stripes)/gi,
+    '<table class="glyph-zebra-stripes"'
+  );
+
+  return {
+    html: modifiedHtml,
+    changes: ['Added zebra stripes (alternating row colors) to tables'],
+    transformed: true,
+  };
+}
+
+/**
+ * Add border styling to tables
+ */
+function addTableBorder(html: string): FastTransformResult {
+  // Check if table borders already exist
+  if (/table[^{]*\{[^}]*border/i.test(html) || html.includes('glyph-bordered-table')) {
+    return {
+      html,
+      changes: ['Table borders already present'],
+      transformed: true,
+    };
+  }
+
+  const tableBorderCSS = `
+/* Glyph table borders */
+.glyph-bordered-table,
+table {
+  border-collapse: collapse;
+  border: 1px solid #e5e7eb;
+}
+.glyph-bordered-table th,
+.glyph-bordered-table td,
+table th,
+table td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+}
+.glyph-bordered-table thead,
+table thead {
+  background-color: #f9fafb;
+}`;
+
+  let modifiedHtml = html;
+
+  // Strategy 1: Add CSS to existing <style> tag
+  if (/<style[^>]*>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<style[^>]*>)/i,
+      `$1${tableBorderCSS}`
+    );
+
+    // Also add class to tables for specificity
+    modifiedHtml = modifiedHtml.replace(
+      /<table(?![^>]*glyph-bordered-table)/gi,
+      '<table class="glyph-bordered-table"'
+    );
+
+    return {
+      html: modifiedHtml,
+      changes: ['Added borders to tables'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 2: Add <style> tag with borders before </head>
+  if (/<\/head>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<\/head>/i,
+      `<style>${tableBorderCSS}</style>\n</head>`
+    );
+
+    // Also add class to tables
+    modifiedHtml = modifiedHtml.replace(
+      /<table(?![^>]*glyph-bordered-table)/gi,
+      '<table class="glyph-bordered-table"'
+    );
+
+    return {
+      html: modifiedHtml,
+      changes: ['Added borders to tables'],
+      transformed: true,
+    };
+  }
+
+  // Strategy 3: Add inline style tag at start of document
+  modifiedHtml = `<style>${tableBorderCSS}</style>\n` + modifiedHtml;
+
+  // Also add class to tables
+  modifiedHtml = modifiedHtml.replace(
+    /<table(?![^>]*glyph-bordered-table)/gi,
+    '<table class="glyph-bordered-table"'
+  );
+
+  return {
+    html: modifiedHtml,
+    changes: ['Added borders to tables'],
     transformed: true,
   };
 }

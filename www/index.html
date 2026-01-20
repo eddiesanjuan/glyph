@@ -1413,42 +1413,48 @@
     .playground__body {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      min-height: 500px;
+      min-height: 420px;
+      max-height: 520px;
     }
 
     .playground__input-area {
-      padding: 24px;
+      padding: 20px;
       border-right: 1px solid var(--color-border-subtle);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .playground__prompt {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      min-height: 0;
     }
 
     .playground__prompt-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--color-text-subtle);
+      flex-shrink: 0;
     }
 
     .playground__input {
       flex: 1;
       width: 100%;
-      padding: 16px;
+      min-height: 80px;
+      max-height: 100px;
+      padding: 12px;
       background: var(--color-surface);
       border: 1px solid var(--color-border-subtle);
       border-radius: var(--radius-md);
       color: var(--color-text);
       font-family: var(--font-body);
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 14px;
+      line-height: 1.5;
       resize: none;
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
@@ -1466,7 +1472,7 @@
     /* Playground input wrapper for autocomplete positioning */
     .playground__input-wrapper {
       position: relative;
-      flex: 1;
+      flex: 0 0 auto;
       display: flex;
     }
 
@@ -1712,15 +1718,15 @@
     .playground__suggestions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
     }
 
     .playground__suggestion {
-      padding: 8px 14px;
+      padding: 6px 12px;
       background: var(--color-primary-subtle);
       border: 1px solid var(--color-border);
       border-radius: 100px;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--color-text-muted);
       cursor: pointer;
       transition: all var(--transition-fast);
@@ -1740,29 +1746,31 @@
     }
 
     .playground__hint {
-      margin-top: 12px;
-      font-size: 13px;
+      margin-top: 8px;
+      font-size: 12px;
       color: var(--color-text-subtle);
       font-style: italic;
     }
 
     .playground__preview-area {
-      padding: 24px;
+      padding: 16px;
       background: var(--color-bg-elevated);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .playground__preview-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--color-text-subtle);
-      margin-bottom: 16px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .playground__preview-status {
@@ -1789,7 +1797,8 @@
       border-radius: var(--radius-md);
       overflow: hidden;
       position: relative;
-      min-height: 400px;
+      min-height: 320px;
+      max-height: 400px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1798,7 +1807,7 @@
     .playground__preview-frame-wrapper {
       width: 850px;
       height: 1100px;
-      transform: scale(0.45);
+      transform: scale(0.35);
       transform-origin: center center;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
       border-radius: 4px;
@@ -1934,21 +1943,24 @@
     }
 
     .playground__rate-notice {
-      margin-top: 16px;
-      padding: 12px 16px;
+      margin-top: 12px;
+      padding: 8px 12px;
       background: var(--color-primary-subtle);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
-      font-size: 13px;
+      font-size: 11px;
       color: var(--color-text-muted);
       text-align: center;
+      flex-shrink: 0;
     }
 
     /* Apply Button - Prominent */
     .playground__apply-btn {
-      margin-top: 16px;
+      margin-top: auto;
+      padding-top: 12px;
+      flex-shrink: 0;
       width: 100%;
-      padding: 12px 24px;
+      padding: 10px 20px;
       background: var(--color-primary);
       color: white;
       border: none;
