@@ -229,13 +229,13 @@ GLYPH_API_KEY=your-key node dist/index.js
 
 ## API Reference
 
-This MCP server communicates with the Glyph API at `https://glyph-api-production-3f73.up.railway.app`.
+This MCP server communicates with the Glyph API at `https://api.glyph.you`.
 
-Full API documentation: [docs.glyph.dev](https://docs.glyph.dev)
+Full API documentation: [docs.glyph.you](https://docs.glyph.you)
 
 ## Support
 
-- Documentation: [docs.glyph.dev](https://docs.glyph.dev)
+- Documentation: [docs.glyph.you](https://docs.glyph.you)
 - Issues: [GitHub Issues](https://github.com/glyph-pdf/mcp-server/issues)
 - Email: support@glyph.so
 

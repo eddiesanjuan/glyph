@@ -4657,7 +4657,7 @@
           </div>
           <div class="integration-card__label">SDK</div>
           <div class="integration-card__desc">For web applications</div>
-          <div class="integration-card__code" onclick="copyToClipboard('&lt;script src=&quot;https://glyph-sdk-production.up.railway.app/glyph.min.js&quot;&gt;&lt;/script&gt;', this)">
+          <div class="integration-card__code" onclick="copyToClipboard('&lt;script src=&quot;https://sdk.glyph.you/glyph.min.js&quot;&gt;&lt;/script&gt;', this)">
             <span class="integration-card__code-text">&lt;script src="...glyph.min.js"&gt;</span>
             <span class="integration-card__copy">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5145,7 +5145,7 @@
           <div class="code-content">
             <div class="code-block code-block--active" id="code-html">
               <pre><code><span class="code-comment">&lt;!-- Include the SDK --&gt;</span>
-<span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://glyph-sdk-production.up.railway.app/glyph.min.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
+<span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://sdk.glyph.you/glyph.min.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
 
 <span class="code-comment">&lt;!-- Add the editor component --&gt;</span>
 <span class="code-tag">&lt;glyph-editor</span>
@@ -5872,12 +5872,16 @@
       if (window.location.hostname === 'localhost' && localStorage.getItem('USE_LOCAL_API')) {
         return 'http://localhost:3000';
       }
-      // Railway internal networking for speed
+      // Custom domain for glyph.you
+      if (window.location.hostname.includes('glyph.you')) {
+        return 'https://api.glyph.you';
+      }
+      // Railway fallback
       if (window.location.hostname.includes('.railway.app')) {
-        return 'https://glyph-api-production-b8ea.up.railway.app'; // Same for now, internal later
+        return 'https://api.glyph.you';
       }
       // All other cases use production API
-      return 'https://glyph-api-production-b8ea.up.railway.app';
+      return 'https://api.glyph.you';
     })();
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
 
@@ -7604,7 +7608,7 @@
     // ============================================
     const GLYPH_API = (window.location.hostname === 'localhost' && localStorage.getItem('USE_LOCAL_API'))
       ? 'http://localhost:3000'
-      : 'https://glyph-api-production-b8ea.up.railway.app';
+      : 'https://api.glyph.you';
 
     // State
     const airtableState = {

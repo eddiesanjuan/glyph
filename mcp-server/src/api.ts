@@ -3,7 +3,7 @@
  * Handles all communication with the Glyph API
  */
 
-const API_BASE = "https://glyph-api-production-3f73.up.railway.app";
+const API_BASE = "https://api.glyph.you";
 
 export interface GlyphSession {
   sessionId: string;

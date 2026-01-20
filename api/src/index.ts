@@ -42,11 +42,11 @@ app.use(
       if (origin.includes("localhost")) return origin;
 
       // Allow glyph domains
-      if (origin.includes("glyph.so") || origin.includes("glyph.dev"))
+      if (origin.includes("glyph.so") || origin.includes("glyph.dev") || origin.includes("glyph.you"))
         return origin;
 
-      // Allow Vercel preview/production deployments
-      if (origin.includes("vercel.app")) return origin;
+      // Allow Railway deployments
+      if (origin.includes("railway.app")) return origin;
 
       // In production, could restrict further
       return origin; // Allow all for now during beta

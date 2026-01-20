@@ -13,7 +13,7 @@ import type {
   QuoteData
 } from './types';
 
-const DEFAULT_API_URL = 'https://api.glyph.so';
+const DEFAULT_API_URL = 'https://api.glyph.you';
 
 export interface ApiClientConfig {
   apiKey: string;

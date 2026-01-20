@@ -5,7 +5,7 @@ AI-powered PDF customization. 2 lines of code. Unlimited possibilities.
 ## Quick Start
 
 ```html
-<script src="https://glyph-sdk-production.up.railway.app/glyph.min.js"></script>
+<script src="https://sdk.glyph.you/glyph.min.js"></script>
 <glyph-editor api-key="gk_xxx" template="quote-modern" :data="quoteData" />
 ```
 
@@ -35,17 +35,19 @@ glyph/
 
 All services are deployed on **Railway** with GitHub auto-deploy:
 
-| Service | URL |
-|---------|-----|
-| API | `https://glyph-api-production-b8ea.up.railway.app` |
-| SDK | `https://glyph-sdk-production.up.railway.app` |
-| WWW | `https://glyph-www-production.up.railway.app` |
+| Service | Production URL |
+|---------|----------------|
+| WWW | `https://glyph.you` |
+| API | `https://api.glyph.you` |
+| SDK | `https://sdk.glyph.you` |
+| Dashboard | `https://dashboard.glyph.you` |
+| Docs | `https://docs.glyph.you` |
 
-Push to `main` to deploy automatically.
+Push to `main` to deploy automatically (Railway auto-deploy).
 
 ## Documentation
 
-Coming soon at docs.glyph.so
+Visit [docs.glyph.you](https://docs.glyph.you)
 
 ## License
 

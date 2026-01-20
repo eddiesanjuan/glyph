@@ -102,7 +102,7 @@ export class GlyphEditor extends HTMLElement {
     const apiKey = this.getAttribute('api-key');
     const template = this.getAttribute('template') || 'quote-modern';
     const dataAttr = this.getAttribute('data');
-    const apiUrl = this.getAttribute('api-url') || 'https://api.glyph.so';
+    const apiUrl = this.getAttribute('api-url') || 'https://api.glyph.you';
 
     if (!apiKey) {
       this.showError('Missing required attribute: api-key');

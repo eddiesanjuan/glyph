@@ -54,11 +54,13 @@ User Action → SDK (GlyphEditor) → API (/v1/modify) → Claude AI → Updated
 
 **ALL services deploy on Railway with GitHub auto-deploy. Push to main = deploy.**
 
-| Service | Railway URL |
-|---------|-------------|
-| API | `https://glyph-api-production-b8ea.up.railway.app` |
-| SDK | `https://glyph-sdk-production.up.railway.app` |
-| WWW | `https://glyph-www-production-69d7.up.railway.app` |
+| Service | Production URL | Railway Fallback |
+|---------|----------------|------------------|
+| WWW | `https://glyph.you` | `glyph-www-production-69d7.up.railway.app` |
+| API | `https://api.glyph.you` | `glyph-api-production-b8ea.up.railway.app` |
+| SDK | `https://sdk.glyph.you` | `glyph-sdk-production.up.railway.app` |
+| Dashboard | `https://dashboard.glyph.you` | `glyph-dashboard-production.up.railway.app` |
+| Docs | `https://docs.glyph.you` | `glyph-docs-production.up.railway.app` |
 
 **Railway Project:** GlyphALL
 **Environment:** production
