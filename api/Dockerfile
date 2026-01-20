@@ -1,5 +1,6 @@
 FROM node:20-slim
 
+# Cache bust: 2026-01-20-v2
 WORKDIR /app
 
 # Install system dependencies for Playwright
