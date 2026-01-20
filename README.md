@@ -5,7 +5,7 @@ AI-powered PDF customization. 2 lines of code. Unlimited possibilities.
 ## Quick Start
 
 ```html
-<script src="https://glyph-sdk.vercel.app/glyph.min.js"></script>
+<script src="https://glyph-sdk-production.up.railway.app/glyph.min.js"></script>
 <glyph-editor api-key="gk_xxx" template="quote-modern" :data="quoteData" />
 ```
 
@@ -26,8 +26,22 @@ glyph/
 ├── templates/        # PDF templates
 ├── dashboard/        # API key management UI
 ├── docs/             # Documentation site
-└── landing/          # Marketing site
+├── www/              # Landing page with demo
+├── cli/              # Command-line interface
+└── mcp-server/       # MCP server for AI integrations
 ```
+
+## Deployment
+
+All services are deployed on **Railway** with GitHub auto-deploy:
+
+| Service | URL |
+|---------|-----|
+| API | `https://glyph-api-production-b8ea.up.railway.app` |
+| SDK | `https://glyph-sdk-production.up.railway.app` |
+| WWW | `https://glyph-www-production.up.railway.app` |
+
+Push to `main` to deploy automatically.
 
 ## Documentation
 
