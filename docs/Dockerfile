@@ -25,5 +25,6 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 3000
 
 # Serve the built docs - use PORT env var for Railway compatibility
+# Note: Do NOT use -s flag (SPA mode) as Astro generates static HTML for each route
 ENV PORT=3000
-CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT}"]
+CMD ["sh", "-c", "serve dist -l tcp://0.0.0.0:${PORT}"]
