@@ -58,7 +58,7 @@ User Action → SDK (GlyphEditor) → API (/v1/modify) → Claude AI → Updated
 |---------|-------------|
 | API | `https://glyph-api-production-b8ea.up.railway.app` |
 | SDK | `https://glyph-sdk-production.up.railway.app` |
-| WWW | `https://glyph-www-production.up.railway.app` |
+| WWW | `https://glyph-www-production-69d7.up.railway.app` |
 
 **Railway Project:** GlyphALL
 **Environment:** production
@@ -179,7 +179,7 @@ When working on Glyph, delegate to specialized agents rather than doing everythi
 Use Agent Browser CLI for all browser automation:
 
 ```bash
-agent-browser open https://glyph-www-production.up.railway.app
+agent-browser open https://glyph-www-production-69d7.up.railway.app
 agent-browser snapshot -i          # Get interactive element refs
 agent-browser click @ref           # Click element
 agent-browser fill @ref "text"     # Fill input
@@ -216,7 +216,7 @@ agent-browser close
 ## Common Tasks
 
 ### Testing the Demo
-1. Go to `https://glyph-www-production.up.railway.app`
+1. Go to `https://glyph-www-production-69d7.up.railway.app`
 2. Try quick actions: "Stripe styling", "Add signature"
 3. Check browser console - should see `[Glyph] Self-check passed`
 4. No localhost:3000 errors should appear
