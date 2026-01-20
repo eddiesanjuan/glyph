@@ -24,5 +24,6 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-# Serve the built docs
-CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3000"]
+# Serve the built docs - use PORT env var for Railway compatibility
+ENV PORT=3000
+CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT}"]
