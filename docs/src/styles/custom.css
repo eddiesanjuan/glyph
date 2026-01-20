@@ -7,14 +7,18 @@
   --sl-color-accent: #7c3aed;
   --sl-color-accent-high: #c4b5fd;
 
-  /* Text colors for better readability */
+  /* Text colors for LIGHT MODE - ensure dark text on white background */
+  --sl-color-text: #1e293b;
+  --sl-color-text-accent: #0f172a;
+
+  /* Gray scale for light mode - darker grays for text contrast */
   --sl-color-white: #ffffff;
   --sl-color-gray-1: #f8fafc;
   --sl-color-gray-2: #e2e8f0;
-  --sl-color-gray-3: #cbd5e1;
-  --sl-color-gray-4: #94a3b8;
-  --sl-color-gray-5: #64748b;
-  --sl-color-gray-6: #475569;
+  --sl-color-gray-3: #94a3b8;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #475569;
+  --sl-color-gray-6: #1e293b;
   --sl-color-black: #0f172a;
 
   /* Backgrounds */
@@ -28,6 +32,119 @@
   /* Font customizations */
   --sl-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ============================================
+   LIGHT MODE - Explicit Text Color Overrides
+   ============================================ */
+
+/* Force all text to be readable in light mode */
+:root:not([data-theme='dark']) body,
+:root:not([data-theme='dark']) main,
+:root:not([data-theme='dark']) article {
+  color: #1e293b;
+}
+
+:root:not([data-theme='dark']) h1,
+:root:not([data-theme='dark']) h2,
+:root:not([data-theme='dark']) h3,
+:root:not([data-theme='dark']) h4,
+:root:not([data-theme='dark']) h5,
+:root:not([data-theme='dark']) h6 {
+  color: #0f172a !important;
+}
+
+:root:not([data-theme='dark']) p,
+:root:not([data-theme='dark']) li,
+:root:not([data-theme='dark']) span:not(.sl-badge),
+:root:not([data-theme='dark']) td,
+:root:not([data-theme='dark']) th,
+:root:not([data-theme='dark']) label {
+  color: #1e293b;
+}
+
+/* Links in light mode */
+:root:not([data-theme='dark']) a:not([class]) {
+  color: #7c3aed;
+}
+
+:root:not([data-theme='dark']) a:not([class]):hover {
+  color: #6d28d9;
+}
+
+/* Muted text in light mode - still readable */
+:root:not([data-theme='dark']) .sl-markdown-content :where(p, li) {
+  color: #334155;
+}
+
+/* Sidebar navigation in light mode */
+:root:not([data-theme='dark']) nav a,
+:root:not([data-theme='dark']) .sidebar-content a {
+  color: #475569;
+}
+
+:root:not([data-theme='dark']) nav a:hover,
+:root:not([data-theme='dark']) .sidebar-content a:hover {
+  color: #1e293b;
+}
+
+:root:not([data-theme='dark']) nav a[aria-current="page"],
+:root:not([data-theme='dark']) .sidebar-content a[aria-current="page"] {
+  color: #7c3aed !important;
+  font-weight: 600;
+}
+
+/* Tables in light mode */
+:root:not([data-theme='dark']) table {
+  border-color: #e2e8f0;
+}
+
+:root:not([data-theme='dark']) th {
+  background: #f8fafc;
+  color: #0f172a !important;
+  border-color: #e2e8f0;
+}
+
+:root:not([data-theme='dark']) td {
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Code in light mode */
+:root:not([data-theme='dark']) code:not(pre code) {
+  background: #f1f5f9;
+  color: #6d28d9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* Cards in light mode */
+:root:not([data-theme='dark']) .card,
+:root:not([data-theme='dark']) .sl-card,
+:root:not([data-theme='dark']) [class*="Card"] {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+:root:not([data-theme='dark']) .card h2,
+:root:not([data-theme='dark']) .card h3,
+:root:not([data-theme='dark']) .card p,
+:root:not([data-theme='dark']) .sl-card h2,
+:root:not([data-theme='dark']) .sl-card h3,
+:root:not([data-theme='dark']) .sl-card p {
+  color: #1e293b !important;
+}
+
+/* Asides in light mode */
+:root:not([data-theme='dark']) .starlight-aside {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+:root:not([data-theme='dark']) .starlight-aside p,
+:root:not([data-theme='dark']) .starlight-aside span {
+  color: #1e293b !important;
 }
 
 /* ============================================
