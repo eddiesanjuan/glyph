@@ -62,10 +62,47 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 /**
+ * Check if prompt contains compound requests (multiple items)
+ * Compound requests should go to AI for proper handling
+ */
+function isCompoundRequest(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+
+  // Check for common conjunctions that indicate multiple items
+  if (/\band\b/.test(lower)) {
+    // Count distinct request types mentioned
+    const requestTypes = [
+      /thank\s*you/i.test(lower),
+      /signature/i.test(lower),
+      /qr\s*code/i.test(lower),
+      /watermark/i.test(lower),
+      /logo/i.test(lower),
+      /phone/i.test(lower),
+      /email/i.test(lower),
+      /terms/i.test(lower),
+      /header/i.test(lower),
+      /footer/i.test(lower),
+      /message/i.test(lower),
+      /note/i.test(lower),
+    ].filter(Boolean).length;
+
+    // If 2+ distinct types mentioned with "and", it's compound
+    if (requestTypes >= 2) return true;
+  }
+
+  return false;
+}
+
+/**
  * Check if the prompt can be handled by fast transform
  */
 export function canFastTransform(prompt: string): boolean {
   const lower = prompt.toLowerCase();
+
+  // CRITICAL: Compound requests go to AI (e.g., "add thank you AND signature")
+  if (isCompoundRequest(prompt)) {
+    return false;
+  }
 
   // QR code additions
   if (/add\s*(a\s+)?qr\s*code/i.test(lower)) return true;
@@ -88,16 +125,20 @@ export function canFastTransform(prompt: string): boolean {
   if (/(header|title)\s*background\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
 
   // Logo additions (fast-path to prevent AI regeneration)
-  if (/add\s+.*?logo/i.test(lower)) return true;
+  // Only match simple "add logo" requests, not complex ones like "add company logo with text"
+  if (/^add\s+(a\s+)?logo\s*(placeholder)?$/i.test(lower)) return true;
 
   // Phone additions (fast-path to prevent AI regeneration)
-  if (/add\s+.*?phone/i.test(lower)) return true;
+  // Only match simple "add phone" or "add phone field", NOT "add client phone number"
+  if (/^add\s+(a\s+)?phone\s*(field)?$/i.test(lower)) return true;
 
   // Email additions (fast-path to prevent AI regeneration)
-  if (/add\s+.*?email/i.test(lower)) return true;
+  // Only match simple "add email" or "add email field"
+  if (/^add\s+(a\s+)?email\s*(field)?$/i.test(lower)) return true;
 
-  // Signature additions (fast-path to prevent AI regeneration)
-  if (/add\s+.*?signature/i.test(lower)) return true;
+  // Signature additions - only simple signature requests (fast-path to prevent AI regeneration)
+  // Patterns like "add signature" or "add a signature line" but NOT "add thank you and signature"
+  if (/^add\s+(a\s+)?signature\s*(line|block|section)?$/i.test(lower)) return true;
 
   return false;
 }
@@ -107,6 +148,12 @@ export function canFastTransform(prompt: string): boolean {
  */
 export function fastTransform(html: string, prompt: string): FastTransformResult {
   const lower = prompt.toLowerCase();
+
+  // CRITICAL: Compound requests should not be fast-transformed
+  // This is defense-in-depth (canFastTransform should catch this first)
+  if (isCompoundRequest(prompt)) {
+    return { html, changes: [], transformed: false };
+  }
 
   // === QR CODE ===
   if (/add\s*(a\s+)?qr\s*code/i.test(lower)) {
@@ -138,22 +185,26 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
   }
 
   // === LOGO ADDITIONS (Fast-path to prevent AI regeneration) ===
-  if (/add\s+.*?logo/i.test(lower)) {
+  // Only match simple "add logo" requests
+  if (/^add\s+(a\s+)?logo\s*(placeholder)?$/i.test(lower)) {
     return addLogo(html);
   }
 
   // === PHONE ADDITIONS (Fast-path to prevent AI regeneration) ===
-  if (/add\s+.*?phone/i.test(lower)) {
+  // Only match simple "add phone" requests, not "add client phone number"
+  if (/^add\s+(a\s+)?phone\s*(field)?$/i.test(lower)) {
     return addPhone(html);
   }
 
   // === EMAIL ADDITIONS (Fast-path to prevent AI regeneration) ===
-  if (/add\s+.*?email/i.test(lower)) {
+  // Only match simple "add email" requests
+  if (/^add\s+(a\s+)?email\s*(field)?$/i.test(lower)) {
     return addEmail(html);
   }
 
   // === SIGNATURE ADDITIONS (Fast-path to prevent AI regeneration) ===
-  if (/add\s+.*?signature/i.test(lower)) {
+  // Only match simple signature requests, not compound ones
+  if (/^add\s+(a\s+)?signature\s*(line|block|section)?$/i.test(lower)) {
     return addSignature(html);
   }
 

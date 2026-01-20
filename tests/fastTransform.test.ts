@@ -38,6 +38,21 @@ describe('fastTransform', () => {
       expect(canFastTransform('Restructure the layout')).toBe(false);
       expect(canFastTransform('Add client phone number')).toBe(false);
     });
+
+    it('should return false for compound requests (multiple items with "and")', () => {
+      // These compound requests should go to AI, not fast transform
+      expect(canFastTransform('Add a thank you message and signature line at the bottom')).toBe(false);
+      expect(canFastTransform('Add signature and thank you')).toBe(false);
+      expect(canFastTransform('Add QR code and watermark')).toBe(false);
+      expect(canFastTransform('Add logo and phone number')).toBe(false);
+      expect(canFastTransform('Add email and phone fields')).toBe(false);
+    });
+
+    it('should return true for simple signature requests', () => {
+      expect(canFastTransform('Add signature')).toBe(true);
+      expect(canFastTransform('add a signature')).toBe(true);
+      expect(canFastTransform('Add a signature line')).toBe(true);
+    });
   });
 
   describe('QR code transformation', () => {
