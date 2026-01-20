@@ -5723,14 +5723,16 @@
     // Configuration
     // ============================================
     const API_URL = (() => {
-      if (window.location.hostname === 'localhost') {
+      // Always use production API for consistency
+      // Set USE_LOCAL_API=true in localStorage for local development
+      if (window.location.hostname === 'localhost' && localStorage.getItem('USE_LOCAL_API')) {
         return 'http://localhost:3000';
       }
       // Railway internal networking for speed
       if (window.location.hostname.includes('.railway.app')) {
         return 'https://glyph-api-production-b8ea.up.railway.app'; // Same for now, internal later
       }
-      // Custom domain fallback
+      // All other cases use production API
       return 'https://glyph-api-production-b8ea.up.railway.app';
     })();
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
