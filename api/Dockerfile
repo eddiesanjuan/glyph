@@ -1,6 +1,9 @@
 FROM node:20-slim
 
-# Cache bust: 2026-01-20-v2
+# Force rebuild - this ARG changes invalidates cache
+ARG CACHE_BUST=20260120v3
+RUN echo "Build: ${CACHE_BUST}"
+
 WORKDIR /app
 
 # Install system dependencies for Playwright
