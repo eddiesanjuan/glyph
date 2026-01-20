@@ -85,10 +85,36 @@ function extractRegions(html: string): Set<string> {
 }
 
 /**
+ * Style-related placeholder prefixes that are ALLOWED to be replaced
+ * when AI applies styling (e.g., "Make this look like Stripe")
+ * These should NOT trigger "missing placeholder" errors
+ */
+const STYLE_PLACEHOLDER_PREFIXES = [
+  'styles.',
+  'branding.accentColor',
+  'branding.primaryColor',
+  'branding.secondaryColor',
+  'branding.backgroundColor',
+  'branding.textColor',
+];
+
+/**
+ * Check if a placeholder is a style-related placeholder that can be replaced
+ */
+function isStylePlaceholder(placeholder: string): boolean {
+  // Extract the content between {{ and }}
+  const content = placeholder.replace(/^\{\{|\}\}$/g, '').trim();
+  return STYLE_PLACEHOLDER_PREFIXES.some(prefix => content.startsWith(prefix));
+}
+
+/**
  * Extract all Mustache placeholders from HTML
  * Includes both simple {{variable}} and nested {{object.property}} patterns
+ *
+ * @param html - The HTML to extract placeholders from
+ * @param excludeStylePlaceholders - If true, excludes style-related placeholders
  */
-function extractPlaceholders(html: string): Set<string> {
+function extractPlaceholders(html: string, excludeStylePlaceholders: boolean = false): Set<string> {
   const placeholders = new Set<string>();
   const regex = /\{\{([^#/^][^}]*)\}\}/g;
   let match;
@@ -96,6 +122,10 @@ function extractPlaceholders(html: string): Set<string> {
     const content = match[1].trim();
     // Skip if it starts with section markers that we might have partially matched
     if (!content.startsWith('#') && !content.startsWith('/') && !content.startsWith('^')) {
+      // Skip style placeholders if requested
+      if (excludeStylePlaceholders && isStylePlaceholder(match[0])) {
+        continue;
+      }
       placeholders.add(match[0]);
     }
   }
@@ -207,9 +237,10 @@ function compareStructure(beforeHtml: string, afterHtml: string): ValidationIssu
     }
   }
 
-  // Check placeholders
-  const beforePlaceholders = extractPlaceholders(beforeHtml);
-  const afterPlaceholders = extractPlaceholders(afterHtml);
+  // Check placeholders - EXCLUDE style placeholders as they can legitimately be replaced
+  // when AI applies brand styling (e.g., "Make this look like Stripe")
+  const beforePlaceholders = extractPlaceholders(beforeHtml, true); // Exclude style placeholders
+  const afterPlaceholders = extractPlaceholders(afterHtml, true);   // Exclude style placeholders
 
   for (const placeholder of beforePlaceholders) {
     if (!afterPlaceholders.has(placeholder)) {

@@ -846,6 +846,60 @@ IMPORTANT: Add position:relative to the body element if not already present. Cha
       intent: "group_by_category",
       enhancement: "Use nested Mustache sections: {{#categories}}...{{#items}}...{{/items}}...{{/categories}} for grouped display."
     },
+
+    // BRAND STYLING PATTERNS - for "Make this look like X" requests
+    {
+      pattern: /look\s*like\s*(a\s+)?stripe|stripe\s*(style|invoice|aesthetic|design)|stripe's?\s*(look|style|design)/i,
+      intent: "brand_style_stripe",
+      enhancement: `Apply Stripe's signature design aesthetic with these SPECIFIC CSS changes:
+1. PRIMARY COLOR: Change all accent colors to Stripe's purple (#635bff or #6366f1)
+2. HEADER: Clean white background with subtle bottom border, remove heavy colored headers
+3. TYPOGRAPHY: Use system fonts (-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)
+4. SPACING: Increase whitespace - use padding: 24px-32px for sections
+5. BORDERS: Use subtle gray borders (#e5e5e5), avoid dark/heavy borders
+6. TOTALS: Right-aligned with larger font for final total
+7. TABLE: Minimal borders, use background alternating rows or none
+8. OVERALL: Clean, minimal, professional - less is more
+
+CRITICAL: You MUST actually modify the <style> block to replace existing colors with #635bff (Stripe purple).
+Replace any {{styles.accentColor}} with the actual color value #635bff.
+Remove or lighten dark header backgrounds. Add more padding for breathing room.`
+    },
+    {
+      pattern: /look\s*like\s*(a\s+)?apple|apple\s*(style|invoice|aesthetic|design)|apple's?\s*(look|style|design)/i,
+      intent: "brand_style_apple",
+      enhancement: `Apply Apple's signature design aesthetic:
+1. PRIMARY COLOR: Use dark gray (#1d1d1f) for text, blue (#0071e3) for accents
+2. TYPOGRAPHY: San Francisco font or -apple-system, clean and readable
+3. SPACING: Generous whitespace, lots of breathing room
+4. BORDERS: Minimal to none, use spacing instead
+5. OVERALL: Ultra-minimal, typography-focused, premium feel
+
+CRITICAL: You MUST modify the <style> block with these specific changes.`
+    },
+    {
+      pattern: /look\s*like\s*(a\s+)?shopify|shopify\s*(style|invoice|aesthetic|design)|shopify's?\s*(look|style|design)/i,
+      intent: "brand_style_shopify",
+      enhancement: `Apply Shopify's design aesthetic:
+1. PRIMARY COLOR: Shopify green (#96bf48 or #008060) for accents
+2. TYPOGRAPHY: Clean sans-serif, good hierarchy
+3. HEADER: Often includes green accent bar or elements
+4. OVERALL: Friendly, approachable, e-commerce focused
+
+CRITICAL: You MUST modify the <style> block with these specific changes.`
+    },
+    {
+      pattern: /make\s*(it|this)?\s*(look\s*)?(modern|clean|minimal|professional|sleek)/i,
+      intent: "style_modern",
+      enhancement: `Apply modern professional styling:
+1. Increase whitespace and padding
+2. Use subtle shadows (box-shadow: 0 1px 3px rgba(0,0,0,0.1))
+3. Rounded corners (border-radius: 8px)
+4. Clean sans-serif typography
+5. Muted color palette with one accent color
+
+CRITICAL: You MUST actually modify the CSS in the <style> block to apply these changes.`
+    },
   ];
 
   // Check each pattern
@@ -934,6 +988,23 @@ SPECIAL PATTERNS:
  */
 function isSimpleModification(prompt: string): boolean {
   const lowPrompt = prompt.toLowerCase();
+
+  // COMPLEX patterns that ALWAYS need full Sonnet AI (never Haiku)
+  // Brand styling requires deep CSS understanding and comprehensive changes
+  const complexPatterns = [
+    /look\s*like\s*(a\s+)?(stripe|apple|shopify|airbnb|notion)/i,
+    /stripe|apple|shopify|airbnb|notion/i, // Brand names in general
+    /(brand|corporate|professional)\s*styl/i,
+    /complete\s*redesign/i,
+    /overhaul/i,
+    /make\s*(it|this)?\s*(look\s*)?(modern|clean|minimal|professional|sleek)/i,
+  ];
+
+  // If it matches any complex pattern, it's NOT simple
+  if (complexPatterns.some(p => p.test(lowPrompt))) {
+    return false;
+  }
+
   // Simple modifications that don't require deep understanding
   // IMPORTANT: Only include patterns that INJECT content, not patterns that could
   // remove, hide, or relocate existing content - those need full Sonnet prompts
@@ -941,7 +1012,7 @@ function isSimpleModification(prompt: string): boolean {
     /add.*qr/i,
     /add.*watermark/i,
     /change.*color/i,
-    /make.*blue|red|green|purple|orange|teal/i,
+    /make.*(the\s+)?(header|accent|title)\s*(color\s+)?(blue|red|green|purple|orange|teal)/i, // Simple color only
     /add.*logo/i,
     /add.*phone/i,
     /add.*email/i,
