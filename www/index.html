@@ -7409,7 +7409,7 @@
     // ============================================
     // Airtable Connection Flow
     // ============================================
-    const GLYPH_API = window.location.hostname === 'localhost'
+    const GLYPH_API = (window.location.hostname === 'localhost' && localStorage.getItem('USE_LOCAL_API'))
       ? 'http://localhost:3000'
       : 'https://glyph-api-production-b8ea.up.railway.app';
 
