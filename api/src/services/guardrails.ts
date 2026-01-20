@@ -57,6 +57,115 @@ function extractSections(html: string): Set<string> {
 }
 
 /**
+ * Known valid Mustache sections that are allowed in templates
+ * Any section NOT in this list that gets created by AI is suspicious
+ */
+const ALLOWED_SECTIONS = new Set([
+  // Core data loops
+  "lineItems",
+  // Conditional field wrappers (optional fields)
+  "client.phone",
+  "client.email",
+  "client.company",
+  "client.address",
+  "branding.logoUrl",
+  "branding.companyAddress",
+  "meta.notes",
+  "meta.terms",
+  "meta.showSignature",
+  "meta.poNumber",
+  "meta.paymentInstructions",
+  "meta.deliveryNotes",
+  "totals.discount",
+  "totals.discountPercent",
+  "totals.tax",
+  "totals.taxRate",
+  "totals.shipping",
+  "totals.deposit",
+  "totals.balance",
+]);
+
+/**
+ * Check for unauthorized new loop structures that would break the template
+ * This catches AI attempts to create {{#categories}}, {{#items}}, etc.
+ */
+function findUnauthorizedSections(originalHtml: string, modifiedHtml: string): string[] {
+  const violations: string[] = [];
+
+  const originalSections = extractSections(originalHtml);
+  const modifiedSections = extractSections(modifiedHtml);
+
+  // Check for new sections that weren't in the original and aren't in the allowed list
+  for (const section of modifiedSections) {
+    if (!originalSections.has(section) && !ALLOWED_SECTIONS.has(section)) {
+      // This is a NEW section that AI created - likely breaks data bindings
+      violations.push(`Unauthorized new Mustache section: {{#${section}}} - this data structure does not exist`);
+    }
+  }
+
+  return violations;
+}
+
+/**
+ * Check for unmatched/broken Mustache syntax
+ * Detects cases where opening tags don't have closing tags or vice versa
+ */
+function findBrokenMustacheSyntax(html: string): string[] {
+  const violations: string[] = [];
+
+  // Extract all opening sections {{#...}}
+  const openingSections: string[] = [];
+  const openRegex = /\{\{#([^}]+)\}\}/g;
+  let match;
+  while ((match = openRegex.exec(html)) !== null) {
+    openingSections.push(match[1].trim());
+  }
+
+  // Extract all closing sections {{/...}}
+  const closingSections: string[] = [];
+  const closeRegex = /\{\{\/([^}]+)\}\}/g;
+  while ((match = closeRegex.exec(html)) !== null) {
+    closingSections.push(match[1].trim());
+  }
+
+  // Count occurrences
+  const openingCounts = new Map<string, number>();
+  const closingCounts = new Map<string, number>();
+
+  for (const section of openingSections) {
+    openingCounts.set(section, (openingCounts.get(section) || 0) + 1);
+  }
+
+  for (const section of closingSections) {
+    closingCounts.set(section, (closingCounts.get(section) || 0) + 1);
+  }
+
+  // Check for mismatches
+  const allSections = new Set([...openingCounts.keys(), ...closingCounts.keys()]);
+
+  for (const section of allSections) {
+    const openCount = openingCounts.get(section) || 0;
+    const closeCount = closingCounts.get(section) || 0;
+
+    if (openCount !== closeCount) {
+      if (openCount > closeCount) {
+        violations.push(`Unclosed Mustache section: {{#${section}}} has ${openCount} opening tags but only ${closeCount} closing tags`);
+      } else {
+        violations.push(`Orphan closing tag: {{/${section}}} has ${closeCount} closing tags but only ${openCount} opening tags`);
+      }
+    }
+  }
+
+  // Check for malformed Mustache syntax (unclosed braces)
+  const malformedOpening = html.match(/\{\{[^}]*$/gm);
+  if (malformedOpening) {
+    violations.push("Malformed Mustache syntax: unclosed {{ brace detected");
+  }
+
+  return violations;
+}
+
+/**
  * Extract all data-glyph-region markers
  */
 function extractRegions(html: string): Set<string> {
@@ -160,6 +269,14 @@ export function validateModification(
   modifiedHtml: string
 ): GuardrailResult {
   const violations: string[] = [];
+
+  // 0. CRITICAL: Check for broken Mustache syntax first
+  const brokenSyntax = findBrokenMustacheSyntax(modifiedHtml);
+  violations.push(...brokenSyntax);
+
+  // 0.5. CRITICAL: Check for unauthorized new loop structures
+  const unauthorizedSections = findUnauthorizedSections(originalHtml, modifiedHtml);
+  violations.push(...unauthorizedSections);
 
   // 1. Check all data placeholders are preserved
   const originalPlaceholders = extractPlaceholders(originalHtml);
@@ -291,6 +408,57 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
+ * Check if prompt requests structural data changes that would break templates
+ * These requests are allowed to proceed but with enhanced AI instructions
+ */
+export function detectStructuralRequest(prompt: string): {
+  isStructural: boolean;
+  warningMessage?: string;
+} {
+  const lowerPrompt = prompt.toLowerCase();
+
+  // Patterns that indicate requests to restructure data (not just style)
+  const structuralPatterns = [
+    {
+      pattern: /group\s*(the\s+)?(items?|line\s*items?|data).*by/i,
+      message: "Grouping requires data structure changes. Visual grouping will be applied instead."
+    },
+    {
+      pattern: /sort\s*(the\s+)?(items?|line\s*items?|data)/i,
+      message: "Sorting requires backend changes. Visual styling will be applied instead."
+    },
+    {
+      pattern: /organize\s*(the\s+)?(items?|line\s*items?|data)/i,
+      message: "Organizing requires data restructuring. Visual enhancements will be applied instead."
+    },
+    {
+      pattern: /reorder\s*(the\s+)?(items?|line\s*items?|rows?)/i,
+      message: "Reordering requires backend changes. Visual styling will be applied instead."
+    },
+    {
+      pattern: /split\s*(the\s+)?(items?|line\s*items?).*into/i,
+      message: "Splitting items requires data structure changes. Visual separation will be applied instead."
+    },
+    {
+      pattern: /create\s*(new\s+)?(categories|sections|groups)\s*(for|from)/i,
+      message: "Creating new categories requires backend changes. Visual styling will be applied instead."
+    },
+    {
+      pattern: /add\s*(new\s+)?(loop|iteration|array)/i,
+      message: "Adding new data loops is not supported. Visual enhancements will be applied instead."
+    },
+  ];
+
+  for (const { pattern, message } of structuralPatterns) {
+    if (pattern.test(lowerPrompt)) {
+      return { isStructural: true, warningMessage: message };
+    }
+  }
+
+  return { isStructural: false };
+}
+
+/**
  * Pre-validate user prompt for injection attempts
  * Called BEFORE sending to AI
  */
@@ -400,6 +568,8 @@ export function runGuardrails(
 ): {
   promptValid: boolean;
   promptReason?: string;
+  isStructuralRequest?: boolean;
+  structuralWarning?: string;
   outputValid?: boolean;
   outputViolations?: string[];
   sanitizedHtml?: string;
@@ -413,11 +583,24 @@ export function runGuardrails(
     };
   }
 
+  // Step 1.5: Detect structural requests (for logging/warning purposes)
+  const structuralCheck = detectStructuralRequest(prompt);
+
   // Step 2: If we have modified HTML, validate it
   if (modifiedHtml) {
     const outputResult = validateModification(originalHtml, modifiedHtml);
+
+    // If output validation failed and we detected a structural request,
+    // the AI likely broke the template despite our warnings
+    if (!outputResult.valid && structuralCheck.isStructural) {
+      console.warn(`[Guardrails] Structural request likely broke template: "${prompt.substring(0, 100)}..."`);
+      console.warn(`[Guardrails] Violations: ${outputResult.violations.join(', ')}`);
+    }
+
     return {
       promptValid: true,
+      isStructuralRequest: structuralCheck.isStructural,
+      structuralWarning: structuralCheck.warningMessage,
       outputValid: outputResult.valid,
       outputViolations: outputResult.violations,
       sanitizedHtml: outputResult.valid
@@ -426,5 +609,9 @@ export function runGuardrails(
     };
   }
 
-  return { promptValid: true };
+  return {
+    promptValid: true,
+    isStructuralRequest: structuralCheck.isStructural,
+    structuralWarning: structuralCheck.warningMessage,
+  };
 }

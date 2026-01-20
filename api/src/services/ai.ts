@@ -326,21 +326,21 @@ ADDING A CUSTOM FIELD (e.g., PO Number):
   </div>
   {{/meta.poNumber}}
 
-GROUPING LINE ITEMS BY CATEGORY (Advanced):
-  If data has categories, use nested sections:
-  {{#categories}}
-    <tr class="category-header">
-      <td colspan="4">{{categoryName}}</td>
+⚠️  FORBIDDEN - DO NOT CREATE NEW LOOP STRUCTURES:
+  NEVER create {{#categories}}, {{#items}}, {{#groups}} or any NEW section loops.
+  These data structures DO NOT EXIST and will break the template.
+
+  The ONLY array loop available is: {{#lineItems}}...{{/lineItems}}
+
+  For visual grouping requests, use CSS styling on the existing structure:
+  {{#lineItems}}
+    <tr style="border-bottom: 2px solid #ccc;">
+      <td>{{description}}</td>
+      <td>{{quantity}}</td>
+      <td>\${{unitPrice}}</td>
+      <td>\${{total}}</td>
     </tr>
-    {{#items}}
-      <tr>
-        <td>{{description}}</td>
-        <td>{{quantity}}</td>
-        <td>\${{unitPrice}}</td>
-        <td>\${{total}}</td>
-      </tr>
-    {{/items}}
-  {{/categories}}
+  {{/lineItems}}
 `;
 
 /**
@@ -586,6 +586,49 @@ You don't just change colors - you understand document STRUCTURE, DATA FLOW, and
 
 5. USE EXACT MUSTACHE SYNTAX - When adding fields, use the exact placeholder
    syntax from the schema (e.g., {{client.phone}}, not {{phone}}).
+
+═══════════════════════════════════════════════════════════════════════════════
+                    CRITICAL: TEMPLATE BINDING PROTECTION
+═══════════════════════════════════════════════════════════════════════════════
+
+**YOU MUST NEVER CREATE NEW MUSTACHE LOOP STRUCTURES**
+
+The document template has specific data bindings that CANNOT be changed:
+- {{#lineItems}}...{{/lineItems}} iterates over the lineItems array
+- There is NO "categories" array, NO "items" array, NO "groups" array
+- Creating {{#categories}}, {{#items}}, {{#groups}} etc. WILL BREAK THE TEMPLATE
+
+**WHEN USERS ASK FOR STRUCTURAL DATA CHANGES:**
+
+If the user asks to "group items by category", "sort line items", "organize by type",
+or any request that would require changing the DATA STRUCTURE:
+
+1. DO NOT create new Mustache loop structures ({{#newThing}}...{{/newThing}})
+2. DO NOT remove or modify the {{#lineItems}}...{{/lineItems}} loop
+3. INSTEAD: Apply VISUAL grouping using CSS (borders, spacing, backgrounds)
+4. OR: Politely explain that data restructuring requires backend changes
+
+**SAFE ALTERNATIVES FOR STRUCTURAL REQUESTS:**
+- "Group by category" → Add visual separators, use alternating backgrounds
+- "Sort line items" → Cannot be done in template (data comes pre-sorted)
+- "Add category headers" → Add a visual styling to the description field
+- "Organize by type" → Use CSS to visually distinguish different items
+
+**EXAMPLE - WHAT NOT TO DO:**
+User asks: "Group the line items by description"
+WRONG (will break template):
+  {{#categories}}
+    <tr class="category-header"><td>{{categoryName}}</td></tr>
+    {{#items}}
+      <tr><td>{{description}}</td></tr>
+    {{/items}}
+  {{/categories}}
+
+CORRECT (visual enhancement only):
+  {{#lineItems}}
+    <tr style="...styling..."><td>{{description}}</td>...</tr>
+  {{/lineItems}}
+  (Keep the EXACT same loop structure, only modify HTML/CSS around it)
 
 ═══════════════════════════════════════════════════════════════════════════════
                               YOUR CAPABILITIES
@@ -840,11 +883,43 @@ IMPORTANT: Add position:relative to the body element if not already present. Cha
       enhancement: "Use Mustache conditional syntax: {{#field}}...{{/field}} to show only when field exists, or {{^field}}...{{/field}} for the inverse."
     },
 
-    // Grouping patterns
+    // Grouping patterns - SAFELY REDIRECT to visual styling only
     {
-      pattern: /group\s*(items?|line\s*items?).*by\s*category/i,
-      intent: "group_by_category",
-      enhancement: "Use nested Mustache sections: {{#categories}}...{{#items}}...{{/items}}...{{/categories}} for grouped display."
+      pattern: /group\s*(items?|line\s*items?|the\s+)?.*by\s*(category|type|description|name)/i,
+      intent: "group_by_visual",
+      enhancement: `CRITICAL: You CANNOT create new Mustache loop structures like {{#categories}} or {{#items}} - these do not exist in the data model and will break the template.
+
+Instead, apply VISUAL grouping to the existing {{#lineItems}} loop:
+- Add alternating row backgrounds
+- Add visual separators (borders, spacing)
+- Use CSS to highlight the first column (description)
+- Add a subtle background pattern
+
+Example of safe visual enhancement:
+{{#lineItems}}
+<tr style="border-bottom: 1px solid #e5e5e5;">
+  <td style="font-weight: 500; background: #f9fafb; padding: 12px;">{{description}}</td>
+  <td>{{quantity}}</td>
+  <td>\${{unitPrice}}</td>
+  <td>\${{total}}</td>
+</tr>
+{{/lineItems}}
+
+DO NOT create {{#categories}}, {{#groups}}, {{#items}} or any new section loops.`
+    },
+    {
+      pattern: /sort\s*(the\s+)?(items?|line\s*items?)/i,
+      intent: "sort_items_safe",
+      enhancement: `IMPORTANT: Sorting cannot be done in the template - line items come pre-sorted from the data source.
+Instead, you can apply visual styling to make the table more readable (zebra stripes, borders, etc.).
+DO NOT attempt to restructure the {{#lineItems}} loop.`
+    },
+    {
+      pattern: /organize\s*(the\s+)?(items?|line\s*items?)/i,
+      intent: "organize_items_safe",
+      enhancement: `IMPORTANT: Data organization cannot be done in the template - it requires backend changes.
+You can apply VISUAL organization using CSS (alternating colors, section borders, spacing).
+DO NOT create new Mustache loop structures like {{#categories}} or {{#groups}}.`
     },
 
     // BRAND STYLING PATTERNS - for "Make this look like X" requests
