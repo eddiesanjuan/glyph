@@ -142,6 +142,38 @@ When working on Glyph, delegate to specialized agents rather than doing everythi
 - `/test-driven-development` - When implementing features
 - `/verification-before-completion` - Before claiming work is done
 
+### Rapid Development Commands
+
+**These are the primary commands for iterating on Glyph:**
+
+| Command | Purpose |
+|---------|---------|
+| `/rapid` | Batch feedback → parallel fixes → deploy → verify |
+| `/self-improve` | Continuous quality audit and auto-improvement |
+
+**`/rapid` Workflow:**
+```
+1. Paste batch feedback (bugs, UX issues, feature requests)
+2. System parses into discrete issues
+3. Spawns parallel agents to fix all issues
+4. Commits all fixes in one commit
+5. Pushes to main (Railway auto-deploys)
+6. QA agent verifies production
+7. Reports results
+```
+
+**`/self-improve` Workflow:**
+```
+1. Health check on production
+2. UX audit (scores + friction points)
+3. Code quality scan
+4. Generate improvement backlog
+5. Auto-fix safe issues (with --auto-fix)
+6. Log learnings for future cycles
+```
+
+**No barriers. Ship fast. Verify on production.**
+
 ### Browser Testing
 
 Use Agent Browser CLI for all browser automation:

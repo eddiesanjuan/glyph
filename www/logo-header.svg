@@ -1,0 +1,20 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Glyph Logo - Header Version
+    Matches .nav__logo-mark CSS styling:
+    - 36x36 container, 6px border-radius
+    - #1E3A5F ink navy background
+    - White G lettermark (Google-style with inward stroke)
+  -->
+
+  <!-- Rounded background -->
+  <rect width="36" height="36" rx="6" fill="#1E3A5F"/>
+
+  <!-- G mark - centered and scaled from logo-g.svg -->
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M18 8C12.477 8 8 12.477 8 18C8 23.523 12.477 28 18 28C23.523 28 28 23.523 28 18V16H18V19H24.75C24 22.25 21.3 25 18 25C14.134 25 11 21.866 11 18C11 14.134 14.134 11 18 11C20.625 11 22.95 12.6 24.375 14.875L27 13C24.975 9.65 21.75 8 18 8Z"
+    fill="white"
+  />
+</svg>

@@ -1,0 +1,20 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stylized G - more geometric, bolder -->
+  <path
+    d="M32 6
+       C16.536 6 6 17.536 6 32
+       C6 46.464 16.536 58 32 58
+       C44 58 53 50 56 40
+       L56 32
+       L30 32
+       L30 42
+       L44 42
+       C41 48 37 50 32 50
+       C21.507 50 14 42.493 14 32
+       C14 21.507 21.507 14 32 14
+       C39 14 45 18 48 24
+       L56 18
+       C51 10 42 6 32 6Z"
+    fill="#1E3A5F"
+  />
+</svg>

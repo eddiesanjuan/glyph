@@ -1,0 +1,9 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stylized G - clean stroke-based approach -->
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M32 10C19.85 10 10 19.85 10 32C10 44.15 19.85 54 32 54C42.5 54 51.2 46.8 53.5 37H34V29H62V33C62 48.464 49.464 62 34 62H32C14.327 62 2 48.673 2 32C2 15.327 14.327 2 32 2C44.5 2 55 9.5 60 20L52 25C48.5 17 41 12 32 12C21.507 12 12 21.507 12 32C12 42.493 21.507 52 32 52C40 52 46.8 47 50 40H34V37"
+    fill="#1E3A5F"
+  />
+</svg>

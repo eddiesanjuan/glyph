@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stylized G - clean, minimal, with subtle page fold hint -->
+  <path
+    d="M32 8
+       C18 8 8 18 8 32
+       C8 46 18 56 32 56
+       C46 56 54 46 54 36
+       L54 32
+       L32 32
+       L32 40
+       L46 40
+       L46 36
+       C46 42 40 48 32 48
+       C22 48 16 42 16 32
+       C16 22 22 16 32 16
+       C38 16 43 19 46 24
+       L54 20
+       C50 12 42 8 32 8Z"
+    fill="#1E3A5F"
+  />
+</svg>
