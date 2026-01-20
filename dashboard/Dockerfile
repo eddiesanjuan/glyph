@@ -3,11 +3,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build argument for API URL (Vite env vars are baked in at build time)
+ARG VITE_API_URL=https://glyph-api-production-3f73.up.railway.app
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy source and build
+# Copy source and build with env var
 COPY . .
 RUN npm run build
 

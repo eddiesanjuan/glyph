@@ -231,6 +231,7 @@ export function App() {
                     placeholder="gk_..."
                     class="api-input mono"
                     autoComplete="off"
+                    autoFocus
                   />
                   <button
                     type="button"
@@ -245,6 +246,10 @@ export function App() {
                 <button type="submit" class="btn btn-primary" disabled={loading || !apiKey.trim()}>
                   {loading ? 'Loading...' : 'View Dashboard'}
                 </button>
+
+                {!apiKey.trim() && !loading && (
+                  <p class="input-hint">Enter your API key above to continue</p>
+                )}
               </form>
 
               {error && (

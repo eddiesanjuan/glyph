@@ -1,6 +1,9 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
+# Pass VITE_API_URL as build arg (Vite vars are build-time, not runtime)
+# Railway will use the default in Dockerfile unless overridden in Variables
+dockerBuildArgs = ["VITE_API_URL"]
 
 [deploy]
 healthcheckPath = "/"

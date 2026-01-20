@@ -88,6 +88,13 @@
   gap: 16px;
 }
 
+.input-hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  margin-top: -8px;
+}
+
 .input-group {
   position: relative;
   display: flex;
