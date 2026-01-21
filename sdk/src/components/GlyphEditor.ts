@@ -68,6 +68,10 @@ export class GlyphEditor extends HTMLElement {
   // Region event listener cleanup (prevents memory leaks on re-render)
   private regionListenerController: AbortController | null = null;
 
+  // Document-level event listener cleanup (Issue #2 - Cycle 7)
+  // Prevents memory leaks when component unmounts
+  private documentListenerController: AbortController | null = null;
+
   // Event callbacks for programmatic usage
   public onSave?: GlyphEditorProps['onSave'];
   public onGenerate?: GlyphEditorProps['onGenerate'];
@@ -106,6 +110,16 @@ export class GlyphEditor extends HTMLElement {
     if (this.regionListenerController) {
       this.regionListenerController.abort();
       this.regionListenerController = null;
+    }
+    // Issue #2 - Cycle 7: Abort document-level event listeners (keyboard shortcuts, click-outside)
+    if (this.documentListenerController) {
+      this.documentListenerController.abort();
+      this.documentListenerController = null;
+    }
+    // Issue #3 - Cycle 7: Clear AI operation timer to prevent memory leaks
+    if (this.aiOperationTimer) {
+      clearInterval(this.aiOperationTimer);
+      this.aiOperationTimer = null;
     }
     this.api = null;
     this.sessionId = null;
@@ -1583,6 +1597,13 @@ export class GlyphEditor extends HTMLElement {
    * Set up all event listeners
    */
   private setupEventListeners() {
+    // Issue #2 - Cycle 7: Initialize AbortController for document-level listeners
+    // Abort any previous controller first (in case of re-init)
+    if (this.documentListenerController) {
+      this.documentListenerController.abort();
+    }
+    this.documentListenerController = new AbortController();
+
     // Quick action pills with keyboard navigation
     const pills = this.shadow.querySelectorAll('.glyph-pill');
     const pillsArray = Array.from(pills) as HTMLElement[];
@@ -1683,6 +1704,7 @@ export class GlyphEditor extends HTMLElement {
     }
 
     // Keyboard shortcuts for undo/redo
+    // Issue #2 - Cycle 7: Use AbortController signal for cleanup on disconnect
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         if (e.shiftKey) {
@@ -1693,7 +1715,7 @@ export class GlyphEditor extends HTMLElement {
           this.undo();
         }
       }
-    });
+    }, { signal: this.documentListenerController?.signal });
 
     // Template save/load event listeners
     const saveBtn = this.shadow.getElementById('glyph-save-template');
@@ -1742,13 +1764,14 @@ export class GlyphEditor extends HTMLElement {
     }
 
     // Close dropdown when clicking outside
+    // Issue #2 - Cycle 7: Use AbortController signal for cleanup on disconnect
     document.addEventListener('click', (e) => {
       const dropdown = this.shadow.getElementById('glyph-load-dropdown');
       const target = e.target as Node;
       if (dropdown && !dropdown.contains(target)) {
         this.closeLoadDropdown();
       }
-    });
+    }, { signal: this.documentListenerController?.signal });
   }
 
   /**

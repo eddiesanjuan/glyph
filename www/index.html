@@ -8573,7 +8573,7 @@
     </div>
   </div>
 
-  <!-- Modal for API Key Prompt -->
+  <!-- Modal for API Key Prompt (shown when demo limit reached) -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
       <div class="modal__icon">
@@ -8587,6 +8587,29 @@
       </p>
       <div class="modal__actions">
         <button class="modal__btn modal__btn--secondary" id="modal-close">Maybe Later</button>
+        <a href="https://dashboard.glyph.you" class="modal__btn modal__btn--primary">Get Free API Key</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for PDF Success Upsell (shown after successful demo PDF generation) -->
+  <div class="modal-overlay" id="pdf-success-modal">
+    <div class="modal">
+      <div class="modal__icon" style="background: rgba(34, 197, 94, 0.15);">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #22C55E;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h3 class="modal__title">PDF Downloaded!</h3>
+      <p class="modal__description">
+        Your PDF has been downloaded with a Glyph watermark.<br>
+        <strong id="demo-downloads-remaining">2 demo downloads remaining.</strong>
+      </p>
+      <p class="modal__description" style="margin-top: -12px; font-size: 13px;">
+        Get a free API key to remove watermarks and integrate Glyph into your app.
+      </p>
+      <div class="modal__actions">
+        <button class="modal__btn modal__btn--secondary" id="pdf-success-close">Continue Editing</button>
         <a href="https://dashboard.glyph.you" class="modal__btn modal__btn--primary">Get Free API Key</a>
       </div>
     </div>
@@ -8687,6 +8710,135 @@
           showToast('Private browsing detected - saved versions won\'t persist', 'warning', 6000);
         }
       }, 2000);
+    }
+
+    // ============================================
+    // Demo PDF Generation (Issue #1 - Cycle 7)
+    // ============================================
+    const MAX_DEMO_DOWNLOADS = 3;
+    let demoDownloadCount = 0;
+
+    // Add watermark to HTML for demo PDFs
+    function addWatermarkToHtml(html) {
+      const watermarkStyle = `
+        <style>
+          .glyph-demo-watermark {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 10px;
+            color: rgba(100, 116, 139, 0.6);
+            background: rgba(248, 250, 252, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            z-index: 9999;
+            pointer-events: none;
+          }
+          @media print {
+            .glyph-demo-watermark {
+              position: fixed;
+              bottom: 12px;
+              right: 12px;
+            }
+          }
+        </style>
+      `;
+      const watermarkHtml = '<div class="glyph-demo-watermark">Created with Glyph - glyph.you</div>';
+
+      // Insert watermark before closing body tag
+      if (html.includes('</body>')) {
+        return html.replace('</body>', watermarkStyle + watermarkHtml + '</body>');
+      } else {
+        // If no body tag, append at the end
+        return html + watermarkStyle + watermarkHtml;
+      }
+    }
+
+    // Generate demo PDF with watermark
+    async function generateDemoPdf() {
+      if (demoDownloadCount >= MAX_DEMO_DOWNLOADS) {
+        // Show API key modal if limit reached
+        showModal();
+        return false;
+      }
+
+      if (!currentHtml) {
+        showToast('No document to generate. Please wait for preview to load.', 'error');
+        return false;
+      }
+
+      try {
+        const watermarkedHtml = addWatermarkToHtml(currentHtml);
+
+        const response = await fetch(`${API_URL}/v1/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEMO_API_KEY}`
+          },
+          body: JSON.stringify({
+            html: watermarkedHtml,
+            format: 'pdf'
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'PDF generation failed');
+        }
+
+        // Download the PDF
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `glyph-demo-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Update demo download count
+        demoDownloadCount++;
+        const remaining = MAX_DEMO_DOWNLOADS - demoDownloadCount;
+
+        // Update the success modal text
+        const remainingEl = document.getElementById('demo-downloads-remaining');
+        if (remainingEl) {
+          if (remaining === 0) {
+            remainingEl.textContent = 'This was your last demo download.';
+          } else {
+            remainingEl.textContent = `${remaining} demo download${remaining === 1 ? '' : 's'} remaining.`;
+          }
+        }
+
+        // Show success upsell modal
+        showPdfSuccessModal();
+        return true;
+      } catch (err) {
+        console.error('[Glyph] Demo PDF generation failed:', err);
+        showToast('PDF generation failed. Please try again.', 'error');
+        return false;
+      }
+    }
+
+    // PDF Success Modal functions
+    function showPdfSuccessModal() {
+      const modal = document.getElementById('pdf-success-modal');
+      if (modal) {
+        modal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function hidePdfSuccessModal() {
+      const modal = document.getElementById('pdf-success-modal');
+      if (modal) {
+        modal.classList.remove('visible');
+        document.body.style.overflow = '';
+      }
     }
 
     // ============================================
@@ -12484,20 +12636,27 @@
       }
     });
 
-    // Generate PDF button
-    generateBtn.addEventListener('click', () => {
+    // Generate PDF button - Issue #1 Cycle 7: Allow demo PDF generation with watermark
+    generateBtn.addEventListener('click', async () => {
+      // Check if demo limit reached first
+      if (demoDownloadCount >= MAX_DEMO_DOWNLOADS) {
+        showModal();
+        return;
+      }
+
       const originalText = generateBtn.innerHTML;
       generateBtn.innerHTML = `<div class="loading-spinner loading-spinner--small"></div>Generating...`;
       generateBtn.disabled = true;
 
-      setTimeout(() => {
+      try {
+        await generateDemoPdf();
+      } finally {
         generateBtn.innerHTML = originalText;
         generateBtn.disabled = false;
-        showModal();
-      }, 1500);
+      }
     });
 
-    // Modal functionality
+    // API Key Modal functionality (shown when demo limit reached)
     const modalOverlay = document.getElementById('modal-overlay');
     const modalClose = document.getElementById('modal-close');
 
@@ -12515,9 +12674,28 @@
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) hideModal();
     });
+
+    // PDF Success Modal event listeners
+    const pdfSuccessClose = document.getElementById('pdf-success-close');
+    const pdfSuccessModal = document.getElementById('pdf-success-modal');
+
+    if (pdfSuccessClose) {
+      pdfSuccessClose.addEventListener('click', hidePdfSuccessModal);
+    }
+    if (pdfSuccessModal) {
+      pdfSuccessModal.addEventListener('click', (e) => {
+        if (e.target === pdfSuccessModal) hidePdfSuccessModal();
+      });
+    }
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalOverlay.classList.contains('visible')) {
-        hideModal();
+      if (e.key === 'Escape') {
+        if (modalOverlay.classList.contains('visible')) {
+          hideModal();
+        }
+        if (pdfSuccessModal && pdfSuccessModal.classList.contains('visible')) {
+          hidePdfSuccessModal();
+        }
       }
     });
 
