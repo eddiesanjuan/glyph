@@ -994,14 +994,18 @@
 
       /* Extra small mobile preview fixes */
       .playground__preview-frame-wrapper {
-        transform: scale(0.24) perspective(1000px) rotateX(2deg);
+        width: 200px;
+        height: 259px;
+      }
+
+      .playground__preview-frame-wrapper iframe {
+        transform: scale(0.235);
       }
 
       .playground__preview {
-        min-height: 260px;
+        min-height: 280px;
         max-height: 300px;
-        background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
-        box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+        background: #374151;
       }
 
       .playground__suggestion {
@@ -1815,8 +1819,7 @@
 
     .playground__preview {
       flex: 1;
-      /* Subtle desk/surface gradient for depth */
-      background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
+      background: #374151;
       border-radius: var(--radius-md);
       overflow: hidden;
       position: relative;
@@ -1825,38 +1828,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Inset shadow to feel like a surface */
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+      padding: 20px;
     }
 
     .playground__preview-frame-wrapper {
-      width: 850px;
-      height: 1100px;
-      transform: scale(0.45) perspective(1000px) rotateX(2deg);
-      transform-origin: center center;
-      /* Layered shadow for realistic paper depth - like holding a document */
-      box-shadow:
-        0 1px 2px rgba(0,0,0,0.07),
-        0 2px 4px rgba(0,0,0,0.07),
-        0 4px 8px rgba(0,0,0,0.07),
-        0 8px 16px rgba(0,0,0,0.05),
-        0 16px 32px rgba(0,0,0,0.05),
-        0 32px 64px rgba(0,0,0,0.03);
+      /* 8.5 x 11 aspect ratio (0.773) - letter size document */
+      width: 340px;
+      height: 440px;
+      background: white;
       border-radius: 2px;
       overflow: hidden;
-      transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease, box-shadow 0.3s ease;
-      /* Subtle paper edge */
-      border: 1px solid rgba(0,0,0,0.08);
-      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+
+    .playground__preview-frame-wrapper iframe {
+      width: 850px;
+      height: 1100px;
+      transform: scale(0.4);
+      transform-origin: top left;
+      border: none;
     }
 
     .playground__preview.zoomed-in .playground__preview-frame-wrapper {
       width: 100%;
       height: 100%;
-      transform: scale(1);
-      transform-origin: top left;
       box-shadow: none;
       border-radius: 0;
+    }
+
+    .playground__preview.zoomed-in .playground__preview-frame-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      transform: none;
     }
 
     .playground__preview-frame {
@@ -1868,30 +1872,32 @@
 
     .playground__zoom-toggle {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
-      width: 36px;
-      height: 36px;
-      background: rgba(0, 0, 0, 0.7);
-      border: none;
+      bottom: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(0,0,0,0.1);
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: #374151;
       z-index: 20;
-      transition: background 0.2s, transform 0.2s;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .playground__zoom-toggle:hover {
-      background: rgba(0, 0, 0, 0.85);
+      background: white;
       transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .playground__zoom-toggle svg {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
     }
 
     .playground__zoom-toggle .zoom-out-icon {
@@ -3823,35 +3829,26 @@
         border-bottom: 1px solid var(--color-border-subtle);
       }
 
-      /* Mobile preview area fixes - use absolute positioning for scaled preview */
+      /* Mobile preview area fixes */
       .playground__preview {
-        min-height: 320px;
-        max-height: 360px;
-        overflow: hidden;
-        position: relative;
-        /* Keep the paper surface feel on mobile */
-        background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
-        box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+        min-height: 300px;
+        max-height: 340px;
+        padding: 16px;
+        background: #374151;
       }
 
       .playground__preview-frame-wrapper {
-        position: absolute;
+        width: 260px;
+        height: 336px;
+        position: relative;
+        margin: 0 auto;
+      }
+
+      .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.35) perspective(1000px) rotateX(2deg);
+        transform: scale(0.306);
         transform-origin: top left;
-        top: 10px;
-        left: 50%;
-        margin-left: -148.75px; /* (850 * 0.35) / 2 = 148.75px to center */
-        /* Realistic paper shadow on mobile */
-        box-shadow:
-          0 1px 2px rgba(0,0,0,0.07),
-          0 2px 4px rgba(0,0,0,0.07),
-          0 4px 8px rgba(0,0,0,0.07),
-          0 8px 16px rgba(0,0,0,0.05),
-          0 16px 32px rgba(0,0,0,0.05);
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 2px;
       }
 
       .playground__preview-area {
