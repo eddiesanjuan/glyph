@@ -485,6 +485,58 @@
   box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
 }
 
+/* ============================================
+   HERO CTA BUTTONS - Fix invisible text
+   Issue: In light mode, primary button has same text/bg color
+   ============================================ */
+
+/* Light mode: primary button needs white text on dark background */
+:root:not([data-theme='dark']) .sl-link-button.primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #ffffff !important;
+}
+
+:root:not([data-theme='dark']) .sl-link-button.primary:hover {
+  background: #6d28d9;
+  border-color: #6d28d9;
+  color: #ffffff !important;
+}
+
+/* Light mode: secondary button needs dark text */
+:root:not([data-theme='dark']) .sl-link-button.secondary {
+  border-color: #e2e8f0;
+  color: #1e293b !important;
+}
+
+:root:not([data-theme='dark']) .sl-link-button.secondary:hover {
+  border-color: #cbd5e1;
+  color: #0f172a !important;
+}
+
+/* Dark mode: ensure buttons remain visible */
+:root[data-theme='dark'] .sl-link-button.primary {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff !important;
+}
+
+:root[data-theme='dark'] .sl-link-button.primary:hover {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #ffffff !important;
+}
+
+:root[data-theme='dark'] .sl-link-button.secondary {
+  border-color: #475569;
+  color: #f1f5f9 !important;
+}
+
+:root[data-theme='dark'] .sl-link-button.secondary:hover {
+  border-color: #64748b;
+  color: #ffffff !important;
+}
+
 /* Card grid layout */
 .card-grid {
   display: grid;

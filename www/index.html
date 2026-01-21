@@ -5163,22 +5163,37 @@
 
     /* CRITICAL: 375px overrides - must come AFTER 480px to win cascade */
     @media (max-width: 375px) {
-      .playground__preview {
-        min-height: 420px;
-        max-height: 480px;
-      }
-
+      /* Force preview area to be visible with explicit height */
       .playground__preview-area {
-        min-height: 480px;
+        min-height: 450px !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        display: flex !important;
+        flex-direction: column !important;
       }
 
+      /* Preview container needs explicit height so document shows */
+      .playground__preview {
+        min-height: 400px !important;
+        height: 400px !important;
+        max-height: none !important;
+        overflow: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+      }
+
+      /* Scale down frame wrapper to fit 375px - 24px padding = 351px available */
       .playground__preview-frame-wrapper {
-        width: 320px;
-        height: 414px;
+        width: 280px !important;
+        height: 362px !important;
+        flex-shrink: 0 !important;
       }
 
       .playground__preview-frame-wrapper iframe {
-        transform: scale(0.376);
+        transform: scale(0.329) !important; /* 280/850 = 0.329 */
       }
     }
 

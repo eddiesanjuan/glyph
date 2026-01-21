@@ -1863,6 +1863,14 @@ export class GlyphEditor extends HTMLElement {
     try {
       const blob = await this.api.generate(this.sessionId);
 
+      // Validate blob before download - check size and type
+      if (!blob || blob.size === 0) {
+        throw new Error('PDF generation returned empty file. Please try again.');
+      }
+      if (blob.type && blob.type !== 'application/pdf' && blob.type !== 'application/octet-stream') {
+        throw new Error(`Invalid file type received: ${blob.type}. Expected PDF.`);
+      }
+
       // Trigger download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
