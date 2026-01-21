@@ -991,6 +991,26 @@
       .social-proof__grid {
         grid-template-columns: 1fr 1fr;
       }
+
+      /* Extra small mobile preview fixes */
+      .playground__preview-frame-wrapper {
+        transform: scale(0.24);
+      }
+
+      .playground__preview {
+        min-height: 260px;
+        max-height: 300px;
+      }
+
+      .playground__suggestion {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .playground__apply-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
     }
 
     /* ============================================
@@ -3786,6 +3806,29 @@
       .playground__input-area {
         border-right: none;
         border-bottom: 1px solid var(--color-border-subtle);
+      }
+
+      /* Mobile preview area fixes - use absolute positioning for scaled preview */
+      .playground__preview {
+        min-height: 320px;
+        max-height: 360px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .playground__preview-frame-wrapper {
+        position: absolute;
+        width: 850px;
+        height: 1100px;
+        transform: scale(0.35);
+        transform-origin: top left;
+        top: 10px;
+        left: 50%;
+        margin-left: -148.75px; /* (850 * 0.35) / 2 = 148.75px to center */
+      }
+
+      .playground__preview-area {
+        min-height: 360px;
       }
 
       .integration__content {
@@ -6920,6 +6963,10 @@
     const MAX_UNDO_HISTORY = 10;
     let undoHistory = [];
 
+    // Redo history - stores states that can be redone (max 20 items)
+    const MAX_REDO_HISTORY = 20;
+    let redoHistory = [];
+
     // ============================================
     // Navigation Scroll Effect
     // ============================================
@@ -7847,6 +7894,10 @@
 
       undoHistory.push(currentHtml);
 
+      // CRITICAL: Clear redo history when a new change is made
+      // This prevents undone states from "coming back" when user undos after making new changes
+      redoHistory = [];
+
       // Limit history size to prevent memory issues
       if (undoHistory.length > MAX_UNDO_HISTORY) {
         undoHistory.shift();
@@ -7927,10 +7978,6 @@
       });
     }
 
-    // Redo history for redo functionality
-    let redoHistory = [];
-    const MAX_REDO_HISTORY = 20;
-
     // Perform redo
     function performRedo() {
       if (redoHistory.length === 0) return;
@@ -7946,6 +7993,15 @@
       const nextHtml = redoHistory.pop();
       currentHtml = nextHtml;
       renderPreview(currentHtml);
+
+      // CRITICAL: Sync currentHistoryIndex with redo
+      // This ensures historyEntries stay in sync when user redos
+      if (currentHistoryIndex < historyEntries.length - 1) {
+        currentHistoryIndex++;
+        updateHistoryCount();
+        renderHistoryPanel();
+      }
+
       updateUndoButtonState();
     }
 
@@ -7965,6 +8021,15 @@
       const previousHtml = undoHistory.pop();
       currentHtml = previousHtml;
       renderPreview(currentHtml);
+
+      // CRITICAL: Sync currentHistoryIndex with undo
+      // This ensures historyEntries truncates correctly when user makes new change after undo
+      if (currentHistoryIndex > 0) {
+        currentHistoryIndex--;
+        updateHistoryCount();
+        renderHistoryPanel();
+      }
+
       updateUndoButtonState();
     };
 
@@ -8193,21 +8258,30 @@
     // ============================================
     const SAVED_VERSIONS_KEY = 'glyph_saved_versions';
     const MAX_SAVED_VERSIONS = 10;
-    
-    // DOM elements for saved versions
-    const saveVersionBtn = document.getElementById('save-version-btn');
-    const saveVersionModal = document.getElementById('save-version-modal');
-    const versionNameInput = document.getElementById('version-name-input');
-    const saveVersionConfirm = document.getElementById('save-version-confirm');
-    const saveVersionCancel = document.getElementById('save-version-cancel');
-    const savedVersionsList = document.getElementById('saved-versions-list');
-    const savedVersionsCount = document.getElementById('saved-versions-count');
-    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-    const deleteVersionName = document.getElementById('delete-version-name');
-    const deleteConfirm = document.getElementById('delete-confirm');
-    const deleteCancel = document.getElementById('delete-cancel');
-    const glyphToast = document.getElementById('glyph-toast');
-    const toastMessage = document.getElementById('toast-message');
+
+    // DOM elements for saved versions - use lazy getters since modal HTML is below script
+    // These elements exist in DOM at lines 10689+ but script runs before that
+    let _saveVersionElements = null;
+    function getSaveVersionElements() {
+      if (!_saveVersionElements) {
+        _saveVersionElements = {
+          saveVersionBtn: document.getElementById('save-version-btn'),
+          saveVersionModal: document.getElementById('save-version-modal'),
+          versionNameInput: document.getElementById('version-name-input'),
+          saveVersionConfirm: document.getElementById('save-version-confirm'),
+          saveVersionCancel: document.getElementById('save-version-cancel'),
+          savedVersionsList: document.getElementById('saved-versions-list'),
+          savedVersionsCount: document.getElementById('saved-versions-count'),
+          deleteConfirmModal: document.getElementById('delete-confirm-modal'),
+          deleteVersionName: document.getElementById('delete-version-name'),
+          deleteConfirm: document.getElementById('delete-confirm'),
+          deleteCancel: document.getElementById('delete-cancel'),
+          glyphToast: document.getElementById('glyph-toast'),
+          toastMessage: document.getElementById('toast-message')
+        };
+      }
+      return _saveVersionElements;
+    }
     
     let savedVersions = [];
     let versionToDelete = null;
@@ -8235,13 +8309,14 @@
     
     // Show toast notification
     function showToast(message, type = 'success') {
-      if (!glyphToast || !toastMessage) return;
-      
-      toastMessage.textContent = message;
-      glyphToast.className = 'glyph-toast glyph-toast--' + type;
-      
+      const els = getSaveVersionElements();
+      if (!els.glyphToast || !els.toastMessage) return;
+
+      els.toastMessage.textContent = message;
+      els.glyphToast.className = 'glyph-toast glyph-toast--' + type;
+
       // Update icon based on type
-      const iconPath = glyphToast.querySelector('.glyph-toast__icon path');
+      const iconPath = els.glyphToast.querySelector('.glyph-toast__icon path');
       if (iconPath) {
         if (type === 'success') {
           iconPath.setAttribute('d', 'M5 13l4 4L19 7');
@@ -8249,11 +8324,11 @@
           iconPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
         }
       }
-      
-      glyphToast.classList.add('active');
-      
+
+      els.glyphToast.classList.add('active');
+
       setTimeout(() => {
-        glyphToast.classList.remove('active');
+        els.glyphToast.classList.remove('active');
       }, 3000);
     }
     
@@ -8276,19 +8351,20 @@
     
     // Render saved versions list
     function renderSavedVersions() {
-      if (!savedVersionsList || !savedVersionsCount) return;
-      
-      savedVersionsCount.textContent = savedVersions.length + '/10';
-      
+      const els = getSaveVersionElements();
+      if (!els.savedVersionsList || !els.savedVersionsCount) return;
+
+      els.savedVersionsCount.textContent = savedVersions.length + '/10';
+
       if (savedVersions.length === 0) {
-        savedVersionsList.innerHTML = '<div class="saved-versions__empty">Click the star to save a named version</div>';
+        els.savedVersionsList.innerHTML = '<div class="saved-versions__empty">Click the star to save a named version</div>';
         return;
       }
-      
+
       // Sort by timestamp (newest first)
       const sorted = [...savedVersions].sort((a, b) => b.timestamp - a.timestamp);
-      
-      savedVersionsList.innerHTML = sorted.map(version => {
+
+      els.savedVersionsList.innerHTML = sorted.map(version => {
         const item = document.createElement('div');
         item.className = 'saved-version-item';
         item.setAttribute('data-id', version.id);
@@ -8306,19 +8382,19 @@
           '</button>';
         return item.outerHTML;
       }).join('');
-      
+
       // Add click handlers
-      savedVersionsList.querySelectorAll('.saved-version-item').forEach(item => {
+      els.savedVersionsList.querySelectorAll('.saved-version-item').forEach(item => {
         item.addEventListener('click', (e) => {
           // Don't restore if clicking delete button
           if (e.target.closest('.saved-version-item__delete')) return;
-          
+
           const id = item.getAttribute('data-id');
           restoreSavedVersion(id);
         });
       });
-      
-      savedVersionsList.querySelectorAll('.saved-version-item__delete').forEach(btn => {
+
+      els.savedVersionsList.querySelectorAll('.saved-version-item__delete').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const id = btn.getAttribute('data-id');
@@ -8336,30 +8412,33 @@
     
     // Open save version modal
     function openSaveVersionModal() {
+      const els = getSaveVersionElements();
       if (!currentHtml) {
         showToast('No document to save', 'error');
         return;
       }
-      
+
       if (savedVersions.length >= MAX_SAVED_VERSIONS) {
         showToast('Maximum 10 versions. Delete one first.', 'error');
         return;
       }
-      
-      versionNameInput.value = '';
-      saveVersionModal.classList.add('active');
-      setTimeout(() => versionNameInput.focus(), 100);
+
+      if (els.versionNameInput) els.versionNameInput.value = '';
+      if (els.saveVersionModal) els.saveVersionModal.classList.add('active');
+      setTimeout(() => els.versionNameInput && els.versionNameInput.focus(), 100);
     }
-    
+
     // Close save version modal
     function closeSaveVersionModal() {
-      saveVersionModal.classList.remove('active');
-      versionNameInput.value = '';
+      const els = getSaveVersionElements();
+      if (els.saveVersionModal) els.saveVersionModal.classList.remove('active');
+      if (els.versionNameInput) els.versionNameInput.value = '';
     }
-    
+
     // Save the current version
     function saveCurrentVersion() {
-      const name = versionNameInput.value.trim();
+      const els = getSaveVersionElements();
+      const name = els.versionNameInput ? els.versionNameInput.value.trim() : '';
       
       if (!name) {
         showToast('Please enter a name', 'error');
@@ -8411,17 +8490,19 @@
     
     // Confirm delete dialog
     function confirmDeleteVersion(id) {
+      const els = getSaveVersionElements();
       const version = savedVersions.find(v => v.id === id);
       if (!version) return;
-      
+
       versionToDelete = id;
-      deleteVersionName.textContent = version.name;
-      deleteConfirmModal.classList.add('active');
+      if (els.deleteVersionName) els.deleteVersionName.textContent = version.name;
+      if (els.deleteConfirmModal) els.deleteConfirmModal.classList.add('active');
     }
-    
+
     // Close delete dialog
     function closeDeleteModal() {
-      deleteConfirmModal.classList.remove('active');
+      const els = getSaveVersionElements();
+      if (els.deleteConfirmModal) els.deleteConfirmModal.classList.remove('active');
       versionToDelete = null;
     }
     
@@ -8441,47 +8522,59 @@
       console.log('[Glyph] Deleted version:', name);
     }
     
-    // Event listeners for saved versions
-    if (saveVersionBtn) {
-      saveVersionBtn.addEventListener('click', openSaveVersionModal);
+    // Event listeners for saved versions - must wait for DOM since modal HTML is below script
+    function initSaveVersionListeners() {
+      const els = getSaveVersionElements();
+
+      if (els.saveVersionBtn) {
+        els.saveVersionBtn.addEventListener('click', openSaveVersionModal);
+      }
+
+      if (els.saveVersionCancel) {
+        els.saveVersionCancel.addEventListener('click', closeSaveVersionModal);
+      }
+
+      if (els.saveVersionConfirm) {
+        els.saveVersionConfirm.addEventListener('click', saveCurrentVersion);
+      }
+
+      if (els.saveVersionModal) {
+        els.saveVersionModal.addEventListener('click', (e) => {
+          if (e.target === els.saveVersionModal) closeSaveVersionModal();
+        });
+      }
+
+      if (els.versionNameInput) {
+        els.versionNameInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') saveCurrentVersion();
+        });
+      }
+
+      if (els.deleteCancel) {
+        els.deleteCancel.addEventListener('click', closeDeleteModal);
+      }
+
+      if (els.deleteConfirm) {
+        els.deleteConfirm.addEventListener('click', deleteSavedVersion);
+      }
+
+      if (els.deleteConfirmModal) {
+        els.deleteConfirmModal.addEventListener('click', (e) => {
+          if (e.target === els.deleteConfirmModal) closeDeleteModal();
+        });
+      }
+
+      // Load saved versions after listeners are attached
+      loadSavedVersions();
     }
-    
-    if (saveVersionCancel) {
-      saveVersionCancel.addEventListener('click', closeSaveVersionModal);
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSaveVersionListeners);
+    } else {
+      // DOM already loaded, but elements might still be below - use setTimeout to ensure they exist
+      setTimeout(initSaveVersionListeners, 0);
     }
-    
-    if (saveVersionConfirm) {
-      saveVersionConfirm.addEventListener('click', saveCurrentVersion);
-    }
-    
-    if (saveVersionModal) {
-      saveVersionModal.addEventListener('click', (e) => {
-        if (e.target === saveVersionModal) closeSaveVersionModal();
-      });
-    }
-    
-    if (versionNameInput) {
-      versionNameInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') saveCurrentVersion();
-      });
-    }
-    
-    if (deleteCancel) {
-      deleteCancel.addEventListener('click', closeDeleteModal);
-    }
-    
-    if (deleteConfirm) {
-      deleteConfirm.addEventListener('click', deleteSavedVersion);
-    }
-    
-    if (deleteConfirmModal) {
-      deleteConfirmModal.addEventListener('click', (e) => {
-        if (e.target === deleteConfirmModal) closeDeleteModal();
-      });
-    }
-    
-    // Load saved versions on page load
-    loadSavedVersions();
     // Static demo fallback when API is not available
     function renderStaticDemo() {
       const staticHtml = generateStaticHtml(sampleQuoteData, '#1E3A5F');
@@ -8683,7 +8776,10 @@
             },
             body: JSON.stringify({
               sessionId,
-              prompt
+              prompt,
+              // UNDO FIX: Send current HTML to server to ensure modifications
+              // apply to the correct state after undo operations
+              html: currentHtml
             })
           });
 
@@ -9140,7 +9236,7 @@
       renderPreview(currentHtml);
 
       // Add to version history
-      addToVersionHistory(currentHtml, prompt);
+      addHistoryEntry(prompt, currentHtml);
 
       previewContainer.classList.add('success');
       setTimeout(() => previewContainer.classList.remove('success'), 500);

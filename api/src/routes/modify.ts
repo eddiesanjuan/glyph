@@ -139,6 +139,10 @@ const sessionModifySchema = z.object({
   ),
   prompt: z.string().min(1).max(1000),
   region: z.string().optional(),
+  // Optional: client can provide current HTML to override server session state
+  // This is critical for undo support - when user undoes, client has correct state
+  // but server session may still have old state
+  html: z.string().optional(),
 });
 
 // Direct HTML modification schema (legacy/simple mode)
@@ -167,7 +171,7 @@ modify.post("/", async (c) => {
         return c.json(error, 400);
       }
 
-      const { sessionId, prompt, region } = parsed.data;
+      const { sessionId, prompt, region, html: clientHtml } = parsed.data;
       const apiKeyId = c.get("apiKeyId") as string | undefined;
       const isDevSession = isDevSessionId(sessionId);
 
@@ -250,7 +254,10 @@ modify.post("/", async (c) => {
 
       // FIX: Send TEMPLATE HTML (with Mustache placeholders) to AI, not rendered HTML
       // This ensures AI modifications preserve the template structure
-      const templateToModify = session.template_html || session.current_html;
+      // UNDO FIX: If client provides HTML, use it instead of server session state
+      // This is critical for undo support - when user undoes, client has the correct state
+      // but server session may still have the old (pre-undo) state
+      const templateToModify = clientHtml || session.template_html || session.current_html;
 
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
       const result = await modifyTemplate(templateToModify, prompt, region);
