@@ -1063,11 +1063,11 @@
         flex-shrink: 0;
       }
 
-      /* CRITICAL FIX: Make preview area scrollable on mobile */
+      /* CRITICAL FIX: Make preview area visible and scrollable on mobile */
       .playground__preview-area {
-        padding: 12px;
-        min-height: 320px;
-        max-height: 400px;
+        padding: 16px;
+        min-height: 450px;  /* Increased from 320px for better visibility */
+        max-height: 500px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -1075,10 +1075,10 @@
 
       /* CRITICAL FIX: Enable touch scrolling in preview container */
       .playground__preview {
-        min-height: 300px;
-        max-height: 350px;
+        min-height: 400px;  /* Increased from 300px */
+        max-height: 450px;  /* Increased from 350px */
         flex: 1;
-        padding: 12px;
+        padding: 16px;
         display: block !important;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
@@ -1091,8 +1091,8 @@
 
       /* Larger document preview for better visibility and scrolling */
       .playground__preview-frame-wrapper {
-        width: 280px;
-        height: 362px;
+        width: 320px;   /* Increased from 280px */
+        height: 414px;  /* Increased proportionally (320 * 1.29) */
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
@@ -1103,7 +1103,7 @@
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.33);
+        transform: scale(0.376);  /* Increased from 0.33 (320/850 = 0.376) */
         transform-origin: top left;
         border: none;
         /* Enable touch on iframe content */
@@ -7174,7 +7174,7 @@
             <li><a href="#features">Features</a></li>
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="#playground">Playground</a></li>
-            <li><a href="/changelog">Changelog</a></li>
+            <li><a href="/changelog.html">Changelog</a></li>
           </ul>
         </div>
 
@@ -7184,17 +7184,17 @@
             <li><a href="https://docs.glyph.you">Documentation</a></li>
             <li><a href="https://docs.glyph.you/api">API Reference</a></li>
             <li><a href="https://github.com/glyph-so/glyph">GitHub</a></li>
-            <li><a href="/examples">Examples</a></li>
+            <li><a href="/examples.html">Examples</a></li>
           </ul>
         </div>
 
         <div class="footer__column">
           <h4>Company</h4>
           <ul>
-            <li><a href="/about">About</a></li>
+            <li><a href="/about.html">About</a></li>
             <li><a href="/blog">Blog</a></li>
-            <li><a href="/privacy">Privacy</a></li>
-            <li><a href="/terms">Terms</a></li>
+            <li><a href="/privacy.html">Privacy</a></li>
+            <li><a href="/terms.html">Terms</a></li>
           </ul>
         </div>
       </div>
@@ -10714,6 +10714,20 @@
 
     // Initialize on load
     document.addEventListener('DOMContentLoaded', () => {
+      // CRITICAL FIX: Ensure all toasts start hidden (prevent stale toast visibility)
+      const toastElements = [
+        document.getElementById('glyph-toast'),
+        document.getElementById('session-warning-toast'),
+        document.getElementById('api-error-toast')
+      ];
+      toastElements.forEach(toast => {
+        if (toast) {
+          toast.classList.remove('active', 'visible');
+          toast.style.opacity = '0';
+          toast.style.pointerEvents = 'none';
+        }
+      });
+
       initializePreview();
     });
 
