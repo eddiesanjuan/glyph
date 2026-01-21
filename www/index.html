@@ -1149,6 +1149,12 @@
         height: 12px;
       }
 
+      /* Loading tip compact */
+      .playground__loading-tip {
+        margin-top: 10px;
+        font-size: 11px;
+      }
+
       /* Hide rate notice on very small screens */
       .playground__rate-notice {
         display: none;
@@ -2239,6 +2245,64 @@
       white-space: nowrap;
     }
 
+    /* Loading tip that rotates during long waits */
+    .playground__loading-tip {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #888;
+      font-style: italic;
+      min-height: 18px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .playground__loading-tip.visible {
+      opacity: 1;
+    }
+
+    .playground__loading-tip::before {
+      content: '\2728';
+      margin-right: 6px;
+    }
+
+    /* Cancel button - appears after 5 seconds during long operations */
+    .playground__loading-cancel {
+      margin-top: 20px;
+      padding: 10px 24px;
+      min-width: 100px;
+      min-height: 44px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      background: transparent;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
+      /* Hidden by default, will be shown via JS after 5s */
+    }
+
+    .playground__loading-cancel.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .playground__loading-cancel:hover {
+      background: #f5f5f5;
+      border-color: #bbb;
+    }
+
+    .playground__loading-cancel:active {
+      background: #eee;
+    }
+
+    .playground__loading-cancel:focus {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
     .playground__rate-notice {
       margin-top: 12px;
       padding: 8px 12px;
@@ -3215,6 +3279,14 @@
 
     .glyph-toast--error .glyph-toast__icon {
       color: var(--color-error);
+    }
+
+    .glyph-toast--info {
+      border-color: #6b7280;
+    }
+
+    .glyph-toast--info .glyph-toast__icon {
+      color: #6b7280;
     }
 
     .glyph-toast__icon {
@@ -6961,11 +7033,19 @@
                     <span class="loading-stage__icon"></span>
                     <span class="loading-stage__text">Generating modifications</span>
                   </div>
+                  <div class="loading-stage" data-stage="apply">
+                    <span class="loading-stage__icon"></span>
+                    <span class="loading-stage__text">Applying changes</span>
+                  </div>
                   <div class="loading-stage" data-stage="validate">
                     <span class="loading-stage__icon"></span>
-                    <span class="loading-stage__text">Validating changes</span>
+                    <span class="loading-stage__text">Validating output</span>
                   </div>
                 </div>
+                <div class="playground__loading-tip" id="loading-tip"></div>
+                <button class="playground__loading-cancel" id="loading-cancel-btn">
+                  Cancel
+                </button>
               </div>
               <div class="playground__preview-frame-wrapper">
                 <iframe id="preview-frame" class="playground__preview-frame" title="Document Preview"></iframe>
@@ -9853,6 +9933,9 @@
           iconPath.setAttribute('d', 'M5 13l4 4L19 7');
         } else if (type === 'error') {
           iconPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        } else if (type === 'info') {
+          // Info icon - circle with i
+          iconPath.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z');
         }
       }
 
@@ -10312,21 +10395,38 @@
     let stageTimeouts = [];
     let elapsedTimerInterval = null;
     let loadingStartTime = null;
+    let currentAbortController = null;  // For cancel button
+    let cancelButtonTimeout = null;     // Shows cancel after 5 seconds
 
     // Time-aware loading stages with context messages
+    // Calibrated for 45-50 second typical operations
     const loadingStages = [
-      { name: 'analyze', text: 'Analyzing your request...', delay: 0, maxTime: 10 },
-      { name: 'generate', text: 'Generating modifications...', delay: 10000, maxTime: 25 },
-      { name: 'validate', text: 'Almost there...', delay: 25000, maxTime: 40 },
-      { name: 'extended', text: 'This is taking longer than usual...', delay: 40000, maxTime: 999 }
+      { name: 'analyze', text: 'Analyzing your request...', delay: 0, maxTime: 15 },
+      { name: 'generate', text: 'Generating modifications...', delay: 15000, maxTime: 30 },
+      { name: 'apply', text: 'Applying changes...', delay: 30000, maxTime: 45 },
+      { name: 'validate', text: 'Almost there...', delay: 45000, maxTime: 60 },
+      { name: 'extended', text: 'This one\'s complex - hang tight!', delay: 60000, maxTime: 999 }
     ];
+
+    // Tips that rotate during loading (shown after 10 seconds)
+    const loadingTips = [
+      'Glyph uses AI to understand your intent, not just keywords',
+      'Try "Add QR code linking to our website" for a quick modification',
+      'The AI is reviewing multiple approaches for the best result',
+      'Complex styling changes may take a bit longer',
+      'Every modification is validated for quality',
+      'You can click any region to target specific changes'
+    ];
+    let currentTipIndex = 0;
+    let tipRotationInterval = null;
 
     // Get context-aware status message based on elapsed time
     function getTimeAwareMessage(elapsedSeconds) {
-      if (elapsedSeconds < 10) return 'Analyzing your request...';
-      if (elapsedSeconds < 25) return 'Generating modifications...';
-      if (elapsedSeconds < 40) return 'Almost there...';
-      return 'This is taking longer than usual...';
+      if (elapsedSeconds < 15) return 'Analyzing your request...';
+      if (elapsedSeconds < 30) return 'Generating modifications...';
+      if (elapsedSeconds < 45) return 'Applying changes...';
+      if (elapsedSeconds < 60) return 'Almost there...';
+      return 'This one\'s complex - hang tight!';
     }
 
     function resetLoadingStages() {
@@ -10368,6 +10468,7 @@
       previewLoading.classList.toggle('visible', show);
       const progressBar = document.getElementById('loading-progress-bar');
       const loadingText = document.getElementById('loading-text');
+      const cancelBtn = document.getElementById('loading-cancel-btn');
 
       if (show) {
         // Reset progress and stages
@@ -10376,10 +10477,40 @@
         resetLoadingStages();
         loadingStartTime = Date.now();
 
+        // Hide cancel button initially
+        if (cancelBtn) {
+          cancelBtn.classList.remove('visible');
+        }
+
+        // Clear any existing cancel button timeout
+        if (cancelButtonTimeout) {
+          clearTimeout(cancelButtonTimeout);
+          cancelButtonTimeout = null;
+        }
+
+        // Show cancel button after 5 seconds
+        cancelButtonTimeout = setTimeout(() => {
+          if (cancelBtn && isProcessingModification) {
+            cancelBtn.classList.add('visible');
+          }
+        }, 5000);
+
         // Clear any existing elapsed timer
         if (elapsedTimerInterval) {
           clearInterval(elapsedTimerInterval);
           elapsedTimerInterval = null;
+        }
+
+        // Reset and hide tip
+        const tipElement = document.getElementById('loading-tip');
+        if (tipElement) {
+          tipElement.classList.remove('visible');
+          tipElement.textContent = '';
+        }
+        currentTipIndex = Math.floor(Math.random() * loadingTips.length);
+        if (tipRotationInterval) {
+          clearInterval(tipRotationInterval);
+          tipRotationInterval = null;
         }
 
         // Start elapsed time counter that updates every second
@@ -10394,6 +10525,21 @@
 
           // Also update status indicator with elapsed time
           setStatus(`Applying... ${elapsedSeconds}s`);
+
+          // Show first tip after 10 seconds
+          if (elapsedSeconds === 10 && tipElement) {
+            tipElement.textContent = loadingTips[currentTipIndex];
+            tipElement.classList.add('visible');
+            // Start rotating tips every 12 seconds
+            tipRotationInterval = setInterval(() => {
+              currentTipIndex = (currentTipIndex + 1) % loadingTips.length;
+              tipElement.classList.remove('visible');
+              setTimeout(() => {
+                tipElement.textContent = loadingTips[currentTipIndex];
+                tipElement.classList.add('visible');
+              }, 300);
+            }, 12000);
+          }
         }, 1000);
 
         // Initial message
@@ -10401,23 +10547,25 @@
           loadingText.textContent = 'Analyzing your request... (0s)';
         }
 
-        // Animate progress with ease-out curve (fast start, slow end)
-        // Progress goes from 0 to ~90% over time, never completing until actual response
+        // Animate progress with logarithmic curve for 60 second operations
+        // Fast start, progressively slower as it approaches 95%
         const startTime = Date.now();
-        const duration = 30000; // 30 seconds to reach ~90% (extended for longer operations)
+        const duration = 60000; // 60 seconds to reach ~95%
 
         loadingProgressInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
-          // Ease-out cubic curve: approaches 90% asymptotically
-          const t = Math.min(elapsed / duration, 1);
-          loadingProgress = 90 * (1 - Math.pow(1 - t, 3));
-          progressBar.style.width = loadingProgress + '%';
-
-          // Stop updating once we're at ~90%
-          if (loadingProgress >= 89) {
-            clearInterval(loadingProgressInterval);
-            loadingProgressInterval = null;
+          // Logarithmic progression: fast start, slow approach to 95%
+          // Uses log curve that reaches ~95% at duration, continues slowly after
+          const t = elapsed / duration;
+          if (t <= 1) {
+            // During first 60s: logarithmic curve from 0 to 95%
+            loadingProgress = 95 * (1 - Math.pow(1 - t, 2.5));
+          } else {
+            // After 60s: very slow crawl from 95% toward 98% (never reaches)
+            const extraTime = (elapsed - duration) / 60000; // additional minutes
+            loadingProgress = 95 + 3 * (1 - Math.exp(-extraTime));
           }
+          progressBar.style.width = loadingProgress + '%';
         }, 50);
       } else {
         // Complete the progress bar smoothly
@@ -10430,6 +10578,25 @@
         if (elapsedTimerInterval) {
           clearInterval(elapsedTimerInterval);
           elapsedTimerInterval = null;
+        }
+
+        // Clear cancel button timeout and hide button
+        if (cancelButtonTimeout) {
+          clearTimeout(cancelButtonTimeout);
+          cancelButtonTimeout = null;
+        }
+        if (cancelBtn) {
+          cancelBtn.classList.remove('visible');
+        }
+
+        // Stop tip rotation and hide tip
+        if (tipRotationInterval) {
+          clearInterval(tipRotationInterval);
+          tipRotationInterval = null;
+        }
+        const tipElement = document.getElementById('loading-tip');
+        if (tipElement) {
+          tipElement.classList.remove('visible');
         }
 
         // Mark all stages as completed
@@ -10450,6 +10617,10 @@
           resetLoadingStages();
           if (loadingText) {
             loadingText.textContent = 'Applying changes...';
+          }
+          // Also reset tip
+          if (tipElement) {
+            tipElement.textContent = '';
           }
         }, 500);
       }
@@ -10484,10 +10655,11 @@
       const startTime = Date.now();
 
       // TIMEOUT FIX: Create AbortController for 60-second timeout
+      // Store globally so cancel button can access it
       const MODIFICATION_TIMEOUT_MS = 60000; // 60 seconds max
-      const controller = new AbortController();
+      currentAbortController = new AbortController();
       const timeoutId = setTimeout(() => {
-        controller.abort();
+        currentAbortController.abort();
       }, MODIFICATION_TIMEOUT_MS);
 
       try {
@@ -10516,7 +10688,7 @@
               // apply to the correct state after undo operations
               html: currentHtml
             }),
-            signal: controller.signal
+            signal: currentAbortController.signal
           });
 
           // SILENT FAILURE FIX: Properly handle non-ok responses
@@ -10574,7 +10746,7 @@
             html: currentHtml,
             instruction: prompt
           }),
-          signal: controller.signal
+          signal: currentAbortController.signal
         });
 
         if (!response.ok) {
@@ -10625,10 +10797,22 @@
           updateUndoButtonState();
         }
 
-        // TIMEOUT FIX: Handle AbortError with clear timeout message
+        // Handle AbortError - could be user cancel or timeout
         let errorMessage = err.message || 'Unknown error';
+        const elapsedMs = Date.now() - startTime;
+        const wasUserCancel = err.name === 'AbortError' && elapsedMs < MODIFICATION_TIMEOUT_MS - 1000;
+
         if (err.name === 'AbortError') {
-          errorMessage = 'timeout - request took too long (60s limit)';
+          if (wasUserCancel) {
+            // User clicked cancel button
+            showToast('Modification cancelled', 'info');
+            setStatus('Ready');
+            console.log('[Glyph] Modification cancelled by user');
+            return; // Skip showing error
+          } else {
+            // Actual timeout
+            errorMessage = 'timeout - request took too long (60s limit)';
+          }
         }
         showApiError(errorMessage, prompt);
 
@@ -10638,6 +10822,7 @@
       } finally {
         // Always clear the timeout to prevent memory leaks
         clearTimeout(timeoutId);
+        currentAbortController = null;  // Clear abort controller
         isProcessingModification = false;
         showLoading(false);
         applyBtn.classList.remove('loading');
@@ -11364,6 +11549,19 @@
         performUndo();
       }
     });
+
+    // Cancel button for long-running modifications
+    const loadingCancelBtn = document.getElementById('loading-cancel-btn');
+    if (loadingCancelBtn) {
+      loadingCancelBtn.addEventListener('click', () => {
+        if (isProcessingModification && currentAbortController) {
+          console.log('[Glyph] User cancelled modification');
+          currentAbortController.abort();
+          // The abort will trigger the catch block in applyModifications
+          // which will handle cleanup and show appropriate message
+        }
+      });
+    }
 
     // Enter key to apply
     promptInput.addEventListener('keypress', (e) => {

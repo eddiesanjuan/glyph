@@ -18,6 +18,7 @@ import {
   validateModification as validateGuardrails,
   sanitizeHtml,
 } from "../services/guardrails.js";
+import { repairHtml, isHtmlTruncated, getFriendlyIssueDescription } from "../services/validator.js";
 import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
@@ -260,21 +261,65 @@ modify.post("/", async (c) => {
       const templateToModify = session.template_html || session.current_html;
 
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
-      const result = await modifyTemplate(templateToModify, prompt, region);
-
-      // PERFORMANCE: Skip synchronous validation to return response faster
-      // Background validation at line ~365 will catch issues asynchronously
-      // Only do FAST security check for critical XSS/script injection
+      // With automatic retry if HTML appears truncated or malformed
+      let result = await modifyTemplate(templateToModify, prompt, region);
       let modifiedTemplateHtml = result.html;
 
+      // Check if HTML appears truncated and needs repair
+      if (isHtmlTruncated(result.html)) {
+        console.warn("[Modify] HTML appears truncated, attempting repair...");
+
+        // First try to repair the HTML
+        const repairResult = repairHtml(result.html);
+        if (repairResult.repairsApplied.length > 0) {
+          console.log(`[Modify] Applied HTML repairs: ${repairResult.repairsApplied.join(', ')}`);
+          modifiedTemplateHtml = repairResult.html;
+        }
+
+        // If still seems broken after repair, retry with enhanced prompt
+        if (isHtmlTruncated(modifiedTemplateHtml)) {
+          console.warn("[Modify] HTML still appears truncated after repair, retrying with AI...");
+
+          // Retry with an enhanced prompt emphasizing complete output
+          const retryPrompt = `${prompt}
+
+CRITICAL: You MUST output the COMPLETE HTML document from <!DOCTYPE html> to </html>.
+Do NOT truncate or cut off the output. Include ALL closing tags.`;
+
+          try {
+            const retryResult = await modifyTemplate(templateToModify, retryPrompt, region);
+            if (!isHtmlTruncated(retryResult.html)) {
+              console.log("[Modify] Retry successful - got complete HTML");
+              result = retryResult;
+              modifiedTemplateHtml = retryResult.html;
+            } else {
+              // Apply repair to retry result as fallback
+              const retryRepair = repairHtml(retryResult.html);
+              modifiedTemplateHtml = retryRepair.html;
+              console.log("[Modify] Retry also truncated, using repaired version");
+            }
+          } catch (retryError) {
+            console.error("[Modify] Retry failed:", retryError);
+            // Continue with repaired original
+          }
+        }
+      } else {
+        // Even non-truncated HTML might benefit from light repairs
+        const repairResult = repairHtml(result.html);
+        if (repairResult.repairsApplied.length > 0) {
+          console.log(`[Modify] Applied minor HTML repairs: ${repairResult.repairsApplied.join(', ')}`);
+          modifiedTemplateHtml = repairResult.html;
+        }
+      }
+
       // FAST security check - only check for script injection (< 1ms)
-      const hasScriptInjection = /<script/i.test(result.html) ||
-        /javascript:/i.test(result.html) ||
-        /<iframe/i.test(result.html) ||
-        /\son\w+\s*=/i.test(result.html);
+      const hasScriptInjection = /<script/i.test(modifiedTemplateHtml) ||
+        /javascript:/i.test(modifiedTemplateHtml) ||
+        /<iframe/i.test(modifiedTemplateHtml) ||
+        /\son\w+\s*=/i.test(modifiedTemplateHtml);
 
       if (hasScriptInjection) {
-        modifiedTemplateHtml = sanitizeHtml(result.html);
+        modifiedTemplateHtml = sanitizeHtml(modifiedTemplateHtml);
         console.warn("[Security] Applied HTML sanitization for potential script injection");
       }
 
@@ -521,11 +566,17 @@ async function runBackgroundValidation(
 
       // Store validation result in session for potential future API endpoint
       // This allows the frontend to poll for validation status
+      // Convert technical descriptions to friendly messages for the user
+      const friendlyIssues = result.issues.slice(0, 5).map(issue => ({
+        ...issue,
+        description: getFriendlyIssueDescription(issue),
+      }));
+
       const validationSummary = {
         passed: result.passed,
         criticalCount: result.issues.filter(i => i.severity === 'critical').length,
         warningCount: result.issues.filter(i => i.severity === 'warning').length,
-        issues: result.issues.slice(0, 5), // Only store first 5 issues
+        issues: friendlyIssues, // Use friendly descriptions for the user
         hasAutoFix: !!result.fixedHtml,
         validatedAt: new Date().toISOString(),
       };

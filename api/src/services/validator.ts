@@ -525,6 +525,15 @@ function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
     /incomplete.*(header-left|meta-item|client-info|line-items|totals|footer)/i,
     // General "incomplete" with region/section context
     /incomplete\s+(rendering|structure)\s+(in|for)/i,
+    // Truncated HTML patterns - these are handled by HTML repair now
+    /truncated\s+(html|output|response|document)/i,
+    /cut\s+off/i,
+    /appears?\s+to\s+be\s+(truncated|incomplete)/i,
+    /missing\s+closing\s+(tag|bracket|brace)/i,
+    /unclosed\s+(tag|element)/i,
+    // Generic "looks incomplete" type messages
+    /output\s+(was\s+)?(not|wasn't)\s+complete/i,
+    /document\s+(appears?|seems?)\s+incomplete/i,
   ];
 
   for (const pattern of fulfillmentPatterns) {
@@ -554,6 +563,264 @@ function isValidIssue(obj: unknown): obj is ValidationIssue {
     typeof issue.description === 'string' &&
     typeof issue.autoFixable === 'boolean'
   );
+}
+
+/**
+ * Convert technical issue descriptions to user-friendly messages
+ * This improves trust by not showing scary technical jargon
+ */
+export function getFriendlyIssueDescription(issue: ValidationIssue): string {
+  const desc = issue.description.toLowerCase();
+
+  // Missing placeholder - make it friendly
+  if (issue.type === 'missing_placeholder') {
+    if (desc.includes('{{')) {
+      // Extract the placeholder name for context
+      const match = issue.description.match(/\{\{([^}]+)\}\}/);
+      if (match) {
+        const fieldName = match[1].replace('fields.', '').replace(/([A-Z])/g, ' $1').trim();
+        return `A data field (${fieldName}) was removed. The document may not display all your information.`;
+      }
+    }
+    return 'Some data fields were affected. Your document information may be incomplete.';
+  }
+
+  // Missing region - make it friendly
+  if (issue.type === 'missing_region') {
+    const regionMatch = issue.description.match(/data-glyph-region="([^"]+)"/);
+    if (regionMatch) {
+      const regionName = regionMatch[1].replace(/-/g, ' ');
+      return `The ${regionName} section was affected. Some content may not appear correctly.`;
+    }
+    return 'A document section was affected. Some content may not appear correctly.';
+  }
+
+  // Broken layout - make it friendly
+  if (issue.type === 'broken_layout') {
+    if (desc.includes('doctype')) {
+      return 'Document structure was adjusted automatically.';
+    }
+    if (desc.includes('</html>') || desc.includes('closing')) {
+      return 'Document formatting was corrected automatically.';
+    }
+    return 'Some layout adjustments were made automatically.';
+  }
+
+  // Missing content - make it friendly
+  if (issue.type === 'missing_content') {
+    if (desc.includes('content reduction') || desc.includes('% of text')) {
+      return 'Some content may have been removed unexpectedly. Consider using Undo to restore.';
+    }
+    return 'Some content may have been affected.';
+  }
+
+  // Overlap issues - make it friendly
+  if (issue.type === 'overlap') {
+    if (desc.includes('qr code')) {
+      return 'The QR code may be covering some text. We can move it if needed.';
+    }
+    if (desc.includes('watermark')) {
+      return 'The watermark may be affecting readability.';
+    }
+    return 'Some elements may be overlapping.';
+  }
+
+  // Obscured text - make it friendly
+  if (issue.type === 'obscured_text') {
+    if (desc.includes('watermark') && desc.includes('opacity')) {
+      return 'The watermark may be too dark. We can make it lighter.';
+    }
+    return 'Some text may be hard to read.';
+  }
+
+  // Z-index conflict - make it friendly
+  if (issue.type === 'z_index_conflict') {
+    return 'Some elements may appear in the wrong order.';
+  }
+
+  // For any other cases, return a generic friendly message
+  // Only show the original if it's already reasonably friendly
+  if (
+    desc.includes('incomplete') ||
+    desc.includes('truncated') ||
+    desc.includes('malformed') ||
+    desc.includes('broken')
+  ) {
+    return 'We made some adjustments to ensure your document displays correctly.';
+  }
+
+  // If it's already friendly enough, return original
+  return issue.description;
+}
+
+// ============================================================================
+// HTML Repair Engine
+// ============================================================================
+
+// Self-closing HTML tags that don't need repair (for reference in future improvements)
+// 'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'
+
+/**
+ * Repair common HTML issues before validation
+ * This handles truncated/incomplete HTML from AI responses
+ *
+ * @param html - The potentially malformed HTML
+ * @returns Repaired HTML with proper structure
+ */
+export function repairHtml(html: string): { html: string; repairsApplied: string[] } {
+  const repairsApplied: string[] = [];
+  let repaired = html;
+
+  // 1. Ensure DOCTYPE exists
+  if (!repaired.includes('<!DOCTYPE html>') && !repaired.includes('<!doctype html>')) {
+    if (repaired.includes('<html')) {
+      repaired = '<!DOCTYPE html>\n' + repaired;
+      repairsApplied.push('Added missing DOCTYPE');
+    }
+  }
+
+  // 2. Ensure closing </html> tag
+  if (repaired.includes('<html') && !repaired.includes('</html>')) {
+    repaired = repaired + '\n</html>';
+    repairsApplied.push('Added missing </html> tag');
+  }
+
+  // 3. Ensure closing </body> tag
+  if (repaired.includes('<body') && !repaired.includes('</body>')) {
+    // Insert before </html> if possible
+    if (repaired.includes('</html>')) {
+      repaired = repaired.replace('</html>', '</body>\n</html>');
+    } else {
+      repaired = repaired + '\n</body>';
+    }
+    repairsApplied.push('Added missing </body> tag');
+  }
+
+  // 4. Ensure closing </head> tag
+  if (repaired.includes('<head') && !repaired.includes('</head>')) {
+    const bodyMatch = repaired.match(/<body/i);
+    if (bodyMatch && bodyMatch.index !== undefined) {
+      repaired = repaired.slice(0, bodyMatch.index) + '</head>\n' + repaired.slice(bodyMatch.index);
+      repairsApplied.push('Added missing </head> tag');
+    }
+  }
+
+  // 5. Ensure closing </style> tag
+  const styleOpenCount = (repaired.match(/<style/gi) || []).length;
+  const styleCloseCount = (repaired.match(/<\/style>/gi) || []).length;
+  if (styleOpenCount > styleCloseCount) {
+    // Find the last unclosed <style> and close it before </head> or <body>
+    const closePoint = repaired.indexOf('</head>') !== -1
+      ? repaired.indexOf('</head>')
+      : repaired.indexOf('<body');
+    if (closePoint !== -1) {
+      repaired = repaired.slice(0, closePoint) + '</style>\n' + repaired.slice(closePoint);
+      repairsApplied.push('Added missing </style> tag');
+    }
+  }
+
+  // 6. Balance common container tags (div, section, footer, header, main, article, aside, nav)
+  const containerTags = ['div', 'section', 'footer', 'header', 'main', 'article', 'aside', 'nav', 'table', 'tbody', 'thead', 'tr'];
+  for (const tag of containerTags) {
+    const openRegex = new RegExp(`<${tag}(?:\\s|>)`, 'gi');
+    const closeRegex = new RegExp(`</${tag}>`, 'gi');
+    const openCount = (repaired.match(openRegex) || []).length;
+    const closeCount = (repaired.match(closeRegex) || []).length;
+
+    if (openCount > closeCount) {
+      const diff = openCount - closeCount;
+      // Add closing tags before </body> or at the end
+      const closingTags = `</${tag}>`.repeat(diff);
+      if (repaired.includes('</body>')) {
+        repaired = repaired.replace('</body>', closingTags + '\n</body>');
+      } else if (repaired.includes('</html>')) {
+        repaired = repaired.replace('</html>', closingTags + '\n</html>');
+      } else {
+        repaired = repaired + closingTags;
+      }
+      if (diff > 0) {
+        repairsApplied.push(`Added ${diff} missing </${tag}> tag(s)`);
+      }
+    }
+  }
+
+  // 7. Fix truncated Mustache conditionals - ensure matching {{/...}} for {{#...}}
+  const mustacheOpenRegex = /\{\{#([^}]+)\}\}/g;
+  const mustacheCloseRegex = /\{\{\/([^}]+)\}\}/g;
+  const openSections: string[] = [];
+  const closeSections: string[] = [];
+
+  let match;
+  while ((match = mustacheOpenRegex.exec(repaired)) !== null) {
+    openSections.push(match[1].trim());
+  }
+  while ((match = mustacheCloseRegex.exec(repaired)) !== null) {
+    closeSections.push(match[1].trim());
+  }
+
+  // Count occurrences of each section
+  const openCounts = new Map<string, number>();
+  const closeCounts = new Map<string, number>();
+  for (const section of openSections) {
+    openCounts.set(section, (openCounts.get(section) || 0) + 1);
+  }
+  for (const section of closeSections) {
+    closeCounts.set(section, (closeCounts.get(section) || 0) + 1);
+  }
+
+  // Add missing closing tags for each section
+  for (const [section, count] of openCounts) {
+    const closeCount = closeCounts.get(section) || 0;
+    if (count > closeCount) {
+      const missingCount = count - closeCount;
+      const closingTags = `{{/${section}}}`.repeat(missingCount);
+      // Insert before </body> or </html> or at end
+      if (repaired.includes('</body>')) {
+        repaired = repaired.replace('</body>', closingTags + '</body>');
+      } else if (repaired.includes('</html>')) {
+        repaired = repaired.replace('</html>', closingTags + '</html>');
+      } else {
+        repaired = repaired + closingTags;
+      }
+      repairsApplied.push(`Added ${missingCount} missing {{/${section}}} closing tag(s)`);
+    }
+  }
+
+  return { html: repaired, repairsApplied };
+}
+
+/**
+ * Check if HTML appears truncated (AI cut off mid-generation)
+ */
+export function isHtmlTruncated(html: string): boolean {
+  // Check for obvious signs of truncation
+  const truncationIndicators = [
+    // Missing closing tags for required elements
+    /<html[^>]*>(?![\s\S]*<\/html>)/i,
+    /<body[^>]*>(?![\s\S]*<\/body>)/i,
+    // Unclosed style/script blocks
+    /<style[^>]*>(?![\s\S]*<\/style>)/i,
+    // Ends mid-tag
+    /<[a-z]+[^>]*$/i,
+    // Ends mid-attribute
+    /\s[a-z-]+="[^"]*$/i,
+    // Ends mid-Mustache
+    /\{\{[^}]*$/,
+    // Very short for a complete document
+  ];
+
+  for (const pattern of truncationIndicators) {
+    if (pattern.test(html)) {
+      return true;
+    }
+  }
+
+  // Also check if document seems too short (less than 500 chars for a full HTML doc)
+  if (html.includes('<html') && html.length < 500) {
+    return true;
+  }
+
+  return false;
 }
 
 // ============================================================================
