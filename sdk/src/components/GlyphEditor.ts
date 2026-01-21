@@ -1768,17 +1768,17 @@ export class GlyphEditor extends HTMLElement {
     // Download button
     const downloadBtn = this.shadow.getElementById('glyph-download');
     if (downloadBtn) {
-      downloadBtn.addEventListener('click', () => this.downloadPdf());
+      downloadBtn.addEventListener('click', () => this.downloadPdf(), { signal: this.documentListenerController?.signal });
     }
 
     // Undo/Redo buttons
     const undoBtn = this.shadow.getElementById('glyph-undo');
     const redoBtn = this.shadow.getElementById('glyph-redo');
     if (undoBtn) {
-      undoBtn.addEventListener('click', () => this.undo());
+      undoBtn.addEventListener('click', () => this.undo(), { signal: this.documentListenerController?.signal });
     }
     if (redoBtn) {
-      redoBtn.addEventListener('click', () => this.redo());
+      redoBtn.addEventListener('click', () => this.redo(), { signal: this.documentListenerController?.signal });
     }
 
     // Keyboard shortcuts for undo/redo
@@ -1798,27 +1798,27 @@ export class GlyphEditor extends HTMLElement {
     // Template save/load event listeners
     const saveBtn = this.shadow.getElementById('glyph-save-template');
     if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.openSaveModal());
+      saveBtn.addEventListener('click', () => this.openSaveModal(), { signal: this.documentListenerController?.signal });
     }
 
     const loadBtn = this.shadow.getElementById('glyph-load-template');
     if (loadBtn) {
-      loadBtn.addEventListener('click', () => this.toggleLoadDropdown());
+      loadBtn.addEventListener('click', () => this.toggleLoadDropdown(), { signal: this.documentListenerController?.signal });
     }
 
     const modalClose = this.shadow.getElementById('glyph-modal-close');
     if (modalClose) {
-      modalClose.addEventListener('click', () => this.closeSaveModal());
+      modalClose.addEventListener('click', () => this.closeSaveModal(), { signal: this.documentListenerController?.signal });
     }
 
     const modalCancel = this.shadow.getElementById('glyph-modal-cancel');
     if (modalCancel) {
-      modalCancel.addEventListener('click', () => this.closeSaveModal());
+      modalCancel.addEventListener('click', () => this.closeSaveModal(), { signal: this.documentListenerController?.signal });
     }
 
     const modalSave = this.shadow.getElementById('glyph-modal-save');
     if (modalSave) {
-      modalSave.addEventListener('click', () => this.saveTemplate());
+      modalSave.addEventListener('click', () => this.saveTemplate(), { signal: this.documentListenerController?.signal });
     }
 
     const modalOverlay = this.shadow.getElementById('glyph-save-modal');
@@ -1827,7 +1827,7 @@ export class GlyphEditor extends HTMLElement {
         if (e.target === modalOverlay) {
           this.closeSaveModal();
         }
-      });
+      }, { signal: this.documentListenerController?.signal });
     }
 
     const templateNameInput = this.shadow.getElementById('glyph-template-name') as HTMLInputElement;
@@ -1838,7 +1838,7 @@ export class GlyphEditor extends HTMLElement {
         } else if (e.key === 'Escape') {
           this.closeSaveModal();
         }
-      });
+      }, { signal: this.documentListenerController?.signal });
     }
 
     // Close dropdown when clicking outside
@@ -2778,7 +2778,7 @@ export class GlyphEditor extends HTMLElement {
       if (retryBtn) {
         retryBtn.addEventListener('click', () => {
           this.initialize();
-        });
+        }, { signal: this.documentListenerController?.signal });
       }
     }
     this.emit('glyph:error', { error: message });
@@ -2818,7 +2818,7 @@ export class GlyphEditor extends HTMLElement {
     closeBtn.className = 'glyph-toast-close';
     closeBtn.setAttribute('aria-label', 'Dismiss notification');
     closeBtn.textContent = '\u00d7'; // × character
-    closeBtn.addEventListener('click', () => this.removeToast(toast, toastId));
+    closeBtn.addEventListener('click', () => this.removeToast(toast, toastId), { signal: this.documentListenerController?.signal });
 
     toast.appendChild(messageSpan);
     toast.appendChild(closeBtn);
