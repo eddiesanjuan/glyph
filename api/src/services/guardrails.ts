@@ -263,6 +263,52 @@ function findScriptInjection(html: string): string[] {
 }
 
 /**
+ * Extract text content from HTML for content-loss detection
+ */
+function extractTextContent(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove style blocks
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove script blocks
+    .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Check for significant content loss between original and modified HTML
+ * This catches cases where AI deleted most content but kept document structure
+ */
+function detectContentLoss(originalHtml: string, modifiedHtml: string): string[] {
+  const violations: string[] = [];
+
+  const originalText = extractTextContent(originalHtml);
+  const modifiedText = extractTextContent(modifiedHtml);
+
+  // If original had substantial content but modified is much shorter, flag it
+  if (originalText.length > 500 && modifiedText.length < originalText.length * 0.3) {
+    violations.push(`Significant content loss detected: document reduced from ${originalText.length} to ${modifiedText.length} characters (${Math.round((modifiedText.length / originalText.length) * 100)}% remaining)`);
+  }
+
+  // Check for suspicious replacement patterns (AI wrote explanation instead of document)
+  const suspiciousPatterns = [
+    /this document has been/i,
+    /the document (is|has been) (cleared|deleted|removed|empty)/i,
+    /content has been (cleared|deleted|removed)/i,
+    /i (have|'ve) (cleared|deleted|removed)/i,
+    /as requested.*(cleared|deleted|removed)/i,
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(modifiedText)) {
+      violations.push('Document appears to have been improperly cleared or replaced with explanatory text');
+      break;
+    }
+  }
+
+  return violations;
+}
+
+/**
  * Validate that AI modification didn't break critical elements
  */
 export function validateModification(
@@ -271,7 +317,11 @@ export function validateModification(
 ): GuardrailResult {
   const violations: string[] = [];
 
-  // 0. CRITICAL: Check for broken Mustache syntax first
+  // 0. CRITICAL: Check for content loss / document corruption
+  const contentLossViolations = detectContentLoss(originalHtml, modifiedHtml);
+  violations.push(...contentLossViolations);
+
+  // 0.5. CRITICAL: Check for broken Mustache syntax
   const brokenSyntax = findBrokenMustacheSyntax(modifiedHtml);
   violations.push(...brokenSyntax);
 
@@ -498,6 +548,35 @@ export function validatePrompt(prompt: string): PromptValidationResult {
         valid: false,
         reason: "Prompt contains disallowed instruction patterns",
         category: "injection",
+      };
+    }
+  }
+
+  // Check for DESTRUCTIVE requests that would corrupt the document
+  // These patterns catch attempts to delete, clear, or replace all content
+  const destructivePatterns = [
+    { pattern: /delete\s+(all|the|every|entire)/i, reason: "Cannot delete document content" },
+    { pattern: /clear\s+(all|the|every|entire|this)/i, reason: "Cannot clear document content" },
+    { pattern: /remove\s+(all|every|entire)/i, reason: "Cannot remove all content" },
+    { pattern: /erase\s+(all|the|every|entire)/i, reason: "Cannot erase document content" },
+    { pattern: /wipe\s+(all|the|every|entire)/i, reason: "Cannot wipe document content" },
+    { pattern: /replace\s+(all|every|entire).*with/i, reason: "Cannot replace all content" },
+    { pattern: /replace\s+with\s+random/i, reason: "Cannot replace content with random data" },
+    { pattern: /replace\s+with\s+(gibberish|nonsense|garbage)/i, reason: "Cannot replace content with garbage data" },
+    { pattern: /show\s+(only|just)\s+(a\s+)?(message|text)\s+(saying|that)/i, reason: "Cannot replace document with a message" },
+    { pattern: /blank\s+(out|the)/i, reason: "Cannot blank out the document" },
+    { pattern: /empty\s+(the|this)/i, reason: "Cannot empty the document" },
+    { pattern: /destroy/i, reason: "Cannot destroy document content" },
+    { pattern: /corrupt/i, reason: "Cannot corrupt the document" },
+    { pattern: /make\s+(it|the\s+document)\s+(blank|empty)/i, reason: "Cannot make the document blank" },
+  ];
+
+  for (const { pattern, reason } of destructivePatterns) {
+    if (pattern.test(lowerPrompt)) {
+      return {
+        valid: false,
+        reason: `${reason} - only styling and layout changes are allowed`,
+        category: "data_modification",
       };
     }
   }

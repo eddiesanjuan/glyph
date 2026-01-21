@@ -339,6 +339,30 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         console.warn("[Security] Applied HTML sanitization for potential script injection");
       }
 
+      // CRITICAL: Check for content loss / document corruption BEFORE returning
+      // This catches cases where AI deleted most content or replaced with explanatory text
+      const guardrailResult = validateGuardrails(templateToModify, modifiedTemplateHtml);
+      if (!guardrailResult.valid) {
+        const contentLossViolation = guardrailResult.violations.find(v =>
+          v.includes('content loss') || v.includes('improperly cleared')
+        );
+
+        if (contentLossViolation) {
+          console.error(`[Security] Content loss detected: ${contentLossViolation}`);
+          console.error(`[Security] Rejecting corrupted response and returning original template`);
+
+          // Return the original template instead of corrupted one
+          const error: ApiError = {
+            error: "This type of modification cannot be applied. The AI attempted to remove document content which is not allowed. Please try a styling or layout change instead.",
+            code: "CONTENT_LOSS_BLOCKED",
+          };
+          return c.json(error, 400);
+        }
+
+        // Log other violations but don't block
+        console.warn(`[Security] Guardrail violations detected: ${guardrailResult.violations.join(', ')}`);
+      }
+
       // FIX: Re-render the modified template with the original data
       // This produces the final HTML with actual values for display
       let renderedHtml: string;
