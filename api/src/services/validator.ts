@@ -304,39 +304,47 @@ function detectVisualIssues(html: string, beforeHtml: string): ValidationIssue[]
     }
   }
 
-  // Check for watermark opacity issues
+  // Check for watermark opacity issues - only warn if opacity is very high
+  // Most professional watermarks are 5-20% opacity, so we only flag >25%
   if (visual.hasWatermark) {
     const opacityMatch = html.match(/(?:color:\s*rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)|opacity:\s*([\d.]+))/i);
     if (opacityMatch) {
       const opacity = parseFloat(opacityMatch[1] || opacityMatch[2]);
-      if (opacity > 0.15) {
+      // Only warn if opacity is very high (>25%) - standard watermarks are 5-20%
+      if (opacity > 0.25) {
         issues.push({
           type: 'obscured_text',
           severity: 'warning',
           description: `Watermark opacity (${(opacity * 100).toFixed(0)}%) may be too high and obscure content`,
           autoFixable: true,
-          suggestedFix: 'Reduce watermark opacity to 5-10% for better readability'
+          suggestedFix: 'Reduce watermark opacity to 5-15% for better readability'
         });
       }
     }
   }
 
-  // Check for z-index conflicts
+  // Check for z-index conflicts - only flag if there are MANY identical values
+  // which suggests the AI may have made a mistake. Adjacent z-index values (1, 2, 3)
+  // are often intentional for layering and shouldn't trigger warnings.
   const zIndexMatches = html.matchAll(/z-index:\s*(\d+)/gi);
   const zIndexValues: number[] = [];
   for (const match of zIndexMatches) {
     zIndexValues.push(parseInt(match[1]));
   }
 
-  if (zIndexValues.length > 2) {
-    const hasConflict = zIndexValues.some((v, i) =>
-      zIndexValues.slice(i + 1).some(other => Math.abs(v - other) <= 1)
-    );
-    if (hasConflict) {
+  // Only warn if there are 4+ identical z-index values (suggests copy-paste error)
+  // or if critical elements have the same z-index as overlays
+  if (zIndexValues.length > 3) {
+    const valueCounts = new Map<number, number>();
+    for (const v of zIndexValues) {
+      valueCounts.set(v, (valueCounts.get(v) || 0) + 1);
+    }
+    const hasDuplicates = Array.from(valueCounts.values()).some(count => count >= 4);
+    if (hasDuplicates) {
       issues.push({
         type: 'z_index_conflict',
         severity: 'warning',
-        description: 'Multiple elements with similar z-index values may cause stacking conflicts',
+        description: 'Multiple elements share the same z-index value, which may cause unexpected stacking',
         autoFixable: false,
         suggestedFix: 'Review z-index values to ensure proper element stacking'
       });
@@ -379,13 +387,12 @@ async function aiAnalyzeModification(
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022', // Fast model for quick validation
       max_tokens: 1024,
-      system: `You are a QA agent that validates HTML document modifications for VISUAL and STRUCTURAL issues ONLY.
+      system: `You are a QA agent that validates HTML documents for SEVERE VISUAL ISSUES ONLY.
 
-IMPORTANT: Your job is NOT to judge whether the user's request was fulfilled correctly.
-DO NOT report issues about styling preferences, colors, fonts, or design choices.
-Another AI already made the modification - your ONLY job is to check for TECHNICAL problems.
+CRITICAL: Be VERY conservative. Only report issues that would genuinely break the document.
+Most HTML modifications are fine - only flag truly problematic cases.
 
-ONLY report issues in this JSON format, nothing else:
+Return ONLY this JSON format:
 {
   "issues": [
     {
@@ -398,20 +405,22 @@ ONLY report issues in this JSON format, nothing else:
   ]
 }
 
-If no issues found, return: {"issues": []}
+If the document looks okay, return: {"issues": []}
+WHEN IN DOUBT, return {"issues": []} - false negatives are better than false positives.
 
-ONLY check for these TECHNICAL problems:
-1. QR codes or watermarks physically overlapping text (making it unreadable)
-2. Positioned elements (absolute/fixed) covering data fields users need to read
-3. Critical content/data regions completely missing or empty
-4. HTML structure broken (missing closing tags, invalid nesting)
-5. Text completely obscured by overlays (opacity too high)
+ONLY report issues if you are CERTAIN:
+1. QR codes or watermarks DIRECTLY overlapping important text (making it unreadable)
+2. A large section of content is COMPLETELY MISSING (not just styled differently)
+3. Critical structural breakage (document won't render at all)
 
 DO NOT report:
-- Whether colors/fonts/styles match the user's request (that's not your job)
-- Subjective design quality issues
-- "Request not fulfilled" type issues
-- Minor style inconsistencies`,
+- "Incomplete HTML" - the document is complete if it renders
+- "Request not fulfilled" - that's not your job
+- Styling preferences or design quality
+- Minor inconsistencies
+- Anything about colors, fonts, or aesthetics
+- Anything about Mustache template syntax
+- Potential or possible issues - only DEFINITE problems`,
       messages: [{
         role: 'user',
         content: `BEFORE HTML (relevant excerpts):
@@ -487,8 +496,10 @@ function extractRelevantExcerpts(html: string): string {
  * 1. "Request not fulfilled" - AI incorrectly reports user's styling wasn't applied
  * 2. "Incomplete HTML/tags" - AI incorrectly flags valid HTML structure
  * 3. "Incomplete conditional" - AI incorrectly flags valid Mustache conditionals
+ * 4. "Minor cosmetic issues" - Issues that don't affect document functionality
  *
  * We only want to report actual TECHNICAL issues (broken layout, overlaps, etc.)
+ * that genuinely affect the user's document.
  */
 function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
   const description = issue.description.toLowerCase();
@@ -508,6 +519,11 @@ function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
     /styling\s+(was\s+)?not\s+(applied|visible)/i,
     /modification\s+(was\s+)?not\s+(successful|applied)/i,
     /no\s+(visible\s+)?(color|style|font|background)\s+(change|modification)/i,
+    // Additional fulfillment patterns
+    /doesn't\s+(appear|seem)\s+to\s+(have|be)/i,
+    /no\s+(evidence|indication)\s+of/i,
+    /unchanged/i,
+    /same\s+as\s+(before|original)/i,
   ];
 
   // Patterns for false positive "incomplete HTML/conditional" issues
@@ -534,6 +550,16 @@ function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
     // Generic "looks incomplete" type messages
     /output\s+(was\s+)?(not|wasn't)\s+complete/i,
     /document\s+(appears?|seems?)\s+incomplete/i,
+    // Additional false positive patterns
+    /may\s+(be|have)\s+(incomplete|missing)/i,
+    /possible\s+(incomplete|truncat)/i,
+    /partial\s+(html|output|content)/i,
+    /html\s+(structure|element)s?\s+(appear|seem)/i,
+    /not\s+(fully\s+)?(complete|formed)/i,
+    // CSS/styling concerns that aren't actual breakages
+    /inconsistent\s+(styling|css|color)/i,
+    /style\s+(mismatch|inconsistenc)/i,
+    /visual\s+inconsistenc/i,
   ];
 
   for (const pattern of fulfillmentPatterns) {

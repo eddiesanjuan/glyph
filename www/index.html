@@ -5161,8 +5161,26 @@
       }
     }
 
-    /* NOTE: 375px mobile styles are consolidated in the earlier media query block (around line 1023)
-       to prevent CSS specificity conflicts. Do not add duplicate 375px rules here. */
+    /* CRITICAL: 375px overrides - must come AFTER 480px to win cascade */
+    @media (max-width: 375px) {
+      .playground__preview {
+        min-height: 420px;
+        max-height: 480px;
+      }
+
+      .playground__preview-area {
+        min-height: 480px;
+      }
+
+      .playground__preview-frame-wrapper {
+        width: 320px;
+        height: 414px;
+      }
+
+      .playground__preview-frame-wrapper iframe {
+        transform: scale(0.376);
+      }
+    }
 
     /* ============================================
        Utility Classes
