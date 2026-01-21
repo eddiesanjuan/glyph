@@ -2355,6 +2355,126 @@
     }
 
     /* ============================================
+       Post-Playground Success CTA Banner
+       Shown after first successful modification
+       ============================================ */
+    .playground__success-cta {
+      display: none;
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-lg);
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    .playground__success-cta.visible {
+      display: block;
+    }
+
+    .playground__success-cta-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .playground__success-cta-text {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .playground__success-cta-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(16, 185, 129, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .playground__success-cta-icon svg {
+      width: 18px;
+      height: 18px;
+      color: #10B981;
+    }
+
+    .playground__success-cta-message {
+      font-size: 14px;
+      color: var(--color-text);
+      line-height: 1.4;
+    }
+
+    .playground__success-cta-message strong {
+      color: #10B981;
+    }
+
+    .playground__success-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: #10B981;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .playground__success-cta-btn:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    .playground__success-cta-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .playground__success-cta-dismiss {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.2s ease;
+    }
+
+    .playground__success-cta-dismiss:hover {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .playground__success-cta-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .playground__success-cta-btn {
+        justify-content: center;
+      }
+    }
+
+    /* ============================================
        Change Diff Highlight Animation
        Applied to elements inside the preview iframe
        ============================================ */
@@ -3708,6 +3828,157 @@
 
     .code-block code {
       color: var(--color-text-muted);
+    }
+
+    /* Code Copy Button and CTA */
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      background: var(--color-surface);
+    }
+
+    .code-copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-bright);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .code-copy-btn:hover {
+      background: var(--color-primary);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .code-copy-btn.copied {
+      background: #10B981;
+      border-color: #10B981;
+      color: white;
+    }
+
+    .code-copy-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .integration__cta {
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.05));
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .integration__cta-text {
+      font-size: 14px;
+      color: var(--color-text);
+    }
+
+    .integration__cta-text span {
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
+
+    .integration__cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--color-primary);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .integration__cta-btn:hover {
+      background: var(--color-primary-bright);
+      transform: translateY(-1px);
+    }
+
+    .integration__cta-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .integration__cta {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      .integration__cta-btn {
+        justify-content: center;
+      }
+    }
+
+    /* Integration Copy Toast */
+    .integration-copy-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      z-index: 10000;
+      padding: 14px 20px;
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .integration-copy-toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .integration-copy-toast__content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--color-text);
+    }
+
+    .integration-copy-toast__icon {
+      width: 20px;
+      height: 20px;
+      color: #10B981;
+      flex-shrink: 0;
+    }
+
+    .integration-copy-toast a {
+      color: var(--color-primary-bright);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .integration-copy-toast a:hover {
+      text-decoration: underline;
     }
 
     /* Syntax highlighting - subtle, not rainbow */
@@ -6558,6 +6829,28 @@
             <div class="playground__rate-notice">
               Demo limited to 10 requests/minute. Get an API key for higher limits.
             </div>
+
+            <!-- Success CTA - Shown after first successful modification -->
+            <div class="playground__success-cta" id="success-cta">
+              <div class="playground__success-cta-content">
+                <div class="playground__success-cta-text">
+                  <div class="playground__success-cta-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <div class="playground__success-cta-message">
+                    <strong>Love what you created?</strong> Get your free API key to use Glyph in your app.
+                  </div>
+                </div>
+                <a href="https://dashboard.glyph.you" class="playground__success-cta-btn">
+                  Get Free API Key
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -6828,6 +7121,13 @@
             <button class="code-tab code-tab--active" data-lang="html">HTML</button>
             <button class="code-tab" data-lang="react">React</button>
             <button class="code-tab" data-lang="vue">Vue</button>
+            <button class="code-copy-btn" id="integration-copy-btn" onclick="copyIntegrationCode()">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+              </svg>
+              <span>Copy Code</span>
+            </button>
           </div>
           <div class="code-content">
             <div class="code-block code-block--active" id="code-html">
@@ -6867,6 +7167,19 @@
 <span class="code-keyword">import</span> { GlyphEditor } <span class="code-keyword">from</span> <span class="code-string">'@glyph-so/vue'</span>
 <span class="code-tag">&lt;/script&gt;</span></code></pre>
             </div>
+          </div>
+
+          <!-- CTA below code snippets -->
+          <div class="integration__cta">
+            <div class="integration__cta-text">
+              Replace <code>gk_your_api_key</code> with your key. <span>Free tier: 100 PDFs/month</span>
+            </div>
+            <a href="https://dashboard.glyph.you" class="integration__cta-btn">
+              Get Your Free API Key
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
+            </a>
           </div>
         </div>
       </div>
@@ -7593,6 +7906,66 @@
       });
     }
 
+    // Copy integration code from the currently visible tab
+    function copyIntegrationCode() {
+      // Find the active code block
+      const activeBlock = document.querySelector('.code-block--active');
+      if (!activeBlock) return;
+
+      // Get the text content (strips HTML tags)
+      const codeElement = activeBlock.querySelector('code');
+      if (!codeElement) return;
+
+      // Get plain text, decode HTML entities
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = codeElement.textContent || '';
+      const codeText = textarea.value;
+
+      navigator.clipboard.writeText(codeText).then(() => {
+        // Update button state
+        const btn = document.getElementById('integration-copy-btn');
+        if (btn) {
+          btn.classList.add('copied');
+          btn.querySelector('span').textContent = 'Copied!';
+
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.querySelector('span').textContent = 'Copy Code';
+          }, 2000);
+        }
+
+        // Show toast with CTA message
+        showIntegrationCopyToast();
+      }).catch(err => {
+        console.error('Failed to copy integration code:', err);
+      });
+    }
+
+    // Show special toast for integration code copy
+    function showIntegrationCopyToast() {
+      // Create or reuse toast
+      let toast = document.getElementById('integration-copy-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'integration-copy-toast';
+        toast.className = 'integration-copy-toast';
+        toast.innerHTML = `
+          <div class="integration-copy-toast__content">
+            <svg class="integration-copy-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Copied! <a href="https://dashboard.glyph.you">Get your API key</a> to start using Glyph</span>
+          </div>
+        `;
+        document.body.appendChild(toast);
+      }
+
+      toast.classList.add('visible');
+      setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 4000);
+    }
+
     // Current state
     let currentTemplate = 'quote-modern';
     let currentHtml = '';
@@ -7618,6 +7991,7 @@
     let hasShown10MinWarning = false;
     let hasShown2MinWarning = false;
     let userHasInteracted = false; // Track if user has performed any action (prevents stale toasts on load)
+    let hasShownSuccessCta = false; // Track if we've shown the success CTA (show once per session)
 
     // DOM elements for session timer (lazy loaded)
     function getSessionTimerElements() {
@@ -9277,7 +9651,21 @@
         els.glyphToast.classList.remove('active');
       }, 3000);
     }
-    
+
+    // Show success CTA after first successful modification
+    function showSuccessCta() {
+      if (hasShownSuccessCta) return;
+      hasShownSuccessCta = true;
+
+      const ctaElement = document.getElementById('success-cta');
+      if (ctaElement) {
+        // Delay showing to not interrupt the success animation
+        setTimeout(() => {
+          ctaElement.classList.add('visible');
+        }, 1000);
+      }
+    }
+
     // Format timestamp for display
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp);
@@ -9854,6 +10242,9 @@
             previewContainer.classList.add('success');
             setTimeout(() => previewContainer.classList.remove('success'), 500);
 
+            // Show success CTA after first modification
+            showSuccessCta();
+
             setStatus(`Done in ${elapsed}s`);
             console.log(`[Glyph] Modification completed in ${elapsed}s`);
             setTimeout(() => setStatus('Ready'), 2000);
@@ -9898,6 +10289,9 @@
 
         previewContainer.classList.add('success');
         setTimeout(() => previewContainer.classList.remove('success'), 500);
+
+        // Show success CTA after first modification
+        showSuccessCta();
 
         setStatus(`Done in ${elapsed}s`);
         console.log(`[Glyph] Modification completed in ${elapsed}s`);

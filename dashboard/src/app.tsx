@@ -96,6 +96,12 @@ export function App() {
   const [regenerating, setRegenerating] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
+  // Signup flow state
+  const [showSignup, setShowSignup] = useState(false)
+  const [signupEmail, setSignupEmail] = useState('')
+  const [signupLoading, setSignupLoading] = useState(false)
+  const [signupSuccess, setSignupSuccess] = useState(false)
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null)
 
   const fetchDashboard = useCallback(async (key: string) => {
     if (!key.trim()) return
@@ -179,6 +185,60 @@ export function App() {
     }
   }
 
+  // Handle signup / get free API key
+  const handleSignup = async (e: Event) => {
+    e.preventDefault()
+    if (!signupEmail.trim() || !signupEmail.includes('@')) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    setSignupLoading(true)
+    setError(null)
+
+    try {
+      // For now, generate a demo key format (will connect to Supabase later)
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Generate a unique-looking key for demo purposes
+      const timestamp = Date.now().toString(36)
+      const random = Math.random().toString(36).substring(2, 10)
+      const demoKey = `gk_free_${timestamp}${random}`
+
+      setGeneratedKey(demoKey)
+      setSignupSuccess(true)
+
+      console.log('[Glyph] Free API key requested for:', signupEmail)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create API key')
+    } finally {
+      setSignupLoading(false)
+    }
+  }
+
+  // Copy generated key
+  const handleCopyGeneratedKey = async () => {
+    if (generatedKey) {
+      await navigator.clipboard.writeText(generatedKey)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // Use generated key in dashboard
+  const handleUseGeneratedKey = () => {
+    if (generatedKey) {
+      setApiKey(generatedKey)
+      setShowSignup(false)
+      setSignupSuccess(false)
+      setGeneratedKey(null)
+      setSignupEmail('')
+      // Note: This demo key won't actually work with the API
+      // In production, the key would be stored in Supabase
+    }
+  }
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Never'
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -219,7 +279,7 @@ export function App() {
       <main class="main">
         <div class="container">
           {/* API Key Input */}
-          {!data && (
+          {!data && !showSignup && (
             <div class="auth-card animate-in">
               <h1>API Dashboard</h1>
               <p class="subtitle">Enter your API key to view usage and manage your account.</p>
@@ -259,6 +319,121 @@ export function App() {
                   {Icons.warning}
                   <span>{error}</span>
                 </div>
+              )}
+
+              <div class="signup-divider">
+                <span>or</span>
+              </div>
+
+              <button
+                class="btn btn-signup"
+                onClick={() => { setShowSignup(true); setError(null); }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="8.5" cy="7" r="4"/>
+                  <line x1="20" y1="8" x2="20" y2="14"/>
+                  <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                Get a Free API Key
+              </button>
+
+              <p class="free-tier-note">Free tier: 100 PDFs/month, upgrade anytime</p>
+            </div>
+          )}
+
+          {/* Signup / Get Free API Key */}
+          {!data && showSignup && (
+            <div class="auth-card animate-in">
+              {!signupSuccess ? (
+                <>
+                  <h1>Get Your Free API Key</h1>
+                  <p class="subtitle">Start building with Glyph. Free tier includes 100 PDFs/month.</p>
+
+                  <form onSubmit={handleSignup} class="auth-form">
+                    <div class="input-group">
+                      <input
+                        type="email"
+                        value={signupEmail}
+                        onInput={(e) => setSignupEmail((e.target as HTMLInputElement).value)}
+                        placeholder="you@example.com"
+                        class="api-input"
+                        autoComplete="email"
+                        autoFocus
+                      />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled={signupLoading || !signupEmail.trim()}>
+                      {signupLoading ? 'Creating...' : 'Get Free API Key'}
+                    </button>
+                  </form>
+
+                  {error && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    class="btn btn-ghost back-link"
+                    onClick={() => { setShowSignup(false); setError(null); }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Already have a key? Sign in
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div class="success-icon">
+                    {Icons.check}
+                  </div>
+                  <h1>Your API Key is Ready!</h1>
+                  <p class="subtitle">Copy your key now - you won't see it again.</p>
+
+                  <div class="generated-key-display">
+                    <code class="mono">{generatedKey}</code>
+                    <button class="btn btn-icon" onClick={handleCopyGeneratedKey}>
+                      {copied ? Icons.check : Icons.copy}
+                    </button>
+                  </div>
+
+                  <div class="signup-actions">
+                    <button class="btn btn-primary" onClick={handleCopyGeneratedKey}>
+                      {copied ? 'Copied!' : 'Copy Key'}
+                    </button>
+                  </div>
+
+                  <div class="free-tier-features">
+                    <div class="feature-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span>100 PDFs per month</span>
+                    </div>
+                    <div class="feature-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span>All templates included</span>
+                    </div>
+                    <div class="feature-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span>Upgrade anytime</span>
+                    </div>
+                  </div>
+
+                  <button
+                    class="btn btn-ghost back-link"
+                    onClick={() => { setShowSignup(false); setSignupSuccess(false); setGeneratedKey(null); setSignupEmail(''); }}
+                  >
+                    Back to sign in
+                  </button>
+                </>
               )}
             </div>
           )}

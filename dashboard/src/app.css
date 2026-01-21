@@ -603,6 +603,144 @@
   color: var(--border-subtle);
 }
 
+/* Signup / Get API Key Flow */
+.signup-divider {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+  gap: 16px;
+}
+
+.signup-divider::before,
+.signup-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.signup-divider span {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-signup {
+  width: 100%;
+  padding: 14px 20px;
+  background: transparent;
+  border: 1.5px solid var(--glyph-purple);
+  border-radius: var(--radius-md);
+  color: var(--glyph-purple-light);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-signup:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: var(--glyph-purple-light);
+  transform: translateY(-1px);
+}
+
+.btn-signup svg {
+  stroke: currentColor;
+}
+
+.free-tier-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.back-link {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.back-link svg {
+  stroke: currentColor;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: #10B981;
+  stroke-width: 2.5;
+}
+
+.generated-key-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin: 24px 0;
+}
+
+.generated-key-display code {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  word-break: break-all;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.signup-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.free-tier-features {
+  margin-top: 32px;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.feature-item:not(:last-child) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.feature-item svg {
+  stroke: #10B981;
+  flex-shrink: 0;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .main {
