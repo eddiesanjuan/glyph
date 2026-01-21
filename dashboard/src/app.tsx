@@ -226,19 +226,6 @@ export function App() {
     }
   }
 
-  // Use generated key in dashboard
-  const handleUseGeneratedKey = () => {
-    if (generatedKey) {
-      setApiKey(generatedKey)
-      setShowSignup(false)
-      setSignupSuccess(false)
-      setGeneratedKey(null)
-      setSignupEmail('')
-      // Note: This demo key won't actually work with the API
-      // In production, the key would be stored in Supabase
-    }
-  }
-
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Never'
     return new Date(dateStr).toLocaleDateString('en-US', {
