@@ -1063,40 +1063,74 @@
         flex-shrink: 0;
       }
 
-      /* CRITICAL: Make preview area visible and prominent */
+      /* CRITICAL FIX: Make preview area scrollable on mobile */
       .playground__preview-area {
         padding: 12px;
         min-height: 320px;
+        max-height: 400px;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
       }
 
+      /* CRITICAL FIX: Enable touch scrolling in preview container */
       .playground__preview {
-        min-height: 260px;
-        max-height: none;
+        min-height: 300px;
+        max-height: 350px;
         flex: 1;
         padding: 12px;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
+        display: block !important;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         background: #374151;
+        position: relative;
+        /* Allow scrolling to full document */
+        touch-action: pan-x pan-y;
       }
 
-      /* Smaller document preview for 375px */
+      /* Larger document preview for better visibility and scrolling */
       .playground__preview-frame-wrapper {
-        width: 170px;
-        height: 220px;
+        width: 280px;
+        height: 362px;
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        /* Make wrapper scrollable for full document access */
+        overflow: visible;
       }
 
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.2);
+        transform: scale(0.33);
         transform-origin: top left;
         border: none;
+        /* Enable touch on iframe content */
+        pointer-events: auto;
+      }
+
+      /* Zoomed state for 375px - full width scrollable */
+      .playground__preview.zoomed-in {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+      }
+
+      .playground__preview.zoomed-in .playground__preview-frame-wrapper {
+        width: 100%;
+        height: auto;
+        min-height: 500px;
+        box-shadow: none;
+        border-radius: 0;
+        overflow: auto;
+      }
+
+      .playground__preview.zoomed-in .playground__preview-frame-wrapper iframe {
+        width: 100%;
+        height: 600px;
+        transform: none;
+        min-height: 600px;
       }
 
       /* Loading stages compact */
@@ -1120,14 +1154,20 @@
         display: none;
       }
 
-      /* Toolbar compact */
+      /* Toolbar compact - but allow horizontal scroll */
       .playground__toolbar {
         padding: 8px 12px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px;
       }
 
       .playground__tab {
         padding: 6px 10px;
         font-size: 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
 
       /* Apply button full width */
@@ -1144,14 +1184,26 @@
       .playground__preview-label {
         font-size: 10px;
         margin-bottom: 8px;
+        flex-shrink: 0;
       }
 
-      /* Zoom toggle smaller */
+      /* CRITICAL FIX: Make zoom button fixed and always accessible */
       .playground__zoom-toggle {
-        width: 32px;
-        height: 32px;
-        bottom: 8px;
-        right: 8px;
+        width: 36px;
+        height: 36px;
+        bottom: 12px;
+        right: 12px;
+        position: fixed;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      }
+
+      /* Session timer compact */
+      .session-timer {
+        padding: 4px 8px;
+        font-size: 10px;
+        flex-shrink: 0;
       }
     }
 
@@ -3054,6 +3106,297 @@
     .glyph-toast__message {
       font-size: 14px;
       color: var(--color-text);
+    }
+
+    /* ============================================
+       Session Timer - Addiction-Critical UX
+       ============================================ */
+    .session-timer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-success);
+      transition: all 0.3s ease;
+    }
+
+    .session-timer svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .session-timer.warning {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--color-warning);
+      animation: session-timer-pulse 2s ease-in-out infinite;
+    }
+
+    .session-timer.urgent {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--color-error);
+      animation: session-timer-urgent 0.8s ease-in-out infinite;
+    }
+
+    @keyframes session-timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    @keyframes session-timer-urgent {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
+    /* Session Warning Toast - More prominent */
+    .session-warning-toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border: 1px solid var(--color-warning);
+      border-radius: var(--radius-lg);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10001;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.2);
+      max-width: 500px;
+    }
+
+    .session-warning-toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .session-warning-toast.urgent {
+      border-color: var(--color-error);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.3);
+      animation: session-toast-shake 0.5s ease-in-out;
+    }
+
+    @keyframes session-toast-shake {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      25% { transform: translateX(calc(-50% - 4px)) translateY(0); }
+      75% { transform: translateX(calc(-50% + 4px)) translateY(0); }
+    }
+
+    .session-warning-toast__icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      color: var(--color-warning);
+    }
+
+    .session-warning-toast.urgent .session-warning-toast__icon {
+      color: var(--color-error);
+    }
+
+    .session-warning-toast__content {
+      flex: 1;
+    }
+
+    .session-warning-toast__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .session-warning-toast__message {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .session-warning-toast__actions {
+      display: flex;
+      gap: 8px;
+      margin-left: 8px;
+    }
+
+    .session-warning-toast__btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .session-warning-toast__btn--primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .session-warning-toast__btn--primary:hover {
+      background: var(--color-primary-bright);
+    }
+
+    .session-warning-toast__btn--secondary {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .session-warning-toast__btn--secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text);
+    }
+
+    /* API Error Toast - User-visible errors */
+    .api-error-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border: 1px solid var(--color-error);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 10001;
+      opacity: 0;
+      transform: translateX(100px);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.15);
+      max-width: 380px;
+      min-width: 320px;
+    }
+
+    .api-error-toast.visible {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .api-error-toast__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-error-toast__icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: var(--color-error);
+    }
+
+    .api-error-toast__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+      flex: 1;
+    }
+
+    .api-error-toast__close {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: var(--color-text-muted);
+      transition: color 0.2s ease;
+    }
+
+    .api-error-toast__close:hover {
+      color: var(--color-text);
+    }
+
+    .api-error-toast__message {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    .api-error-toast__actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .api-error-toast__btn {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-align: center;
+    }
+
+    .api-error-toast__btn--retry {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .api-error-toast__btn--retry:hover {
+      background: var(--color-primary-bright);
+    }
+
+    .api-error-toast__btn--dismiss {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .api-error-toast__btn--dismiss:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text);
+    }
+
+    @media (max-width: 480px) {
+      .session-timer {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+
+      .session-timer span {
+        display: none;
+      }
+
+      .session-timer svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .session-warning-toast {
+        left: 16px;
+        right: 16px;
+        transform: translateX(0) translateY(-100px);
+        max-width: none;
+        padding: 12px 16px;
+      }
+
+      .session-warning-toast.visible {
+        transform: translateX(0) translateY(0);
+      }
+
+      .session-warning-toast__actions {
+        flex-direction: column;
+        margin-left: 0;
+        margin-top: 8px;
+      }
+
+      .api-error-toast {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        min-width: auto;
+        max-width: none;
+      }
     }
 
     /* ============================================
@@ -6037,6 +6380,13 @@
             <button class="playground__tab" data-template="quote-professional">Professional</button>
             <button class="playground__tab" data-template="quote-bold">Bold</button>
           </div>
+          <!-- Session Timer - Shows remaining time before session expires -->
+          <div class="session-timer" id="session-timer" title="Session time remaining">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span id="session-timer-text">60 min</span>
+          </div>
           <div class="playground__actions">
             <button class="history-toggle-btn" id="history-toggle-btn" title="View change history">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -7210,6 +7560,299 @@
     let redoHistory = [];
 
     // ============================================
+    // Session Timer Management - CRITICAL UX
+    // ============================================
+    const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+    const WARNING_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes warning
+    const URGENT_THRESHOLD_MS = 2 * 60 * 1000;   // 2 minutes urgent
+
+    let sessionStartTime = null;
+    let sessionTimerInterval = null;
+    let hasShown10MinWarning = false;
+    let hasShown2MinWarning = false;
+
+    // DOM elements for session timer (lazy loaded)
+    function getSessionTimerElements() {
+      return {
+        timer: document.getElementById('session-timer'),
+        timerText: document.getElementById('session-timer-text'),
+        warningToast: document.getElementById('session-warning-toast'),
+        warningTitle: document.getElementById('session-warning-title'),
+        warningMessage: document.getElementById('session-warning-message'),
+        warningDownload: document.getElementById('session-warning-download'),
+        warningDismiss: document.getElementById('session-warning-dismiss')
+      };
+    }
+
+    // Format remaining time for display
+    function formatTimeRemaining(ms) {
+      if (ms <= 0) return 'Expired';
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      if (minutes >= 60) {
+        return '60 min';
+      } else if (minutes > 0) {
+        return `${minutes} min`;
+      } else {
+        return `${seconds}s`;
+      }
+    }
+
+    // Start session timer when preview loads
+    function startSessionTimer() {
+      sessionStartTime = Date.now();
+      hasShown10MinWarning = false;
+      hasShown2MinWarning = false;
+
+      // Clear any existing interval
+      if (sessionTimerInterval) {
+        clearInterval(sessionTimerInterval);
+      }
+
+      // Update timer every second
+      sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+      updateSessionTimer(); // Initial update
+      console.log('[Glyph] Session timer started');
+    }
+
+    // Update session timer display and check warnings
+    function updateSessionTimer() {
+      if (!sessionStartTime) return;
+
+      const els = getSessionTimerElements();
+      if (!els.timer || !els.timerText) return;
+
+      const elapsed = Date.now() - sessionStartTime;
+      const remaining = SESSION_DURATION_MS - elapsed;
+
+      // Update display
+      els.timerText.textContent = formatTimeRemaining(remaining);
+
+      // Update timer styling based on remaining time
+      els.timer.classList.remove('warning', 'urgent');
+      if (remaining <= URGENT_THRESHOLD_MS) {
+        els.timer.classList.add('urgent');
+      } else if (remaining <= WARNING_THRESHOLD_MS) {
+        els.timer.classList.add('warning');
+      }
+
+      // Show 10-minute warning toast
+      if (remaining <= WARNING_THRESHOLD_MS && remaining > URGENT_THRESHOLD_MS && !hasShown10MinWarning) {
+        hasShown10MinWarning = true;
+        showSessionWarning(
+          'Session expires in 10 minutes',
+          'Save your work! Download PDF or save a named version now.',
+          false
+        );
+      }
+
+      // Show 2-minute urgent warning toast
+      if (remaining <= URGENT_THRESHOLD_MS && remaining > 0 && !hasShown2MinWarning) {
+        hasShown2MinWarning = true;
+        showSessionWarning(
+          'Session expires in 2 minutes!',
+          'Your changes will be lost. Download PDF immediately!',
+          true
+        );
+      }
+
+      // Session expired - graceful reload
+      if (remaining <= 0) {
+        clearInterval(sessionTimerInterval);
+        handleSessionExpired();
+      }
+    }
+
+    // Show session warning toast
+    function showSessionWarning(title, message, isUrgent) {
+      const els = getSessionTimerElements();
+      if (!els.warningToast) return;
+
+      els.warningTitle.textContent = title;
+      els.warningMessage.textContent = message;
+
+      els.warningToast.classList.remove('urgent');
+      if (isUrgent) {
+        els.warningToast.classList.add('urgent');
+      }
+
+      els.warningToast.classList.add('visible');
+      console.log(`[Glyph] Session warning: ${title}`);
+    }
+
+    // Hide session warning toast
+    function hideSessionWarning() {
+      const els = getSessionTimerElements();
+      if (els.warningToast) {
+        els.warningToast.classList.remove('visible');
+      }
+    }
+
+    // Handle session expiration gracefully
+    function handleSessionExpired() {
+      console.log('[Glyph] Session expired - initiating graceful reload');
+
+      // Show final message
+      const els = getSessionTimerElements();
+      if (els.warningToast) {
+        els.warningTitle.textContent = 'Session Expired';
+        els.warningMessage.textContent = 'Starting fresh session...';
+        els.warningToast.classList.add('visible', 'urgent');
+
+        // Hide action buttons since we're auto-reloading
+        const actions = els.warningToast.querySelector('.session-warning-toast__actions');
+        if (actions) actions.style.display = 'none';
+      }
+
+      // Reset session state and reload preview after brief delay
+      setTimeout(() => {
+        sessionId = null;
+        sessionStartTime = null;
+        currentHtml = '';
+        undoHistory = [];
+        redoHistory = [];
+        historyEntries = [];
+        currentHistoryIndex = -1;
+
+        // Hide warning
+        hideSessionWarning();
+
+        // Reload preview with fresh session
+        loadPreview();
+
+        // Show success toast
+        showToast('New session started', 'success');
+      }, 2000);
+    }
+
+    // Initialize session timer event listeners
+    function initSessionTimerListeners() {
+      const els = getSessionTimerElements();
+
+      // Dismiss warning button
+      if (els.warningDismiss) {
+        els.warningDismiss.addEventListener('click', hideSessionWarning);
+      }
+
+      // Download PDF button in warning - triggers generate
+      if (els.warningDownload) {
+        els.warningDownload.addEventListener('click', () => {
+          hideSessionWarning();
+          // Trigger PDF generation
+          const generateBtn = document.getElementById('generate-btn');
+          if (generateBtn) generateBtn.click();
+        });
+      }
+    }
+
+    // Initialize on DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSessionTimerListeners);
+    } else {
+      initSessionTimerListeners();
+    }
+
+    // ============================================
+    // API Error Toast - User-Visible Error Handling
+    // ============================================
+    let lastFailedPrompt = null;
+    let apiErrorToastTimeout = null;
+
+    // Get API error toast elements
+    function getApiErrorElements() {
+      return {
+        toast: document.getElementById('api-error-toast'),
+        message: document.getElementById('api-error-message'),
+        retryBtn: document.getElementById('api-error-retry'),
+        dismissBtn: document.getElementById('api-error-dismiss'),
+        closeBtn: document.getElementById('api-error-close')
+      };
+    }
+
+    // Show API error toast with actionable message
+    function showApiError(errorMessage, prompt) {
+      const els = getApiErrorElements();
+      if (!els.toast) return;
+
+      // Store failed prompt for retry
+      lastFailedPrompt = prompt;
+
+      // Set error message - make it user-friendly
+      let userMessage = 'Unable to apply changes. ';
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        userMessage += 'Check your internet connection and try again.';
+      } else if (errorMessage.includes('timeout')) {
+        userMessage += 'The request timed out. Try a simpler modification.';
+      } else if (errorMessage.includes('session')) {
+        userMessage += 'Your session may have expired. Click retry to refresh.';
+      } else if (errorMessage.includes('rate') || errorMessage.includes('429')) {
+        userMessage += 'Too many requests. Please wait a moment and try again.';
+      } else {
+        userMessage += 'Please try again or use a different prompt.';
+      }
+
+      els.message.textContent = userMessage;
+
+      // Show the toast
+      els.toast.classList.add('visible');
+
+      // Clear any existing timeout
+      if (apiErrorToastTimeout) {
+        clearTimeout(apiErrorToastTimeout);
+      }
+
+      // Auto-hide after 10 seconds
+      apiErrorToastTimeout = setTimeout(hideApiError, 10000);
+
+      console.error('[Glyph] API Error shown to user:', errorMessage);
+    }
+
+    // Hide API error toast
+    function hideApiError() {
+      const els = getApiErrorElements();
+      if (els.toast) {
+        els.toast.classList.remove('visible');
+      }
+      if (apiErrorToastTimeout) {
+        clearTimeout(apiErrorToastTimeout);
+        apiErrorToastTimeout = null;
+      }
+    }
+
+    // Retry failed modification
+    function retryFailedModification() {
+      hideApiError();
+      if (lastFailedPrompt) {
+        // Re-apply the failed prompt
+        applyModifications(lastFailedPrompt);
+      }
+    }
+
+    // Initialize API error toast event listeners
+    function initApiErrorListeners() {
+      const els = getApiErrorElements();
+
+      if (els.retryBtn) {
+        els.retryBtn.addEventListener('click', retryFailedModification);
+      }
+
+      if (els.dismissBtn) {
+        els.dismissBtn.addEventListener('click', hideApiError);
+      }
+
+      if (els.closeBtn) {
+        els.closeBtn.addEventListener('click', hideApiError);
+      }
+    }
+
+    // Initialize on DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApiErrorListeners);
+    } else {
+      initApiErrorListeners();
+    }
+
+    // ============================================
     // Navigation Scroll Effect
     // ============================================
     const nav = document.getElementById('nav');
@@ -7888,10 +8531,16 @@
 
         renderPreview(currentHtml);
         setStatus('Ready');
+
+        // Start session timer for this new session
+        startSessionTimer();
       } catch (err) {
         console.warn('API not available, using static demo:', err);
         renderStaticDemo();
         setStatus('Demo Mode');
+
+        // Still start timer in demo mode for consistent UX
+        startSessionTimer();
       }
     }
 
@@ -9159,8 +9808,24 @@
         setTimeout(() => setStatus('Ready'), 2000);
 
       } catch (err) {
-        console.warn('API modification failed, using local simulation:', err);
-        simulateModification(prompt);
+        // CRITICAL FIX: Show user-visible error instead of silent simulation
+        // Never pretend changes applied when API failed
+        console.error('[Glyph] API modification failed:', err);
+
+        // Restore previous state (undo the optimistic state save)
+        if (undoHistory.length > 0) {
+          // Pop the state we just saved
+          undoHistory.pop();
+          updateUndoButtonState();
+        }
+
+        // Show user-friendly error toast with retry option
+        const errorMessage = err.message || 'Unknown error';
+        showApiError(errorMessage, prompt);
+
+        // Update status to show error
+        setStatus('Error - See message');
+        setTimeout(() => setStatus('Ready'), 3000);
       } finally {
         isProcessingModification = false;
         showLoading(false);
@@ -11104,6 +11769,41 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
     </svg>
     <span class="glyph-toast__message" id="toast-message"></span>
+  </div>
+
+  <!-- Session Warning Toast -->
+  <div class="session-warning-toast" id="session-warning-toast">
+    <svg class="session-warning-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <div class="session-warning-toast__content">
+      <div class="session-warning-toast__title" id="session-warning-title">Session expiring soon</div>
+      <div class="session-warning-toast__message" id="session-warning-message">Save your work or download PDF now.</div>
+    </div>
+    <div class="session-warning-toast__actions">
+      <button class="session-warning-toast__btn session-warning-toast__btn--primary" id="session-warning-download">Download PDF</button>
+      <button class="session-warning-toast__btn session-warning-toast__btn--secondary" id="session-warning-dismiss">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- API Error Toast -->
+  <div class="api-error-toast" id="api-error-toast">
+    <div class="api-error-toast__header">
+      <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <span class="api-error-toast__title">Modification Failed</span>
+      <button class="api-error-toast__close" id="api-error-close">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="api-error-toast__message" id="api-error-message">Unable to apply changes. Please try again.</div>
+    <div class="api-error-toast__actions">
+      <button class="api-error-toast__btn api-error-toast__btn--retry" id="api-error-retry">Retry</button>
+      <button class="api-error-toast__btn api-error-toast__btn--dismiss" id="api-error-dismiss">Dismiss</button>
+    </div>
   </div>
 </body>
 </html>
