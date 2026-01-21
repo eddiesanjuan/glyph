@@ -3229,6 +3229,79 @@
     }
 
     /* ============================================
+       Modification Success Toast - Cycle 6 Addition
+       Celebrates the magic moment when changes are applied
+       ============================================ */
+    .modification-success-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+      border: 1px solid var(--color-success);
+      border-radius: var(--radius-lg);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10001;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+    }
+
+    .modification-success-toast.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .modification-success-toast__icon {
+      width: 24px;
+      height: 24px;
+      color: var(--color-success);
+      flex-shrink: 0;
+      animation: success-checkmark 0.4s ease-out 0.1s both;
+    }
+
+    @keyframes success-checkmark {
+      0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(0deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .modification-success-toast__content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .modification-success-toast__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .modification-success-toast__detail {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    @media (max-width: 480px) {
+      .modification-success-toast {
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        transform: translateX(0) translateY(100px);
+        max-width: none;
+      }
+
+      .modification-success-toast.visible {
+        transform: translateX(0) translateY(0);
+      }
+    }
+
+    /* ============================================
        Session Timer - Addiction-Critical UX
        ============================================ */
     .session-timer {
@@ -4725,17 +4798,18 @@
 
     @media (max-width: 375px) {
       /* CRITICAL: Mobile preview must be visible and properly sized */
+      /* Cycle 6 Fix: Increased min-height so document content is visible on first view */
       .playground__preview-area {
         padding: 12px;
-        min-height: 420px;
+        min-height: 480px;
         max-height: none;
         display: flex;
         flex-direction: column;
       }
 
       .playground__preview {
-        min-height: 380px;
-        max-height: 420px;
+        min-height: 420px;
+        max-height: 480px;
         flex: 1;
         padding: 12px;
         display: flex;
@@ -4746,8 +4820,8 @@
       }
 
       .playground__preview-frame-wrapper {
-        width: 280px;
-        height: 362px;
+        width: 300px;
+        height: 388px;
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
@@ -4757,7 +4831,7 @@
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.329);
+        transform: scale(0.353);
         transform-origin: top left;
         border: none;
       }
@@ -8280,9 +8354,11 @@
 
     // ============================================
     // API Error Toast - User-Visible Error Handling
+    // Cycle 6: Enhanced with retry tracking and better guidance
     // ============================================
     let lastFailedPrompt = null;
     let apiErrorToastTimeout = null;
+    let consecutiveFailures = 0; // Track consecutive failures for guidance
 
     // Get API error toast elements
     function getApiErrorElements() {
@@ -8291,7 +8367,8 @@
         message: document.getElementById('api-error-message'),
         retryBtn: document.getElementById('api-error-retry'),
         dismissBtn: document.getElementById('api-error-dismiss'),
-        closeBtn: document.getElementById('api-error-close')
+        closeBtn: document.getElementById('api-error-close'),
+        title: document.getElementById('api-error-title')
       };
     }
 
@@ -8300,24 +8377,52 @@
       const els = getApiErrorElements();
       if (!els.toast) return;
 
+      // Track consecutive failures
+      consecutiveFailures++;
+
       // Store failed prompt for retry
       lastFailedPrompt = prompt;
 
-      // Set error message - make it user-friendly
-      let userMessage = 'Unable to apply changes. ';
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        userMessage += 'Check your internet connection and try again.';
-      } else if (errorMessage.includes('timeout')) {
-        userMessage += 'The request timed out. Try a simpler modification.';
-      } else if (errorMessage.includes('session')) {
-        userMessage += 'Your session may have expired. Click retry to refresh.';
+      // Set title based on failure count
+      if (els.title) {
+        if (consecutiveFailures >= 2) {
+          els.title.textContent = 'Still Having Trouble';
+        } else {
+          els.title.textContent = 'Modification Failed';
+        }
+      }
+
+      // Set error message - make it user-friendly with progressive guidance
+      let userMessage = '';
+
+      if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+        userMessage = 'Connection issue. Check your internet and click Retry.';
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('took too long')) {
+        if (consecutiveFailures >= 2) {
+          userMessage = 'Request timed out again. Try a simpler prompt like "Make the header blue" or "Add bold text".';
+        } else {
+          userMessage = 'Request timed out (60s limit). Click Retry or try a simpler modification.';
+        }
+      } else if (errorMessage.includes('session') || errorMessage.includes('expired')) {
+        userMessage = 'Session expired. Click Retry to start fresh.';
       } else if (errorMessage.includes('rate') || errorMessage.includes('429')) {
-        userMessage += 'Too many requests. Please wait a moment and try again.';
+        userMessage = 'Too many requests. Wait 10 seconds, then click Retry.';
+      } else if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+        userMessage = 'Server is busy. Click Retry in a moment.';
       } else {
-        userMessage += 'Please try again or use a different prompt.';
+        if (consecutiveFailures >= 2) {
+          userMessage = 'Try a simpler request. Example: "Change the font to Arial" or "Make text larger".';
+        } else {
+          userMessage = 'Something went wrong. Click Retry or try a different prompt.';
+        }
       }
 
       els.message.textContent = userMessage;
+
+      // Update retry button text based on failure count
+      if (els.retryBtn) {
+        els.retryBtn.textContent = consecutiveFailures >= 2 ? 'Try Again' : 'Retry';
+      }
 
       // STALE TOAST FIX: Clear inline display:none before showing
       els.toast.style.display = 'flex';
@@ -9782,6 +9887,62 @@
       }
     }
 
+    // ============================================
+    // Modification Success Toast - Cycle 6 Addition
+    // Celebrates the magic moment when changes are applied
+    // ============================================
+    let modificationSuccessToastElement = null;
+    let modificationSuccessToastTimeout = null;
+
+    function showModificationSuccessToast(elapsed) {
+      // Create toast element if it doesn't exist
+      if (!modificationSuccessToastElement) {
+        modificationSuccessToastElement = document.createElement('div');
+        modificationSuccessToastElement.className = 'modification-success-toast';
+        modificationSuccessToastElement.innerHTML = `
+          <svg class="modification-success-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <div class="modification-success-toast__content">
+            <span class="modification-success-toast__title">Changes applied successfully</span>
+            <span class="modification-success-toast__detail"></span>
+          </div>
+        `;
+        document.body.appendChild(modificationSuccessToastElement);
+      }
+
+      // Update detail text with elapsed time
+      const detailEl = modificationSuccessToastElement.querySelector('.modification-success-toast__detail');
+      if (detailEl) {
+        detailEl.textContent = `Completed in ${elapsed}s`;
+      }
+
+      // Clear any existing timeout
+      if (modificationSuccessToastTimeout) {
+        clearTimeout(modificationSuccessToastTimeout);
+      }
+
+      // Show toast with animation
+      requestAnimationFrame(() => {
+        modificationSuccessToastElement.classList.add('visible');
+      });
+
+      // Auto-hide after 4 seconds
+      modificationSuccessToastTimeout = setTimeout(() => {
+        modificationSuccessToastElement.classList.remove('visible');
+      }, 4000);
+
+      // Auto-scroll to preview on mobile after success
+      if (window.innerWidth <= 480) {
+        const previewArea = document.querySelector('.playground__preview-area');
+        if (previewArea) {
+          setTimeout(() => {
+            previewArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
+      }
+    }
+
     // Format timestamp for display
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp);
@@ -10381,8 +10542,14 @@
           previewContainer.classList.add('success');
           setTimeout(() => previewContainer.classList.remove('success'), 500);
 
+          // Cycle 6: Reset failure counter on success
+          consecutiveFailures = 0;
+
           // Show success CTA after first modification
           showSuccessCta();
+
+          // Cycle 6: Show celebratory success toast
+          showModificationSuccessToast(elapsed);
 
           setStatus(`Done in ${elapsed}s`);
           console.log(`[Glyph] Modification completed in ${elapsed}s`);
@@ -10431,8 +10598,14 @@
         previewContainer.classList.add('success');
         setTimeout(() => previewContainer.classList.remove('success'), 500);
 
+        // Cycle 6: Reset failure counter on success
+        consecutiveFailures = 0;
+
         // Show success CTA after first modification
         showSuccessCta();
+
+        // Cycle 6: Show celebratory success toast
+        showModificationSuccessToast(elapsed);
 
         setStatus(`Done in ${elapsed}s`);
         console.log(`[Glyph] Modification completed in ${elapsed}s`);
@@ -12524,7 +12697,7 @@
       <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
-      <span class="api-error-toast__title">Modification Failed</span>
+      <span class="api-error-toast__title" id="api-error-title">Modification Failed</span>
       <button class="api-error-toast__close" id="api-error-close">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
