@@ -3289,6 +3289,159 @@
       color: #6b7280;
     }
 
+    .glyph-toast--warning {
+      border-color: #f59e0b;
+    }
+
+    .glyph-toast--warning .glyph-toast__icon {
+      color: #f59e0b;
+    }
+
+    /* Demo Mode Banner - Issue #2 Fix */
+    .demo-mode-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      padding: 10px 20px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .demo-mode-banner.visible {
+      display: flex;
+    }
+
+    .demo-mode-banner__text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .demo-mode-banner__icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .demo-mode-banner__retry {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .demo-mode-banner__retry:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .demo-mode-banner__dismiss {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      padding: 4px;
+      margin-left: 8px;
+      transition: color 0.2s;
+    }
+
+    .demo-mode-banner__dismiss:hover {
+      color: white;
+    }
+
+    /* Preview Loading Skeleton - Issue #3 Fix */
+    .preview-init-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-surface);
+      z-index: 5;
+      transition: opacity 0.3s ease;
+    }
+
+    .preview-init-loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .preview-init-loading__skeleton {
+      width: 85%;
+      max-width: 400px;
+      padding: 24px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .skeleton-line {
+      height: 12px;
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .skeleton-line:last-child {
+      margin-bottom: 0;
+    }
+
+    .skeleton-line--header {
+      height: 20px;
+      width: 60%;
+      margin-bottom: 20px;
+    }
+
+    .skeleton-line--short {
+      width: 40%;
+    }
+
+    .skeleton-line--medium {
+      width: 70%;
+    }
+
+    @keyframes skeleton-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .preview-init-loading__text {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-init-loading__spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .glyph-toast__icon {
       width: 18px;
       height: 18px;
@@ -6482,6 +6635,22 @@
   </style>
 </head>
 <body>
+  <!-- Demo Mode Banner - Issue #2 Fix -->
+  <div class="demo-mode-banner" id="demo-mode-banner">
+    <span class="demo-mode-banner__text">
+      <svg class="demo-mode-banner__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      Demo mode active - API temporarily unavailable
+    </span>
+    <button class="demo-mode-banner__retry" id="demo-mode-retry">Retry Connection</button>
+    <button class="demo-mode-banner__dismiss" id="demo-mode-dismiss" title="Dismiss">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
   <!-- Background Effects -->
   <div class="gradient-mesh" aria-hidden="true">
     <div class="gradient-orb gradient-orb--1"></div>
@@ -7046,6 +7215,21 @@
                 <button class="playground__loading-cancel" id="loading-cancel-btn">
                   Cancel
                 </button>
+              </div>
+              <!-- Initial Loading Skeleton - Issue #3 Fix -->
+              <div class="preview-init-loading" id="preview-init-loading">
+                <div class="preview-init-loading__skeleton">
+                  <div class="skeleton-line skeleton-line--header"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line skeleton-line--medium"></div>
+                  <div class="skeleton-line skeleton-line--short"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line skeleton-line--medium"></div>
+                </div>
+                <div class="preview-init-loading__text">
+                  <div class="preview-init-loading__spinner"></div>
+                  Initializing preview...
+                </div>
               </div>
               <div class="playground__preview-frame-wrapper">
                 <iframe id="preview-frame" class="playground__preview-frame" title="Document Preview"></iframe>
@@ -9225,8 +9409,65 @@
     };
 
     // Initialize preview with HTML
+    // Track if we're in demo mode (Issue #2)
+    let isInDemoMode = false;
+
+    // Hide initial loading skeleton (Issue #3)
+    function hideInitialLoadingSkeleton() {
+      const skeleton = document.getElementById('preview-init-loading');
+      if (skeleton) {
+        skeleton.classList.add('hidden');
+        // Remove from DOM after transition
+        setTimeout(() => {
+          skeleton.style.display = 'none';
+        }, 300);
+      }
+    }
+
+    // Show demo mode banner (Issue #2)
+    function showDemoModeBanner() {
+      const banner = document.getElementById('demo-mode-banner');
+      if (banner) {
+        banner.classList.add('visible');
+        isInDemoMode = true;
+      }
+    }
+
+    // Hide demo mode banner
+    function hideDemoModeBanner() {
+      const banner = document.getElementById('demo-mode-banner');
+      if (banner) {
+        banner.classList.remove('visible');
+        isInDemoMode = false;
+      }
+    }
+
+    // Setup demo mode banner event listeners
+    function setupDemoModeBanner() {
+      const retryBtn = document.getElementById('demo-mode-retry');
+      const dismissBtn = document.getElementById('demo-mode-dismiss');
+
+      if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+          retryBtn.textContent = 'Retrying...';
+          retryBtn.disabled = true;
+          hideDemoModeBanner();
+          await initializePreview();
+          retryBtn.textContent = 'Retry Connection';
+          retryBtn.disabled = false;
+        });
+      }
+
+      if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+          hideDemoModeBanner();
+        });
+      }
+    }
+
     async function initializePreview() {
-      setStatus('Loading...');
+      // Issue #3: Show "Initializing preview..." status immediately
+      setStatus('Initializing preview...');
 
       try {
         const response = await fetch(`${API_URL}/v1/preview`, {
@@ -9249,7 +9490,12 @@
         currentHtml = data.html;
         sessionId = data.sessionId;
 
+        // Hide demo mode banner if previously shown (successful reconnect)
+        hideDemoModeBanner();
+
         renderPreview(currentHtml);
+        // Issue #3: Hide skeleton after successful load
+        hideInitialLoadingSkeleton();
         setStatus('Ready');
 
         // Start session timer for this new session
@@ -9257,7 +9503,12 @@
       } catch (err) {
         console.warn('API not available, using static demo:', err);
         renderStaticDemo();
+        // Issue #3: Hide skeleton even in demo mode
+        hideInitialLoadingSkeleton();
         setStatus('Demo Mode');
+
+        // Issue #2: Show visible demo mode banner instead of silent fallback
+        showDemoModeBanner();
 
         // Still start timer in demo mode for consistent UX
         startSessionTimer();
@@ -9919,7 +10170,7 @@
     }
     
     // Show toast notification
-    function showToast(message, type = 'success') {
+    function showToast(message, type = 'success', duration = 3000) {
       const els = getSaveVersionElements();
       if (!els.glyphToast || !els.toastMessage) return;
 
@@ -9936,6 +10187,9 @@
         } else if (type === 'info') {
           // Info icon - circle with i
           iconPath.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z');
+        } else if (type === 'warning') {
+          // Warning triangle icon
+          iconPath.setAttribute('d', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z');
         }
       }
 
@@ -9953,7 +10207,7 @@
             els.glyphToast.setAttribute('aria-hidden', 'true');
           }
         }, 300); // Match CSS transition duration
-      }, 3000);
+      }, duration);
     }
 
     // Show success CTA after first successful modification
@@ -10626,6 +10880,80 @@
       }
     }
 
+    // Issue #1: Detect AI refusal responses that should NOT be rendered to document
+    // These are explanations/refusals that would corrupt the document if rendered
+    function isAiRefusalResponse(html) {
+      if (!html || typeof html !== 'string') return false;
+
+      // Check if the HTML is suspiciously short (likely just text, not a document)
+      // Real documents have substantial structure
+      const trimmedHtml = html.trim();
+
+      // If HTML doesn't contain basic document structure, it's likely a refusal text
+      const hasDocStructure = trimmedHtml.includes('<!DOCTYPE') ||
+                              trimmedHtml.includes('<html') ||
+                              trimmedHtml.includes('<body') ||
+                              trimmedHtml.includes('<div') ||
+                              trimmedHtml.includes('<table');
+
+      // Common AI refusal patterns - if HTML is mostly text with these phrases
+      const refusalPatterns = [
+        /I understand your request/i,
+        /I cannot|I can't|I'm unable to/i,
+        /I apologize|I'm sorry/i,
+        /Unfortunately,? I/i,
+        /This (request|feature|functionality) (is|isn't|cannot)/i,
+        /beyond my capabilities/i,
+        /not possible to/i,
+        /I'd be happy to help.*but/i,
+        /This would require/i,
+        /PDF documents cannot/i,
+        /interactive (features|elements|charts)/i,
+        /video (player|playback|content)/i,
+        /animations? (are|is) not/i,
+        /real-time (data|updates)/i
+      ];
+
+      // If no document structure and matches refusal patterns, it's a refusal
+      if (!hasDocStructure) {
+        for (const pattern of refusalPatterns) {
+          if (pattern.test(html)) {
+            return true;
+          }
+        }
+        // If it's under 500 chars with no structure, likely refusal text
+        if (trimmedHtml.length < 500) {
+          return true;
+        }
+      }
+
+      // Check if it looks like prose explanation inserted into document
+      // (AI might wrap explanation in basic HTML)
+      const textContent = html.replace(/<[^>]*>/g, '').trim();
+      if (textContent.length > 100) {
+        for (const pattern of refusalPatterns) {
+          if (pattern.test(textContent.substring(0, 500))) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    // Extract a user-friendly message from AI refusal response
+    function extractRefusalMessage(html) {
+      // Strip HTML tags to get the text
+      const textContent = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Return first ~100 characters or until first period
+      const firstSentence = textContent.split('.')[0];
+      if (firstSentence.length > 100) {
+        return firstSentence.substring(0, 100) + '...';
+      }
+      return firstSentence || 'This request cannot be completed';
+    }
+
     // Apply modifications via API
     async function applyModifications(prompt) {
       if (!prompt.trim()) return;
@@ -10699,6 +11027,26 @@
 
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
           const data = await response.json();
+
+          // Issue #1: Check for AI refusal before rendering
+          if (isAiRefusalResponse(data.html)) {
+            console.warn('[Glyph] AI refusal detected, not rendering to document');
+            const refusalMsg = extractRefusalMessage(data.html);
+
+            // Restore previous state (undo the optimistic state save)
+            if (undoHistory.length > 0) {
+              undoHistory.pop();
+              updateUndoButtonState();
+            }
+
+            // Show warning toast instead of corrupting document
+            showToast(refusalMsg, 'warning', 5000);
+            setStatus('Request not supported');
+            setTimeout(() => setStatus('Ready'), 3000);
+            clearTimeout(timeoutId);
+            return;
+          }
+
           currentHtml = data.html;
 
           // Render preview with change highlighting
@@ -10756,6 +11104,26 @@
 
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         const data = await response.json();
+
+        // Issue #1: Check for AI refusal before rendering (fallback path)
+        if (isAiRefusalResponse(data.html)) {
+          console.warn('[Glyph] AI refusal detected, not rendering to document');
+          const refusalMsg = extractRefusalMessage(data.html);
+
+          // Restore previous state (undo the optimistic state save)
+          if (undoHistory.length > 0) {
+            undoHistory.pop();
+            updateUndoButtonState();
+          }
+
+          // Show warning toast instead of corrupting document
+          showToast(refusalMsg, 'warning', 5000);
+          setStatus('Request not supported');
+          setTimeout(() => setStatus('Ready'), 3000);
+          clearTimeout(timeoutId);
+          return;
+        }
+
         currentHtml = data.html;
 
         // Render preview with change highlighting
@@ -11641,6 +12009,9 @@
           toast.setAttribute('aria-hidden', 'true');
         }
       });
+
+      // Issue #2: Setup demo mode banner event listeners
+      setupDemoModeBanner();
 
       initializePreview();
     });
