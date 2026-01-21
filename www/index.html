@@ -1202,24 +1202,27 @@
       }
 
       /* CRITICAL FIX: Make preview area visible and scrollable on mobile
-         Consolidated from Cycle 6 fix - increased min-height, removed max-height constraint */
+         Cycle 6 consolidated - explicit visibility, proper sizing for 375px viewport */
       .playground__preview-area {
         padding: 12px;
-        min-height: 480px;  /* Increased for better document visibility on first view */
-        max-height: none;   /* Allow content to expand naturally */
-        display: flex;
+        min-height: 450px;
+        max-height: none;
+        display: flex !important;
         flex-direction: column;
-        overflow: visible;  /* Allow preview to be visible without clipping */
+        overflow: visible;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
-      /* CRITICAL FIX: Enable touch scrolling in preview container
-         Consolidated from Cycle 6 fix - uses flex for centering, larger heights for visibility */
+      /* CRITICAL FIX: Preview container must be visible with proper dimensions
+         Cycle 6 consolidated - flex centering, explicit visibility */
       .playground__preview {
-        min-height: 420px;  /* Increased for better document visibility */
-        max-height: 480px;
+        min-height: 400px;
+        height: 400px;
+        max-height: none;
         flex: 1;
         padding: 12px;
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         overflow: auto;
@@ -1227,29 +1230,34 @@
         overscroll-behavior: contain;
         background: #374151;
         position: relative;
-        /* Allow scrolling to full document */
         touch-action: pan-x pan-y;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
-      /* Larger document preview for better visibility and scrolling */
+      /* Document preview sized to fit 375px - 24px padding = 351px available
+         Using 280px width to leave margin for shadows and ensure visibility */
       .playground__preview-frame-wrapper {
-        width: 320px;   /* Increased from 280px */
-        height: 414px;  /* Increased proportionally (320 * 1.29) */
+        width: 280px;
+        height: 362px;  /* 280 * 1.294 ratio */
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-        flex-shrink: 0; /* Prevent collapse in flex container */
+        flex-shrink: 0;
         overflow: visible;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.376);  /* Increased from 0.33 (320/850 = 0.376) */
+        transform: scale(0.329);  /* 280/850 = 0.329 */
         transform-origin: top left;
         border: none;
-        /* Enable touch on iframe content */
         pointer-events: auto;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
       /* Zoomed state for 375px - full width scrollable */
@@ -5299,41 +5307,7 @@
       }
     }
 
-    /* CRITICAL: 375px overrides - must come AFTER 480px to win cascade */
-    @media (max-width: 375px) {
-      /* Force preview area to be visible with explicit height */
-      .playground__preview-area {
-        min-height: 450px !important;
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        display: flex !important;
-        flex-direction: column !important;
-      }
-
-      /* Preview container needs explicit height so document shows */
-      .playground__preview {
-        min-height: 400px !important;
-        height: 400px !important;
-        max-height: none !important;
-        overflow: auto !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-shrink: 0 !important;
-      }
-
-      /* Scale down frame wrapper to fit 375px - 24px padding = 351px available */
-      .playground__preview-frame-wrapper {
-        width: 280px !important;
-        height: 362px !important;
-        flex-shrink: 0 !important;
-      }
-
-      .playground__preview-frame-wrapper iframe {
-        transform: scale(0.329) !important; /* 280/850 = 0.329 */
-      }
-    }
+    /* NOTE: 375px rules consolidated into main 375px block at ~line 1161 */
 
     /* ============================================
        Utility Classes

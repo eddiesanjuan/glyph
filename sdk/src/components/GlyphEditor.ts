@@ -65,6 +65,9 @@ export class GlyphEditor extends HTMLElement {
   private static readonly FIRST_VISIT_KEY = 'glyph-first-visit-hinted';
   private hasShownRegionHint: boolean = false;
 
+  // Region event listener cleanup (prevents memory leaks on re-render)
+  private regionListenerController: AbortController | null = null;
+
   // Event callbacks for programmatic usage
   public onSave?: GlyphEditorProps['onSave'];
   public onGenerate?: GlyphEditorProps['onGenerate'];
@@ -98,6 +101,11 @@ export class GlyphEditor extends HTMLElement {
     if (this.fieldAutocomplete) {
       this.fieldAutocomplete.destroy();
       this.fieldAutocomplete = null;
+    }
+    // Abort any active region event listeners
+    if (this.regionListenerController) {
+      this.regionListenerController.abort();
+      this.regionListenerController = null;
     }
     this.api = null;
     this.sessionId = null;
@@ -2006,6 +2014,14 @@ export class GlyphEditor extends HTMLElement {
   private setupRegionSelection(doc: Document) {
     const regions = doc.querySelectorAll('[data-glyph-region]');
 
+    // CRITICAL: Abort any previous listeners to prevent memory leak
+    // Without this, each renderPreview() call adds duplicate listeners
+    if (this.regionListenerController) {
+      this.regionListenerController.abort();
+    }
+    this.regionListenerController = new AbortController();
+    const signal = this.regionListenerController.signal;
+
     // Show first-visit hint
     this.showRegionHintIfFirstVisit();
 
@@ -2056,14 +2072,14 @@ export class GlyphEditor extends HTMLElement {
         e.stopPropagation();
         e.preventDefault();
         handleRegionSelect(false);
-      });
+      }, { signal });
 
       // Double-click - enter edit mode with floating toolbar
       region.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         e.preventDefault();
         handleRegionSelect(true);
-      });
+      }, { signal });
 
       // Touch start - begin tracking for long-press
       region.addEventListener('touchstart', (e) => {
@@ -2078,7 +2094,7 @@ export class GlyphEditor extends HTMLElement {
             navigator.vibrate(50);
           }
         }, LONG_PRESS_DURATION);
-      }, { passive: false });
+      }, { passive: false, signal });
 
       // Touch end - handle tap or cancel long-press
       region.addEventListener('touchend', (e) => {
@@ -2095,7 +2111,7 @@ export class GlyphEditor extends HTMLElement {
           e.preventDefault();
           handleRegionSelect(false);
         }
-      });
+      }, { signal });
 
       // Touch cancel - clear timer
       region.addEventListener('touchcancel', () => {
@@ -2103,7 +2119,7 @@ export class GlyphEditor extends HTMLElement {
           clearTimeout(touchTimer);
           touchTimer = null;
         }
-      });
+      }, { signal });
 
       // Touch move - cancel long-press if user moves finger
       region.addEventListener('touchmove', () => {
@@ -2111,7 +2127,7 @@ export class GlyphEditor extends HTMLElement {
           clearTimeout(touchTimer);
           touchTimer = null;
         }
-      });
+      }, { signal });
     });
 
     // Click/touch outside regions clears selection
@@ -2120,14 +2136,14 @@ export class GlyphEditor extends HTMLElement {
       if (!target.closest('[data-glyph-region]')) {
         this.clearRegionSelection(regions);
       }
-    });
+    }, { signal });
 
     doc.body.addEventListener('touchend', (e) => {
       const target = e.target as HTMLElement;
       if (!target.closest('[data-glyph-region]')) {
         this.clearRegionSelection(regions);
       }
-    });
+    }, { signal });
   }
 
   /**
@@ -2678,8 +2694,9 @@ export class GlyphEditor extends HTMLElement {
     const toastId = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
     // If we have max toasts, remove the oldest one
+    // Note: Container uses flex-direction: column-reverse, so oldest toasts are at the END
     if (this.activeToasts.size >= this.maxToasts) {
-      const oldestToast = container.firstElementChild as HTMLElement;
+      const oldestToast = container.lastElementChild as HTMLElement;
       if (oldestToast) {
         this.removeToast(oldestToast, oldestToast.dataset.toastId || '');
       }
