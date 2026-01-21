@@ -7066,6 +7066,8 @@
       }
     }
   </style>
+  <!-- Canvas Confetti for first modification celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
   <!-- Page Loading Skeleton - P2 FOUC Prevention -->
@@ -11293,12 +11295,69 @@
       if (hasShownSuccessCta) return;
       hasShownSuccessCta = true;
 
+      // P2: First modification celebration - the addiction hook!
+      // This is THE critical moment when users realize "holy shit, this actually works"
+      celebrateFirstModification();
+
       const ctaElement = document.getElementById('success-cta');
       if (ctaElement) {
         // Delay showing to not interrupt the success animation
         setTimeout(() => {
           ctaElement.classList.add('visible');
         }, 1000);
+      }
+    }
+
+    // P2: Confetti celebration for first modification
+    // Creates emotional memory and social shareability
+    function celebrateFirstModification() {
+      // Respect reduced motion preference
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      // Get preview container for origin point
+      const previewContainer = document.getElementById('preview-container');
+      if (!previewContainer) return;
+
+      // Calculate origin based on preview container position
+      const rect = previewContainer.getBoundingClientRect();
+      const originX = (rect.left + rect.width / 2) / window.innerWidth;
+      const originY = (rect.top + rect.height / 3) / window.innerHeight;
+
+      // Fire confetti from the preview area
+      if (typeof confetti === 'function') {
+        // Initial burst
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { x: originX, y: originY },
+          colors: ['#1E3A5F', '#22c55e', '#f59e0b', '#3b82f6', '#ec4899'],
+          ticks: 200,
+          gravity: 1.2,
+          scalar: 0.9,
+          drift: 0
+        });
+
+        // Secondary burst after slight delay for layered effect
+        setTimeout(() => {
+          confetti({
+            particleCount: 40,
+            spread: 80,
+            origin: { x: originX - 0.1, y: originY + 0.05 },
+            colors: ['#22c55e', '#f59e0b', '#8b5cf6'],
+            ticks: 150,
+            gravity: 1,
+            scalar: 0.8
+          });
+          confetti({
+            particleCount: 40,
+            spread: 80,
+            origin: { x: originX + 0.1, y: originY + 0.05 },
+            colors: ['#22c55e', '#f59e0b', '#8b5cf6'],
+            ticks: 150,
+            gravity: 1,
+            scalar: 0.8
+          });
+        }, 150);
       }
     }
 

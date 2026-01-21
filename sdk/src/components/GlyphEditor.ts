@@ -879,7 +879,7 @@ export class GlyphEditor extends HTMLElement {
           width: 100%;
           background: rgba(255, 255, 255, 0.3);
           transform-origin: left;
-          animation: glyph-toast-progress 3s linear forwards;
+          animation: glyph-toast-progress var(--toast-duration, 3000ms) linear forwards;
         }
 
         @keyframes glyph-toast-progress {
@@ -916,6 +916,14 @@ export class GlyphEditor extends HTMLElement {
 
         .glyph-toast.error::before {
           background: #fecaca;
+        }
+
+        .glyph-toast.info {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .glyph-toast.info::before {
+          background: #dbeafe;
         }
 
         .glyph-toast-message {
@@ -1895,6 +1903,35 @@ export class GlyphEditor extends HTMLElement {
         this.selectedRegion || undefined
       );
 
+      // Check for AI refusal before rendering to document
+      // AI might return explanatory text instead of HTML for unsupported requests
+      if (this.isAiRefusalResponse(result.html)) {
+        console.warn('[Glyph] AI refusal detected, not rendering to document');
+        const refusalMsg = this.extractRefusalMessage(result.html);
+
+        // Undo the optimistic history save since we're not applying changes
+        if (this.history.length > 0 && this.historyIndex >= 0) {
+          this.history.pop();
+          this.historyIndex = Math.max(0, this.historyIndex - 1);
+        }
+
+        // Show info toast explaining what happened
+        this.showToast(
+          refusalMsg || 'This type of change cannot be applied. Try a styling change instead.',
+          'info',
+          5000
+        );
+
+        // Remove loading state from pill
+        if (pillElement) {
+          pillElement.classList.remove('loading');
+        }
+
+        // Emit event for programmatic handling
+        this.emit('glyph:refusal', { command, message: refusalMsg });
+        return;
+      }
+
       this.currentHtml = result.html;
       this.saveToHistory(); // Also save the new state so we can redo
       this.renderPreview();
@@ -2786,10 +2823,21 @@ export class GlyphEditor extends HTMLElement {
 
   /**
    * Show toast notification with stacking support
+   * @param message - The message to display
+   * @param typeOrIsError - Toast type ('success' | 'error' | 'warning' | 'info') or boolean for legacy support
+   * @param duration - Auto-dismiss duration in ms (default: 3000)
    */
-  private showToast(message: string, isError = false) {
+  private showToast(message: string, typeOrIsError: 'success' | 'error' | 'warning' | 'info' | boolean = 'success', duration = 3000) {
     const container = this.shadow.getElementById('glyph-toast-container');
     if (!container) return;
+
+    // Support legacy boolean parameter
+    let toastType: string;
+    if (typeof typeOrIsError === 'boolean') {
+      toastType = typeOrIsError ? 'error' : 'success';
+    } else {
+      toastType = typeOrIsError;
+    }
 
     // Generate unique ID for this toast
     const toastId = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -2805,10 +2853,13 @@ export class GlyphEditor extends HTMLElement {
 
     // Create toast element using safe DOM methods (XSS prevention)
     const toast = document.createElement('div');
-    toast.className = `glyph-toast ${isError ? 'error' : 'success'}`;
+    toast.className = `glyph-toast ${toastType}`;
     toast.dataset.toastId = toastId;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
+
+    // Update progress bar animation duration to match toast duration
+    toast.style.setProperty('--toast-duration', `${duration}ms`);
 
     const messageSpan = document.createElement('span');
     messageSpan.className = 'glyph-toast-message';
@@ -2831,10 +2882,10 @@ export class GlyphEditor extends HTMLElement {
       toast.classList.add('show');
     });
 
-    // Auto-dismiss after 3 seconds
+    // Auto-dismiss after specified duration
     setTimeout(() => {
       this.removeToast(toast, toastId);
-    }, 3000);
+    }, duration);
   }
 
   /**
@@ -2851,6 +2902,82 @@ export class GlyphEditor extends HTMLElement {
       toast.remove();
       this.activeToasts.delete(toastId);
     }, 400);
+  }
+
+  /**
+   * Detect if AI response is a refusal/explanation that should NOT be rendered
+   * These are explanations that would corrupt the document if rendered as HTML
+   */
+  private isAiRefusalResponse(html: string): boolean {
+    if (!html || typeof html !== 'string') return false;
+
+    const trimmedHtml = html.trim();
+
+    // If HTML doesn't contain basic document structure, it's likely a refusal text
+    const hasDocStructure = trimmedHtml.includes('<!DOCTYPE') ||
+                            trimmedHtml.includes('<html') ||
+                            trimmedHtml.includes('<body') ||
+                            trimmedHtml.includes('<div') ||
+                            trimmedHtml.includes('<table');
+
+    // Common AI refusal patterns
+    const refusalPatterns = [
+      /I understand your request/i,
+      /I cannot|I can't|I'm unable to/i,
+      /I apologize|I'm sorry/i,
+      /Unfortunately,? I/i,
+      /This (request|feature|functionality) (is|isn't|cannot)/i,
+      /beyond my capabilities/i,
+      /not possible to/i,
+      /I'd be happy to help.*but/i,
+      /This would require/i,
+      /PDF documents cannot/i,
+      /interactive (features|elements|charts)/i,
+      /video (player|playback|content)/i,
+      /animations? (are|is) not/i,
+      /real-time (data|updates)/i
+    ];
+
+    // If no document structure and matches refusal patterns, it's a refusal
+    if (!hasDocStructure) {
+      for (const pattern of refusalPatterns) {
+        if (pattern.test(html)) {
+          return true;
+        }
+      }
+      // If it's under 500 chars with no structure, likely refusal text
+      if (trimmedHtml.length < 500) {
+        return true;
+      }
+    }
+
+    // Check if it looks like prose explanation inserted into document
+    // (AI might wrap explanation in basic HTML)
+    const textContent = html.replace(/<[^>]*>/g, '').trim();
+    if (textContent.length > 100) {
+      for (const pattern of refusalPatterns) {
+        if (pattern.test(textContent.substring(0, 500))) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Extract a user-friendly message from AI refusal response
+   */
+  private extractRefusalMessage(html: string): string {
+    // Strip HTML tags to get the text
+    const textContent = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // Return first ~120 characters or until first period for a friendly message
+    const firstSentence = textContent.split('.')[0];
+    if (firstSentence.length > 120) {
+      return firstSentence.substring(0, 120) + '...';
+    }
+    return firstSentence || 'This type of change cannot be applied to the document';
   }
 
   /**
