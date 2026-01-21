@@ -22,6 +22,12 @@ export interface ValidationSummary {
   validatedAt: string;
 }
 
+/** A snapshot of template state for undo support */
+export interface TemplateSnapshot {
+  template_html: string;
+  rendered_html: string;
+}
+
 export interface DevSession {
   id: string;
   current_html: string;
@@ -43,6 +49,8 @@ export interface DevSession {
   validation_result?: ValidationSummary;
   /** Auto-fixed HTML suggestion if issues were found and fixable */
   suggested_fix_html?: string;
+  /** History of template states for undo support (most recent last) */
+  template_history?: TemplateSnapshot[];
 }
 
 // In-memory storage for development sessions
@@ -71,6 +79,11 @@ export function createDevSession(
     template,
     created_at: now.toISOString(),
     expires_at: expiresAt.toISOString(),
+    // Initialize template history with the original state for undo support
+    template_history: [{
+      template_html: templateHtml,
+      rendered_html: renderedHtml,
+    }],
   };
 
   devSessions.set(sessionId, session);
@@ -119,6 +132,68 @@ export function updateDevSession(
 
   devSessions.set(sessionId, updatedSession);
   return updatedSession;
+}
+
+/**
+ * Find the template HTML that corresponds to a given rendered HTML.
+ * Used for undo support - when client sends rendered HTML that differs from
+ * current state, we need to find the matching template in history.
+ *
+ * Returns the template_html if found, or null if no match.
+ */
+export function findTemplateForRenderedHtml(
+  sessionId: string,
+  renderedHtml: string
+): string | null {
+  const session = devSessions.get(sessionId);
+  if (!session || !session.template_history) {
+    return null;
+  }
+
+  // Search history from most recent to oldest
+  for (let i = session.template_history.length - 1; i >= 0; i--) {
+    const snapshot = session.template_history[i];
+    if (snapshot.rendered_html === renderedHtml) {
+      console.info(`[Dev Mode] Found matching template at history index ${i} for session: ${sessionId}`);
+      return snapshot.template_html;
+    }
+  }
+
+  console.warn(`[Dev Mode] No matching template found for rendered HTML in session: ${sessionId}`);
+  return null;
+}
+
+/**
+ * Add a new template snapshot to history.
+ * Called after each successful modification.
+ */
+export function addTemplateToHistory(
+  sessionId: string,
+  templateHtml: string,
+  renderedHtml: string
+): void {
+  const session = devSessions.get(sessionId);
+  if (!session) {
+    return;
+  }
+
+  if (!session.template_history) {
+    session.template_history = [];
+  }
+
+  // Add to history (limit to 20 entries to prevent memory bloat)
+  session.template_history.push({
+    template_html: templateHtml,
+    rendered_html: renderedHtml,
+  });
+
+  // Trim history if too long
+  const MAX_HISTORY = 20;
+  if (session.template_history.length > MAX_HISTORY) {
+    session.template_history = session.template_history.slice(-MAX_HISTORY);
+  }
+
+  devSessions.set(sessionId, session);
 }
 
 /**

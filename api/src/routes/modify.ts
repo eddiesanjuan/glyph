@@ -22,7 +22,7 @@ import { repairHtml, isHtmlTruncated, getFriendlyIssueDescription } from "../ser
 import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
-import { getDevSession, updateDevSession, isDevSessionId } from "../lib/devSessions.js";
+import { getDevSession, updateDevSession, isDevSessionId, findTemplateForRenderedHtml, addTemplateToHistory } from "../lib/devSessions.js";
 import { validateModification as selfCheckValidation } from "../services/validator.js";
 
 const modify = new Hono();
@@ -252,13 +252,29 @@ modify.post("/", async (c) => {
         return c.json(error, 400);
       }
 
-      // ALWAYS use server-side template HTML for AI modifications
+      // Determine which template to use for AI modifications
       // The template HTML contains Mustache placeholders that AI must preserve
-      // Client HTML is rendered (no placeholders) and would cause validation failures
       //
-      // Note: For undo support, we track template history on the server side,
-      // not by accepting rendered HTML from the client
-      const templateToModify = session.template_html || session.current_html;
+      // UNDO SUPPORT: If client sends HTML that differs from current session state,
+      // it means the client did an undo operation. We need to find the matching
+      // template from history and use that instead of the current template.
+      let templateToModify = session.template_html || session.current_html;
+
+      const clientHtml = parsed.data.html;
+      if (isDevSession && clientHtml && clientHtml !== session.current_html) {
+        // Client state differs from server state - likely due to undo
+        console.info(`[Modify] Client HTML differs from server state - checking history for undo support`);
+        const matchingTemplate = findTemplateForRenderedHtml(sessionId, clientHtml);
+        if (matchingTemplate) {
+          console.info(`[Modify] Found matching template in history - using for modification`);
+          templateToModify = matchingTemplate;
+        } else {
+          // No matching template found - fall back to original template
+          // This handles edge cases where history was truncated
+          console.warn(`[Modify] No matching template in history - falling back to original template`);
+          templateToModify = session.original_html;
+        }
+      }
 
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
       // With automatic retry if HTML appears truncated or malformed
@@ -355,6 +371,10 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           template_html: modifiedTemplateHtml,
           modifications,
         });
+
+        // UNDO SUPPORT: Add this template state to history
+        // This allows finding the template when client undos to this state
+        addTemplateToHistory(sessionId, modifiedTemplateHtml, renderedHtml);
       } else if (supabase) {
         const { error: updateError } = await getSupabase()
           .from("sessions")

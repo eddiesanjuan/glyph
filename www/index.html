@@ -617,6 +617,144 @@
       50% { opacity: 0; }
     }
 
+    /* Hero Demo Effects - Visual feedback for each command */
+    .demo-effect {
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+
+    .demo-effect--active {
+      opacity: 1;
+    }
+
+    /* DRAFT Watermark Effect */
+    .demo-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-35deg);
+      font-size: 48px;
+      font-weight: 900;
+      color: rgba(239, 68, 68, 0.15);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .demo-watermark.demo-effect--active {
+      transform: translate(-50%, -50%) rotate(-35deg) scale(1);
+    }
+
+    /* Stripe Styling Effect - Purple theme indicator */
+    .demo-preview--stripe .demo-doc-header {
+      border-color: #635BFF !important;
+    }
+    .demo-preview--stripe .demo-company,
+    .demo-preview--stripe .demo-quote-title {
+      color: #635BFF !important;
+    }
+    .demo-preview--stripe .demo-table-header {
+      background: #635BFF !important;
+    }
+    .demo-preview--stripe .demo-meta {
+      background: #f5f4ff;
+    }
+    .demo-stripe-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: linear-gradient(135deg, #635BFF 0%, #8B5CF6 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      z-index: 5;
+    }
+
+    /* QR Code Effect */
+    .demo-qrcode {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      background: white;
+      border: 2px solid #1E3A5F;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .demo-qrcode svg {
+      width: 36px;
+      height: 36px;
+    }
+    .demo-qrcode-label {
+      position: absolute;
+      bottom: 76px;
+      right: 24px;
+      font-size: 7px;
+      color: #666;
+      text-align: right;
+    }
+
+    /* Payment Terms Effect */
+    .demo-terms {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 80px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+      border-left: 3px solid #22C55E;
+      border-radius: 0 4px 4px 0;
+      z-index: 5;
+    }
+    .demo-terms-title {
+      font-size: 8px;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 2px;
+    }
+    .demo-terms-text {
+      font-size: 9px;
+      color: #15803d;
+    }
+
+    /* Signature Line Effect */
+    .demo-signature {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      z-index: 5;
+    }
+    .demo-signature-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 40px;
+    }
+    .demo-signature-box {
+      flex: 1;
+    }
+    .demo-signature-rule {
+      border-bottom: 1px solid #333;
+      margin-bottom: 4px;
+      height: 24px;
+    }
+    .demo-signature-label {
+      font-size: 8px;
+      color: #666;
+    }
+    .demo-signature-date {
+      flex: 0 0 80px;
+    }
+
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -6927,6 +7065,40 @@
                   </div>
                 </div>
               </div>
+              <!-- Visual Effect Elements -->
+              <div class="demo-watermark demo-effect" id="demo-effect-watermark">DRAFT</div>
+              <div class="demo-stripe-badge demo-effect" id="demo-effect-stripe">Powered by Stripe</div>
+              <div class="demo-qrcode-label demo-effect" id="demo-effect-qrcode-label">Scan to Pay</div>
+              <div class="demo-qrcode demo-effect" id="demo-effect-qrcode">
+                <svg viewBox="0 0 100 100" fill="none" stroke="#1E3A5F" stroke-width="3">
+                  <rect x="10" y="10" width="25" height="25" />
+                  <rect x="15" y="15" width="15" height="15" fill="#1E3A5F" />
+                  <rect x="65" y="10" width="25" height="25" />
+                  <rect x="70" y="15" width="15" height="15" fill="#1E3A5F" />
+                  <rect x="10" y="65" width="25" height="25" />
+                  <rect x="15" y="70" width="15" height="15" fill="#1E3A5F" />
+                  <rect x="40" y="40" width="20" height="20" fill="#1E3A5F" />
+                  <rect x="65" y="65" width="8" height="8" fill="#1E3A5F" />
+                  <rect x="80" y="65" width="8" height="8" fill="#1E3A5F" />
+                  <rect x="65" y="80" width="8" height="8" fill="#1E3A5F" />
+                </svg>
+              </div>
+              <div class="demo-terms demo-effect" id="demo-effect-terms">
+                <div class="demo-terms-title">Payment Terms</div>
+                <div class="demo-terms-text">Net 30 days from invoice date</div>
+              </div>
+              <div class="demo-signature demo-effect" id="demo-effect-signature">
+                <div class="demo-signature-line">
+                  <div class="demo-signature-box">
+                    <div class="demo-signature-rule"></div>
+                    <div class="demo-signature-label">Client Signature</div>
+                  </div>
+                  <div class="demo-signature-box demo-signature-date">
+                    <div class="demo-signature-rule"></div>
+                    <div class="demo-signature-label">Date</div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="demo-command">
               <svg class="demo-command__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -9087,6 +9259,41 @@
     let charIndex = 0;
     let isDeleting = false;
 
+    // Effect elements mapping
+    const effectElements = {
+      watermark: document.getElementById('demo-effect-watermark'),
+      stripe: document.getElementById('demo-effect-stripe'),
+      qrcode: [document.getElementById('demo-effect-qrcode'), document.getElementById('demo-effect-qrcode-label')],
+      terms: document.getElementById('demo-effect-terms'),
+      signature: document.getElementById('demo-effect-signature')
+    };
+
+    // Clear all effects
+    function clearAllEffects() {
+      heroDemo.classList.remove('demo-preview--stripe');
+      Object.values(effectElements).flat().forEach(el => {
+        if (el) el.classList.remove('demo-effect--active');
+      });
+    }
+
+    // Activate a specific effect
+    function activateEffect(effectName) {
+      clearAllEffects();
+      if (effectName === 'stripe') {
+        heroDemo.classList.add('demo-preview--stripe');
+        effectElements.stripe.classList.add('demo-effect--active');
+      } else if (effectName === 'qrcode') {
+        effectElements.qrcode.forEach(el => el.classList.add('demo-effect--active'));
+      } else if (effectElements[effectName]) {
+        const el = effectElements[effectName];
+        if (Array.isArray(el)) {
+          el.forEach(e => e.classList.add('demo-effect--active'));
+        } else {
+          el.classList.add('demo-effect--active');
+        }
+      }
+    }
+
     function typeCommand() {
       const command = commands[commandIndex];
 
@@ -9095,14 +9302,16 @@
         charIndex++;
 
         if (charIndex === command.text.length) {
+          // Typing complete - show the effect
           setTimeout(() => {
             heroDemo.style.setProperty('--demo-accent', command.color);
+            activateEffect(command.effect);
           }, 300);
 
           setTimeout(() => {
             isDeleting = true;
             typeCommand();
-          }, 2000);
+          }, 2500); // Slightly longer to appreciate the effect
           return;
         }
       } else {
@@ -9110,6 +9319,8 @@
         charIndex--;
 
         if (charIndex === 0) {
+          // Clear effect when starting next command
+          clearAllEffects();
           isDeleting = false;
           commandIndex = (commandIndex + 1) % commands.length;
         }
