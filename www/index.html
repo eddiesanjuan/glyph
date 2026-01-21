@@ -2177,6 +2177,17 @@
       pointer-events: none;
     }
 
+    .playground__suggestion-duration {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-left: 4px;
+      font-weight: 400;
+    }
+
+    .playground__suggestion:hover:not(:disabled) .playground__suggestion-duration {
+      opacity: 0.8;
+    }
+
     .playground__hint {
       margin-top: 6px;
       font-size: 11px;
@@ -7638,12 +7649,12 @@
                 ></textarea>
               </div>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Make this look like a Stripe invoice - clean, minimal, with their signature purple">Stripe style</button>
-                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code</button>
-                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark</button>
-                <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms</button>
-                <button class="playground__suggestion" data-prompt="Add a thank you message and signature line at the bottom with the current date">Add signature</button>
-                <button class="playground__suggestion" data-prompt="Add a progress bar showing 50% deposit already paid">Show progress</button>
+                <button class="playground__suggestion" data-prompt="Make this look like a Stripe invoice - clean, minimal, with their signature purple">Stripe style <span class="playground__suggestion-duration">~45s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">~3s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">~2s</span></button>
+                <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">~3s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a thank you message and signature line at the bottom with the current date">Add signature <span class="playground__suggestion-duration">~3s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a progress bar showing 50% deposit already paid">Show progress <span class="playground__suggestion-duration">~5s</span></button>
               </div>
               <p class="playground__hint">Try something wild - the AI understands complex requests</p>
               <div class="playground__button-row">
@@ -14210,22 +14221,35 @@
     const glow = document.getElementById('mouseGlow');
     if (!glow) return;
 
+    // Skip entirely on mobile/touch devices - saves battery and GPU
+    const isTouchDevice = !window.matchMedia('(hover: hover)').matches;
+    if (isTouchDevice) {
+      glow.style.display = 'none';
+      return;
+    }
+
     let mouseX = 0, mouseY = 0;
     let glowX = 0, glowY = 0;
     let animationId = null;
+    let isRunning = false;
 
-    document.addEventListener('mousemove', (e) => {
+    function onMouseMove(e) {
       mouseX = e.clientX;
       mouseY = e.clientY;
       glow.classList.add('active');
-    });
+    }
 
-    document.addEventListener('mouseleave', () => {
+    function onMouseLeave() {
       glow.classList.remove('active');
-    });
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseleave', onMouseLeave);
 
     // Smooth animation with requestAnimationFrame
     function animate() {
+      if (!isRunning) return;
+
       // Ease the glow position towards mouse (creates smooth follow)
       glowX += (mouseX - glowX) * 0.1;
       glowY += (mouseY - glowY) * 0.1;
@@ -14236,9 +14260,33 @@
       animationId = requestAnimationFrame(animate);
     }
 
-    // Only start animation if not on touch device
-    if (window.matchMedia('(hover: hover)').matches) {
+    function startAnimation() {
+      if (isRunning) return;
+      isRunning = true;
       animate();
+    }
+
+    function stopAnimation() {
+      isRunning = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    }
+
+    // Stop animation when tab is hidden to save battery/GPU
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopAnimation();
+        glow.classList.remove('active');
+      } else {
+        startAnimation();
+      }
+    });
+
+    // Start animation (only if page is visible)
+    if (!document.hidden) {
+      startAnimation();
     }
   })();
   </script>
