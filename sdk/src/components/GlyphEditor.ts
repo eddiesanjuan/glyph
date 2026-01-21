@@ -1608,15 +1608,15 @@ export class GlyphEditor extends HTMLElement {
     const pills = this.shadow.querySelectorAll('.glyph-pill');
     const pillsArray = Array.from(pills) as HTMLElement[];
 
+    const pillSignal = this.documentListenerController?.signal;
     pills.forEach((pill, index) => {
       pill.addEventListener('click', (e) => {
         const action = (e.currentTarget as HTMLElement).getAttribute('data-action');
         if (action) {
           this.executeCommand(action, e.currentTarget as HTMLElement);
         }
-      });
+      }, { signal: pillSignal });
 
-      // Arrow key navigation for pills
       pill.addEventListener('keydown', (e) => {
         const key = (e as KeyboardEvent).key;
         if (key === 'ArrowRight' || key === 'ArrowDown') {
@@ -1628,11 +1628,10 @@ export class GlyphEditor extends HTMLElement {
           const prevIndex = (index - 1 + pillsArray.length) % pillsArray.length;
           this.focusPill(pillsArray, prevIndex);
         } else if (key === 'Escape') {
-          // Clear pill focus and move to input
           const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
           if (input) input.focus();
         }
-      });
+      }, { signal: pillSignal });
     });
 
     // Command input - Enter key with debounce
@@ -1660,15 +1659,12 @@ export class GlyphEditor extends HTMLElement {
       });
 
       input.addEventListener('keydown', (e) => {
-        // Don't handle Enter if autocomplete is handling it
         if (e.key === 'Enter' && input.value.trim() && !this.isLoading) {
-          // Check if autocomplete dropdown is visible - if so, let it handle Enter
           const autocompleteDropdown = commandWrapper.querySelector('.glyph-autocomplete-dropdown') as HTMLElement;
           if (autocompleteDropdown && autocompleteDropdown.style.display !== 'none') {
-            return; // Let autocomplete handle it
+            return;
           }
 
-          // Debounce rapid Enter presses
           if (this.commandDebounceTimer) {
             clearTimeout(this.commandDebounceTimer);
           }
@@ -1678,13 +1674,12 @@ export class GlyphEditor extends HTMLElement {
             this.commandDebounceTimer = null;
           }, this.commandDebounceMs);
         } else if (e.key === 'Escape') {
-          // Clear selection and input
           input.value = '';
           this.selectedRegion = null;
           this.hideRegionActions();
           input.placeholder = "What would you like to change?";
         }
-      });
+      }, { signal: this.documentListenerController?.signal });
     }
 
     // Download button

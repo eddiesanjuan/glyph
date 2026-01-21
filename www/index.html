@@ -617,6 +617,38 @@
       50% { opacity: 0; }
     }
 
+    /* Clickable demo command - triggers playground demo */
+    .demo-command {
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .demo-command:hover {
+      border-color: var(--color-primary-bright);
+      box-shadow: 0 12px 48px rgba(30, 58, 95, 0.4);
+    }
+
+    .demo-command:hover .demo-command__text {
+      color: var(--color-primary-bright);
+    }
+
+    .demo-command::after {
+      content: 'Click to try it';
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--color-text-subtle);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .demo-command:hover::after {
+      opacity: 1;
+    }
+
     /* Hero Demo Effects - Visual feedback for each command */
     .demo-effect {
       opacity: 0;
@@ -3518,7 +3550,7 @@
       color: white;
     }
 
-    /* Preview Loading Skeleton - Issue #3 Fix */
+    /* Preview Loading Skeleton - Enhanced Document-Shaped Skeleton */
     .preview-init-loading {
       position: absolute;
       inset: 0;
@@ -3528,7 +3560,7 @@
       justify-content: center;
       background: var(--color-surface);
       z-index: 5;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease-out;
     }
 
     .preview-init-loading.hidden {
@@ -3536,32 +3568,135 @@
       pointer-events: none;
     }
 
+    /* Document-shaped skeleton container */
     .preview-init-loading__skeleton {
-      width: 85%;
-      max-width: 400px;
-      padding: 24px;
+      width: 90%;
+      max-width: 420px;
+      padding: 28px;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+      transform: translateY(0);
+      animation: skeleton-float 2s ease-in-out infinite;
     }
 
+    @keyframes skeleton-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* Document header section */
+    .skeleton-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .skeleton-header__left {
+      flex: 1;
+    }
+
+    .skeleton-header__right {
+      width: 80px;
+      text-align: right;
+    }
+
+    /* Meta info row (quote number, date, etc) */
+    .skeleton-meta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .skeleton-meta__item {
+      flex: 1;
+    }
+
+    /* Table skeleton */
+    .skeleton-table {
+      margin-bottom: 20px;
+    }
+
+    .skeleton-table__header {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-table__row {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .skeleton-table__cell {
+      flex: 1;
+    }
+
+    .skeleton-table__cell--wide {
+      flex: 2;
+    }
+
+    .skeleton-table__cell--narrow {
+      flex: 0.5;
+    }
+
+    /* Footer section */
+    .skeleton-footer {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Skeleton line base styles */
     .skeleton-line {
       height: 12px;
-      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background: linear-gradient(90deg, #e8eaed 0%, #f8f9fa 50%, #e8eaed 100%);
       background-size: 200% 100%;
-      animation: skeleton-shimmer 1.5s infinite;
+      animation: skeleton-shimmer 1.8s ease-in-out infinite;
       border-radius: 4px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .skeleton-line:last-child {
       margin-bottom: 0;
     }
 
-    .skeleton-line--header {
-      height: 20px;
-      width: 60%;
-      margin-bottom: 20px;
+    /* Line variations */
+    .skeleton-line--title {
+      height: 22px;
+      width: 55%;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-line--subtitle {
+      height: 10px;
+      width: 70%;
+    }
+
+    .skeleton-line--badge {
+      height: 28px;
+      width: 70px;
+      border-radius: 6px;
+    }
+
+    .skeleton-line--label {
+      height: 8px;
+      width: 50%;
+      margin-bottom: 6px;
+    }
+
+    .skeleton-line--value {
+      height: 14px;
+      width: 80%;
     }
 
     .skeleton-line--short {
@@ -3569,7 +3704,16 @@
     }
 
     .skeleton-line--medium {
-      width: 70%;
+      width: 65%;
+    }
+
+    .skeleton-line--full {
+      width: 100%;
+    }
+
+    .skeleton-line--total {
+      height: 16px;
+      width: 100px;
     }
 
     @keyframes skeleton-shimmer {
@@ -3577,13 +3721,59 @@
       100% { background-position: -200% 0; }
     }
 
+    /* Progressive loading stages */
+    .preview-init-loading__stages {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-init-loading__stage {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      opacity: 0.5;
+      transition: opacity 0.3s ease, color 0.3s ease;
+    }
+
+    .preview-init-loading__stage.active {
+      opacity: 1;
+      color: var(--color-text);
+    }
+
+    .preview-init-loading__stage.completed {
+      opacity: 0.7;
+      color: var(--color-success);
+    }
+
+    .preview-init-loading__stage-icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-init-loading__stage.active .preview-init-loading__stage-icon {
+      animation: spin 0.8s linear infinite;
+    }
+
+    .preview-init-loading__stage.completed .preview-init-loading__stage-icon svg {
+      color: var(--color-success);
+    }
+
+    /* Legacy text style for fallback */
     .preview-init-loading__text {
-      margin-top: 16px;
+      margin-top: 20px;
       font-size: 13px;
       color: var(--color-text-muted);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .preview-init-loading__spinner {
@@ -7525,19 +7715,87 @@
                   Cancel
                 </button>
               </div>
-              <!-- Initial Loading Skeleton - Issue #3 Fix -->
+              <!-- Enhanced Document-Shaped Loading Skeleton -->
               <div class="preview-init-loading" id="preview-init-loading">
                 <div class="preview-init-loading__skeleton">
-                  <div class="skeleton-line skeleton-line--header"></div>
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-line skeleton-line--medium"></div>
-                  <div class="skeleton-line skeleton-line--short"></div>
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-line skeleton-line--medium"></div>
+                  <!-- Document Header -->
+                  <div class="skeleton-header">
+                    <div class="skeleton-header__left">
+                      <div class="skeleton-line skeleton-line--title"></div>
+                      <div class="skeleton-line skeleton-line--subtitle"></div>
+                    </div>
+                    <div class="skeleton-header__right">
+                      <div class="skeleton-line skeleton-line--badge"></div>
+                    </div>
+                  </div>
+
+                  <!-- Meta Info Row -->
+                  <div class="skeleton-meta">
+                    <div class="skeleton-meta__item">
+                      <div class="skeleton-line skeleton-line--label"></div>
+                      <div class="skeleton-line skeleton-line--value"></div>
+                    </div>
+                    <div class="skeleton-meta__item">
+                      <div class="skeleton-line skeleton-line--label"></div>
+                      <div class="skeleton-line skeleton-line--value"></div>
+                    </div>
+                    <div class="skeleton-meta__item">
+                      <div class="skeleton-line skeleton-line--label"></div>
+                      <div class="skeleton-line skeleton-line--value"></div>
+                    </div>
+                  </div>
+
+                  <!-- Table Skeleton -->
+                  <div class="skeleton-table">
+                    <div class="skeleton-table__header">
+                      <div class="skeleton-line skeleton-table__cell--wide skeleton-line--short"></div>
+                      <div class="skeleton-line skeleton-table__cell--narrow skeleton-line--short"></div>
+                      <div class="skeleton-line skeleton-table__cell skeleton-line--short"></div>
+                    </div>
+                    <div class="skeleton-table__row">
+                      <div class="skeleton-line skeleton-table__cell--wide skeleton-line--medium"></div>
+                      <div class="skeleton-line skeleton-table__cell--narrow skeleton-line--short"></div>
+                      <div class="skeleton-line skeleton-table__cell skeleton-line--medium"></div>
+                    </div>
+                    <div class="skeleton-table__row">
+                      <div class="skeleton-line skeleton-table__cell--wide skeleton-line--short"></div>
+                      <div class="skeleton-line skeleton-table__cell--narrow skeleton-line--short"></div>
+                      <div class="skeleton-line skeleton-table__cell skeleton-line--short"></div>
+                    </div>
+                  </div>
+
+                  <!-- Footer with Total -->
+                  <div class="skeleton-footer">
+                    <div class="skeleton-line skeleton-line--total"></div>
+                  </div>
                 </div>
-                <div class="preview-init-loading__text">
-                  <div class="preview-init-loading__spinner"></div>
-                  Initializing preview...
+
+                <!-- Progressive Loading Stages -->
+                <div class="preview-init-loading__stages" id="preview-init-stages">
+                  <div class="preview-init-loading__stage active" data-stage="connecting">
+                    <span class="preview-init-loading__stage-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" style="animation: dash 1s linear infinite;"/>
+                      </svg>
+                    </span>
+                    <span>Connecting to server...</span>
+                  </div>
+                  <div class="preview-init-loading__stage" data-stage="loading">
+                    <span class="preview-init-loading__stage-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+                      </svg>
+                    </span>
+                    <span>Loading preview...</span>
+                  </div>
+                  <div class="preview-init-loading__stage" data-stage="ready">
+                    <span class="preview-init-loading__stage-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                    <span>Ready</span>
+                  </div>
                 </div>
               </div>
               <div class="playground__preview-frame-wrapper">
@@ -9456,6 +9714,54 @@
     }
 
     setTimeout(typeCommand, 1000);
+
+    // ============================================
+    // Hero Command Click Handler - Instant Demo Magic
+    // ============================================
+    const demoCommand = document.querySelector('.demo-command');
+    if (demoCommand) {
+      demoCommand.addEventListener('click', () => {
+        // Get the current command being displayed
+        const currentCommand = commands[commandIndex];
+        const commandText = currentCommand.text;
+
+        // Map hero commands to full playground prompts for better results
+        const promptMap = {
+          'Add a diagonal DRAFT watermark': 'Add a subtle DRAFT watermark diagonally across the document',
+          'Make this look like a Stripe invoice': 'Make this look like a Stripe invoice - clean, minimal, with their signature purple',
+          'Add a QR code for instant payment': 'Add a QR code in the bottom right corner for easy mobile payment',
+          'Add payment terms: Net 30': 'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
+          'Add a signature line with date': 'Add a thank you message and signature line at the bottom with the current date'
+        };
+
+        const fullPrompt = promptMap[commandText] || commandText;
+
+        // Scroll to playground section smoothly
+        const playgroundSection = document.getElementById('playground');
+        if (playgroundSection) {
+          playgroundSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          // Wait for scroll to complete, then fill input and focus
+          setTimeout(() => {
+            const promptInput = document.getElementById('prompt-input');
+            if (promptInput) {
+              promptInput.value = fullPrompt;
+              promptInput.focus();
+
+              // Trigger input event to update any autocomplete UI
+              promptInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+              // Flash the input to draw attention
+              promptInput.style.transition = 'box-shadow 0.3s ease';
+              promptInput.style.boxShadow = '0 0 0 3px rgba(30, 58, 95, 0.3)';
+              setTimeout(() => {
+                promptInput.style.boxShadow = '';
+              }, 600);
+            }
+          }, 600);
+        }
+      });
+    }
 
     // ============================================
     // Code Tab Switching
@@ -12718,8 +13024,6 @@
 
     // Initialize on load
     document.addEventListener('DOMContentLoaded', () => {
-      // CRITICAL FIX: Ensure all toasts start hidden (prevent stale toast visibility)
-      // Uses display:none approach which is more robust than opacity/pointerEvents
       const toastElements = [
         document.getElementById('glyph-toast'),
         document.getElementById('session-warning-toast'),
@@ -12733,10 +13037,17 @@
         }
       });
 
-      // Issue #2: Setup demo mode banner event listeners
       setupDemoModeBanner();
 
       initializePreview();
+
+      // Auto-enable zoom on mobile for better preview visibility
+      if (window.innerWidth <= 480) {
+        const previewContainer = document.getElementById('preview-container');
+        if (previewContainer) {
+          previewContainer.classList.add('zoomed-in');
+        }
+      }
     });
 
     // ============================================
