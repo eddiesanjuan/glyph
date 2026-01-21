@@ -587,16 +587,29 @@ async function runBackgroundValidation(
       // Store validation result in session for potential future API endpoint
       // This allows the frontend to poll for validation status
       // Convert technical descriptions to friendly messages for the user
+      // Then deduplicate based on friendly message to avoid showing the same message twice
       const friendlyIssues = result.issues.slice(0, 5).map(issue => ({
         ...issue,
         description: getFriendlyIssueDescription(issue),
       }));
 
+      // Deduplicate issues with identical friendly messages
+      // This prevents showing "Some content may have been affected" twice
+      const seenDescriptions = new Set<string>();
+      const deduplicatedIssues = friendlyIssues.filter(issue => {
+        const key = `${issue.severity}:${issue.description}`;
+        if (seenDescriptions.has(key)) {
+          return false;
+        }
+        seenDescriptions.add(key);
+        return true;
+      });
+
       const validationSummary = {
         passed: result.passed,
-        criticalCount: result.issues.filter(i => i.severity === 'critical').length,
-        warningCount: result.issues.filter(i => i.severity === 'warning').length,
-        issues: friendlyIssues, // Use friendly descriptions for the user
+        criticalCount: deduplicatedIssues.filter(i => i.severity === 'critical').length,
+        warningCount: deduplicatedIssues.filter(i => i.severity === 'warning').length,
+        issues: deduplicatedIssues, // Use deduplicated friendly descriptions for the user
         hasAutoFix: !!result.fixedHtml,
         validatedAt: new Date().toISOString(),
       };

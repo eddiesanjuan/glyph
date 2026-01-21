@@ -420,7 +420,10 @@ DO NOT report:
 - Minor inconsistencies
 - Anything about colors, fonts, or aesthetics
 - Anything about Mustache template syntax
-- Potential or possible issues - only DEFINITE problems`,
+- Potential or possible issues - only DEFINITE problems
+- Added elements like watermarks, QR codes, or signatures - these are intentional additions
+- "Some content may have been affected" - this is too vague to be useful
+- Any issue you are not 100% certain about`,
       messages: [{
         role: 'user',
         content: `BEFORE HTML (relevant excerpts):
@@ -560,6 +563,13 @@ function isRequestFulfillmentIssue(issue: ValidationIssue): boolean {
     /inconsistent\s+(styling|css|color)/i,
     /style\s+(mismatch|inconsistenc)/i,
     /visual\s+inconsistenc/i,
+    // Vague "content affected" statements without specifics
+    /some\s+content\s+(may\s+)?(have\s+)?(been\s+)?affected/i,
+    /content\s+(may\s+)?(be|have)\s+affected/i,
+    // Generic "something might be wrong" without specifics
+    /might\s+(be|have)\s+(an?\s+)?issue/i,
+    /could\s+(be|have)\s+(affected|impacted)/i,
+    /potential(ly)?\s+(affect|impact)/i,
   ];
 
   for (const pattern of fulfillmentPatterns) {
