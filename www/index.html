@@ -1019,6 +1019,142 @@
       }
     }
 
+    /* Critical: 375px mobile viewport (iPhone SE, small Android) */
+    @media (max-width: 375px) {
+      /* Reduce container padding */
+      .container {
+        padding: 0 12px;
+      }
+
+      /* Make playground body stack vertically with proper heights */
+      .playground__body {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        max-height: none;
+      }
+
+      /* Input area compact */
+      .playground__input-area {
+        padding: 12px;
+        min-height: auto;
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+
+      .playground__input {
+        height: 50px;
+        min-height: 50px;
+        max-height: 60px;
+        font-size: 12px;
+      }
+
+      /* Suggestions row - horizontal scroll */
+      .playground__suggestions {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 6px;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .playground__suggestion {
+        padding: 5px 8px;
+        font-size: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* CRITICAL: Make preview area visible and prominent */
+      .playground__preview-area {
+        padding: 12px;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .playground__preview {
+        min-height: 260px;
+        max-height: none;
+        flex: 1;
+        padding: 12px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: #374151;
+      }
+
+      /* Smaller document preview for 375px */
+      .playground__preview-frame-wrapper {
+        width: 170px;
+        height: 220px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      }
+
+      .playground__preview-frame-wrapper iframe {
+        width: 850px;
+        height: 1100px;
+        transform: scale(0.2);
+        transform-origin: top left;
+        border: none;
+      }
+
+      /* Loading stages compact */
+      .playground__loading-stages {
+        margin-top: 12px;
+        gap: 6px;
+      }
+
+      .loading-stage {
+        font-size: 10px;
+        gap: 6px;
+      }
+
+      .loading-stage__icon {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* Hide rate notice on very small screens */
+      .playground__rate-notice {
+        display: none;
+      }
+
+      /* Toolbar compact */
+      .playground__toolbar {
+        padding: 8px 12px;
+      }
+
+      .playground__tab {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      /* Apply button full width */
+      .playground__apply-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .playground__button-row {
+        gap: 6px;
+      }
+
+      /* Preview label */
+      .playground__preview-label {
+        font-size: 10px;
+        margin-bottom: 8px;
+      }
+
+      /* Zoom toggle smaller */
+      .playground__zoom-toggle {
+        width: 32px;
+        height: 32px;
+        bottom: 8px;
+        right: 8px;
+      }
+    }
+
     /* ============================================
        AI IDE Integration Section - HERO FEATURE
        ============================================ */
@@ -1981,6 +2117,74 @@
       margin-top: 16px;
       font-size: 13px;
       color: #888;
+      font-weight: 500;
+    }
+
+    .playground__loading-stages {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 240px;
+    }
+
+    .loading-stage {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #aaa;
+      opacity: 0.5;
+      transition: opacity 0.3s, color 0.3s;
+    }
+
+    .loading-stage.active {
+      opacity: 1;
+      color: #666;
+    }
+
+    .loading-stage.completed {
+      opacity: 1;
+      color: #22C55E;
+    }
+
+    .loading-stage__icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+
+    .loading-stage.active .loading-stage__icon {
+      border-color: var(--color-primary);
+      animation: pulse-stage 1s ease-in-out infinite;
+    }
+
+    .loading-stage.completed .loading-stage__icon {
+      background: #22C55E;
+      border-color: #22C55E;
+    }
+
+    .loading-stage.completed .loading-stage__icon::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    @keyframes pulse-stage {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .loading-stage__text {
+      white-space: nowrap;
     }
 
     .playground__rate-notice {
@@ -5411,9 +5615,9 @@
         <li><a href="#playground" class="nav__link">Playground</a></li>
         <li><a href="#features" class="nav__link">Features</a></li>
         <li><a href="#pricing" class="nav__link">Pricing</a></li>
-        <li><a href="/docs" class="nav__link">Docs</a></li>
+        <li><a href="https://docs.glyph.you" class="nav__link">Docs</a></li>
       </ul>
-      <a href="/dashboard" class="nav__cta">
+      <a href="https://dashboard.glyph.you" class="nav__cta">
         Get API Key
         <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
@@ -5434,9 +5638,9 @@
       <li><a href="#playground">Playground</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#pricing">Pricing</a></li>
-      <li><a href="/docs">Docs</a></li>
+      <li><a href="https://docs.glyph.you">Docs</a></li>
     </ul>
-    <a href="/dashboard" class="nav__mobile-cta">Get API Key</a>
+    <a href="https://dashboard.glyph.you" class="nav__mobile-cta">Get API Key</a>
   </div>
 
   <!-- Hero Section -->
@@ -5460,7 +5664,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </a>
-            <a href="/docs" class="btn btn--secondary">
+            <a href="https://docs.glyph.you" class="btn btn--secondary">
               Read the Docs
             </a>
           </div>
@@ -5921,7 +6125,21 @@
                 <div class="playground__loading-progress">
                   <div class="playground__loading-progress-bar" id="loading-progress-bar"></div>
                 </div>
-                <div class="playground__loading-text">Applying changes...</div>
+                <div class="playground__loading-text" id="loading-text">Applying changes...</div>
+                <div class="playground__loading-stages" id="loading-stages">
+                  <div class="loading-stage" data-stage="analyze">
+                    <span class="loading-stage__icon"></span>
+                    <span class="loading-stage__text">Analyzing document structure</span>
+                  </div>
+                  <div class="loading-stage" data-stage="generate">
+                    <span class="loading-stage__icon"></span>
+                    <span class="loading-stage__text">Generating modifications</span>
+                  </div>
+                  <div class="loading-stage" data-stage="validate">
+                    <span class="loading-stage__icon"></span>
+                    <span class="loading-stage__text">Validating changes</span>
+                  </div>
+                </div>
               </div>
               <div class="playground__preview-frame-wrapper">
                 <iframe id="preview-frame" class="playground__preview-frame" title="Document Preview"></iframe>
@@ -6010,10 +6228,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
-          <h3 class="feature-card__title">Lightning Fast</h3>
+          <h3 class="feature-card__title">Instant Feedback</h3>
           <p class="feature-card__description">
-            PDFs generated in under 3 seconds. Real-time preview updates
-            as your users type their requests.
+            Live progress updates as AI processes your request.
+            See changes applied in real-time with visual confirmation.
           </p>
         </div>
 
@@ -6451,7 +6669,7 @@
               Community support
             </li>
           </ul>
-          <a href="/dashboard" class="btn btn--secondary">Get Started</a>
+          <a href="https://dashboard.glyph.you" class="btn btn--secondary">Get Started</a>
         </div>
 
         <!-- Pro Tier -->
@@ -6477,7 +6695,7 @@
               Email support
             </li>
           </ul>
-          <a href="/dashboard" class="btn btn--primary">Get Started</a>
+          <a href="https://dashboard.glyph.you" class="btn btn--primary">Get Started</a>
         </div>
 
         <!-- Scale Tier -->
@@ -6503,7 +6721,7 @@
               Priority support
             </li>
           </ul>
-          <a href="/dashboard" class="btn btn--secondary">Get Started</a>
+          <a href="https://dashboard.glyph.you" class="btn btn--secondary">Get Started</a>
         </div>
 
         <!-- Enterprise Tier -->
@@ -6566,8 +6784,8 @@
         <div class="footer__column">
           <h4>Resources</h4>
           <ul>
-            <li><a href="/docs">Documentation</a></li>
-            <li><a href="/docs/api">API Reference</a></li>
+            <li><a href="https://docs.glyph.you">Documentation</a></li>
+            <li><a href="https://docs.glyph.you/api">API Reference</a></li>
             <li><a href="https://github.com/glyph-so/glyph">GitHub</a></li>
             <li><a href="/examples">Examples</a></li>
           </ul>
@@ -6928,7 +7146,7 @@
       </p>
       <div class="modal__actions">
         <button class="modal__btn modal__btn--secondary" id="modal-close">Maybe Later</button>
-        <a href="/dashboard" class="modal__btn modal__btn--primary">Get Free API Key</a>
+        <a href="https://dashboard.glyph.you" class="modal__btn modal__btn--primary">Get Free API Key</a>
       </div>
     </div>
   </div>
@@ -8719,23 +8937,73 @@
       previewStatus.innerHTML = `<span class="status-dot"></span>${text}`;
     }
 
-    // Show/hide loading with smooth progress bar animation
+    // Show/hide loading with smooth progress bar animation and staged feedback
     let loadingProgressInterval = null;
     let loadingProgress = 0;
+    let stageTimeouts = [];
+
+    const loadingStages = [
+      { name: 'analyze', text: 'Analyzing document...', delay: 0 },
+      { name: 'generate', text: 'Generating modifications...', delay: 2000 },
+      { name: 'validate', text: 'Validating changes...', delay: 6000 }
+    ];
+
+    function resetLoadingStages() {
+      const stages = document.querySelectorAll('.loading-stage');
+      stages.forEach(stage => {
+        stage.classList.remove('active', 'completed');
+      });
+      stageTimeouts.forEach(t => clearTimeout(t));
+      stageTimeouts = [];
+    }
+
+    function activateStage(stageName) {
+      const stages = document.querySelectorAll('.loading-stage');
+      stages.forEach(stage => {
+        if (stage.dataset.stage === stageName) {
+          // Mark previous stages as completed
+          let found = false;
+          stages.forEach(s => {
+            if (s.dataset.stage === stageName) {
+              found = true;
+              s.classList.add('active');
+              s.classList.remove('completed');
+            } else if (!found) {
+              s.classList.remove('active');
+              s.classList.add('completed');
+            }
+          });
+        }
+      });
+      // Update loading text
+      const loadingText = document.getElementById('loading-text');
+      const stageInfo = loadingStages.find(s => s.name === stageName);
+      if (loadingText && stageInfo) {
+        loadingText.textContent = stageInfo.text;
+      }
+    }
 
     function showLoading(show) {
       previewLoading.classList.toggle('visible', show);
       const progressBar = document.getElementById('loading-progress-bar');
+      const loadingText = document.getElementById('loading-text');
 
       if (show) {
-        // Reset progress
+        // Reset progress and stages
         loadingProgress = 0;
         progressBar.style.width = '0%';
+        resetLoadingStages();
+
+        // Start stage progression
+        loadingStages.forEach(stage => {
+          const timeout = setTimeout(() => activateStage(stage.name), stage.delay);
+          stageTimeouts.push(timeout);
+        });
 
         // Animate progress with ease-out curve (fast start, slow end)
         // Progress goes from 0 to ~90% over time, never completing until actual response
         const startTime = Date.now();
-        const duration = 8000; // 8 seconds to reach ~90%
+        const duration = 15000; // 15 seconds to reach ~90% (more realistic)
 
         loadingProgressInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
@@ -8756,11 +9024,27 @@
           clearInterval(loadingProgressInterval);
           loadingProgressInterval = null;
         }
+
+        // Mark all stages as completed
+        const stages = document.querySelectorAll('.loading-stage');
+        stages.forEach(stage => {
+          stage.classList.remove('active');
+          stage.classList.add('completed');
+        });
+
+        if (loadingText) {
+          loadingText.textContent = 'Done!';
+        }
+
         progressBar.style.width = '100%';
         // Reset after animation completes
         setTimeout(() => {
           progressBar.style.width = '0%';
-        }, 300);
+          resetLoadingStages();
+          if (loadingText) {
+            loadingText.textContent = 'Applying changes...';
+          }
+        }, 500);
       }
     }
 
@@ -10423,11 +10707,11 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } else {
-          alert('PDF generation requires an API key. Sign up at glyph.you/dashboard');
+          alert('PDF generation requires an API key. Sign up at dashboard.glyph.you');
         }
       } catch (err) {
         console.error('PDF download failed:', err);
-        alert('PDF generation requires an API key. Sign up at glyph.you/dashboard');
+        alert('PDF generation requires an API key. Sign up at dashboard.glyph.you');
       } finally {
         airtableDownloadPdfBtn.classList.remove('loading');
       }
@@ -10435,7 +10719,7 @@
 
     // Save template
     airtableSaveTemplateBtn.addEventListener('click', () => {
-      alert('Template saving requires an account. Sign up at glyph.you/dashboard to save and manage your templates.');
+      alert('Template saving requires an account. Sign up at dashboard.glyph.you to save and manage your templates.');
     });
 
     // ==============================================
