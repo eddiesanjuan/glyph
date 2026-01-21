@@ -12,5 +12,6 @@ COPY . .
 EXPOSE 3000
 
 # Serve static files - use PORT env var for Railway compatibility
+# Note: Removed -s flag to allow serving multiple HTML files (not SPA)
 ENV PORT=3000
-CMD ["sh", "-c", "serve -s . -l tcp://0.0.0.0:${PORT}"]
+CMD ["sh", "-c", "serve . -l tcp://0.0.0.0:${PORT}"]
