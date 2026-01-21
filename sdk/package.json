@@ -1,6 +1,6 @@
 {
   "name": "@glyph-pdf/sdk",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Embeddable PDF editor SDK with AI-powered document generation. Add professional PDF editing to any web app with a single web component.",
   "type": "module",
   "main": "./dist/glyph.cjs.js",
