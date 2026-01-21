@@ -5582,6 +5582,16 @@
       color: var(--color-success);
     }
 
+    /* Success variant - subtle green tint */
+    .validation-toast--success {
+      border-color: rgba(34, 197, 94, 0.3);
+      background: linear-gradient(135deg, var(--color-bg-card) 0%, rgba(34, 197, 94, 0.05) 100%);
+    }
+
+    .validation-toast--success .validation-toast__header {
+      margin-bottom: 0;
+    }
+
     .validation-toast__title {
       font-size: 14px;
       font-weight: 600;
@@ -9590,12 +9600,24 @@
     let loadingProgressInterval = null;
     let loadingProgress = 0;
     let stageTimeouts = [];
+    let elapsedTimerInterval = null;
+    let loadingStartTime = null;
 
+    // Time-aware loading stages with context messages
     const loadingStages = [
-      { name: 'analyze', text: 'Analyzing document...', delay: 0 },
-      { name: 'generate', text: 'Generating modifications...', delay: 2000 },
-      { name: 'validate', text: 'Validating changes...', delay: 6000 }
+      { name: 'analyze', text: 'Analyzing your request...', delay: 0, maxTime: 10 },
+      { name: 'generate', text: 'Generating modifications...', delay: 10000, maxTime: 25 },
+      { name: 'validate', text: 'Almost there...', delay: 25000, maxTime: 40 },
+      { name: 'extended', text: 'This is taking longer than usual...', delay: 40000, maxTime: 999 }
     ];
+
+    // Get context-aware status message based on elapsed time
+    function getTimeAwareMessage(elapsedSeconds) {
+      if (elapsedSeconds < 10) return 'Analyzing your request...';
+      if (elapsedSeconds < 25) return 'Generating modifications...';
+      if (elapsedSeconds < 40) return 'Almost there...';
+      return 'This is taking longer than usual...';
+    }
 
     function resetLoadingStages() {
       const stages = document.querySelectorAll('.loading-stage');
@@ -9642,17 +9664,37 @@
         loadingProgress = 0;
         progressBar.style.width = '0%';
         resetLoadingStages();
+        loadingStartTime = Date.now();
 
-        // Start stage progression
-        loadingStages.forEach(stage => {
-          const timeout = setTimeout(() => activateStage(stage.name), stage.delay);
-          stageTimeouts.push(timeout);
-        });
+        // Clear any existing elapsed timer
+        if (elapsedTimerInterval) {
+          clearInterval(elapsedTimerInterval);
+          elapsedTimerInterval = null;
+        }
+
+        // Start elapsed time counter that updates every second
+        elapsedTimerInterval = setInterval(() => {
+          const elapsedSeconds = Math.floor((Date.now() - loadingStartTime) / 1000);
+          const message = getTimeAwareMessage(elapsedSeconds);
+
+          // Update loading text with elapsed time
+          if (loadingText) {
+            loadingText.textContent = `${message} (${elapsedSeconds}s)`;
+          }
+
+          // Also update status indicator with elapsed time
+          setStatus(`Applying... ${elapsedSeconds}s`);
+        }, 1000);
+
+        // Initial message
+        if (loadingText) {
+          loadingText.textContent = 'Analyzing your request... (0s)';
+        }
 
         // Animate progress with ease-out curve (fast start, slow end)
         // Progress goes from 0 to ~90% over time, never completing until actual response
         const startTime = Date.now();
-        const duration = 15000; // 15 seconds to reach ~90% (more realistic)
+        const duration = 30000; // 30 seconds to reach ~90% (extended for longer operations)
 
         loadingProgressInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
@@ -9672,6 +9714,12 @@
         if (loadingProgressInterval) {
           clearInterval(loadingProgressInterval);
           loadingProgressInterval = null;
+        }
+
+        // Stop elapsed timer
+        if (elapsedTimerInterval) {
+          clearInterval(elapsedTimerInterval);
+          elapsedTimerInterval = null;
         }
 
         // Mark all stages as completed
@@ -9881,7 +9929,9 @@
               if (!data.validationResult.passed || data.validationResult.warningCount > 0) {
                 showValidationToast(data.validationResult, data.hasAutoFix, sessionId);
               } else {
+                // Show success toast when validation passes
                 console.log('[Glyph] Self-check passed - no issues detected');
+                showValidationSuccessToast();
               }
               return;
             }
@@ -10005,6 +10055,47 @@
           currentValidationToast = null;
         }
       }, 300);
+    }
+
+    /**
+     * Show success toast when validation passes
+     */
+    function showValidationSuccessToast() {
+      // Remove existing toast if any
+      if (currentValidationToast) {
+        currentValidationToast.remove();
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'validation-toast validation-toast--success';
+
+      // Success checkmark icon
+      const successIcon = `<svg class="validation-toast__icon validation-toast__icon--success" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/>
+      </svg>`;
+
+      toast.innerHTML = `
+        <div class="validation-toast__header">
+          ${successIcon}
+          <span class="validation-toast__title">Changes verified safe</span>
+        </div>
+      `;
+
+      // Add to DOM
+      document.body.appendChild(toast);
+      currentValidationToast = toast;
+
+      // Animate in
+      requestAnimationFrame(() => {
+        toast.classList.add('visible');
+      });
+
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          dismissValidationToast(toast);
+        }
+      }, 3000);
     }
 
     /**
