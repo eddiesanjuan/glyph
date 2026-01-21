@@ -8105,6 +8105,9 @@
         els.warningToast.classList.add('urgent');
       }
 
+      // STALE TOAST FIX: Clear inline display:none before showing
+      els.warningToast.style.display = 'flex';
+      els.warningToast.removeAttribute('aria-hidden');
       els.warningToast.classList.add('visible');
       console.log(`[Glyph] Session warning: ${title}`);
     }
@@ -8114,6 +8117,13 @@
       const els = getSessionTimerElements();
       if (els.warningToast) {
         els.warningToast.classList.remove('visible');
+        // Re-hide after animation
+        setTimeout(() => {
+          if (!els.warningToast.classList.contains('visible')) {
+            els.warningToast.style.display = 'none';
+            els.warningToast.setAttribute('aria-hidden', 'true');
+          }
+        }, 300);
       }
     }
 
@@ -9645,10 +9655,20 @@
         }
       }
 
+      // STALE TOAST FIX: Clear inline display:none before showing
+      els.glyphToast.style.display = 'flex';
+      els.glyphToast.removeAttribute('aria-hidden');
       els.glyphToast.classList.add('active');
 
       setTimeout(() => {
         els.glyphToast.classList.remove('active');
+        // Re-hide after animation completes
+        setTimeout(() => {
+          if (!els.glyphToast.classList.contains('active')) {
+            els.glyphToast.style.display = 'none';
+            els.glyphToast.setAttribute('aria-hidden', 'true');
+          }
+        }, 300); // Match CSS transition duration
       }, 3000);
     }
 
@@ -10206,7 +10226,24 @@
 
       const startTime = Date.now();
 
+      // TIMEOUT FIX: Create AbortController for 60-second timeout
+      const MODIFICATION_TIMEOUT_MS = 60000; // 60 seconds max
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, MODIFICATION_TIMEOUT_MS);
+
       try {
+        // Helper to extract error message from response
+        async function extractErrorMessage(response) {
+          try {
+            const errorData = await response.json();
+            return errorData.error || errorData.message || `Server error (${response.status})`;
+          } catch {
+            return `Server error (${response.status})`;
+          }
+        }
+
         // Try session-based modification if we have sessionId
         if (sessionId) {
           const response = await fetch(`${API_URL}/v1/modify`, {
@@ -10221,43 +10258,49 @@
               // UNDO FIX: Send current HTML to server to ensure modifications
               // apply to the correct state after undo operations
               html: currentHtml
-            })
+            }),
+            signal: controller.signal
           });
 
-          if (response.ok) {
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const data = await response.json();
-            currentHtml = data.html;
-
-            // Render preview with change highlighting
-            renderPreview(currentHtml, {
-              changes: data.changes || [],
-              previousHtml: previousHtml
-            });
-
-            // Add to version history
-            addHistoryEntry(prompt, currentHtml);
-
-            // Success animation
-            previewContainer.classList.add('success');
-            setTimeout(() => previewContainer.classList.remove('success'), 500);
-
-            // Show success CTA after first modification
-            showSuccessCta();
-
-            setStatus(`Done in ${elapsed}s`);
-            console.log(`[Glyph] Modification completed in ${elapsed}s`);
-            setTimeout(() => setStatus('Ready'), 2000);
-
-            // Start background validation polling
-            if (sessionId) {
-              startValidationPolling(sessionId);
-            }
-            return;
+          // SILENT FAILURE FIX: Properly handle non-ok responses
+          if (!response.ok) {
+            const errorMsg = await extractErrorMessage(response);
+            throw new Error(errorMsg);
           }
+
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          const data = await response.json();
+          currentHtml = data.html;
+
+          // Render preview with change highlighting
+          renderPreview(currentHtml, {
+            changes: data.changes || [],
+            previousHtml: previousHtml
+          });
+
+          // Add to version history
+          addHistoryEntry(prompt, currentHtml);
+
+          // Success animation
+          previewContainer.classList.add('success');
+          setTimeout(() => previewContainer.classList.remove('success'), 500);
+
+          // Show success CTA after first modification
+          showSuccessCta();
+
+          setStatus(`Done in ${elapsed}s`);
+          console.log(`[Glyph] Modification completed in ${elapsed}s`);
+          setTimeout(() => setStatus('Ready'), 2000);
+
+          // Start background validation polling
+          if (sessionId) {
+            startValidationPolling(sessionId);
+          }
+          clearTimeout(timeoutId);
+          return;
         }
 
-        // Fallback to direct modification
+        // Fallback to direct modification (no session)
         const response = await fetch(`${API_URL}/v1/modify`, {
           method: 'POST',
           headers: {
@@ -10267,11 +10310,13 @@
           body: JSON.stringify({
             html: currentHtml,
             instruction: prompt
-          })
+          }),
+          signal: controller.signal
         });
 
         if (!response.ok) {
-          throw new Error('Modification failed');
+          const errorMsg = await extractErrorMessage(response);
+          throw new Error(errorMsg);
         }
 
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -10298,6 +10343,8 @@
         setTimeout(() => setStatus('Ready'), 2000);
 
       } catch (err) {
+        // Clear timeout on error
+        clearTimeout(timeoutId);
         // CRITICAL FIX: Show user-visible error instead of silent simulation
         // Never pretend changes applied when API failed
         console.error('[Glyph] API modification failed:', err);
@@ -10309,14 +10356,19 @@
           updateUndoButtonState();
         }
 
-        // Show user-friendly error toast with retry option
-        const errorMessage = err.message || 'Unknown error';
+        // TIMEOUT FIX: Handle AbortError with clear timeout message
+        let errorMessage = err.message || 'Unknown error';
+        if (err.name === 'AbortError') {
+          errorMessage = 'timeout - request took too long (60s limit)';
+        }
         showApiError(errorMessage, prompt);
 
         // Update status to show error
         setStatus('Error - See message');
         setTimeout(() => setStatus('Ready'), 3000);
       } finally {
+        // Always clear the timeout to prevent memory leaks
+        clearTimeout(timeoutId);
         isProcessingModification = false;
         showLoading(false);
         applyBtn.classList.remove('loading');
@@ -12346,16 +12398,16 @@
     </div>
   </div>
 
-  <!-- Toast Notification -->
-  <div class="glyph-toast" id="glyph-toast">
+  <!-- Toast Notification - HIDDEN BY DEFAULT (style attribute prevents FOUC) -->
+  <div class="glyph-toast" id="glyph-toast" style="display:none !important;" aria-hidden="true">
     <svg class="glyph-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
     </svg>
     <span class="glyph-toast__message" id="toast-message"></span>
   </div>
 
-  <!-- Session Warning Toast -->
-  <div class="session-warning-toast" id="session-warning-toast">
+  <!-- Session Warning Toast - HIDDEN BY DEFAULT (style attribute prevents FOUC) -->
+  <div class="session-warning-toast" id="session-warning-toast" style="display:none !important;" aria-hidden="true">
     <svg class="session-warning-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
     </svg>
@@ -12369,8 +12421,8 @@
     </div>
   </div>
 
-  <!-- API Error Toast -->
-  <div class="api-error-toast" id="api-error-toast">
+  <!-- API Error Toast - HIDDEN BY DEFAULT (style attribute prevents FOUC) -->
+  <div class="api-error-toast" id="api-error-toast" style="display:none !important;" aria-hidden="true">
     <div class="api-error-toast__header">
       <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
