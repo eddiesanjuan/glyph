@@ -623,14 +623,43 @@ export class GlyphEditor extends HTMLElement {
           animation-delay: 0.4s;
         }
 
-        /* Skeleton shimmer for preview area */
+        /* Document-shaped skeleton for preview area */
         .glyph-skeleton {
           width: 90%;
           max-width: 400px;
-          padding: 20px;
+          padding: 24px;
           background: var(--glyph-bg);
-          border-radius: 8px;
+          border-radius: 10px;
           border: 1px solid var(--glyph-border);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          animation: glyph-skeleton-float 2s ease-in-out infinite;
+        }
+
+        @keyframes glyph-skeleton-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+
+        .glyph-skeleton-header {
+          display: flex;
+          justify-content: space-between;
+          padding-bottom: 14px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid var(--glyph-border);
+        }
+
+        .glyph-skeleton-body {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .glyph-skeleton-footer {
+          display: flex;
+          justify-content: flex-end;
+          padding-top: 14px;
+          margin-top: 16px;
+          border-top: 1px solid var(--glyph-border);
         }
 
         .glyph-skeleton-line {
@@ -638,18 +667,51 @@ export class GlyphEditor extends HTMLElement {
           background: linear-gradient(
             90deg,
             var(--glyph-border) 0%,
-            #f0f0f0 50%,
+            #f5f5f5 50%,
             var(--glyph-border) 100%
           );
           background-size: 200% 100%;
-          animation: glyph-shimmer 1.5s ease-in-out infinite;
+          animation: glyph-shimmer 1.8s ease-in-out infinite;
           border-radius: 4px;
-          margin-bottom: 12px;
+          margin-bottom: 0;
         }
 
-        .glyph-skeleton-line:nth-child(2) { width: 80%; }
-        .glyph-skeleton-line:nth-child(3) { width: 60%; }
-        .glyph-skeleton-line:nth-child(4) { width: 90%; margin-bottom: 0; }
+        /* Progressive loading stages */
+        .glyph-loading-stages {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 8px;
+          font-size: 12px;
+        }
+
+        .glyph-loading-stage {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--glyph-text-muted);
+          opacity: 0.5;
+          transition: opacity 0.3s ease, color 0.3s ease;
+        }
+
+        .glyph-loading-stage.active {
+          opacity: 1;
+          color: var(--glyph-text);
+        }
+
+        .glyph-loading-stage.completed {
+          opacity: 0.7;
+          color: #22c55e;
+        }
+
+        .glyph-loading-stage-icon {
+          width: 14px;
+          height: 14px;
+        }
+
+        .glyph-loading-stage.active .glyph-loading-stage-icon {
+          animation: glyph-spin 0.8s linear infinite;
+        }
 
         @keyframes glyph-spin {
           to { transform: rotate(360deg); }
@@ -1499,25 +1561,46 @@ export class GlyphEditor extends HTMLElement {
       <div class="glyph-container" role="application" aria-label="Glyph PDF Editor">
         <div class="glyph-preview-area" role="region" aria-label="Document preview" aria-live="polite">
           <div class="glyph-loading" role="status" aria-label="Loading document preview">
+            <div class="glyph-skeleton" aria-hidden="true">
+              <!-- Document-shaped skeleton: header, meta, table rows, footer -->
+              <div class="glyph-skeleton-header">
+                <div style="flex: 1;">
+                  <div class="glyph-skeleton-line" style="width: 50%; height: 18px; margin-bottom: 8px;"></div>
+                  <div class="glyph-skeleton-line" style="width: 70%; height: 10px;"></div>
+                </div>
+                <div style="width: 70px;">
+                  <div class="glyph-skeleton-line" style="width: 100%; height: 26px; border-radius: 6px;"></div>
+                </div>
+              </div>
+              <div class="glyph-skeleton-body">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                  <div style="flex: 1;"><div class="glyph-skeleton-line" style="width: 40%; height: 8px; margin-bottom: 6px;"></div><div class="glyph-skeleton-line" style="width: 70%; height: 12px;"></div></div>
+                  <div style="flex: 1;"><div class="glyph-skeleton-line" style="width: 40%; height: 8px; margin-bottom: 6px;"></div><div class="glyph-skeleton-line" style="width: 70%; height: 12px;"></div></div>
+                  <div style="flex: 1;"><div class="glyph-skeleton-line" style="width: 40%; height: 8px; margin-bottom: 6px;"></div><div class="glyph-skeleton-line" style="width: 70%; height: 12px;"></div></div>
+                </div>
+                <div style="border-bottom: 2px solid var(--glyph-border); padding: 8px 0; display: flex; gap: 10px;">
+                  <div class="glyph-skeleton-line" style="flex: 2; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 0.5; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 1; width: auto; height: 10px;"></div>
+                </div>
+                <div style="padding: 8px 0; display: flex; gap: 10px; border-bottom: 1px solid var(--glyph-border);">
+                  <div class="glyph-skeleton-line" style="flex: 2; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 0.5; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 1; width: auto; height: 10px;"></div>
+                </div>
+                <div style="padding: 8px 0; display: flex; gap: 10px;">
+                  <div class="glyph-skeleton-line" style="flex: 2; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 0.5; width: auto; height: 10px;"></div>
+                  <div class="glyph-skeleton-line" style="flex: 1; width: auto; height: 10px;"></div>
+                </div>
+              </div>
+              <div class="glyph-skeleton-footer">
+                <div class="glyph-skeleton-line" style="width: 90px; height: 14px;"></div>
+              </div>
+            </div>
             <div class="glyph-loading-content">
               <div class="glyph-spinner" aria-hidden="true"></div>
               <span class="glyph-loading-text">Loading preview<span class="glyph-loading-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>
-            </div>
-            <div class="glyph-skeleton" aria-hidden="true">
-              <!-- Document-shaped skeleton: header, content blocks, footer -->
-              <div class="glyph-skeleton-header">
-                <div class="glyph-skeleton-line" style="width: 40%; height: 16px; margin-bottom: 8px;"></div>
-                <div class="glyph-skeleton-line" style="width: 60%; height: 10px;"></div>
-              </div>
-              <div class="glyph-skeleton-body" style="margin-top: 20px;">
-                <div class="glyph-skeleton-line" style="width: 100%;"></div>
-                <div class="glyph-skeleton-line" style="width: 85%;"></div>
-                <div class="glyph-skeleton-line" style="width: 70%;"></div>
-                <div class="glyph-skeleton-line" style="width: 90%;"></div>
-              </div>
-              <div class="glyph-skeleton-footer" style="margin-top: 20px;">
-                <div class="glyph-skeleton-line" style="width: 50%; margin-left: auto;"></div>
-              </div>
             </div>
           </div>
           <div class="glyph-toast-container" id="glyph-toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
