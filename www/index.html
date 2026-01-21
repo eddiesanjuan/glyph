@@ -1226,15 +1226,20 @@
         -webkit-overflow-scrolling: touch;
       }
 
+      /* Touch-friendly suggestion buttons - 44px min height for accessibility */
       .playground__suggestion {
-        padding: 5px 8px;
-        font-size: 10px;
+        padding: 10px 12px;
+        font-size: 11px;
         white-space: nowrap;
         flex-shrink: 0;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
       }
 
       /* CRITICAL FIX: Make preview area visible and scrollable on mobile
-         Cycle 6 consolidated - explicit visibility, proper sizing for 375px viewport */
+         Cycle 6 consolidated - explicit visibility, proper sizing for 375px viewport
+         P2 enhancement: Added visual prominence with subtle border */
       .playground__preview-area {
         padding: 12px;
         min-height: 450px;
@@ -1244,6 +1249,8 @@
         overflow: visible;
         visibility: visible !important;
         opacity: 1 !important;
+        border-top: 2px solid var(--color-primary);
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
       }
 
       /* CRITICAL FIX: Preview container must be visible with proper dimensions
@@ -1368,23 +1375,39 @@
         gap: 6px;
       }
 
-      /* Preview label */
+      /* Preview label - more prominent on mobile */
       .playground__preview-label {
-        font-size: 10px;
-        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 10px;
         flex-shrink: 0;
+        color: var(--color-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
-      /* CRITICAL FIX: Make zoom button fixed and always accessible */
+      /* CRITICAL FIX: Make zoom button fixed and always accessible
+         P2: Larger touch target (44px) with primary color accent */
       .playground__zoom-toggle {
-        width: 36px;
-        height: 36px;
-        bottom: 12px;
-        right: 12px;
+        width: 44px;
+        height: 44px;
+        bottom: 16px;
+        right: 16px;
         position: fixed;
         z-index: 100;
-        background: rgba(255, 255, 255, 0.98);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+        background: var(--color-primary);
+        color: white;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+        border: 2px solid white;
+      }
+
+      .playground__zoom-toggle:hover {
+        background: var(--color-primary-bright);
+        transform: scale(1.05);
+      }
+
+      .playground__zoom-toggle svg {
+        color: white;
       }
 
       /* Session timer compact */
@@ -5476,28 +5499,9 @@
        Mobile Preview Overrides (must come after 768px rules)
        These ensure smaller viewports get proper sizing
        ============================================ */
-    @media (max-width: 480px) {
-      .playground__preview {
-        min-height: 320px;
-        max-height: 380px;
-        padding: 12px;
-      }
-
-      .playground__preview-frame-wrapper {
-        width: 240px;
-        height: 310px;
-      }
-
-      .playground__preview-frame-wrapper iframe {
-        transform: scale(0.282);
-      }
-
-      .playground__preview-area {
-        min-height: 380px;
-      }
-    }
-
-    /* NOTE: 375px rules consolidated into main 375px block at ~line 1161 */
+    /* NOTE: 480px preview rules removed - they were overriding the more specific
+       375px rules. The 375px block at ~line 1192 now controls all small mobile
+       preview sizing. See Cycle P2 mobile preview visibility fix. */
 
     /* ============================================
        Utility Classes
@@ -10360,15 +10364,51 @@
     // Track if we're in demo mode (Issue #2)
     let isInDemoMode = false;
 
-    // Hide initial loading skeleton (Issue #3)
+    // Progressive loading stage management
+    function updateSkeletonStage(stage) {
+      const stages = document.querySelectorAll('.preview-init-loading__stage');
+      const stageOrder = ['connecting', 'loading', 'ready'];
+      const currentIndex = stageOrder.indexOf(stage);
+
+      stages.forEach(stageEl => {
+        const stageName = stageEl.dataset.stage;
+        const stageIndex = stageOrder.indexOf(stageName);
+
+        stageEl.classList.remove('active', 'completed');
+
+        if (stageIndex < currentIndex) {
+          stageEl.classList.add('completed');
+        } else if (stageIndex === currentIndex) {
+          stageEl.classList.add('active');
+        }
+      });
+    }
+
+    // Hide initial loading skeleton with smooth transition
     function hideInitialLoadingSkeleton() {
       const skeleton = document.getElementById('preview-init-loading');
       if (skeleton) {
-        skeleton.classList.add('hidden');
-        // Remove from DOM after transition
+        // Mark ready stage as completed before hiding
+        updateSkeletonStage('ready');
+
+        // Small delay to show the "Ready" checkmark
         setTimeout(() => {
-          skeleton.style.display = 'none';
+          skeleton.classList.add('hidden');
+          // Remove from DOM after transition
+          setTimeout(() => {
+            skeleton.style.display = 'none';
+          }, 400);
         }, 300);
+      }
+    }
+
+    // Show skeleton for re-initialization (e.g., template switch)
+    function showInitialLoadingSkeleton() {
+      const skeleton = document.getElementById('preview-init-loading');
+      if (skeleton) {
+        skeleton.style.display = 'flex';
+        skeleton.classList.remove('hidden');
+        updateSkeletonStage('connecting');
       }
     }
 
@@ -10414,10 +10454,15 @@
     }
 
     async function initializePreview() {
-      // Issue #3: Show "Initializing preview..." status immediately
-      setStatus('Initializing preview...');
+      // Show skeleton and set connecting stage
+      showInitialLoadingSkeleton();
+      setStatus('Connecting...');
+      updateSkeletonStage('connecting');
 
       try {
+        // Transition to loading stage after connection starts
+        setTimeout(() => updateSkeletonStage('loading'), 400);
+
         const response = await fetch(`${API_URL}/v1/preview`, {
           method: 'POST',
           headers: {
@@ -10438,11 +10483,15 @@
         currentHtml = data.html;
         sessionId = data.sessionId;
 
+        // Update status to loading preview
+        setStatus('Loading preview...');
+
         // Hide demo mode banner if previously shown (successful reconnect)
         hideDemoModeBanner();
 
         renderPreview(currentHtml);
-        // Issue #3: Hide skeleton after successful load
+
+        // Hide skeleton with smooth transition showing "Ready" state
         hideInitialLoadingSkeleton();
         setStatus('Ready');
 
@@ -10450,12 +10499,18 @@
         startSessionTimer();
       } catch (err) {
         console.warn('API not available, using static demo:', err);
+
+        // Still show loading stage briefly for demo mode
+        updateSkeletonStage('loading');
+        setStatus('Loading demo...');
+
         renderStaticDemo();
-        // Issue #3: Hide skeleton even in demo mode
+
+        // Hide skeleton even in demo mode
         hideInitialLoadingSkeleton();
         setStatus('Demo Mode');
 
-        // Issue #2: Show visible demo mode banner instead of silent fallback
+        // Show visible demo mode banner instead of silent fallback
         showDemoModeBanner();
 
         // Still start timer in demo mode for consistent UX
