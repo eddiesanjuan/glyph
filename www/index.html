@@ -7842,12 +7842,12 @@
                 ></textarea>
               </div>
               <div class="playground__suggestions">
+                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Make the header purple">Purple header <span class="playground__suggestion-duration">instant</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
               <p class="playground__hint playground__hint--time-estimate" id="ai-time-estimate" style="display: none;">
@@ -10078,6 +10078,7 @@
 
     // Quick Actions - common design modifications
     const QUICK_ACTIONS = [
+      { type: 'action', category: 'Quick Actions', icon: 'sparkles', label: 'Stripe styling', description: 'Clean, modern Stripe-like design', value: 'Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography', score: 98 },
       { type: 'action', category: 'Quick Actions', icon: 'qr', label: 'Add QR code for payment', description: 'Easy mobile payment scanning', value: 'Add a QR code in the bottom right corner for easy mobile payment', score: 95 },
       { type: 'action', category: 'Quick Actions', icon: 'image', label: 'Add company logo', description: 'Brand your document', value: 'Add the company logo in the header, sized appropriately', score: 94 },
       { type: 'action', category: 'Quick Actions', icon: 'sparkles', label: 'Make design more professional', description: 'Enhance overall appearance', value: 'Make this design look more professional and polished with better typography and spacing', score: 93 },
@@ -10535,12 +10536,12 @@
     // Check if a prompt matches one of the instant action quick suggestions
     function isInstantAction(prompt) {
       const instantPrompts = [
+        'Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography',
         'Add a QR code in the corner for quick mobile payment',
         'Add a diagonal watermark that says DRAFT across the page',
         'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
         'Add a thank you message',
-        'Add a signature',
-        'Make the header purple'
+        'Add a signature'
       ];
       return instantPrompts.some(p => prompt.toLowerCase().includes(p.toLowerCase().substring(0, 20)));
     }
