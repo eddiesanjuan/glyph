@@ -4296,7 +4296,8 @@
       }
 
       .session-timer span {
-        display: none;
+        display: inline;
+        font-size: 10px;
       }
 
       .session-timer svg {
@@ -9565,7 +9566,7 @@
 
       // STALE TOAST FIX: Clear inline display:none before showing
       els.toast.style.display = 'flex';
-      els.toast.removeAttribute('aria-hidden');
+      els.toast.removeAttribute('inert'); // Remove inert to allow interaction (fixes aria-hidden focus warning)
       els.toast.classList.add('visible');
 
       // Clear any existing timeout
