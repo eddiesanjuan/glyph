@@ -53,9 +53,6 @@
   <!-- Favicon - G lettermark -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
-  <!-- Confetti for first win celebration -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
   <style>
     /* ============================================
        CSS Variables & Reset
@@ -7954,7 +7951,6 @@
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">~45-60s</span></button>
                 <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">~45-60s</span></button>
                 <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~45-60s</span></button>
               </div>
@@ -10063,7 +10059,7 @@
         // Map hero commands to full playground prompts for better results
         const promptMap = {
           'Add a diagonal DRAFT watermark': 'Add a subtle DRAFT watermark diagonally across the document',
-          'Make this look like a Stripe invoice': 'Make this look like a Stripe invoice - clean, minimal, with their signature purple',
+          'Group items by category with subtotals': 'Group the line items by category and add subtotals for each category',
           'Add a QR code for instant payment': 'Add a QR code in the bottom right corner for easy mobile payment',
           'Add payment terms: Net 30': 'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
           'Add a signature line with date': 'Add a thank you message and signature line at the bottom with the current date'
@@ -10187,7 +10183,6 @@
 
     // Quick Actions - common design modifications
     const QUICK_ACTIONS = [
-      { type: 'action', category: 'Quick Actions', icon: 'sparkles', label: 'Stripe styling', description: 'Clean, modern Stripe-like design', value: 'Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography', score: 98 },
       { type: 'action', category: 'Quick Actions', icon: 'qr', label: 'Add QR code for payment', description: 'Easy mobile payment scanning', value: 'Add a QR code in the bottom right corner for easy mobile payment', score: 95 },
       { type: 'action', category: 'Quick Actions', icon: 'image', label: 'Add company logo', description: 'Brand your document', value: 'Add the company logo in the header, sized appropriately', score: 94 },
       { type: 'action', category: 'Quick Actions', icon: 'sparkles', label: 'Make design more professional', description: 'Enhance overall appearance', value: 'Make this design look more professional and polished with better typography and spacing', score: 93 },
@@ -11663,10 +11658,6 @@
       if (hasShownSuccessCta) return;
       hasShownSuccessCta = true;
 
-      // P2: First modification celebration - the addiction hook!
-      // This is THE critical moment when users realize "holy shit, this actually works"
-      celebrateFirstModification();
-
       const ctaElement = document.getElementById('success-cta');
       if (ctaElement) {
         // Delay showing to not interrupt the success animation
@@ -11696,44 +11687,6 @@
       } catch (e) {
         // Private browsing - ignore
       }
-    }
-
-    function celebrateFirstModification() {
-      if (!isFirstWin()) return;
-
-      // Mark as complete so we don't spam confetti
-      markFirstWinComplete();
-
-      // Fire confetti from center-bottom
-      if (typeof confetti === 'function') {
-        // Initial burst
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { x: 0.5, y: 0.9 },
-          colors: ['#22C55E', '#2563EB', '#F59E0B', '#EC4899', '#8B5CF6']
-        });
-
-        // Followed by side cannons
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0, y: 0.8 },
-            colors: ['#22C55E', '#2563EB', '#F59E0B']
-          });
-          confetti({
-            particleCount: 50,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1, y: 0.8 },
-            colors: ['#22C55E', '#2563EB', '#F59E0B']
-          });
-        }, 150);
-      }
-
-      console.log('[Glyph] First win celebrated!');
     }
 
     // ============================================
@@ -11770,8 +11723,8 @@
       if (isFirst) {
         if (titleEl) titleEl.textContent = 'You just customized your first PDF!';
         if (detailEl) detailEl.textContent = 'That was all you. Try another change!';
-        // Fire confetti for first win
-        celebrateFirstModification();
+        // Mark first win complete (no confetti - user preference)
+        markFirstWinComplete();
       } else {
         if (titleEl) titleEl.textContent = 'Changes applied successfully';
         if (detailEl) detailEl.textContent = `Completed in ${elapsed}s`;
