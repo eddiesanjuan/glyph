@@ -5500,8 +5500,11 @@
         grid-template-columns: 1fr;
       }
 
+      /* CRITICAL: Stack layout vertically AND remove height constraints */
       .playground__body {
         grid-template-columns: 1fr;
+        max-height: none;
+        min-height: auto;
       }
 
       .playground__input-area {
@@ -5509,10 +5512,25 @@
         border-bottom: 1px solid var(--color-border-subtle);
       }
 
+      /* Mobile preview area - must be visible after input area */
+      .playground__preview-area {
+        min-height: 340px;
+        border-top: 2px solid var(--color-primary);
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
+      }
+
+      /* Mobile preview label - prominent header */
+      .playground__preview-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 10px;
+      }
+
       /* Mobile preview area fixes */
       .playground__preview {
         min-height: 300px;
-        max-height: 340px;
+        max-height: none;
         padding: 16px;
         background: #374151;
       }
@@ -5529,10 +5547,6 @@
         height: 1100px;
         transform: scale(0.306);
         transform-origin: top left;
-      }
-
-      .playground__preview-area {
-        min-height: 360px;
       }
 
       .integration__content {
@@ -5584,18 +5598,46 @@
         aspect-ratio: 8.5 / 9;
       }
 
+      /* CRITICAL FIX: Remove max-height constraint on playground body
+         The base style sets max-height: 520px which clips the preview area
+         when the layout is stacked vertically on mobile */
+      .playground__body {
+        max-height: none;
+        min-height: auto;
+        gap: 0;
+      }
+
+      /* Ensure preview area is visible with clear header */
+      .playground__preview-area {
+        min-height: 320px;
+        padding: 16px;
+        border-top: 2px solid var(--color-primary);
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, transparent 30%);
+      }
+
+      /* Mobile preview label - make it prominent */
+      .playground__preview-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+
       /* Issue 2 Fix: Ensure preview area is visible without zoom toggle
          These rules must come after 768px rules to override them */
       .playground__preview {
-        min-height: 450px;
-        height: 450px;
+        min-height: 280px;
+        height: auto;
         max-height: none;
+        padding: 12px;
       }
 
       .playground__preview-frame-wrapper {
         width: 100%;
-        max-width: 320px;
-        height: 414px;
+        max-width: 280px;
+        height: 362px;
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
@@ -5606,7 +5648,7 @@
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.376);
+        transform: scale(0.329);
         transform-origin: top left;
         border: none;
         visibility: visible !important;
