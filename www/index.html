@@ -1245,9 +1245,11 @@
         margin-bottom: 24px;
       }
 
-      /* Make playground body stack vertically with proper heights */
+      /* Make playground body stack vertically - flexbox for proper stacking */
       .playground__body {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: unset;
         min-height: auto;
         max-height: none;
       }
@@ -1257,6 +1259,7 @@
         padding: 12px;
         min-height: auto;
         border-bottom: 1px solid var(--color-border-subtle);
+        flex-shrink: 0;
       }
 
       .playground__input {
@@ -5519,9 +5522,11 @@
         grid-template-columns: 1fr;
       }
 
-      /* CRITICAL: Stack layout vertically AND remove height constraints */
+      /* CRITICAL: Stack layout vertically for mobile - controls on top, preview below */
       .playground__body {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: unset;
         max-height: none;
         min-height: auto;
       }
@@ -5529,13 +5534,18 @@
       .playground__input-area {
         border-right: none;
         border-bottom: 1px solid var(--color-border-subtle);
+        flex-shrink: 0;
       }
 
-      /* Mobile preview area - must be visible after input area */
+      /* Mobile preview area - full width, prominent height for document visibility */
       .playground__preview-area {
-        min-height: 340px;
+        width: 100%;
+        min-height: 400px;
+        padding: 16px;
         border-top: 2px solid var(--color-primary);
         background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
+        display: flex;
+        flex-direction: column;
       }
 
       /* Mobile preview label - prominent header */
@@ -5543,29 +5553,38 @@
         font-size: 12px;
         font-weight: 600;
         color: var(--color-text);
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+        flex-shrink: 0;
       }
 
-      /* Mobile preview area fixes */
+      /* Mobile preview container - document must be readable without zoom */
       .playground__preview {
-        min-height: 300px;
+        flex: 1;
+        min-height: 350px;
         max-height: none;
         padding: 16px;
         background: #374151;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
+      /* Document preview sized for mobile readability */
       .playground__preview-frame-wrapper {
-        width: 260px;
-        height: 336px;
+        width: 280px;
+        height: 362px;
         position: relative;
         margin: 0 auto;
+        background: white;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
       }
 
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.306);
+        transform: scale(0.329);
         transform-origin: top left;
+        border: none;
       }
 
       .integration__content {
@@ -5617,21 +5636,26 @@
         aspect-ratio: 8.5 / 9;
       }
 
-      /* CRITICAL FIX: Remove max-height constraint on playground body
-         The base style sets max-height: 520px which clips the preview area
-         when the layout is stacked vertically on mobile */
+      /* CRITICAL FIX: Stack playground vertically with flexbox
+         The base style uses grid which doesn't stack properly on mobile */
       .playground__body {
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: unset;
         max-height: none;
         min-height: auto;
         gap: 0;
       }
 
-      /* Ensure preview area is visible with clear header */
+      /* Ensure preview area is visible with full width and clear header */
       .playground__preview-area {
-        min-height: 320px;
-        padding: 16px;
+        width: 100%;
+        min-height: 400px;
+        padding: 12px;
         border-top: 2px solid var(--color-primary);
         background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, transparent 30%);
+        display: flex;
+        flex-direction: column;
       }
 
       /* Mobile preview label - make it prominent */
@@ -5642,15 +5666,19 @@
         margin-bottom: 12px;
         padding-bottom: 8px;
         border-bottom: 1px solid var(--color-border-subtle);
+        flex-shrink: 0;
       }
 
-      /* Issue 2 Fix: Ensure preview area is visible without zoom toggle
-         These rules must come after 768px rules to override them */
+      /* Issue 2 Fix: Preview container with proper height for document visibility */
       .playground__preview {
-        min-height: 280px;
+        flex: 1;
+        min-height: 350px;
         height: auto;
         max-height: none;
         padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .playground__preview-frame-wrapper {
