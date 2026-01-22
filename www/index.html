@@ -678,21 +678,19 @@
       transform: translate(-50%, -50%) rotate(-35deg) scale(1);
     }
 
-    /* Stripe Styling Effect - Purple theme indicator */
-    .demo-preview--stripe .demo-doc-header {
+    /* Grouping Effect - Shows items grouped by category */
+    .demo-preview--grouping .demo-doc-header {
       border-color: #635BFF !important;
     }
-    .demo-preview--stripe .demo-company,
-    .demo-preview--stripe .demo-quote-title {
-      color: #635BFF !important;
+    .demo-preview--grouping .demo-table-row:first-child {
+      background: #f0f9ff !important;
+      font-weight: 600;
     }
-    .demo-preview--stripe .demo-table-header {
-      background: #635BFF !important;
+    .demo-preview--grouping .demo-table-row:nth-child(3) {
+      background: #fef3c7 !important;
+      font-weight: 600;
     }
-    .demo-preview--stripe .demo-meta {
-      background: #f5f4ff;
-    }
-    .demo-stripe-badge {
+    .demo-grouping-badge {
       position: absolute;
       top: 16px;
       right: 16px;
@@ -7304,7 +7302,7 @@
               </div>
               <!-- Visual Effect Elements -->
               <div class="demo-watermark demo-effect" id="demo-effect-watermark">DRAFT</div>
-              <div class="demo-stripe-badge demo-effect" id="demo-effect-stripe">Powered by Stripe</div>
+              <div class="demo-grouping-badge demo-effect" id="demo-effect-grouping">Grouped by Category</div>
               <div class="demo-qrcode-label demo-effect" id="demo-effect-qrcode-label">Scan to Pay</div>
               <div class="demo-qrcode demo-effect" id="demo-effect-qrcode">
                 <svg viewBox="0 0 100 100" fill="none" stroke="#1E3A5F" stroke-width="3">
@@ -7707,12 +7705,12 @@
                 ></textarea>
               </div>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Make this look like a Stripe invoice - clean, minimal, with their signature purple">Stripe style <span class="playground__suggestion-duration">~45s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">~3s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">~2s</span></button>
-                <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">~3s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a thank you message and signature line at the bottom with the current date">Add signature <span class="playground__suggestion-duration">~3s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a progress bar showing 50% deposit already paid">Show progress <span class="playground__suggestion-duration">~5s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Make the header purple">Purple header <span class="playground__suggestion-duration">instant</span></button>
               </div>
               <p class="playground__hint">Try something wild - the AI understands complex requests</p>
               <div class="playground__button-row">
@@ -9707,7 +9705,7 @@
     const heroDemo = document.getElementById('hero-demo');
     const commands = [
       { text: 'Add a diagonal DRAFT watermark', color: '#1E3A5F', effect: 'watermark' },
-      { text: 'Make this look like a Stripe invoice', color: '#635BFF', effect: 'stripe' },
+      { text: 'Group items by category with subtotals', color: '#635BFF', effect: 'grouping' },
       { text: 'Add a QR code for instant payment', color: '#1E3A5F', effect: 'qrcode' },
       { text: 'Add payment terms: Net 30', color: '#22C55E', effect: 'terms' },
       { text: 'Add a signature line with date', color: '#F97316', effect: 'signature' }
@@ -9719,7 +9717,7 @@
     // Effect elements mapping
     const effectElements = {
       watermark: document.getElementById('demo-effect-watermark'),
-      stripe: document.getElementById('demo-effect-stripe'),
+      grouping: document.getElementById('demo-effect-grouping'),
       qrcode: [document.getElementById('demo-effect-qrcode'), document.getElementById('demo-effect-qrcode-label')],
       terms: document.getElementById('demo-effect-terms'),
       signature: document.getElementById('demo-effect-signature')
@@ -9727,7 +9725,7 @@
 
     // Clear all effects
     function clearAllEffects() {
-      heroDemo.classList.remove('demo-preview--stripe');
+      heroDemo.classList.remove('demo-preview--grouping');
       Object.values(effectElements).flat().forEach(el => {
         if (el) el.classList.remove('demo-effect--active');
       });
@@ -9736,9 +9734,9 @@
     // Activate a specific effect
     function activateEffect(effectName) {
       clearAllEffects();
-      if (effectName === 'stripe') {
-        heroDemo.classList.add('demo-preview--stripe');
-        effectElements.stripe.classList.add('demo-effect--active');
+      if (effectName === 'grouping') {
+        heroDemo.classList.add('demo-preview--grouping');
+        if (effectElements.grouping) effectElements.grouping.classList.add('demo-effect--active');
       } else if (effectName === 'qrcode') {
         effectElements.qrcode.forEach(el => el.classList.add('demo-effect--active'));
       } else if (effectElements[effectName]) {
