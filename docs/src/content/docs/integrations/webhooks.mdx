@@ -1,0 +1,636 @@
+---
+title: Webhooks & Automation
+description: Integrate Glyph with Zapier, Make.com, and any automation platform
+---
+
+import { Aside, Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+
+Connect Glyph to your automation workflows and generate PDFs from any platform that supports HTTP requests. No code required.
+
+## What You Can Build
+
+With Glyph webhooks, you can automatically generate PDFs when:
+
+- **New form submission** - Generate quotes from Typeform, JotForm, or Google Forms
+- **CRM deal closed** - Create invoices from HubSpot, Salesforce, or Pipedrive
+- **Order placed** - Generate packing slips from Shopify or WooCommerce
+- **Approval workflow** - Create contracts when proposals are approved
+- **Scheduled reports** - Generate weekly/monthly reports on a timer
+
+<CardGrid>
+  <Card title="Zapier" icon="puzzle">
+    5,000+ app integrations with visual workflow builder
+  </Card>
+  <Card title="Make.com" icon="rocket">
+    Advanced scenarios with data transformation
+  </Card>
+  <Card title="n8n" icon="setting">
+    Self-hosted automation with full control
+  </Card>
+  <Card title="Any Platform" icon="external">
+    Works with any tool that can make HTTP requests
+  </Card>
+</CardGrid>
+
+## Prerequisites
+
+Before you begin, you'll need:
+
+1. A **Glyph API key** - Get one at [dashboard.glyph.you](https://dashboard.glyph.you)
+2. An account on your automation platform (Zapier, Make.com, etc.)
+
+## The 3-Step Flow
+
+Every Glyph PDF generation follows the same pattern:
+
+```
+1. Preview  →  2. Modify (optional)  →  3. Generate
+```
+
+<Steps>
+
+1. **POST /v1/preview** - Create a session with your template and data
+   - Returns a `sessionId` you'll use in subsequent steps
+
+2. **POST /v1/modify** (optional) - Apply AI-powered customizations
+   - Use natural language to style or adjust the document
+
+3. **POST /v1/generate** - Convert the session to PDF
+   - Returns the PDF file or a download URL
+
+</Steps>
+
+<Aside type="tip">
+For most automation workflows, you can skip Step 2 and go directly from preview to generate. Use the modify step when you need AI-powered customization.
+</Aside>
+
+---
+
+## Zapier Integration
+
+### Setting Up Your First Zap
+
+<Steps>
+
+1. Create a new Zap in your Zapier account
+
+2. Choose your **Trigger** (e.g., "New Form Submission in Typeform")
+
+3. Add an **Action** - Search for "Webhooks by Zapier"
+
+4. Select **Custom Request**
+
+5. Configure Step 1: Create Preview
+
+</Steps>
+
+### Step 1: Create Preview (Webhooks by Zapier)
+
+Configure the HTTP request:
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| URL | `https://api.glyph.you/v1/preview` |
+| Data Pass-Through | No |
+
+**Headers:**
+
+| Key | Value |
+|-----|-------|
+| Authorization | `Bearer gk_your_api_key` |
+| Content-Type | `application/json` |
+
+**Body:**
+
+```json
+{
+  "template": "quote-modern",
+  "data": {
+    "client": {
+      "name": "{{trigger_field_name}}",
+      "company": "{{trigger_field_company}}",
+      "email": "{{trigger_field_email}}"
+    },
+    "lineItems": [
+      {
+        "description": "{{trigger_field_service}}",
+        "quantity": 1,
+        "unitPrice": {{trigger_field_price}},
+        "total": {{trigger_field_price}}
+      }
+    ],
+    "totals": {
+      "subtotal": {{trigger_field_price}},
+      "total": {{trigger_field_price}}
+    },
+    "meta": {
+      "quoteNumber": "Q-{{zap_meta_id}}",
+      "date": "{{zap_meta_human_date}}"
+    }
+  }
+}
+```
+
+<Aside type="note">
+Replace `{{trigger_field_*}}` with your actual Zapier field mappings from your trigger app.
+</Aside>
+
+### Step 2: Generate PDF
+
+Add another **Webhooks by Zapier** action:
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| URL | `https://api.glyph.you/v1/generate` |
+
+**Headers:**
+
+| Key | Value |
+|-----|-------|
+| Authorization | `Bearer gk_your_api_key` |
+| Content-Type | `application/json` |
+| Accept | `application/json` |
+
+**Body:**
+
+```json
+{
+  "sessionId": "{{step1_sessionId}}",
+  "format": "pdf"
+}
+```
+
+The response includes a base64-encoded PDF that you can:
+- Send via email (using Gmail, Outlook, etc.)
+- Upload to cloud storage (Google Drive, Dropbox)
+- Add to your CRM as an attachment
+
+### Complete Zapier Example
+
+**Trigger:** New submission in Typeform
+
+**Actions:**
+1. Webhooks by Zapier → POST to `/v1/preview`
+2. Webhooks by Zapier → POST to `/v1/generate`
+3. Gmail → Send email with PDF attachment
+
+---
+
+## Make.com Integration
+
+Make.com (formerly Integromat) offers more advanced data manipulation. Here's how to set up a scenario.
+
+### Creating a New Scenario
+
+<Steps>
+
+1. Create a new **Scenario** in Make.com
+
+2. Add your trigger module (e.g., "Watch New Submissions" in Google Forms)
+
+3. Add an **HTTP** module → **Make a request**
+
+</Steps>
+
+### HTTP Module 1: Create Preview
+
+**Configuration:**
+
+| Field | Value |
+|-------|-------|
+| URL | `https://api.glyph.you/v1/preview` |
+| Method | POST |
+| Body type | Raw |
+| Content type | JSON (application/json) |
+
+**Headers:**
+
+Add a new header:
+- Name: `Authorization`
+- Value: `Bearer gk_your_api_key`
+
+**Request content (JSON):**
+
+```json
+{
+  "template": "quote-modern",
+  "data": {
+    "client": {
+      "name": "{{1.answers.name}}",
+      "company": "{{1.answers.company}}",
+      "email": "{{1.answers.email}}"
+    },
+    "lineItems": {{toJSON(1.answers.items)}},
+    "totals": {
+      "subtotal": {{1.answers.subtotal}},
+      "tax": {{1.answers.tax}},
+      "total": {{1.answers.total}}
+    },
+    "meta": {
+      "quoteNumber": "Q-{{formatDate(now; 'YYYYMMDD')}}-{{1.responseId}}",
+      "date": "{{formatDate(now; 'MMMM D, YYYY')}}"
+    }
+  }
+}
+```
+
+**Parse response:** Yes
+
+### HTTP Module 2: Generate PDF
+
+Add another **HTTP** module:
+
+| Field | Value |
+|-------|-------|
+| URL | `https://api.glyph.you/v1/generate` |
+| Method | POST |
+| Body type | Raw |
+| Content type | JSON (application/json) |
+
+**Headers:**
+- `Authorization`: `Bearer gk_your_api_key`
+- `Accept`: `application/json`
+
+**Request content:**
+
+```json
+{
+  "sessionId": "{{2.data.sessionId}}",
+  "format": "pdf"
+}
+```
+
+### Advanced: Adding AI Modifications
+
+Insert an HTTP module between preview and generate:
+
+| Field | Value |
+|-------|-------|
+| URL | `https://api.glyph.you/v1/modify` |
+| Method | POST |
+
+**Request content:**
+
+```json
+{
+  "sessionId": "{{2.data.sessionId}}",
+  "prompt": "Apply professional navy blue styling to the header"
+}
+```
+
+<Aside type="tip">
+Use Make.com's built-in functions like `formatDate()`, `toJSON()`, and `ifempty()` to transform your data before sending it to Glyph.
+</Aside>
+
+---
+
+## Generic Webhook Setup
+
+For any platform that supports HTTP requests (n8n, Pipedream, Power Automate, custom scripts), here's the complete API flow.
+
+### Endpoint Reference
+
+| Step | Method | Endpoint | Purpose |
+|------|--------|----------|---------|
+| 1 | POST | `https://api.glyph.you/v1/preview` | Create session with data |
+| 2 | POST | `https://api.glyph.you/v1/modify` | AI modifications (optional) |
+| 3 | POST | `https://api.glyph.you/v1/generate` | Generate PDF |
+
+### Required Headers
+
+All requests must include:
+
+```
+Authorization: Bearer gk_your_api_key
+Content-Type: application/json
+```
+
+### Step 1: Create Preview
+
+**Request:**
+
+```bash
+curl -X POST https://api.glyph.you/v1/preview \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "quote-modern",
+    "data": {
+      "client": {
+        "name": "Acme Corporation",
+        "email": "billing@acme.com",
+        "company": "Acme Corp"
+      },
+      "lineItems": [
+        {
+          "description": "Consulting Services",
+          "quantity": 10,
+          "unitPrice": 150,
+          "total": 1500
+        }
+      ],
+      "totals": {
+        "subtotal": 1500,
+        "tax": 120,
+        "total": 1620
+      },
+      "meta": {
+        "quoteNumber": "Q-2024-001",
+        "date": "January 22, 2024"
+      }
+    }
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "html": "<!DOCTYPE html><html>...</html>",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+<Aside type="caution">
+Save the `sessionId` from this response - you'll need it for the next steps.
+</Aside>
+
+### Step 2: Modify (Optional)
+
+**Request:**
+
+```bash
+curl -X POST https://api.glyph.you/v1/modify \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "prompt": "Add a professional watermark with our company name"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "html": "<!DOCTYPE html><html>...</html>",
+  "changes": ["Added watermark with company name"]
+}
+```
+
+### Step 3: Generate PDF
+
+**Request (returns binary PDF):**
+
+```bash
+curl -X POST https://api.glyph.you/v1/generate \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "format": "pdf"
+  }' \
+  --output document.pdf
+```
+
+**Request (returns JSON with base64):**
+
+```bash
+curl -X POST https://api.glyph.you/v1/generate \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "format": "pdf"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "url": "data:application/pdf;base64,JVBERi0xLjQK...",
+  "format": "pdf",
+  "size": 45678
+}
+```
+
+---
+
+## Platform-Specific Examples
+
+### n8n (Self-Hosted)
+
+Use the **HTTP Request** node with these settings:
+
+**Node 1: Create Preview**
+- Method: POST
+- URL: `https://api.glyph.you/v1/preview`
+- Authentication: Header Auth
+  - Name: `Authorization`
+  - Value: `Bearer gk_your_api_key`
+- Body: JSON with your data
+
+**Node 2: Generate PDF**
+- Method: POST
+- URL: `https://api.glyph.you/v1/generate`
+- Body: `{ "sessionId": "{{ $json.sessionId }}", "format": "pdf" }`
+
+### Pipedream
+
+```javascript
+// Step 1: Create Preview
+const previewResponse = await axios.post(
+  'https://api.glyph.you/v1/preview',
+  {
+    template: 'quote-modern',
+    data: {
+      client: steps.trigger.event.data,
+      lineItems: steps.trigger.event.items,
+      totals: steps.trigger.event.totals
+    }
+  },
+  {
+    headers: {
+      'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  }
+);
+
+// Step 2: Generate PDF
+const pdfResponse = await axios.post(
+  'https://api.glyph.you/v1/generate',
+  {
+    sessionId: previewResponse.data.sessionId,
+    format: 'pdf'
+  },
+  {
+    headers: {
+      'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  }
+);
+
+return pdfResponse.data;
+```
+
+### Power Automate (Microsoft)
+
+1. Add **HTTP** action for preview:
+   - Method: POST
+   - URI: `https://api.glyph.you/v1/preview`
+   - Headers: `Authorization: Bearer gk_your_api_key`
+   - Body: Your JSON data
+
+2. Add **Parse JSON** action on the response
+
+3. Add another **HTTP** action for generate using the parsed `sessionId`
+
+---
+
+## Data Mapping Reference
+
+### Available Templates
+
+| Template ID | Best For |
+|-------------|----------|
+| `quote-modern` | Clean, minimal quotes and invoices |
+| `quote-professional` | Traditional business documents |
+| `quote-bold` | High-impact modern designs |
+
+### Data Structure
+
+```json
+{
+  "client": {
+    "name": "Required - Client name",
+    "company": "Optional - Company name",
+    "email": "Optional - Email address",
+    "address": "Optional - Mailing address"
+  },
+  "lineItems": [
+    {
+      "description": "Service or product name",
+      "details": "Optional - Additional details",
+      "quantity": 1,
+      "unitPrice": 100,
+      "total": 100
+    }
+  ],
+  "totals": {
+    "subtotal": 100,
+    "discount": 0,
+    "tax": 8,
+    "taxRate": 8,
+    "total": 108
+  },
+  "meta": {
+    "quoteNumber": "Q-2024-001",
+    "date": "January 22, 2024",
+    "validUntil": "February 22, 2024",
+    "notes": "Optional notes"
+  },
+  "branding": {
+    "logoUrl": "https://example.com/logo.png",
+    "companyName": "Your Company",
+    "companyAddress": "123 Main St"
+  }
+}
+```
+
+---
+
+## Error Handling
+
+### Common Error Codes
+
+| Code | Meaning | Solution |
+|------|---------|----------|
+| `401` | Invalid API key | Check your `Authorization` header |
+| `400` | Invalid request data | Verify your JSON structure |
+| `404` | Session not found | Session may have expired (1 hour limit) |
+| `429` | Rate limit exceeded | Wait and retry, or upgrade your plan |
+| `500` | Server error | Retry the request |
+
+### Retry Strategy
+
+For automation workflows, implement exponential backoff:
+
+```javascript
+// Pseudocode for retry logic
+async function makeRequestWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+
+      if (response.status === 429) {
+        // Rate limited - wait and retry
+        await sleep(Math.pow(2, i) * 1000);
+        continue;
+      }
+
+      throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await sleep(Math.pow(2, i) * 1000);
+    }
+  }
+}
+```
+
+---
+
+## Best Practices
+
+### Security
+
+- **Never expose your API key** in client-side code or public repositories
+- Use environment variables or secrets management in your automation platform
+- Rotate API keys periodically via the [dashboard](https://dashboard.glyph.you)
+
+### Performance
+
+- **Sessions expire after 1 hour** - Generate PDFs soon after creating the preview
+- **Skip the modify step** if you don't need AI customization
+- **Cache generated PDFs** when possible to avoid regenerating the same document
+
+### Monitoring
+
+- Check the response status code for each request
+- Log errors for debugging
+- Set up alerts in your automation platform for failed workflows
+
+## Troubleshooting
+
+### "Session not found" Error
+
+The session has expired (sessions last 1 hour). Solutions:
+- Generate PDF immediately after preview
+- If running batch jobs, create preview and generate in quick succession
+
+### "Invalid API key" Error
+
+- Verify the key starts with `gk_`
+- Check for extra spaces in the Authorization header
+- Ensure the key is active in your [dashboard](https://dashboard.glyph.you)
+
+### Empty or Malformed PDF
+
+- Check the `html` field in the preview response is valid
+- Verify your data doesn't contain invalid characters
+- Test with minimal data first, then add complexity
+
+## Next Steps
+
+- [API Overview](/api/overview/) - Complete API documentation
+- [POST /v1/preview](/api/preview/) - Detailed preview endpoint reference
+- [POST /v1/modify](/api/modify/) - AI modification options
+- [POST /v1/generate](/api/generate/) - PDF generation options
+- [Templates Overview](/templates/overview/) - Available templates and customization

@@ -32,6 +32,7 @@ export default defineConfig({
 				{
 					label: 'Integrations',
 					items: [
+						{ label: 'Webhooks & Automation', slug: 'integrations/webhooks' },
 						{ label: 'Airtable', slug: 'integrations/airtable' },
 						{ label: 'MCP Server', slug: 'integrations/mcp-server' },
 					],
