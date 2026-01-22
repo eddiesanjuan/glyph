@@ -1,0 +1,448 @@
+---
+title: Zapier & Make.com
+description: Connect Glyph to 5,000+ apps with Zapier and Make.com for automated PDF generation
+---
+
+import { Aside, Steps, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+
+Automate PDF generation from any app in your tech stack. Glyph integrates with Zapier, Make.com (formerly Integromat), and any platform that supports webhooks.
+
+## Why Use Glyph with Zapier/Make?
+
+<CardGrid>
+  <Card title="No Code Required" icon="document">
+    Visual workflow builders - no programming needed
+  </Card>
+  <Card title="5,000+ Apps" icon="puzzle">
+    Connect to your existing tools instantly
+  </Card>
+  <Card title="AI-Powered" icon="rocket">
+    Natural language customization in your automations
+  </Card>
+  <Card title="Real-Time" icon="setting">
+    Generate PDFs the moment triggers fire
+  </Card>
+</CardGrid>
+
+## Common Use Cases
+
+| Trigger | Action | Result |
+|---------|--------|--------|
+| New Airtable record | Generate invoice PDF | Email to client |
+| Form submission | Create branded quote | Save to Google Drive |
+| Deal closed in CRM | Generate contract | Send via DocuSign |
+| Shopify order | Create packing slip | Print automatically |
+| Weekly schedule | Generate report | Post to Slack |
+
+## Prerequisites
+
+Before you begin, you'll need:
+
+1. A **Glyph API key** - Get one at [dashboard.glyph.you](https://dashboard.glyph.you)
+2. An account on **Zapier** or **Make.com**
+
+---
+
+## Zapier Integration
+
+### Quick Start: Your First Zap
+
+This example creates a PDF quote whenever a new record appears in Airtable.
+
+<Steps>
+
+1. **Create a new Zap** in your Zapier account
+
+2. **Set your Trigger**
+   - App: Airtable
+   - Trigger Event: New Record
+   - Connect your account and select your base/table
+
+3. **Add Action 1: Create Preview**
+   - App: Webhooks by Zapier
+   - Action Event: Custom Request
+   - Configure as shown below
+
+4. **Add Action 2: Generate PDF**
+   - App: Webhooks by Zapier
+   - Action Event: Custom Request
+   - Use the sessionId from Step 1
+
+5. **Add Action 3: Deliver the PDF**
+   - Email it, save to Drive, or send anywhere
+
+</Steps>
+
+### Action 1: Create Preview
+
+Configure the Webhooks by Zapier action:
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| URL | `https://api.glyph.you/v1/preview` |
+| Data Pass-Through | No |
+
+**Headers:**
+
+| Key | Value |
+|-----|-------|
+| Authorization | `Bearer gk_your_api_key` |
+| Content-Type | `application/json` |
+
+**Body (Raw JSON):**
+
+```json
+{
+  "template": "quote-modern",
+  "data": {
+    "client": {
+      "name": "{{Client Name}}",
+      "company": "{{Company}}",
+      "email": "{{Email}}"
+    },
+    "lineItems": [
+      {
+        "description": "{{Service Description}}",
+        "quantity": {{Quantity}},
+        "unitPrice": {{Unit Price}},
+        "total": {{Line Total}}
+      }
+    ],
+    "totals": {
+      "subtotal": {{Subtotal}},
+      "tax": {{Tax}},
+      "total": {{Total}}
+    },
+    "meta": {
+      "quoteNumber": "Q-{{Record ID}}",
+      "date": "{{Created Time}}"
+    }
+  }
+}
+```
+
+<Aside type="note">
+Replace the `{{Field Name}}` placeholders with your actual Zapier field mappings from Airtable.
+</Aside>
+
+### Action 2: Generate PDF
+
+Add another Webhooks by Zapier action:
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| URL | `https://api.glyph.you/v1/generate` |
+
+**Headers:**
+
+| Key | Value |
+|-----|-------|
+| Authorization | `Bearer gk_your_api_key` |
+| Content-Type | `application/json` |
+| Accept | `application/json` |
+
+**Body:**
+
+```json
+{
+  "sessionId": "{{step1_sessionId}}",
+  "format": "pdf"
+}
+```
+
+<Aside type="tip">
+Map `sessionId` from the response of your first webhook action.
+</Aside>
+
+### Optional: Add AI Customization
+
+Insert another webhook between preview and generate to apply AI styling:
+
+| Field | Value |
+|-------|-------|
+| Method | POST |
+| URL | `https://api.glyph.you/v1/modify` |
+
+**Body:**
+
+```json
+{
+  "sessionId": "{{preview_sessionId}}",
+  "prompt": "Apply professional blue styling to match our brand"
+}
+```
+
+---
+
+## Make.com Integration
+
+Make.com offers more advanced data transformation and branching logic.
+
+### Quick Start Scenario
+
+<Steps>
+
+1. **Create a new Scenario** in Make.com
+
+2. **Add your Trigger module**
+   - Example: Google Forms > Watch Responses
+
+3. **Add HTTP module** for preview
+   - HTTP > Make a request
+
+4. **Add HTTP module** for generate
+   - Use the sessionId from the previous module
+
+5. **Add output module**
+   - Google Drive > Upload a File, or
+   - Gmail > Send an Email
+
+</Steps>
+
+### HTTP Module 1: Create Preview
+
+| Field | Value |
+|-------|-------|
+| URL | `https://api.glyph.you/v1/preview` |
+| Method | POST |
+| Body type | Raw |
+| Content type | JSON (application/json) |
+
+**Headers:**
+
+Add a header:
+- Name: `Authorization`
+- Value: `Bearer gk_your_api_key`
+
+**Request content:**
+
+```json
+{
+  "template": "quote-modern",
+  "data": {
+    "client": {
+      "name": "{{1.answers.name}}",
+      "company": "{{1.answers.company}}",
+      "email": "{{1.answers.email}}"
+    },
+    "lineItems": {{toJSON(1.answers.items)}},
+    "totals": {
+      "subtotal": {{1.answers.subtotal}},
+      "tax": {{1.answers.tax}},
+      "total": {{1.answers.total}}
+    },
+    "meta": {
+      "quoteNumber": "Q-{{formatDate(now; 'YYYYMMDD')}}-{{1.responseId}}",
+      "date": "{{formatDate(now; 'MMMM D, YYYY')}}"
+    }
+  }
+}
+```
+
+**Parse response:** Yes (check this option)
+
+### HTTP Module 2: Generate PDF
+
+| Field | Value |
+|-------|-------|
+| URL | `https://api.glyph.you/v1/generate` |
+| Method | POST |
+| Body type | Raw |
+| Content type | JSON (application/json) |
+
+**Headers:**
+- `Authorization`: `Bearer gk_your_api_key`
+- `Accept`: `application/json`
+
+**Request content:**
+
+```json
+{
+  "sessionId": "{{2.data.sessionId}}",
+  "format": "pdf"
+}
+```
+
+<Aside type="tip">
+Make.com's `formatDate()`, `toJSON()`, and `ifempty()` functions are great for transforming data before sending to Glyph.
+</Aside>
+
+---
+
+## Real-World Examples
+
+### Example 1: Invoice from Form Submission
+
+**Scenario:** Customer fills out a service request form, you auto-generate a branded invoice.
+
+<Tabs>
+<TabItem label="Zapier">
+
+1. **Trigger:** Typeform > New Entry
+2. **Action 1:** Webhooks > POST to `/v1/preview` with form data
+3. **Action 2:** Webhooks > POST to `/v1/generate` with sessionId
+4. **Action 3:** Gmail > Send Email with PDF attachment
+
+</TabItem>
+<TabItem label="Make.com">
+
+1. **Trigger:** Typeform > Watch Responses
+2. **HTTP:** POST to `/v1/preview`
+3. **HTTP:** POST to `/v1/generate`
+4. **Gmail:** Send Email (attach base64 PDF)
+
+</TabItem>
+</Tabs>
+
+### Example 2: Auto-Customize from CRM Data
+
+**Scenario:** When a deal moves to "Won" in your CRM, generate a contract with AI-applied styling based on the client's industry.
+
+<Tabs>
+<TabItem label="Zapier">
+
+1. **Trigger:** HubSpot > Deal Stage Changed to "Won"
+2. **Action 1:** Webhooks > POST to `/v1/preview`
+3. **Action 2:** Webhooks > POST to `/v1/modify`
+   - Prompt: `"Style this contract professionally for a {{Industry}} company"`
+4. **Action 3:** Webhooks > POST to `/v1/generate`
+5. **Action 4:** Google Drive > Upload File
+
+</TabItem>
+<TabItem label="Make.com">
+
+1. **Trigger:** HubSpot > Watch Deals (filter: stage = Won)
+2. **HTTP:** Create preview
+3. **HTTP:** Modify with industry-specific prompt
+4. **HTTP:** Generate PDF
+5. **Google Drive:** Upload file
+
+</TabItem>
+</Tabs>
+
+### Example 3: Batch Reports on Schedule
+
+**Scenario:** Every Monday at 9am, generate a PDF report from your database.
+
+<Tabs>
+<TabItem label="Zapier">
+
+1. **Trigger:** Schedule by Zapier > Every Week on Monday
+2. **Action 1:** Airtable > Find Records (get weekly data)
+3. **Action 2:** Webhooks > POST to `/v1/preview`
+4. **Action 3:** Webhooks > POST to `/v1/generate`
+5. **Action 4:** Slack > Send Message with file
+
+</TabItem>
+<TabItem label="Make.com">
+
+1. **Trigger:** Schedule > Run scenario (Mondays 9am)
+2. **Airtable:** Search records
+3. **HTTP:** Create preview with aggregated data
+4. **HTTP:** Generate PDF
+5. **Slack:** Send file
+
+</TabItem>
+</Tabs>
+
+---
+
+## API Reference
+
+### The 3-Step Flow
+
+Every Glyph PDF follows this pattern:
+
+```
+POST /v1/preview  →  POST /v1/modify (optional)  →  POST /v1/generate
+```
+
+| Endpoint | Purpose | Returns |
+|----------|---------|---------|
+| `/v1/preview` | Create session with template + data | `sessionId` |
+| `/v1/modify` | AI-powered customization | Updated HTML |
+| `/v1/generate` | Convert to PDF | PDF file |
+
+### Authentication
+
+All requests require this header:
+
+```
+Authorization: Bearer gk_your_api_key
+```
+
+### Data Structure
+
+```json
+{
+  "template": "quote-modern",
+  "data": {
+    "client": { "name": "", "company": "", "email": "" },
+    "lineItems": [{ "description": "", "quantity": 1, "unitPrice": 0, "total": 0 }],
+    "totals": { "subtotal": 0, "tax": 0, "total": 0 },
+    "meta": { "quoteNumber": "", "date": "" }
+  }
+}
+```
+
+---
+
+## Troubleshooting
+
+### "Session not found" Error
+
+Sessions expire after 1 hour. Generate the PDF immediately after creating the preview.
+
+**Solution:** Ensure your generate action runs right after preview in the same workflow execution.
+
+### "Invalid API key" Error
+
+- Verify the key starts with `gk_`
+- Check for extra spaces in the Authorization header
+- Confirm the key is active at [dashboard.glyph.you](https://dashboard.glyph.you)
+
+### Empty or Corrupt PDF
+
+- Test with minimal data first
+- Verify your JSON is valid (use a JSON validator)
+- Check that numeric fields are numbers, not strings
+
+### Rate Limits
+
+If you hit rate limits on batch operations:
+- Add delays between requests (Zapier: use Delay action)
+- Process in smaller batches
+- Contact support for higher limits
+
+---
+
+## Best Practices
+
+### Security
+
+- Store your API key as a secret/environment variable
+- Never expose it in public Zaps or scenarios
+- Rotate keys periodically via the [dashboard](https://dashboard.glyph.you)
+
+### Performance
+
+- **Generate immediately** after preview (sessions expire in 1 hour)
+- **Skip `/v1/modify`** if you don't need AI customization
+- **Cache PDFs** when possible to avoid regenerating
+
+### Testing
+
+1. Test with hardcoded data first
+2. Verify field mappings one at a time
+3. Check the preview HTML before generating
+
+---
+
+## Next Steps
+
+- [Webhooks & Automation](/integrations/webhooks/) - Complete webhook documentation
+- [Airtable Integration](/integrations/airtable/) - Direct Airtable connection
+- [API Overview](/api/overview/) - Full API reference
+- [Templates](/templates/overview/) - Available templates
