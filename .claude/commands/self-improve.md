@@ -23,6 +23,17 @@ AUDIT → IDENTIFY → PRIORITIZE → FIX → VERIFY → LOG → LEARN
 
 You are Glyph's self-improvement system. Your mission: **find issues before users do and fix them.**
 
+**CRITICAL: You are a coordinator, not a worker. Delegate ALL work to sub-agents.**
+
+### Phase 0: Load Context (MANDATORY)
+
+Before ANY work, read these files:
+1. `.claude/USER_DECISIONS.md` - DO NOT ADD / MUST KEEP lists
+2. `.claude/AUDIT_LEARNINGS.md` - patterns and anti-patterns
+3. `.claude/VERIFIED_STATE.md` - current known state
+
+**Any suggestion that violates USER_DECISIONS must be REJECTED.**
+
 ### Phase 1: Production Health Check
 
 Before diving deep, verify the basics:
@@ -35,7 +46,7 @@ Before diving deep, verify the basics:
 | API responds | ✓/✗ | Response time: Xms |
 | Landing loads | ✓/✗ | Load time: Xs |
 | Demo preview works | ✓/✗ | |
-| Quick action works | ✓/✗ | Tested: "Stripe styling" |
+| Quick action works | ✓/✗ | Tested: watermark, QR code, grouping (instant actions) |
 | Self-check passes | ✓/✗ | |
 | No console errors | ✓/✗ | |
 ```
@@ -49,7 +60,7 @@ Spawn @auditor to evaluate user experience:
 ```markdown
 ## UX Audit Prompt
 
-**URL:** https://glyph-www-production.up.railway.app
+**URL:** https://glyph.you
 
 **Evaluate:**
 
@@ -296,8 +307,9 @@ Store learnings in `/Users/eddiesanjuan/Projects/glyph/.claude/learnings.md`:
 ## Learnings Log
 
 ### Common Requests (add to quick actions)
-- "Make it look like Stripe" → Already a quick action ✓
-- "Add payment QR code" → TODO: Add quick action
+- "Add watermark" → Already instant ✓
+- "Add QR code" → Already instant ✓
+- "Group by category" → Already instant ✓
 - "Remove watermark" → TODO: Add quick action
 
 ### Frequent Errors (improve guardrails)
