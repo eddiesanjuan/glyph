@@ -23,6 +23,17 @@ FEEDBACK IN → PARSE → PRIORITIZE → PARALLEL AGENTS → FIX → DEPLOY → 
 
 You are the rapid development orchestrator for Glyph. Your job: **turn feedback into shipped fixes as fast as possible.**
 
+### Phase 0: Load Context (MANDATORY)
+
+**Before parsing feedback, read `.claude/USER_DECISIONS.md`**
+
+This file contains:
+- **DO NOT ADD**: Features explicitly forbidden (Stripe styling, confetti, lying time estimates)
+- **MUST KEEP**: Features that must not be removed
+- **FOCUS AREAS**: P0/P1/P2 priorities
+
+**When parsing issues, REJECT any that violate USER_DECISIONS.**
+
 ### Phase 1: Ingest & Parse (< 1 minute)
 
 When you receive feedback, parse it into discrete issues:
@@ -128,7 +139,7 @@ Spawn @qa-agent to verify ALL fixes on production:
 ```markdown
 ## Production Verification Task
 
-**URL:** https://glyph-www-production.up.railway.app
+**URL:** https://glyph.you
 
 **Verify Each Fix:**
 | Issue | Expected | Actual | Status |
@@ -139,14 +150,19 @@ Spawn @qa-agent to verify ALL fixes on production:
 **Test the Core Demo Flow:**
 1. Page loads without console errors
 2. Preview renders immediately
-3. "Stripe styling" quick action applies visible changes
-4. "Add signature" adds thank you message
+3. Instant actions work (watermark, QR code, grouping - should be <1s)
+4. Mobile 375px - preview visible and usable
 5. Self-check passes (check console for "[Glyph] Self-check passed")
 6. No localhost:3000 errors
 
+**USER_DECISIONS Compliance Check:**
+- NO "Stripe styling" button exists
+- NO confetti animation exists
+- Time estimates are honest (~45-60s for AI, not <30s)
+
 **Use Agent Browser CLI:**
 ```bash
-agent-browser open https://glyph-www-production.up.railway.app
+agent-browser open https://glyph.you
 agent-browser snapshot -i
 # Test interactions
 agent-browser screenshot
@@ -178,7 +194,7 @@ agent-browser screenshot
 - [Issue 1]: [summary]
 - [Issue 2]: [summary]
 
-**Live at:** https://glyph-www-production.up.railway.app
+**Live at:** https://glyph.you
 
 Ready for next feedback batch.
 ```
@@ -229,6 +245,16 @@ What would you like to do?
 - Keep a running log in `/Users/eddiesanjuan/Projects/glyph/.claude/rapid-log.md`
 - Each cycle appends to the log
 - Enables learning from past fixes
+
+### 6. Respect USER_DECISIONS
+- NEVER add items on the DO NOT ADD list
+- NEVER remove items on the MUST KEEP list
+- If feedback asks for something forbidden, REJECT with reason
+
+### 7. Update Learnings
+- After each cycle, update `.claude/AUDIT_LEARNINGS.md` with:
+  - New patterns that worked
+  - Anti-patterns discovered
 
 ---
 
@@ -293,8 +319,24 @@ Changes:
 - [ux] Increased button padding and spacing
 - [feature] Added prominent Download PDF button in toolbar
 
-Live at: https://glyph-www-production.up.railway.app
+Live at: https://glyph.you
 ```
+
+---
+
+## Related Commands
+
+| Command | When to Use |
+|---------|-------------|
+| `/rapid` | Quick batch fixes from feedback |
+| `/addiction-audit` | Thorough audit with verification and learning |
+| `/addiction-audit --quick` | Verify-only, no fixes |
+
+**After multiple rapid cycles**, run `/addiction-audit` to:
+- Verify everything is still working
+- Update VERIFIED_STATE.md with evidence
+- Add learnings to AUDIT_LEARNINGS.md
+- Check for any regressions
 
 ---
 
