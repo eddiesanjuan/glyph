@@ -7845,9 +7845,9 @@
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">~30s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">~30s</span></button>
-                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~30s</span></button>
+                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">~45-60s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">~45-60s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~45-60s</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
               <p class="playground__hint playground__hint--time-estimate" id="ai-time-estimate" style="display: none;">
@@ -7855,7 +7855,7 @@
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                AI requests typically take 30-45 seconds
+                AI requests typically take 45-60 seconds
               </p>
               <div class="playground__button-row">
                 <button class="playground__apply-btn" id="apply-btn">
@@ -12091,7 +12091,7 @@
 
     // Get context-aware status message based on elapsed time
     function getTimeAwareMessage(elapsedSeconds) {
-      if (elapsedSeconds < 10) return 'Analyzing your request (~30-45s total)...';
+      if (elapsedSeconds < 10) return 'Analyzing your request (~45-60s total)...';
       if (elapsedSeconds < 20) return 'Generating modifications...';
       if (elapsedSeconds < 35) return 'Applying changes...';
       if (elapsedSeconds < 50) return 'Almost there...';
@@ -12214,7 +12214,7 @@
 
         // Initial message with time estimate for AI requests
         if (loadingText) {
-          loadingText.textContent = 'AI requests typically take 30-45 seconds. Analyzing... (0s)';
+          loadingText.textContent = 'AI requests typically take 45-60 seconds. Analyzing... (0s)';
         }
 
         // Animate progress with logarithmic curve for 60 second operations
