@@ -12075,10 +12075,18 @@
       // TIMEOUT FIX: Create AbortController for 60-second timeout
       // Store globally so cancel button can access it
       const MODIFICATION_TIMEOUT_MS = 60000; // 60 seconds max
+      const WARNING_TIMEOUT_MS = 45000; // Show warning at 45 seconds
       currentAbortController = new AbortController();
       const timeoutId = setTimeout(() => {
         currentAbortController.abort();
       }, MODIFICATION_TIMEOUT_MS);
+
+      // FIX 2: Show warning at 45 seconds before timeout
+      const warningTimeoutId = setTimeout(() => {
+        if (isProcessingModification) {
+          showToast('Taking longer than expected. Try a simpler request for faster results.', 'warning', 8000);
+        }
+      }, WARNING_TIMEOUT_MS);
 
       try {
         // Helper to extract error message from response
@@ -12161,6 +12169,9 @@
           // Cycle 6: Show celebratory success toast
           showModificationSuccessToast(elapsed);
 
+          // FIX 1: Clear prompt input after successful modification
+          promptInput.value = '';
+
           setStatus(`Done in ${elapsed}s`);
           console.log(`[Glyph] Modification completed in ${elapsed}s`);
           setTimeout(() => setStatus('Ready'), 2000);
@@ -12237,6 +12248,9 @@
         // Cycle 6: Show celebratory success toast
         showModificationSuccessToast(elapsed);
 
+        // FIX 1: Clear prompt input after successful modification
+        promptInput.value = '';
+
         setStatus(`Done in ${elapsed}s`);
         console.log(`[Glyph] Modification completed in ${elapsed}s`);
         setTimeout(() => setStatus('Ready'), 2000);
@@ -12278,8 +12292,9 @@
         setStatus('Error - See message');
         setTimeout(() => setStatus('Ready'), 3000);
       } finally {
-        // Always clear the timeout to prevent memory leaks
+        // Always clear the timeouts to prevent memory leaks
         clearTimeout(timeoutId);
+        clearTimeout(warningTimeoutId);
         currentAbortController = null;  // Clear abort controller
         isProcessingModification = false;
         showLoading(false);
@@ -12363,6 +12378,14 @@
         }
       }, 1000);
     }
+
+    // FIX 3: Clear validation polling on page unload to prevent resource leaks
+    window.addEventListener('pagehide', () => {
+      if (validationPollInterval) {
+        clearInterval(validationPollInterval);
+        validationPollInterval = null;
+      }
+    });
 
     /**
      * Show a gentle message when validation times out (doesn't mean error)
