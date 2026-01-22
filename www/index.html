@@ -12169,9 +12169,6 @@
           // Cycle 6: Show celebratory success toast
           showModificationSuccessToast(elapsed);
 
-          // FIX 1: Clear prompt input after successful modification
-          promptInput.value = '';
-
           setStatus(`Done in ${elapsed}s`);
           console.log(`[Glyph] Modification completed in ${elapsed}s`);
           setTimeout(() => setStatus('Ready'), 2000);
@@ -12248,9 +12245,6 @@
         // Cycle 6: Show celebratory success toast
         showModificationSuccessToast(elapsed);
 
-        // FIX 1: Clear prompt input after successful modification
-        promptInput.value = '';
-
         setStatus(`Done in ${elapsed}s`);
         console.log(`[Glyph] Modification completed in ${elapsed}s`);
         setTimeout(() => setStatus('Ready'), 2000);
@@ -12301,6 +12295,10 @@
         applyBtn.classList.remove('loading');
         applyBtn.disabled = false;
         setSuggestionsDisabled(false);
+
+        // Always clear prompt input after modification completes (success, error, or cancel)
+        // This ensures quick actions and manual entries are both cleared
+        promptInput.value = '';
       }
     }
 
