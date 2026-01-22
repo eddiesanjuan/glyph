@@ -7474,7 +7474,7 @@
 
           <!-- MCP Integration - AI-first developer discovery -->
           <div class="hero__mcp">
-            <a href="https://docs.glyph.you/mcp-server" class="hero__mcp-link">
+            <a href="https://docs.glyph.you/integrations/mcp-server" class="hero__mcp-link">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
@@ -7950,8 +7950,8 @@
               <div class="playground__suggestions">
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Group items by category with subtotals">Group by category <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">~45-60s</span></button>
                 <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~45-60s</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
@@ -10638,12 +10638,13 @@
     }
 
     // Check if a prompt matches one of the instant action quick suggestions
-    // Only actions with pre-baked HTML transformations (watermark, QR, terms) are truly instant
+    // Only actions with pre-baked HTML transformations (watermark, QR, terms, grouping) are truly instant
     function isInstantAction(prompt) {
       const instantPrompts = [
         'Add a QR code in the corner for quick mobile payment',
         'Add a diagonal watermark that says DRAFT across the page',
-        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days'
+        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
+        'Group items by category with subtotals'
       ];
       return instantPrompts.some(p => prompt.toLowerCase().includes(p.toLowerCase().substring(0, 20)));
     }
@@ -10722,14 +10723,19 @@
         address: '456 Startup Lane\nPalo Alto, CA 94301'
       },
       lineItems: [
-        { description: 'Enterprise License', details: 'Annual subscription with all features', quantity: 1, unitPrice: 2400.00, total: 2400.00 },
-        { description: 'Premium Support', details: '24/7 dedicated support channel', quantity: 12, unitPrice: 100.00, total: 1200.00 }
+        { description: 'UI/UX Design', details: 'Custom interface design and prototypes', quantity: 1, unitPrice: 3500.00, total: 3500.00, category: 'Design' },
+        { description: 'Brand Guidelines', details: 'Logo usage, colors, typography specs', quantity: 1, unitPrice: 1500.00, total: 1500.00, category: 'Design' },
+        { description: 'Server Hardware', details: 'Dell PowerEdge R750 with 64GB RAM', quantity: 2, unitPrice: 4200.00, total: 8400.00, category: 'Materials' },
+        { description: 'Network Equipment', details: 'Cisco switches and cabling', quantity: 1, unitPrice: 2800.00, total: 2800.00, category: 'Materials' },
+        { description: 'Software Licenses', details: 'Enterprise software bundle', quantity: 5, unitPrice: 450.00, total: 2250.00, category: 'Materials' },
+        { description: 'Installation', details: 'On-site hardware setup and config', quantity: 16, unitPrice: 150.00, total: 2400.00, category: 'Labor' },
+        { description: 'Training', details: 'Staff training sessions (4 hours each)', quantity: 3, unitPrice: 500.00, total: 1500.00, category: 'Labor' }
       ],
       totals: {
-        subtotal: 3600.00,
+        subtotal: 22350.00,
         tax: 0,
         discount: 0,
-        total: 3600.00
+        total: 22350.00
       },
       styles: {
         accentColor: '#1E3A5F'
@@ -13109,6 +13115,61 @@
       return html.replace('</body>', `${termsDiv}</body>`);
     }
 
+    // Group line items by category with subtotals - instant transformation
+    function injectGroupByCategory(html) {
+      // Check if already grouped
+      if (html.includes('glyph-category-group') || html.includes('Category Subtotal')) return html;
+
+      // Find and replace the tbody content with grouped items
+      const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
+      if (!tbodyMatch) return html;
+
+      // Group the sample data by category
+      const categories = {
+        'Design': [
+          { description: 'UI/UX Design', details: 'Custom interface design and prototypes', quantity: 1, unitPrice: 3500.00, total: 3500.00 },
+          { description: 'Brand Guidelines', details: 'Logo usage, colors, typography specs', quantity: 1, unitPrice: 1500.00, total: 1500.00 }
+        ],
+        'Materials': [
+          { description: 'Server Hardware', details: 'Dell PowerEdge R750 with 64GB RAM', quantity: 2, unitPrice: 4200.00, total: 8400.00 },
+          { description: 'Network Equipment', details: 'Cisco switches and cabling', quantity: 1, unitPrice: 2800.00, total: 2800.00 },
+          { description: 'Software Licenses', details: 'Enterprise software bundle', quantity: 5, unitPrice: 450.00, total: 2250.00 }
+        ],
+        'Labor': [
+          { description: 'Installation', details: 'On-site hardware setup and config', quantity: 16, unitPrice: 150.00, total: 2400.00 },
+          { description: 'Training', details: 'Staff training sessions (4 hours each)', quantity: 3, unitPrice: 500.00, total: 1500.00 }
+        ]
+      };
+
+      let groupedTbody = '';
+      for (const [category, items] of Object.entries(categories)) {
+        const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+        groupedTbody += `
+          <tr class="glyph-category-group" style="background: #f8fafc;">
+            <td colspan="4" style="font-weight: 600; color: #1e3a5f; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0;">${category}</td>
+          </tr>`;
+        for (const item of items) {
+          groupedTbody += `
+          <tr>
+            <td>
+              <div class="item-desc">${item.description}</div>
+              <div class="item-details">${item.details}</div>
+            </td>
+            <td>${item.quantity}</td>
+            <td>$${item.unitPrice.toFixed(2)}</td>
+            <td>$${item.total.toFixed(2)}</td>
+          </tr>`;
+        }
+        groupedTbody += `
+          <tr class="glyph-category-subtotal" style="background: #f1f5f9;">
+            <td colspan="3" style="text-align: right; font-weight: 500; color: #64748b; padding-right: 16px; font-size: 12px;">${category} Subtotal</td>
+            <td style="font-weight: 600; color: #1e3a5f;">$${subtotal.toFixed(2)}</td>
+          </tr>`;
+      }
+
+      return html.replace(/<tbody>[\s\S]*?<\/tbody>/, `<tbody>${groupedTbody}</tbody>`);
+    }
+
     // Simulate modification for demo when API unavailable - MODIFIES existing HTML instead of regenerating
     function simulateModification(prompt) {
       const lowPrompt = prompt.toLowerCase();
@@ -13134,6 +13195,11 @@
       // Detect and apply QR code
       if (lowPrompt.includes('qr')) {
         modifiedHtml = injectQrCode(modifiedHtml);
+      }
+
+      // Detect and apply grouping by category
+      if (lowPrompt.includes('group') && (lowPrompt.includes('category') || lowPrompt.includes('subtotal'))) {
+        modifiedHtml = injectGroupByCategory(modifiedHtml);
       }
 
       // Detect and apply color changes
