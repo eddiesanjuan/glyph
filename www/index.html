@@ -2244,6 +2244,25 @@
       font-style: italic;
     }
 
+    .playground__hint--time-estimate {
+      margin-top: 4px;
+      font-style: normal;
+      color: var(--color-text-subtle);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .playground__hint--time-estimate.visible {
+      opacity: 1;
+    }
+
+    .playground__hint--time-estimate svg {
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
     .playground__preview-area {
       padding: 16px;
       background: var(--color-bg-elevated);
@@ -7799,7 +7818,14 @@
                 <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Make the header purple">Purple header <span class="playground__suggestion-duration">instant</span></button>
               </div>
-              <p class="playground__hint">Try something wild - the AI understands complex requests</p>
+              <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
+              <p class="playground__hint playground__hint--time-estimate" id="ai-time-estimate" style="display: none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                AI requests typically take 30-45 seconds
+              </p>
               <div class="playground__button-row">
                 <button class="playground__apply-btn" id="apply-btn">
                   Apply Changes
@@ -10446,9 +10472,42 @@
     // Initialize autocomplete
     createAutocompleteDropdown();
 
+    // AI Time Estimate - show when user types custom prompts
+    const aiTimeEstimate = document.getElementById('ai-time-estimate');
+    const playgroundHint = document.getElementById('playground-hint');
+
+    function updateTimeEstimateVisibility() {
+      const value = promptInput.value.trim();
+      const isCustomPrompt = value.length > 10 && !isInstantAction(value);
+
+      if (aiTimeEstimate) {
+        aiTimeEstimate.style.display = isCustomPrompt ? 'flex' : 'none';
+        if (isCustomPrompt) {
+          // Slight delay for smooth appearance
+          setTimeout(() => aiTimeEstimate.classList.add('visible'), 10);
+        } else {
+          aiTimeEstimate.classList.remove('visible');
+        }
+      }
+    }
+
+    // Check if a prompt matches one of the instant action quick suggestions
+    function isInstantAction(prompt) {
+      const instantPrompts = [
+        'Add a QR code in the corner for quick mobile payment',
+        'Add a diagonal watermark that says DRAFT across the page',
+        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
+        'Add a thank you message',
+        'Add a signature',
+        'Make the header purple'
+      ];
+      return instantPrompts.some(p => prompt.toLowerCase().includes(p.toLowerCase().substring(0, 20)));
+    }
+
     // Autocomplete event listeners
     promptInput.addEventListener('input', () => {
       showAutocomplete();
+      updateTimeEstimateVisibility();
     });
 
     promptInput.addEventListener('focus', () => {
@@ -10457,6 +10516,15 @@
 
     promptInput.addEventListener('blur', () => {
       setTimeout(() => hideAutocomplete(), 150);
+      // Hide time estimate when losing focus (but keep it if still has content)
+      setTimeout(() => {
+        if (!promptInput.value.trim()) {
+          if (aiTimeEstimate) {
+            aiTimeEstimate.classList.remove('visible');
+            aiTimeEstimate.style.display = 'none';
+          }
+        }
+      }, 200);
     });
 
     promptInput.addEventListener('keydown', (e) => {
@@ -12233,10 +12301,10 @@
         currentAbortController.abort();
       }, MODIFICATION_TIMEOUT_MS);
 
-      // FIX 2: Show warning at 45 seconds before timeout
+      // FIX 2: Show encouraging message at 45 seconds (complex requests take time)
       const warningTimeoutId = setTimeout(() => {
         if (isProcessingModification) {
-          showToast('Taking longer than expected. Try a simpler request for faster results.', 'warning', 8000);
+          showToast('Almost there! Complex changes take a bit longer to perfect.', 'info', 6000);
         }
       }, WARNING_TIMEOUT_MS);
 
@@ -12555,7 +12623,7 @@
           </svg>
           <div class="validation-toast__text">
             <span class="validation-toast__title">Quality check in progress</span>
-            <span class="validation-toast__message">Taking longer than expected... Your changes are applied.</span>
+            <span class="validation-toast__message">Running final validation... Your changes are applied.</span>
           </div>
         </div>
       `;
