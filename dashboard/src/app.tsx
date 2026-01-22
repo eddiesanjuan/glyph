@@ -78,11 +78,11 @@ const Icons = {
   ),
 }
 
-// Tier badge colors
+// Tier badge colors - matching landing page navy blue palette
 const tierColors: Record<string, string> = {
-  free: '#71717a',
-  pro: '#7C3AED',
-  scale: '#2563eb',
+  free: '#64748B',
+  pro: '#2563EB',
+  scale: '#1E3A5F',
   enterprise: '#059669',
 }
 
@@ -238,27 +238,36 @@ export function App() {
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'var(--error)'
     if (percentage >= 75) return 'var(--warning)'
-    return 'var(--glyph-purple)'
+    return 'var(--glyph-primary-bright)'
   }
 
   const maskedKey = apiKey ? `${apiKey.slice(0, 11)}${'*'.repeat(16)}` : ''
 
   return (
     <div class="dashboard">
+      {/* Floating Orb Background - matches landing page */}
+      <div class="gradient-mesh">
+        <div class="gradient-orb gradient-orb--1" />
+        <div class="gradient-orb gradient-orb--2" />
+      </div>
+
       {/* Header */}
       <header class="header">
         <div class="header-content">
-          <div class="logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#7C3AED"/>
-              <path d="M10 12H22M10 16H18M10 20H22" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          <a href="https://glyph.you" class="logo">
+            {/* G lettermark logo - matches landing page */}
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2C8.268 2 2 8.268 2 16C2 23.732 8.268 30 16 30C23.732 30 30 23.732 30 16V14H16V18H25.5C24.5 22.5 20.6 26 16 26C10.477 26 6 21.523 6 16C6 10.477 10.477 6 16 6C19.5 6 22.6 7.8 24.5 10.5L28 8C25.3 4.3 21 2 16 2Z" fill="#1E3A5F"/>
             </svg>
             <span class="logo-text">Glyph</span>
-          </div>
-          <a href="https://docs.glyph.you" target="_blank" class="docs-link">
-            {Icons.docs}
-            <span>Docs</span>
           </a>
+          <nav class="nav-links">
+            <a href="https://glyph.you" class="nav-link">Home</a>
+            <a href="https://docs.glyph.you" target="_blank" class="docs-link">
+              {Icons.docs}
+              <span>Docs</span>
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -596,7 +605,7 @@ export function App() {
 
       {/* Footer */}
       <footer class="footer">
-        <span>Glyph v0.1.0</span>
+        <span>Glyph v0.2.0</span>
         <span class="footer-sep">|</span>
         <a href="https://docs.glyph.you">Documentation</a>
         <span class="footer-sep">|</span>

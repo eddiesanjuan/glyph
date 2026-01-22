@@ -1,39 +1,49 @@
-/* Glyph Dashboard - Premium Dark Theme */
+/* Glyph Dashboard - Premium Dark Theme (Matches Landing Page) */
 
 :root {
-  /* Brand Colors */
-  --glyph-purple: #7C3AED;
-  --glyph-purple-light: #8B5CF6;
-  --glyph-purple-dark: #6D28D9;
-  --glyph-purple-glow: rgba(124, 58, 237, 0.15);
+  /* Brand Colors - Navy Blue (matching landing page) */
+  --glyph-primary: #1E3A5F;
+  --glyph-primary-bright: #2563EB;
+  --glyph-primary-dark: #172554;
+  --glyph-primary-glow: rgba(30, 58, 95, 0.25);
+  --glyph-primary-subtle: rgba(30, 58, 95, 0.1);
 
-  /* Neutrals */
-  --bg-primary: #0a0a0b;
-  --bg-secondary: #111113;
-  --bg-tertiary: #18181b;
-  --bg-elevated: #1f1f23;
-  --bg-hover: #27272a;
+  /* Accent - Teal (for variety) */
+  --glyph-accent: #14B8A6;
+  --glyph-accent-light: #2DD4BF;
 
-  /* Text */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #52525b;
+  /* Neutrals - Deep Navy Tones (matching landing page) */
+  --bg-primary: #0B1120;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1E293B;
+  --bg-elevated: #1E3A5F;
+  --bg-hover: #263548;
+  --bg-card: #1E293B;
+
+  /* Text - Light for dark backgrounds */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-muted: #475569;
 
   /* Borders */
-  --border-subtle: #27272a;
-  --border-default: #3f3f46;
+  --border-subtle: #1E293B;
+  --border-default: rgba(30, 58, 95, 0.3);
 
   /* Status */
-  --success: #22c55e;
-  --warning: #eab308;
-  --error: #ef4444;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
 
   /* Spacing */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-smooth: 0.2s ease;
 }
 
 * {
@@ -82,8 +92,51 @@ button:disabled {
 
 /* Focus states */
 :focus-visible {
-  outline: 2px solid var(--glyph-purple);
+  outline: 2px solid var(--glyph-primary-bright);
   outline-offset: 2px;
+}
+
+/* Gradient Orb Background */
+.gradient-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  will-change: transform;
+}
+
+.gradient-orb--1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #1E3A5F 0%, transparent 70%);
+  top: -200px;
+  left: -100px;
+  animation: floatOrb1 25s ease-in-out infinite;
+}
+
+.gradient-orb--2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #14B8A6 0%, transparent 70%);
+  top: 40%;
+  right: -150px;
+  opacity: 0.1;
+  animation: floatOrb2 30s ease-in-out infinite;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .gradient-orb {
+    animation: none;
+  }
 }
 
 /* Scrollbar */
@@ -127,8 +180,21 @@ button:disabled {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.15); }
-  50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.25); }
+  0%, 100% { box-shadow: 0 0 20px rgba(30, 58, 95, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(30, 58, 95, 0.25); }
+}
+
+/* Floating Orb Background - matches landing page */
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, 40px) scale(1.05); }
+  66% { transform: translate(-30px, 80px) scale(0.95); }
+}
+
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-50px, -60px) scale(1.08); }
+  66% { transform: translate(40px, 30px) scale(0.92); }
 }
 
 @keyframes successPop {
