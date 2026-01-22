@@ -2,29 +2,10 @@
 /* Purple accent: #7C3AED */
 
 :root {
-  /* Primary purple accent colors */
+  /* Primary purple accent colors - for dark mode (default) */
   --sl-color-accent-low: #2e1065;
   --sl-color-accent: #7c3aed;
   --sl-color-accent-high: #c4b5fd;
-
-  /* Text colors for LIGHT MODE - ensure dark text on white background */
-  --sl-color-text: #1e293b;
-  --sl-color-text-accent: #0f172a;
-
-  /* Gray scale for light mode - darker grays for text contrast */
-  --sl-color-white: #ffffff;
-  --sl-color-gray-1: #f8fafc;
-  --sl-color-gray-2: #e2e8f0;
-  --sl-color-gray-3: #94a3b8;
-  --sl-color-gray-4: #64748b;
-  --sl-color-gray-5: #475569;
-  --sl-color-gray-6: #1e293b;
-  --sl-color-black: #0f172a;
-
-  /* Backgrounds */
-  --sl-color-bg: #ffffff;
-  --sl-color-bg-nav: #f8fafc;
-  --sl-color-bg-sidebar: #f8fafc;
 
   /* Content width */
   --sl-content-width: 50rem;
@@ -35,116 +16,102 @@
 }
 
 /* ============================================
-   LIGHT MODE - Explicit Text Color Overrides
+   LIGHT MODE - CSS Variable Overrides
+   Starlight uses [data-theme='light'] selector
+   In light mode: low gray numbers = DARK text
+   ============================================ */
+:root[data-theme='light'] {
+  /* Purple accent adjusted for light backgrounds */
+  --sl-color-accent-low: #ede9fe;
+  --sl-color-accent: #7c3aed;
+  --sl-color-accent-high: #5b21b6;
+
+  /* Gray scale INVERTED for light mode (lower number = darker color for text) */
+  --sl-color-white: #0f172a;        /* Headings - must be very dark */
+  --sl-color-gray-1: #1e293b;       /* Emphasis text - dark */
+  --sl-color-gray-2: #334155;       /* Body text, taglines - dark for contrast */
+  --sl-color-gray-3: #475569;       /* Secondary text */
+  --sl-color-gray-4: #64748b;       /* Muted text */
+  --sl-color-gray-5: #cbd5e1;       /* Borders, dividers */
+  --sl-color-gray-6: #e2e8f0;       /* Light backgrounds */
+  --sl-color-gray-7: #f1f5f9;       /* Subtle backgrounds */
+  --sl-color-black: #ffffff;        /* Main background - white */
+
+  /* Text colors */
+  --sl-color-text: #334155;
+  --sl-color-text-accent: #7c3aed;
+
+  /* Backgrounds */
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #f8fafc;
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-bg-inline-code: #f1f5f9;
+  --sl-color-hairline: #e2e8f0;
+  --sl-color-hairline-light: #f1f5f9;
+}
+
+/* ============================================
+   LIGHT MODE - Element-specific overrides
+   These use [data-theme='light'] for consistency
    ============================================ */
 
-/* Force all text to be readable in light mode */
-:root:not([data-theme='dark']) body,
-:root:not([data-theme='dark']) main,
-:root:not([data-theme='dark']) article {
-  color: #1e293b;
-}
-
-:root:not([data-theme='dark']) h1,
-:root:not([data-theme='dark']) h2,
-:root:not([data-theme='dark']) h3,
-:root:not([data-theme='dark']) h4,
-:root:not([data-theme='dark']) h5,
-:root:not([data-theme='dark']) h6 {
-  color: #0f172a !important;
-}
-
-:root:not([data-theme='dark']) p,
-:root:not([data-theme='dark']) li,
-:root:not([data-theme='dark']) span:not(.sl-badge),
-:root:not([data-theme='dark']) td,
-:root:not([data-theme='dark']) th,
-:root:not([data-theme='dark']) label {
-  color: #1e293b;
-}
-
-/* Links in light mode */
-:root:not([data-theme='dark']) a:not([class]) {
-  color: #7c3aed;
-}
-
-:root:not([data-theme='dark']) a:not([class]):hover {
-  color: #6d28d9;
-}
-
-/* Muted text in light mode - still readable */
-:root:not([data-theme='dark']) .sl-markdown-content :where(p, li) {
-  color: #334155;
+/* Hero tagline - uses gray-2, now properly set in variables above */
+:root[data-theme='light'] .tagline {
+  color: #475569 !important;
 }
 
 /* Sidebar navigation in light mode */
-:root:not([data-theme='dark']) nav a,
-:root:not([data-theme='dark']) .sidebar-content a {
+:root[data-theme='light'] nav a,
+:root[data-theme='light'] .sidebar-content a {
   color: #475569;
 }
 
-:root:not([data-theme='dark']) nav a:hover,
-:root:not([data-theme='dark']) .sidebar-content a:hover {
+:root[data-theme='light'] nav a:hover,
+:root[data-theme='light'] .sidebar-content a:hover {
   color: #1e293b;
 }
 
-:root:not([data-theme='dark']) nav a[aria-current="page"],
-:root:not([data-theme='dark']) .sidebar-content a[aria-current="page"] {
+:root[data-theme='light'] nav a[aria-current="page"],
+:root[data-theme='light'] .sidebar-content a[aria-current="page"] {
   color: #7c3aed !important;
   font-weight: 600;
 }
 
-/* Tables in light mode */
-:root:not([data-theme='dark']) table {
-  border-color: #e2e8f0;
-}
-
-:root:not([data-theme='dark']) th {
-  background: #f8fafc;
-  color: #0f172a !important;
-  border-color: #e2e8f0;
-}
-
-:root:not([data-theme='dark']) td {
-  border-color: #e2e8f0;
-  color: #1e293b;
-}
-
-/* Code in light mode */
-:root:not([data-theme='dark']) code:not(pre code) {
-  background: #f1f5f9;
-  color: #6d28d9;
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-}
-
 /* Cards in light mode */
-:root:not([data-theme='dark']) .card,
-:root:not([data-theme='dark']) .sl-card,
-:root:not([data-theme='dark']) [class*="Card"] {
+:root[data-theme='light'] .card,
+:root[data-theme='light'] .sl-card,
+:root[data-theme='light'] [class*="Card"] {
   background: #ffffff;
   border-color: #e2e8f0;
   color: #1e293b;
 }
 
-:root:not([data-theme='dark']) .card h2,
-:root:not([data-theme='dark']) .card h3,
-:root:not([data-theme='dark']) .card p,
-:root:not([data-theme='dark']) .sl-card h2,
-:root:not([data-theme='dark']) .sl-card h3,
-:root:not([data-theme='dark']) .sl-card p {
+:root[data-theme='light'] .card h2,
+:root[data-theme='light'] .card h3,
+:root[data-theme='light'] .card p,
+:root[data-theme='light'] .sl-card h2,
+:root[data-theme='light'] .sl-card h3,
+:root[data-theme='light'] .sl-card p {
   color: #1e293b !important;
 }
 
 /* Asides in light mode */
-:root:not([data-theme='dark']) .starlight-aside {
+:root[data-theme='light'] .starlight-aside {
   background: #f8fafc;
   border-color: #e2e8f0;
 }
 
-:root:not([data-theme='dark']) .starlight-aside p,
-:root:not([data-theme='dark']) .starlight-aside span {
+:root[data-theme='light'] .starlight-aside p,
+:root[data-theme='light'] .starlight-aside span {
   color: #1e293b !important;
+}
+
+/* Code in light mode */
+:root[data-theme='light'] code:not(pre code) {
+  background: #f1f5f9;
+  color: #6d28d9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
 }
 
 /* ============================================
@@ -365,22 +332,22 @@
    ============================================ */
 
 /* Light mode: search modal should have light background */
-:root:not([data-theme='dark']) dialog[aria-label="Search"] {
+:root[data-theme='light'] dialog[aria-label="Search"] {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
-:root:not([data-theme='dark']) .dialog-frame {
+:root[data-theme='light'] .dialog-frame {
   background: #ffffff;
 }
 
-:root:not([data-theme='dark']) .search-container {
+:root[data-theme='light'] .search-container {
   background: #ffffff;
 }
 
 /* Pagefind UI light mode styling */
-:root:not([data-theme='dark']) .pagefind-ui {
+:root[data-theme='light'] .pagefind-ui {
   --pagefind-ui-scale: 1;
   --pagefind-ui-primary: #7c3aed;
   --pagefind-ui-text: #1e293b;
@@ -389,84 +356,84 @@
   --pagefind-ui-tag: #f1f5f9;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__search-input {
+:root[data-theme='light'] .pagefind-ui__search-input {
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
   color: #1e293b !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__search-input::placeholder {
+:root[data-theme='light'] .pagefind-ui__search-input::placeholder {
   color: #64748b !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__search-input:focus {
+:root[data-theme='light'] .pagefind-ui__search-input:focus {
   border-color: #7c3aed !important;
   outline: none;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__search-clear {
+:root[data-theme='light'] .pagefind-ui__search-clear {
   color: #64748b !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__search-clear:hover {
+:root[data-theme='light'] .pagefind-ui__search-clear:hover {
   color: #1e293b !important;
 }
 
 /* Search results in light mode */
-:root:not([data-theme='dark']) .pagefind-ui__results-area {
+:root[data-theme='light'] .pagefind-ui__results-area {
   background: #ffffff;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__result {
+:root[data-theme='light'] .pagefind-ui__result {
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__result:hover {
+:root[data-theme='light'] .pagefind-ui__result:hover {
   background: #f8fafc;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__result-link {
+:root[data-theme='light'] .pagefind-ui__result-link {
   color: #7c3aed !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__result-title {
+:root[data-theme='light'] .pagefind-ui__result-title {
   color: #0f172a !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__result-excerpt {
+:root[data-theme='light'] .pagefind-ui__result-excerpt {
   color: #475569 !important;
 }
 
-:root:not([data-theme='dark']) .pagefind-ui__message {
+:root[data-theme='light'] .pagefind-ui__message {
   color: #64748b !important;
 }
 
 /* Light mode: generic search inputs */
-:root:not([data-theme='dark']) .search-input,
-:root:not([data-theme='dark']) input[type="search"] {
+:root[data-theme='light'] .search-input,
+:root[data-theme='light'] input[type="search"] {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #1e293b;
 }
 
-:root:not([data-theme='dark']) .search-input::placeholder {
+:root[data-theme='light'] .search-input::placeholder {
   color: #64748b;
 }
 
 /* Cancel button in light mode (mobile) */
-:root:not([data-theme='dark']) dialog[aria-label="Search"] button[data-close-modal] {
+:root[data-theme='light'] dialog[aria-label="Search"] button[data-close-modal] {
   color: #64748b;
   background: transparent;
 }
 
-:root:not([data-theme='dark']) dialog[aria-label="Search"] button[data-close-modal]:hover {
+:root[data-theme='light'] dialog[aria-label="Search"] button[data-close-modal]:hover {
   color: #1e293b;
 }
 
 /* Pagefind drawer in light mode */
-:root:not([data-theme='dark']) .pagefind-ui__drawer {
+:root[data-theme='light'] .pagefind-ui__drawer {
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
 }
@@ -694,29 +661,28 @@
 
 /* ============================================
    HERO CTA BUTTONS - Fix invisible text
-   Issue: In light mode, primary button has same text/bg color
    ============================================ */
 
-/* Light mode: primary button needs white text on dark background */
-:root:not([data-theme='dark']) .sl-link-button.primary {
+/* Light mode: primary button needs white text on purple background */
+:root[data-theme='light'] .sl-link-button.primary {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #ffffff !important;
 }
 
-:root:not([data-theme='dark']) .sl-link-button.primary:hover {
+:root[data-theme='light'] .sl-link-button.primary:hover {
   background: #6d28d9;
   border-color: #6d28d9;
   color: #ffffff !important;
 }
 
 /* Light mode: secondary button needs dark text */
-:root:not([data-theme='dark']) .sl-link-button.secondary {
+:root[data-theme='light'] .sl-link-button.secondary {
   border-color: #e2e8f0;
   color: #1e293b !important;
 }
 
-:root:not([data-theme='dark']) .sl-link-button.secondary:hover {
+:root[data-theme='light'] .sl-link-button.secondary:hover {
   border-color: #cbd5e1;
   color: #0f172a !important;
 }
