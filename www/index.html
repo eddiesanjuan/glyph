@@ -9589,7 +9589,7 @@
         setTimeout(() => {
           if (!els.toast.classList.contains('visible')) {
             els.toast.style.display = 'none';
-            els.toast.setAttribute('aria-hidden', 'true');
+            els.toast.setAttribute('inert', ''); // Re-add inert to prevent focus when hidden
           }
         }, 300);
       }
@@ -13114,10 +13114,10 @@
 
     // Initialize on load
     document.addEventListener('DOMContentLoaded', () => {
+      // Regular toasts use aria-hidden
       const toastElements = [
         document.getElementById('glyph-toast'),
-        document.getElementById('session-warning-toast'),
-        document.getElementById('api-error-toast')
+        document.getElementById('session-warning-toast')
       ];
       toastElements.forEach(toast => {
         if (toast) {
@@ -13126,6 +13126,14 @@
           toast.setAttribute('aria-hidden', 'true');
         }
       });
+
+      // API error toast uses inert instead of aria-hidden for proper focus management
+      const apiErrorToast = document.getElementById('api-error-toast');
+      if (apiErrorToast) {
+        apiErrorToast.classList.remove('active', 'visible');
+        apiErrorToast.style.display = 'none';
+        apiErrorToast.setAttribute('inert', '');
+      }
 
       setupDemoModeBanner();
 
@@ -14413,15 +14421,16 @@
     </div>
   </div>
 
-  <!-- API Error Toast - HIDDEN BY DEFAULT (style attribute prevents FOUC) -->
-  <div class="api-error-toast" id="api-error-toast" style="display:none !important;" aria-hidden="true">
+  <!-- API Error Toast - HIDDEN BY DEFAULT -->
+  <!-- Uses 'inert' instead of 'aria-hidden' to prevent focus-related accessibility warnings -->
+  <div class="api-error-toast" id="api-error-toast" style="display:none !important;" inert role="alertdialog" aria-labelledby="api-error-title" aria-describedby="api-error-message">
     <div class="api-error-toast__header">
-      <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
       <span class="api-error-toast__title" id="api-error-title">Modification Failed</span>
-      <button class="api-error-toast__close" id="api-error-close">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button class="api-error-toast__close" id="api-error-close" aria-label="Close error message">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
