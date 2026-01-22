@@ -252,6 +252,16 @@ modify.post("/", async (c) => {
         return c.json(error, 400);
       }
 
+      // CRITICAL FIX: Clear stale validation results before starting new modification
+      // This prevents the "Quick Fix Available" modal from showing results from previous modifications
+      // The new validation will populate these fields after it completes in the background
+      if (isDevSession) {
+        updateDevSession(sessionId, {
+          validation_result: undefined,
+          suggested_fix_html: undefined,
+        });
+      }
+
       // Determine which template to use for AI modifications
       // The template HTML contains Mustache placeholders that AI must preserve
       //

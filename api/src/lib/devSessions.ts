@@ -125,10 +125,20 @@ export function updateDevSession(
     return null;
   }
 
+  // Create updated session with spread
   const updatedSession = {
     ...session,
     ...updates,
   };
+
+  // Handle explicit undefined values to clear fields
+  // This is needed because spread doesn't delete properties
+  if ('validation_result' in updates && updates.validation_result === undefined) {
+    delete updatedSession.validation_result;
+  }
+  if ('suggested_fix_html' in updates && updates.suggested_fix_html === undefined) {
+    delete updatedSession.suggested_fix_html;
+  }
 
   devSessions.set(sessionId, updatedSession);
   return updatedSession;
