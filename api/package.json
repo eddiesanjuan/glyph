@@ -1,6 +1,6 @@
 {
   "name": "glyph-api",
-  "version": "0.9.8",
+  "version": "0.10.0",
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
