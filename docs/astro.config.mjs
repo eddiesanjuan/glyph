@@ -30,8 +30,9 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'AI Integration',
+					label: 'Integrations',
 					items: [
+						{ label: 'Airtable', slug: 'integrations/airtable' },
 						{ label: 'MCP Server', slug: 'integrations/mcp-server' },
 					],
 				},
