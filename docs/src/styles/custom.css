@@ -361,9 +361,200 @@
 }
 
 /* ============================================
-   SEARCH - Dark Mode
+   SEARCH MODAL - Light Mode
    ============================================ */
 
+/* Light mode: search modal should have light background */
+:root:not([data-theme='dark']) dialog[aria-label="Search"] {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+:root:not([data-theme='dark']) .dialog-frame {
+  background: #ffffff;
+}
+
+:root:not([data-theme='dark']) .search-container {
+  background: #ffffff;
+}
+
+/* Pagefind UI light mode styling */
+:root:not([data-theme='dark']) .pagefind-ui {
+  --pagefind-ui-scale: 1;
+  --pagefind-ui-primary: #7c3aed;
+  --pagefind-ui-text: #1e293b;
+  --pagefind-ui-background: #ffffff;
+  --pagefind-ui-border: #e2e8f0;
+  --pagefind-ui-tag: #f1f5f9;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__search-input {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__search-input::placeholder {
+  color: #64748b !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__search-input:focus {
+  border-color: #7c3aed !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__search-clear {
+  color: #64748b !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__search-clear:hover {
+  color: #1e293b !important;
+}
+
+/* Search results in light mode */
+:root:not([data-theme='dark']) .pagefind-ui__results-area {
+  background: #ffffff;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__result {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__result:hover {
+  background: #f8fafc;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__result-link {
+  color: #7c3aed !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__result-title {
+  color: #0f172a !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__result-excerpt {
+  color: #475569 !important;
+}
+
+:root:not([data-theme='dark']) .pagefind-ui__message {
+  color: #64748b !important;
+}
+
+/* Light mode: generic search inputs */
+:root:not([data-theme='dark']) .search-input,
+:root:not([data-theme='dark']) input[type="search"] {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+:root:not([data-theme='dark']) .search-input::placeholder {
+  color: #64748b;
+}
+
+/* Cancel button in light mode (mobile) */
+:root:not([data-theme='dark']) dialog[aria-label="Search"] button[data-close-modal] {
+  color: #64748b;
+  background: transparent;
+}
+
+:root:not([data-theme='dark']) dialog[aria-label="Search"] button[data-close-modal]:hover {
+  color: #1e293b;
+}
+
+/* Pagefind drawer in light mode */
+:root:not([data-theme='dark']) .pagefind-ui__drawer {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ============================================
+   SEARCH MODAL - Dark Mode
+   ============================================ */
+
+/* Dark mode: search modal with dark background */
+:root[data-theme='dark'] dialog[aria-label="Search"] {
+  background: #1e293b;
+  border: 1px solid #334155;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='dark'] .dialog-frame {
+  background: #1e293b;
+}
+
+:root[data-theme='dark'] .search-container {
+  background: #1e293b;
+}
+
+/* Pagefind UI dark mode styling */
+:root[data-theme='dark'] .pagefind-ui {
+  --pagefind-ui-scale: 1;
+  --pagefind-ui-primary: #8b5cf6;
+  --pagefind-ui-text: #f1f5f9;
+  --pagefind-ui-background: #1e293b;
+  --pagefind-ui-border: #334155;
+  --pagefind-ui-tag: #334155;
+}
+
+:root[data-theme='dark'] .pagefind-ui__search-input {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__search-input::placeholder {
+  color: #64748b !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__search-input:focus {
+  border-color: #8b5cf6 !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+:root[data-theme='dark'] .pagefind-ui__search-clear {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__search-clear:hover {
+  color: #f1f5f9 !important;
+}
+
+/* Search results in dark mode */
+:root[data-theme='dark'] .pagefind-ui__results-area {
+  background: #1e293b;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result {
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result:hover {
+  background: #263548;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result-link {
+  color: #a78bfa !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result-title {
+  color: #f8fafc !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result-excerpt {
+  color: #cbd5e1 !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__message {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode: generic search inputs */
 :root[data-theme='dark'] .search-input,
 :root[data-theme='dark'] input[type="search"] {
   background: #1e293b;
@@ -373,6 +564,22 @@
 
 :root[data-theme='dark'] .search-input::placeholder {
   color: #64748b;
+}
+
+/* Cancel button in dark mode (mobile) */
+:root[data-theme='dark'] dialog[aria-label="Search"] button[data-close-modal] {
+  color: #94a3b8;
+  background: transparent;
+}
+
+:root[data-theme='dark'] dialog[aria-label="Search"] button[data-close-modal]:hover {
+  color: #f1f5f9;
+}
+
+/* Pagefind drawer in dark mode */
+:root[data-theme='dark'] .pagefind-ui__drawer {
+  background: #1e293b;
+  border-top: 1px solid #334155;
 }
 
 /* ============================================
