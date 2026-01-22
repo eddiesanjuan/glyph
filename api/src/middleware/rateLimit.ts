@@ -13,6 +13,7 @@ interface RateLimitConfig {
 
 // Tier-based rate limits (requests per minute)
 const TIER_LIMITS: Record<string, RateLimitConfig> = {
+  demo: { windowMs: 60000, maxRequests: 20 }, // 20/min for playground demo
   free: { windowMs: 60000, maxRequests: 10 }, // 10/min
   pro: { windowMs: 60000, maxRequests: 60 }, // 60/min
   scale: { windowMs: 60000, maxRequests: 120 }, // 120/min
@@ -21,6 +22,7 @@ const TIER_LIMITS: Record<string, RateLimitConfig> = {
 
 // Monthly PDF generation limits by tier
 const MONTHLY_LIMITS: Record<string, number> = {
+  demo: Infinity, // Unlimited for playground demo (in-memory sessions only)
   free: 100,
   pro: 1000,
   scale: 10000,
