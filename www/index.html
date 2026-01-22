@@ -1266,8 +1266,8 @@
       /* CRITICAL FIX: Preview container must be visible with proper dimensions
          Cycle 6 consolidated - flex centering, explicit visibility */
       .playground__preview {
-        min-height: 400px;
-        height: 400px;
+        min-height: 450px;
+        height: 450px;
         max-height: none;
         flex: 1;
         padding: 12px;
@@ -5547,6 +5547,12 @@
 
       /* Issue 2 Fix: Ensure preview area is visible without zoom toggle
          These rules must come after 768px rules to override them */
+      .playground__preview {
+        min-height: 450px;
+        height: 450px;
+        max-height: none;
+      }
+
       .playground__preview-frame-wrapper {
         width: 100%;
         max-width: 320px;
