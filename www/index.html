@@ -7952,6 +7952,10 @@
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Group items by category with subtotals">Group by category <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Make header text bold and larger">Bold header <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add today's date in the top right corner">Add date <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add a professional border around the document">Add border <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Add a thank you note at the bottom">Thank you note <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~45-60s</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
@@ -10638,15 +10642,31 @@
     }
 
     // Check if a prompt matches one of the instant action quick suggestions
-    // Only actions with pre-baked HTML transformations (watermark, QR, terms, grouping) are truly instant
+    // Only actions with pre-baked HTML transformations are truly instant
     function isInstantAction(prompt) {
-      const instantPrompts = [
-        'Add a QR code in the corner for quick mobile payment',
-        'Add a diagonal watermark that says DRAFT across the page',
-        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
-        'Group items by category with subtotals'
+      const lowPrompt = prompt.toLowerCase();
+
+      // Check for specific instant action patterns
+      const instantPatterns = [
+        // QR code
+        /qr\s*code/i,
+        // Watermark
+        /watermark/i,
+        // Payment terms
+        /payment\s*terms|net\s*\d+/i,
+        // Group by category
+        /group.*category|group.*subtotal/i,
+        // Bold header
+        /bold.*header|header.*bold/i,
+        // Add date
+        /add.*date|today.*date|date.*corner/i,
+        // Add border
+        /add.*border|border.*document/i,
+        // Thank you note
+        /thank\s*you.*note|thank.*note|add.*thank/i
       ];
-      return instantPrompts.some(p => prompt.toLowerCase().includes(p.toLowerCase().substring(0, 20)));
+
+      return instantPatterns.some(pattern => pattern.test(lowPrompt));
     }
 
     // Autocomplete event listeners
@@ -12451,6 +12471,26 @@
         return;
       }
 
+      // INSTANT ACTIONS: Check if this is an instant action that can be done locally
+      // These actions have pre-baked HTML transformations and don't need AI
+      if (isInstantAction(prompt)) {
+        console.log('[Glyph] Applying instant action locally:', prompt);
+
+        // Save current state to undo history before modification
+        saveToUndoHistory();
+
+        // Apply the instant transformation
+        simulateModification(prompt);
+
+        // Clear the prompt input
+        promptInput.value = '';
+
+        // Show success toast
+        showToast('Changes applied instantly!', 'success', 2000);
+
+        return; // Skip API call entirely
+      }
+
       // Capture previous HTML for diff highlighting
       const previousHtml = currentHtml;
 
@@ -13072,6 +13112,90 @@
       return html;
     }
 
+    // Make header text bold and larger - instant transformation
+    function injectBoldHeader(html) {
+      if (html.includes('glyph-bold-header-applied')) return html;
+      // Add a marker class and inject CSS to make headers bolder
+      const boldStyle = `
+        <style class="glyph-bold-header-applied">
+          h1, .invoice-title, .document-title, [class*="title"], [class*="header"] h1 {
+            font-weight: 900 !important;
+            font-size: 1.3em !important;
+            letter-spacing: -0.02em !important;
+          }
+          .company-name, [class*="company"] {
+            font-weight: 800 !important;
+            font-size: 1.15em !important;
+          }
+        </style>
+      `;
+      return html.replace('</head>', `${boldStyle}</head>`);
+    }
+
+    // Add today's date in top right corner - instant transformation
+    function injectDate(html) {
+      if (html.includes('glyph-date-badge')) return html;
+      const today = new Date();
+      const dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const dateStyle = `
+        position: fixed;
+        top: 20px;
+        right: 110px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-family: sans-serif;
+        font-size: 11px;
+        color: #475569;
+        z-index: 998;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      `.replace(/\n\s*/g, ' ');
+      const dateDiv = `<div class="glyph-date-badge" style="${dateStyle}">${dateStr}</div>`;
+      return html.replace('</body>', `${dateDiv}</body>`);
+    }
+
+    // Add professional border around document - instant transformation
+    function injectBorder(html) {
+      if (html.includes('glyph-document-border')) return html;
+      const borderStyle = `
+        <style class="glyph-document-border">
+          body {
+            border: 3px solid #1e3a5f !important;
+            border-radius: 8px !important;
+            margin: 16px !important;
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.15) !important;
+          }
+          @media print {
+            body {
+              border: 2px solid #1e3a5f !important;
+              margin: 12px !important;
+            }
+          }
+        </style>
+      `;
+      return html.replace('</head>', `${borderStyle}</head>`);
+    }
+
+    // Add thank you note at bottom - instant transformation
+    function injectThankYouNote(html) {
+      if (html.includes('glyph-thank-you-note')) return html;
+      const noteStyle = `
+        margin: 24px 20px;
+        padding: 20px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-radius: 12px;
+        border-left: 4px solid #22c55e;
+        font-family: sans-serif;
+        text-align: center;
+      `.replace(/\n\s*/g, ' ');
+      const noteDiv = `<div class="glyph-thank-you-note" style="${noteStyle}">
+        <div style="font-size: 16px; font-weight: 600; color: #166534; margin-bottom: 6px;">Thank You for Your Business!</div>
+        <div style="font-size: 12px; color: #15803d; line-height: 1.5;">We appreciate your trust in our services. Please don't hesitate to reach out if you have any questions.</div>
+      </div>`;
+      return html.replace('</body>', `${noteDiv}</body>`);
+    }
+
     // Extract terms text from prompt
     function extractTermsText(prompt) {
       const lower = prompt.toLowerCase();
@@ -13200,6 +13324,26 @@
       // Detect and apply grouping by category
       if (lowPrompt.includes('group') && (lowPrompt.includes('category') || lowPrompt.includes('subtotal'))) {
         modifiedHtml = injectGroupByCategory(modifiedHtml);
+      }
+
+      // Detect and apply bold header
+      if (lowPrompt.includes('bold') && (lowPrompt.includes('header') || lowPrompt.includes('title'))) {
+        modifiedHtml = injectBoldHeader(modifiedHtml);
+      }
+
+      // Detect and apply date badge
+      if (lowPrompt.includes('date') && (lowPrompt.includes('add') || lowPrompt.includes('today'))) {
+        modifiedHtml = injectDate(modifiedHtml);
+      }
+
+      // Detect and apply border
+      if (lowPrompt.includes('border')) {
+        modifiedHtml = injectBorder(modifiedHtml);
+      }
+
+      // Detect and apply thank you note
+      if (lowPrompt.includes('thank') && (lowPrompt.includes('you') || lowPrompt.includes('note'))) {
+        modifiedHtml = injectThankYouNote(modifiedHtml);
       }
 
       // Detect and apply color changes
