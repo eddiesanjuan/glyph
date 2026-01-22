@@ -9633,21 +9633,31 @@
 
       // Set error message - make it user-friendly with progressive guidance
       let userMessage = '';
+      const lowerMsg = errorMessage.toLowerCase();
 
-      if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+      if (lowerMsg.includes('network') || lowerMsg.includes('fetch') || lowerMsg.includes('failed to fetch')) {
         userMessage = 'Connection issue. Check your internet and click Retry.';
-      } else if (errorMessage.includes('timeout') || errorMessage.includes('took too long')) {
+      } else if (lowerMsg.includes('timeout') || lowerMsg.includes('took too long')) {
         if (consecutiveFailures >= 2) {
           userMessage = 'Request timed out again. Try a simpler prompt like "Make the header blue" or "Add bold text".';
         } else {
           userMessage = 'Request timed out (60s limit). Click Retry or try a simpler modification.';
         }
-      } else if (errorMessage.includes('session') || errorMessage.includes('expired')) {
+      } else if (lowerMsg.includes('session') || lowerMsg.includes('expired')) {
         userMessage = 'Session expired. Click Retry to start fresh.';
-      } else if (errorMessage.includes('rate') || errorMessage.includes('429')) {
+      } else if (lowerMsg.includes('rate') || lowerMsg.includes('429')) {
         userMessage = 'Too many requests. Wait 10 seconds, then click Retry.';
-      } else if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+      } else if (lowerMsg.includes('500') || lowerMsg.includes('502') || lowerMsg.includes('503')) {
         userMessage = 'Server is busy. Click Retry in a moment.';
+      } else if (lowerMsg.includes('cannot delete') || lowerMsg.includes('would remove content') || lowerMsg.includes('destructive')) {
+        // Guardrail: Content deletion blocked
+        userMessage = 'This request would remove content. Try styling changes like colors, fonts, or layout instead.';
+      } else if (lowerMsg.includes('cannot modify protected') || lowerMsg.includes('protected field') || lowerMsg.includes('protected region')) {
+        // Guardrail: Protected fields
+        userMessage = 'Some fields are protected. Try adding new elements or changing existing styles.';
+      } else if (lowerMsg.includes('guardrail') || lowerMsg.includes('blocked') || lowerMsg.includes('refused') || lowerMsg.includes('cannot')) {
+        // Generic guardrail message - show the actual reason
+        userMessage = errorMessage + ' Try a different approach.';
       } else {
         if (consecutiveFailures >= 2) {
           userMessage = 'Try a simpler request. Example: "Change the font to Arial" or "Make text larger".';
@@ -11865,10 +11875,11 @@
 
     // Get context-aware status message based on elapsed time
     function getTimeAwareMessage(elapsedSeconds) {
-      if (elapsedSeconds < 15) return 'Analyzing your request...';
-      if (elapsedSeconds < 30) return 'Generating modifications...';
-      if (elapsedSeconds < 45) return 'Applying changes...';
-      if (elapsedSeconds < 60) return 'Almost there...';
+      if (elapsedSeconds < 10) return 'Analyzing your request (~30-45s total)...';
+      if (elapsedSeconds < 20) return 'Generating modifications...';
+      if (elapsedSeconds < 35) return 'Applying changes...';
+      if (elapsedSeconds < 50) return 'Almost there...';
+      if (elapsedSeconds < 60) return 'Finishing up...';
       return 'This one\'s complex - hang tight!';
     }
 
@@ -11985,9 +11996,9 @@
           }
         }, 1000);
 
-        // Initial message
+        // Initial message with time estimate for AI requests
         if (loadingText) {
-          loadingText.textContent = 'Analyzing your request... (0s)';
+          loadingText.textContent = 'AI requests typically take 30-45 seconds. Analyzing... (0s)';
         }
 
         // Animate progress with logarithmic curve for 60 second operations
