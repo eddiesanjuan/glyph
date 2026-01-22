@@ -7842,12 +7842,12 @@
                 ></textarea>
               </div>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion" data-prompt="Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography">Stripe styling <span class="playground__suggestion-duration">~30s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a thank you message">Thank you <span class="playground__suggestion-duration">~30s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~30s</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
               <p class="playground__hint playground__hint--time-estimate" id="ai-time-estimate" style="display: none;">
@@ -10534,14 +10534,12 @@
     }
 
     // Check if a prompt matches one of the instant action quick suggestions
+    // Only actions with pre-baked HTML transformations (watermark, QR, terms) are truly instant
     function isInstantAction(prompt) {
       const instantPrompts = [
-        'Apply Stripe-style design: clean minimalist layout with subtle shadows, rounded corners, and professional typography',
         'Add a QR code in the corner for quick mobile payment',
         'Add a diagonal watermark that says DRAFT across the page',
-        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days',
-        'Add a thank you message',
-        'Add a signature'
+        'Add payment terms: Net 30 with 2% early payment discount if paid within 10 days'
       ];
       return instantPrompts.some(p => prompt.toLowerCase().includes(p.toLowerCase().substring(0, 20)));
     }
