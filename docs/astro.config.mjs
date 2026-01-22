@@ -30,6 +30,12 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'AI Integration',
+					items: [
+						{ label: 'MCP Server', slug: 'integrations/mcp-server' },
+					],
+				},
+				{
 					label: 'API Reference',
 					items: [
 						{ label: 'Overview', slug: 'api/overview' },
