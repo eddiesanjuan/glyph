@@ -1,8 +1,32 @@
-# User Decisions Log
+# User Decisions & Vision
 
-**THIS FILE IS SACRED. The audit system MUST read and respect these decisions.**
+**THIS FILE IS SACRED. Every audit cycle MUST read and embody this vision.**
 
-These are explicit decisions made by the user (Eddie) that should NEVER be reversed by automated audits or improvement cycles. If you think one of these should change, ASK THE USER FIRST.
+---
+
+## THE VISION (This Trumps Everything)
+
+> **"Every app that generates a PDF uses Glyph. Not because they have to, but because nothing else comes close."**
+
+Glyph must be so good that:
+- **Developers are addicted to it** - they feel annoyed using anything else
+- **It barely needs advertising** - word of mouth because it's extraordinary
+- **The DX is flawless** - 2 lines of code, everything just works
+- **Edge cases are handled** - pressure-tested to perfection
+- **It feels like magic** - natural language actually works
+
+### The Addiction Test
+
+Every audit cycle should ask: **"Would a developer who tried this ONCE want to use it for everything?"**
+
+If the answer isn't an emphatic YES, we have work to do.
+
+### How We Achieve This
+
+1. **Test as a real developer** - Actually integrate into test projects, not just click around
+2. **Pressure test edge cases** - Break it, then fix what broke
+3. **Obsess over DX** - Every friction point is a failure
+4. **Make the impossible easy** - Complex document customization in plain English
 
 ---
 
@@ -10,49 +34,91 @@ These are explicit decisions made by the user (Eddie) that should NEVER be rever
 
 ### DO NOT ADD
 
-| Item | Reason | Date | Context |
-|------|--------|------|---------|
-| **Stripe styling button** | Takes 45-60s, times out, "nobody cares about making PDFs look like Stripe invoices" | 2026-01-21 | Commit 6c0079b |
-| **Confetti animation** | User explicitly dislikes it | 2026-01-21 | Commit aa8b769 |
-| **Time estimates that lie** | If AI takes 55s, don't say 30s | 2026-01-22 | Cycle 5 |
+| Item | Reason | Date |
+|------|--------|------|
+| Stripe styling button | Slow (45-60s), times out, doesn't demonstrate real capability | 2026-01-21 |
+| Confetti animation | Feels gimmicky, not professional | 2026-01-21 |
+| Dishonest time estimates | Trust is everything. If it takes 55s, say 55s. | 2026-01-22 |
 
 ### MUST KEEP
 
-| Item | Reason | Date |
-|------|--------|------|
-| **Instant quick actions** | Watermark, QR code work instantly - these demonstrate value | 2026-01-21 |
-| **"Group items by category"** | Hero should show this, not Stripe styling | 2026-01-21 |
-| **Honest time labels** | ~45-60s for AI operations | 2026-01-22 |
+| Item | Reason |
+|------|--------|
+| Instant quick actions | Watermark, QR code, grouping - demonstrate magic instantly |
+| Honest labels | Build trust through transparency |
+| Self-check validation | AI mistakes must be caught automatically |
 
-### FOCUS AREAS
+---
 
-| Priority | Item | Reason |
-|----------|------|--------|
-| **P0** | AI response speed | 55s is the blocker. Streaming or caching needed. |
-| **P1** | Visual consistency | All properties must look like same product |
-| **P2** | Mobile UX | Preview must be usable at 375px |
+## Current Focus Areas
+
+These are tactical priorities, but THE VISION always comes first.
+
+| Priority | Area | Why |
+|----------|------|-----|
+| P0 | Developer Experience | Integration must feel effortless |
+| P1 | Edge Case Handling | Product must never break embarrassingly |
+| P2 | Performance | Fast enough that speed isn't a thought |
+
+---
+
+## The Real Test: Developer Integration Scenarios
+
+Audit cycles should TEST these scenarios, not just check if pages load:
+
+### Scenario 1: Fresh Integration
+```
+A developer finds Glyph. Can they:
+1. Understand what it does in 10 seconds?
+2. Get a working demo in under 5 minutes?
+3. Integrate into their app in under 30 minutes?
+4. Customize their first template without reading docs?
+```
+
+### Scenario 2: Real-World Usage
+```
+A developer is using Glyph in production. Does it:
+1. Handle unexpected data gracefully?
+2. Provide clear error messages when something fails?
+3. Never corrupt the document?
+4. Work consistently across all their use cases?
+```
+
+### Scenario 3: AI Reliability
+```
+A user makes an AI modification request. Does it:
+1. Understand what they actually meant?
+2. Apply changes to the right region?
+3. Never break the document layout?
+4. Recover gracefully if something goes wrong?
+```
+
+### Scenario 4: Edge Cases
+```
+What happens when:
+1. Data is missing fields?
+2. Text is extremely long?
+3. User makes impossible requests?
+4. Multiple rapid requests in sequence?
+5. Session expires mid-edit?
+```
 
 ---
 
 ## How to Use This File
 
-**Before proposing ANY feature addition:**
-1. Check the "DO NOT ADD" list
-2. If it's on the list, DO NOT PROPOSE IT
-3. If you think the decision should be reconsidered, ASK THE USER
-
-**Before removing ANY feature:**
-1. Check the "MUST KEEP" list
-2. If it's on the list, DO NOT REMOVE IT
-
-**When prioritizing work:**
-1. Check the "FOCUS AREAS" list
-2. P0 items come before P1, P1 before P2
+1. **Start every audit by reading THE VISION section**
+2. **Ask the Addiction Test question**
+3. **Test actual developer scenarios, not just surfaces**
+4. **Respect DO NOT ADD / MUST KEEP lists**
+5. **Remember: tactical fixes serve the vision, not the other way around**
 
 ---
 
 ## Change History
 
-| Date | Change | By |
-|------|--------|-----|
-| 2026-01-22 | Created file after Stripe/confetti were wrongly re-added | Cycle 6 |
+| Date | Change |
+|------|--------|
+| 2026-01-22 | Elevated vision to primary position, added integration scenarios |
+| 2026-01-22 | Created file after Stripe/confetti regressions |
+
