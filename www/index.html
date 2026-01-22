@@ -1196,6 +1196,18 @@
         padding: 0 12px;
       }
 
+      /* Hero title: prevent cropping on very small screens */
+      .hero__title {
+        font-size: 32px;
+        line-height: 1.15;
+        margin-bottom: 16px;
+      }
+
+      .hero__subtitle {
+        font-size: 15px;
+        margin-bottom: 24px;
+      }
+
       /* Make playground body stack vertically with proper heights */
       .playground__body {
         grid-template-columns: 1fr;
@@ -5514,6 +5526,14 @@
     /* NOTE: 480px preview rules removed - they were overriding the more specific
        375px rules. The 375px block at ~line 1192 now controls all small mobile
        preview sizing. See Cycle P2 mobile preview visibility fix. */
+
+    /* 375px hero title override - must come after 768px rule that sets 40px */
+    @media (max-width: 375px) {
+      .hero__title {
+        font-size: 32px;
+        line-height: 1.15;
+      }
+    }
 
     /* ============================================
        Utility Classes
