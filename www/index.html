@@ -53,6 +53,9 @@
   <!-- Favicon - G lettermark -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
+  <!-- Confetti for first win celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
   <style>
     /* ============================================
        CSS Variables & Reset
@@ -9939,6 +9942,7 @@
 
     // ============================================
     // Hero Command Click Handler - Instant Demo Magic
+    // Clicking the hero command scrolls to playground AND executes it
     // ============================================
     const demoCommand = document.querySelector('.demo-command');
     if (demoCommand) {
@@ -9963,7 +9967,7 @@
         if (playgroundSection) {
           playgroundSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-          // Wait for scroll to complete, then fill input and focus
+          // Wait for scroll to complete, then fill input and EXECUTE the command
           setTimeout(() => {
             const promptInput = document.getElementById('prompt-input');
             if (promptInput) {
@@ -9973,12 +9977,21 @@
               // Trigger input event to update any autocomplete UI
               promptInput.dispatchEvent(new Event('input', { bubbles: true }));
 
-              // Flash the input to draw attention
+              // Flash the input briefly to show what's being executed
               promptInput.style.transition = 'box-shadow 0.3s ease';
               promptInput.style.boxShadow = '0 0 0 3px rgba(30, 58, 95, 0.3)';
               setTimeout(() => {
                 promptInput.style.boxShadow = '';
-              }, 600);
+              }, 400);
+
+              // Execute the command automatically after a brief moment
+              // This gives users a split second to see what's about to run
+              setTimeout(() => {
+                if (typeof applyModifications === 'function' && !isProcessingModification) {
+                  console.log('[Glyph] Hero click: executing command -', fullPrompt);
+                  applyModifications(fullPrompt);
+                }
+              }, 200);
             }
           }, 600);
         }
@@ -11555,10 +11568,64 @@
       }
     }
 
-    // Confetti removed - Eddie didn't like it
-    // Define as no-op to prevent ReferenceError when called from showSuccessCta
+    // ============================================
+    // First Win Celebration - The Addiction Hook!
+    // Confetti + special message on first successful modification
+    // ============================================
+    const FIRST_WIN_KEY = 'glyph_first_win';
+
+    function isFirstWin() {
+      try {
+        return !localStorage.getItem(FIRST_WIN_KEY);
+      } catch (e) {
+        return false; // Private browsing - skip celebration
+      }
+    }
+
+    function markFirstWinComplete() {
+      try {
+        localStorage.setItem(FIRST_WIN_KEY, 'true');
+      } catch (e) {
+        // Private browsing - ignore
+      }
+    }
+
     function celebrateFirstModification() {
-      // Intentionally empty - celebration was removed
+      if (!isFirstWin()) return;
+
+      // Mark as complete so we don't spam confetti
+      markFirstWinComplete();
+
+      // Fire confetti from center-bottom
+      if (typeof confetti === 'function') {
+        // Initial burst
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { x: 0.5, y: 0.9 },
+          colors: ['#22C55E', '#2563EB', '#F59E0B', '#EC4899', '#8B5CF6']
+        });
+
+        // Followed by side cannons
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.8 },
+            colors: ['#22C55E', '#2563EB', '#F59E0B']
+          });
+          confetti({
+            particleCount: 50,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.8 },
+            colors: ['#22C55E', '#2563EB', '#F59E0B']
+          });
+        }, 150);
+      }
+
+      console.log('[Glyph] First win celebrated!');
     }
 
     // ============================================
@@ -11569,6 +11636,9 @@
     let modificationSuccessToastTimeout = null;
 
     function showModificationSuccessToast(elapsed) {
+      // Check if this is the user's first win BEFORE we update localStorage
+      const isFirst = isFirstWin();
+
       // Create toast element if it doesn't exist
       if (!modificationSuccessToastElement) {
         modificationSuccessToastElement = document.createElement('div');
@@ -11585,10 +11655,18 @@
         document.body.appendChild(modificationSuccessToastElement);
       }
 
-      // Update detail text with elapsed time
+      // Update toast content - special message for first win
+      const titleEl = modificationSuccessToastElement.querySelector('.modification-success-toast__title');
       const detailEl = modificationSuccessToastElement.querySelector('.modification-success-toast__detail');
-      if (detailEl) {
-        detailEl.textContent = `Completed in ${elapsed}s`;
+
+      if (isFirst) {
+        if (titleEl) titleEl.textContent = 'You just customized your first PDF!';
+        if (detailEl) detailEl.textContent = 'That was all you. Try another change!';
+        // Fire confetti for first win
+        celebrateFirstModification();
+      } else {
+        if (titleEl) titleEl.textContent = 'Changes applied successfully';
+        if (detailEl) detailEl.textContent = `Completed in ${elapsed}s`;
       }
 
       // Clear any existing timeout
@@ -11601,10 +11679,11 @@
         modificationSuccessToastElement.classList.add('visible');
       });
 
-      // Auto-hide after 4 seconds
+      // Auto-hide after 4 seconds (5 seconds for first win to enjoy the moment)
+      const hideDelay = isFirst ? 5000 : 4000;
       modificationSuccessToastTimeout = setTimeout(() => {
         modificationSuccessToastElement.classList.remove('visible');
-      }, 4000);
+      }, hideDelay);
 
       // Auto-scroll to preview on mobile after success
       if (window.innerWidth <= 480) {
