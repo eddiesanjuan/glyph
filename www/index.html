@@ -5529,9 +5529,45 @@
 
     /* 375px hero title override - must come after 768px rule that sets 40px */
     @media (max-width: 375px) {
+      /* Issue 1 Fix: Allow hero to compress so headline stays visible */
+      .hero {
+        min-height: auto;
+        padding-top: 100px;
+        padding-bottom: 40px;
+      }
+
       .hero__title {
         font-size: 32px;
         line-height: 1.15;
+      }
+
+      /* Issue 1 Fix: Limit demo preview height to keep headline above fold */
+      .demo-preview {
+        max-height: 350px;
+        aspect-ratio: 8.5 / 9;
+      }
+
+      /* Issue 2 Fix: Ensure preview area is visible without zoom toggle
+         These rules must come after 768px rules to override them */
+      .playground__preview-frame-wrapper {
+        width: 100%;
+        max-width: 320px;
+        height: 414px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .playground__preview-frame-wrapper iframe {
+        width: 850px;
+        height: 1100px;
+        transform: scale(0.376);
+        transform-origin: top left;
+        border: none;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
     }
 
