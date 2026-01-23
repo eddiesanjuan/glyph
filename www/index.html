@@ -9956,9 +9956,9 @@
         userMessage = 'Connection issue. Check your internet and click Retry.';
       } else if (lowerMsg.includes('timeout') || lowerMsg.includes('took too long')) {
         if (consecutiveFailures >= 2) {
-          userMessage = 'Request timed out again. Try a simpler prompt like "Make the header blue" or "Add bold text".';
+          userMessage = 'Complex requests need more processing time. Try specific instructions like "Make the header blue" or "Add a border to the table". Your document is unchanged.';
         } else {
-          userMessage = 'Request timed out (60s limit). Click Retry or try a simpler modification.';
+          userMessage = 'This request was too complex to complete in time. Try a more specific instruction - the AI works best with clear, focused changes. Your document is safe.';
         }
       } else if (lowerMsg.includes('session') || lowerMsg.includes('expired')) {
         userMessage = 'Session expired. Click Retry to start fresh.';
