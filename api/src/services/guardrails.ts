@@ -409,12 +409,35 @@ export function validateModification(
   violations.push(...unauthorizedSections);
 
   // 1. Check all data placeholders are preserved
+  // NOTE: This is a SOFT check - we warn about missing placeholders but don't hard-block
+  // unless they are CRITICAL financial fields. Users legitimately want to remove fields sometimes.
   const originalPlaceholders = extractPlaceholders(originalHtml);
   const modifiedPlaceholders = extractPlaceholders(modifiedHtml);
 
+  // Critical fields that MUST be preserved - tampering with these is always blocked
+  const criticalFields = [
+    'totals.grand', 'totals.subtotal', 'totals.total', 'totals.tax',
+    'lineItems.total', 'lineItems.amount', 'lineItems.price', 'lineItems.quantity',
+    'meta.quoteNumber', 'meta.invoiceNumber', 'company.name'
+  ];
+
   Array.from(originalPlaceholders).forEach((placeholder) => {
     if (!modifiedPlaceholders.has(placeholder)) {
-      violations.push(`Missing data placeholder: ${placeholder}`);
+      // Extract the field name from {{fieldName}} or {{object.property}}
+      const fieldMatch = placeholder.match(/\{\{([^}]+)\}\}/);
+      const fieldName = fieldMatch ? fieldMatch[1].trim() : '';
+
+      // Check if this is a critical field that must be preserved
+      const isCritical = criticalFields.some(critical =>
+        fieldName === critical || fieldName.endsWith(`.${critical.split('.').pop()}`)
+      );
+
+      if (isCritical) {
+        violations.push(`Missing critical data placeholder: ${placeholder}`);
+      } else {
+        // Log but don't block - user may have intentionally removed this field
+        console.log(`[Guardrails] Non-critical placeholder removed: ${placeholder} - allowing modification`);
+      }
     }
   });
 

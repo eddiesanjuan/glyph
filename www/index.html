@@ -803,21 +803,21 @@
 
     /* Grouping Effect - Shows items grouped by category */
     .demo-preview--grouping .demo-doc-header {
-      border-color: #635BFF !important;
+      border-color: #0D9488 !important;
     }
     .demo-preview--grouping .demo-table-row:first-child {
-      background: #f0f9ff !important;
+      background: #f0fdfa !important;
       font-weight: 600;
     }
     .demo-preview--grouping .demo-table-row:nth-child(3) {
-      background: #fef3c7 !important;
+      background: #ccfbf1 !important;
       font-weight: 600;
     }
     .demo-grouping-badge {
       position: absolute;
       top: 16px;
       right: 16px;
-      background: linear-gradient(135deg, #635BFF 0%, #8B5CF6 100%);
+      background: linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
       color: white;
       padding: 4px 10px;
       border-radius: 12px;
@@ -10077,7 +10077,7 @@
     const heroDemo = document.getElementById('hero-demo');
     const commands = [
       { text: 'Add a diagonal DRAFT watermark', color: '#1E3A5F', effect: 'watermark' },
-      { text: 'Group items by category with subtotals', color: '#635BFF', effect: 'grouping' },
+      { text: 'Group items by category with subtotals', color: '#0D9488', effect: 'grouping' },
       { text: 'Add a QR code for instant payment', color: '#1E3A5F', effect: 'qrcode' },
       { text: 'Add payment terms: Net 30', color: '#22C55E', effect: 'terms' },
       { text: 'Add a signature line with date', color: '#F97316', effect: 'signature' }
@@ -10098,6 +10098,8 @@
     // Clear all effects
     function clearAllEffects() {
       heroDemo.classList.remove('demo-preview--grouping');
+      // Reset accent color to default navy
+      heroDemo.style.setProperty('--demo-accent', '#1E3A5F');
       Object.values(effectElements).flat().forEach(el => {
         if (el) el.classList.remove('demo-effect--active');
       });
