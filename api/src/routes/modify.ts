@@ -349,8 +349,8 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         console.warn("[Security] Applied HTML sanitization for potential script injection");
       }
 
-      // CRITICAL: Check for content loss / document corruption BEFORE returning
-      // This catches cases where AI deleted most content or replaced with explanatory text
+      // CRITICAL: Check for content loss / document corruption / unprofessional content BEFORE returning
+      // This catches cases where AI deleted most content, replaced with explanatory text, or added gimmicky elements
       const guardrailResult = validateGuardrails(templateToModify, modifiedTemplateHtml);
       if (!guardrailResult.valid) {
         const contentLossViolation = guardrailResult.violations.find(v =>
@@ -365,6 +365,32 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           const error: ApiError = {
             error: "This type of modification cannot be applied. The AI attempted to remove document content which is not allowed. Please try a styling or layout change instead.",
             code: "CONTENT_LOSS_BLOCKED",
+          };
+          return c.json(error, 400);
+        }
+
+        // CRITICAL: Block unprofessional/gimmicky content that degrades document quality
+        // This prevents AI from adding celebration banners, confetti, sparkles, etc.
+        const unprofessionalViolation = guardrailResult.violations.find(v =>
+          v.includes('Unprofessional content') ||
+          v.includes('Celebration') ||
+          v.includes('Confetti') ||
+          v.includes('Gimmicky animation') ||
+          v.includes('Sparkle') ||
+          v.includes('Fireworks') ||
+          v.includes('Rainbow') ||
+          v.includes('Marquee') ||
+          v.includes('Blink') ||
+          v.includes('Comic Sans') ||
+          v.includes('Papyrus')
+        );
+
+        if (unprofessionalViolation) {
+          console.error(`[Security] Unprofessional content blocked: ${unprofessionalViolation}`);
+
+          const error: ApiError = {
+            error: "This modification would add unprofessional elements to your document. Glyph maintains professional document standards - please try a different styling approach.",
+            code: "UNPROFESSIONAL_CONTENT_BLOCKED",
           };
           return c.json(error, 400);
         }

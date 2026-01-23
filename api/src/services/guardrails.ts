@@ -215,27 +215,63 @@ function findExternalUrls(html: string): string[] {
 /**
  * Check for unprofessional/gimmicky content that degrades document quality
  * This catches AI modifications that add tacky elements to professional documents
+ *
+ * CRITICAL: This is a key guardrail to maintain Glyph's professional standards.
+ * Any AI-generated content that makes documents look unprofessional MUST be blocked.
  */
 function findUnprofessionalContent(html: string): string[] {
   const violations: string[] = [];
   const lowerHtml = html.toLowerCase();
 
   // Patterns that indicate tacky/unprofessional content
+  // Each pattern is designed to catch common AI "creative" outputs that hurt document quality
   const unprofessionalPatterns = [
+    // Celebration/party elements - VERY common AI mistake
     { pattern: /celebration\s*time/i, reason: "Celebration banner detected" },
-    { pattern: /🎉|🎊|🎈|🥳|🎆|🎇/g, reason: "Celebration emojis detected" },
+    { pattern: /let'?s?\s*celebrate/i, reason: "Celebration text detected" },
+    { pattern: /party\s*time/i, reason: "Party text detected" },
+    { pattern: /woohoo|yay!|hurray|hooray/i, reason: "Celebratory exclamations detected" },
+    { pattern: /congratulations?\s*(!|banner|header)/i, reason: "Congratulations banner detected" },
+
+    // Celebration emojis - documents should NOT have these
+    { pattern: /🎉|🎊|🎈|🥳|🎆|🎇|🎁|🎀|🪅|🎏|🎐|🎑|🎠|🎡|🎢|🎪/g, reason: "Celebration emojis detected" },
+    { pattern: /🥂|🍾|🎂|🧁|🍰/g, reason: "Party emojis detected" },
+    { pattern: /🏆|🥇|🥈|🥉|🏅|🎖️|🎗️/g, reason: "Award emojis detected" },
+
+    // Confetti and sparkle effects
     { pattern: /confetti/i, reason: "Confetti element detected" },
     { pattern: /party\s*mode/i, reason: "Party mode element detected" },
     { pattern: /fireworks?/i, reason: "Fireworks element detected" },
-    { pattern: /sparkle|✨|⭐|🌟/gi, reason: "Sparkle/star decorations detected" },
-    { pattern: /@keyframes\s*(bounce|wiggle|pulse|shake|spin|rotate|flash|blink)/i, reason: "Gimmicky animation detected" },
-    { pattern: /animation:\s*[^;]*(bounce|wiggle|shake|spin|flash|blink)/i, reason: "Gimmicky animation style detected" },
+    { pattern: /sparkle|✨|⭐|🌟|💫|⚡|✴️|✳️|❇️|🌠/gi, reason: "Sparkle/star decorations detected" },
+    { pattern: /glitter/i, reason: "Glitter effect detected" },
+
+    // Gimmicky animations that are inappropriate for documents
+    { pattern: /@keyframes\s*(bounce|wiggle|pulse|shake|spin|rotate|flash|blink|tada|jello|heartbeat|swing|rubberband)/i, reason: "Gimmicky animation detected" },
+    { pattern: /animation:\s*[^;]*(bounce|wiggle|shake|spin|flash|blink|tada|jello|heartbeat|swing|rubberband|wobble)/i, reason: "Gimmicky animation style detected" },
+    { pattern: /animation:\s*[^;]*infinite/i, reason: "Infinite animation detected" },
+    { pattern: /transform:\s*[^;]*rotate\([^0)]/i, reason: "Rotation transform detected" },
+
+    // Visual gimmicks
     { pattern: /rainbow|gradient.*rainbow/i, reason: "Rainbow styling detected" },
     { pattern: /marquee/i, reason: "Marquee element detected" },
-    { pattern: /blink/i, reason: "Blink styling detected" },
+    { pattern: /blink(?!-)/i, reason: "Blink styling detected" },  // Negative lookahead to allow "blink-caret" etc.
+    { pattern: /text-decoration:\s*[^;]*blink/i, reason: "Blinking text detected" },
+    { pattern: /glow|box-shadow:\s*[^;]*inset[^;]*0\s+0\s+\d+px\s+\d+px/i, reason: "Glowing effect detected" },
+    { pattern: /neon/i, reason: "Neon styling detected" },
+
+    // Unprofessional fonts
     { pattern: /comic\s*sans/i, reason: "Comic Sans font detected" },
     { pattern: /papyrus/i, reason: "Papyrus font detected" },
-    { pattern: /cursor:\s*(wait|progress|help|crosshair|grab)/i, reason: "Unusual cursor style detected" },
+    { pattern: /curlz|jokerman|chiller|impact/i, reason: "Unprofessional font detected" },
+
+    // Other inappropriate elements
+    { pattern: /cursor:\s*(wait|progress|help|crosshair|grab|grabbing|zoom-in|zoom-out)/i, reason: "Unusual cursor style detected" },
+    { pattern: /<marquee/i, reason: "Marquee HTML element detected" },
+    { pattern: /<blink/i, reason: "Blink HTML element detected" },
+
+    // Sarcastic or joke content
+    { pattern: /just\s*kidding|lol|haha|joke/i, reason: "Joke/sarcastic content detected" },
+    { pattern: /placeholder\s*(text|image|content)/i, reason: "Placeholder content detected" },
   ];
 
   for (const { pattern, reason } of unprofessionalPatterns) {
