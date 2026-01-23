@@ -256,8 +256,13 @@ function findUnprofessionalContent(html: string): string[] {
     { pattern: /marquee/i, reason: "Marquee element detected" },
     { pattern: /blink(?!-)/i, reason: "Blink styling detected" },  // Negative lookahead to allow "blink-caret" etc.
     { pattern: /text-decoration:\s*[^;]*blink/i, reason: "Blinking text detected" },
-    { pattern: /glow|box-shadow:\s*[^;]*inset[^;]*0\s+0\s+\d+px\s+\d+px/i, reason: "Glowing effect detected" },
-    { pattern: /neon/i, reason: "Neon styling detected" },
+    // Glow effects - only match actual glow styling, not words containing "glow"
+    // Catches: text-shadow glow, box-shadow glow animations, neon-glow classes
+    // Allows: normal box-shadows, legitimate CSS that doesn't create glow effects
+    { pattern: /text-shadow:\s*[^;]*\b(glow|0\s+0\s+\d+px\s+\d+px)/i, reason: "Text glow effect detected" },
+    { pattern: /\.neon|neon-|neon\s*{|class="[^"]*neon/i, reason: "Neon styling class detected" },
+    { pattern: /animation[^:]*:\s*[^;]*glow/i, reason: "Glow animation detected" },
+    { pattern: /\bglow-effect\b|\bglowing\b/i, reason: "Glow effect class detected" },
 
     // Unprofessional fonts
     { pattern: /comic\s*sans/i, reason: "Comic Sans font detected" },
