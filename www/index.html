@@ -8064,7 +8064,7 @@
                 <button class="playground__suggestion" data-prompt="Add today's date in the top right corner">Add date <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a professional border around the document">Add border <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add a thank you note at the bottom">Thank you note <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">~45-60s</span></button>
+                <button class="playground__suggestion" data-prompt="Add a signature">Signature <span class="playground__suggestion-duration">instant</span></button>
               </div>
               <p class="playground__hint" id="playground-hint">Try something wild - the AI understands complex requests</p>
               <p class="playground__hint playground__hint--time-estimate" id="ai-time-estimate" style="display: none;">
@@ -10772,7 +10772,9 @@
         // Add border
         /add.*border|border.*document/i,
         // Thank you note
-        /thank\s*you.*note|thank.*note|add.*thank/i
+        /thank\s*you.*note|thank.*note|add.*thank/i,
+        // Signature
+        /add.*signature|signature.*line/i
       ];
 
       return instantPatterns.some(pattern => pattern.test(lowPrompt));
@@ -11936,7 +11938,7 @@
         const previewArea = document.querySelector('.playground__preview-area');
         if (previewArea) {
           setTimeout(() => {
-            previewArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }, 300);
         }
       }
@@ -12699,6 +12701,16 @@
           showToast('Changes applied instantly!', 'success', 2000);
         }
 
+        // Auto-scroll to preview on mobile after instant action success
+        if (window.innerWidth <= 480) {
+          const previewArea = document.querySelector('.playground__preview-area');
+          if (previewArea) {
+            setTimeout(() => {
+              previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+          }
+        }
+
         return; // Skip API call entirely
       }
 
@@ -12991,8 +13003,13 @@
 
               // Only show toast for CRITICAL issues - warnings are logged but don't interrupt the user
               // This builds trust by not showing scary warnings for minor cosmetic issues
-              if (data.validationResult.criticalCount > 0) {
+              // DEMO MODE: Suppress validation warnings entirely - they confuse new users exploring the playground
+              if (data.validationResult.criticalCount > 0 && !isInDemoMode) {
                 showValidationToast(data.validationResult, data.hasAutoFix, sessionId);
+              } else if (data.validationResult.criticalCount > 0 && isInDemoMode) {
+                // In demo mode, log but don't show technical warnings to users
+                console.log('[Glyph] Demo mode: Suppressing validation toast (' + data.validationResult.criticalCount + ' critical issues)');
+                showValidationSuccessToast();
               } else if (data.validationResult.warningCount > 0) {
                 // Log warnings for debugging but don't show to user
                 console.log('[Glyph] Self-check: ' + data.validationResult.warningCount + ' minor warnings (not shown to user)');
@@ -13407,6 +13424,31 @@
       return html.replace('</body>', `${noteDiv}</body>`);
     }
 
+    // Add signature line at bottom - instant transformation
+    function injectSignature(html) {
+      if (html.includes('glyph-signature-line')) return html;
+      const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const signatureStyle = `
+        margin: 32px 20px;
+        padding: 24px;
+        font-family: sans-serif;
+        border-top: 1px solid #e5e7eb;
+      `.replace(/\n\s*/g, ' ');
+      const signatureDiv = `<div class="glyph-signature-line" style="${signatureStyle}">
+        <div style="display: flex; justify-content: space-between; gap: 48px;">
+          <div style="flex: 1;">
+            <div style="border-bottom: 1px solid #374151; margin-bottom: 8px; height: 40px;"></div>
+            <div style="font-size: 12px; color: #6b7280;">Authorized Signature</div>
+          </div>
+          <div style="flex: 1;">
+            <div style="border-bottom: 1px solid #374151; margin-bottom: 8px; height: 40px; display: flex; align-items: flex-end; padding-bottom: 4px; color: #374151; font-size: 14px;">${today}</div>
+            <div style="font-size: 12px; color: #6b7280;">Date</div>
+          </div>
+        </div>
+      </div>`;
+      return html.replace('</body>', `${signatureDiv}</body>`);
+    }
+
     // Extract terms text from prompt
     function extractTermsText(prompt) {
       const lower = prompt.toLowerCase();
@@ -13555,6 +13597,11 @@
       // Detect and apply thank you note
       if (lowPrompt.includes('thank') && (lowPrompt.includes('you') || lowPrompt.includes('note'))) {
         modifiedHtml = injectThankYouNote(modifiedHtml);
+      }
+
+      // Detect and apply signature line
+      if (lowPrompt.includes('signature')) {
+        modifiedHtml = injectSignature(modifiedHtml);
       }
 
       // Detect and apply color changes
