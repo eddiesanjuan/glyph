@@ -130,7 +130,11 @@
 
   /* Text colors - light text on dark bg */
   --sl-color-text: #f1f5f9;
-  --sl-color-text-accent: #e2e8f0;
+  /* CRITICAL: text-accent is used for sidebar active state BACKGROUND */
+  /* Must be dark purple so light text is readable on it */
+  --sl-color-text-accent: #5b21b6;
+  /* text-invert is the TEXT color on the active state background */
+  --sl-color-text-invert: #f8fafc;
 
   /* Gray scale for dark mode - INVERTED for proper contrast */
   --sl-color-gray-1: #f1f5f9;
@@ -323,8 +327,16 @@
 
 :root[data-theme='dark'] nav a[aria-current="page"],
 :root[data-theme='dark'] .sidebar-content a[aria-current="page"] {
-  color: #a78bfa !important;
+  color: #f8fafc !important;
   font-weight: 600;
+  background: #5b21b6 !important;
+}
+
+/* Ensure sidebar group labels are visible */
+:root[data-theme='dark'] .sidebar details summary,
+:root[data-theme='dark'] .sl-sidebar details summary,
+:root[data-theme='dark'] .sidebar-content details summary {
+  color: #e2e8f0 !important;
 }
 
 /* ============================================
