@@ -34,7 +34,16 @@ You are Glyph's quality obsession engine. Your mission: **make the product so go
 ### Phase 0: Load Vision & Context (MANDATORY)
 
 **First, check for user feedback:**
-Read `.claude/CYCLE_FEEDBACK.md` - if there's feedback after the `---` line, this is HIGH PRIORITY input from Eddie. Address it in this cycle, then clear the feedback (leave only the header).
+Read `.claude/CYCLE_FEEDBACK.md` - if there's feedback after the `---` line:
+1. This is HIGH PRIORITY input from Eddie
+2. **Immediately output acknowledgment:**
+   ```
+   📬 FEEDBACK RECEIVED FROM EDDIE
+   - [summarize each feedback item in 1 line]
+   - Will address in this cycle: [yes/investigating/deferred + reason]
+   ```
+3. Incorporate into this cycle's priorities
+4. After cycle completes, clear the feedback file (leave only the header + `---`)
 
 Before ANY work, read these files:
 1. `.claude/USER_DECISIONS.md` - **THE VISION SECTION FIRST**, then tactical rules
@@ -292,8 +301,10 @@ Update `.claude/VERIFIED_STATE.md`:
 
 Append to `/Users/eddiesanjuan/Projects/glyph/.claude/self-improve-log.md`:
 
+**Use Central Standard Time (CST/CDT) for all timestamps.** Get current time with: `TZ='America/Chicago' date '+%Y-%m-%d %H:%M CST'`
+
 ```markdown
-## Self-Improvement Cycle - [Date]
+## Self-Improvement Cycle - [Date in CST, e.g., 2026-01-22 14:30 CST]
 
 ### Addiction Score
 - Previous: X/10

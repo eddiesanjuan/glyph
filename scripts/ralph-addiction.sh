@@ -56,7 +56,7 @@ CYCLE_TIMEOUT="30m"  # Kill cycle after 30 minutes
 mkdir -p plans
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOGFILE"
+    echo "[$(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S CST')] $1" | tee -a "$LOGFILE"
 }
 
 # Extract current addiction score from state file
