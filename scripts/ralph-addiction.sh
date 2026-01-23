@@ -116,6 +116,7 @@ log "=== RALPH WIGGUM ADDICTION AUDIT v2.0 ==="
 log "Goal: Make alternatives feel like punishment"
 log "Target Score: $TARGET_SCORE/10"
 log "Max Iterations: $MAX_ITERATIONS (safety cap)"
+log "Stop: Ctrl+\\ (backslash)"
 log ""
 
 iteration=0
