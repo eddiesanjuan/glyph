@@ -213,6 +213,41 @@ function findExternalUrls(html: string): string[] {
 }
 
 /**
+ * Check for unprofessional/gimmicky content that degrades document quality
+ * This catches AI modifications that add tacky elements to professional documents
+ */
+function findUnprofessionalContent(html: string): string[] {
+  const violations: string[] = [];
+  const lowerHtml = html.toLowerCase();
+
+  // Patterns that indicate tacky/unprofessional content
+  const unprofessionalPatterns = [
+    { pattern: /celebration\s*time/i, reason: "Celebration banner detected" },
+    { pattern: /🎉|🎊|🎈|🥳|🎆|🎇/g, reason: "Celebration emojis detected" },
+    { pattern: /confetti/i, reason: "Confetti element detected" },
+    { pattern: /party\s*mode/i, reason: "Party mode element detected" },
+    { pattern: /fireworks?/i, reason: "Fireworks element detected" },
+    { pattern: /sparkle|✨|⭐|🌟/gi, reason: "Sparkle/star decorations detected" },
+    { pattern: /@keyframes\s*(bounce|wiggle|pulse|shake|spin|rotate|flash|blink)/i, reason: "Gimmicky animation detected" },
+    { pattern: /animation:\s*[^;]*(bounce|wiggle|shake|spin|flash|blink)/i, reason: "Gimmicky animation style detected" },
+    { pattern: /rainbow|gradient.*rainbow/i, reason: "Rainbow styling detected" },
+    { pattern: /marquee/i, reason: "Marquee element detected" },
+    { pattern: /blink/i, reason: "Blink styling detected" },
+    { pattern: /comic\s*sans/i, reason: "Comic Sans font detected" },
+    { pattern: /papyrus/i, reason: "Papyrus font detected" },
+    { pattern: /cursor:\s*(wait|progress|help|crosshair|grab)/i, reason: "Unusual cursor style detected" },
+  ];
+
+  for (const { pattern, reason } of unprofessionalPatterns) {
+    if (pattern.test(html) || pattern.test(lowerHtml)) {
+      violations.push(`Unprofessional content: ${reason}`);
+    }
+  }
+
+  return violations;
+}
+
+/**
  * Check for script injection attempts
  */
 function findScriptInjection(html: string): string[] {
@@ -370,6 +405,10 @@ export function validateModification(
   // 5. Check for script injection
   const scriptViolations = findScriptInjection(modifiedHtml);
   violations.push(...scriptViolations);
+
+  // 5.5. Check for unprofessional/gimmicky content
+  const unprofessionalViolations = findUnprofessionalContent(modifiedHtml);
+  violations.push(...unprofessionalViolations);
 
   // 6. Check HTML structure basics (only for full documents)
   if (
@@ -605,6 +644,31 @@ export function validatePrompt(prompt: string): PromptValidationResult {
       return {
         valid: false,
         reason: `${reason} - only styling changes are allowed`,
+        category: "data_modification",
+      };
+    }
+  }
+
+  // Check for attempts to add gimmicky/unprofessional content
+  const unprofessionalRequestPatterns = [
+    { pattern: "add confetti", reason: "Confetti is not supported - maintaining professional appearance" },
+    { pattern: "confetti animation", reason: "Confetti is not supported - maintaining professional appearance" },
+    { pattern: "celebration", reason: "Celebration elements are not supported - maintaining professional appearance" },
+    { pattern: "party mode", reason: "Party mode is not supported - maintaining professional appearance" },
+    { pattern: "fireworks", reason: "Fireworks are not supported - maintaining professional appearance" },
+    { pattern: "rainbow", reason: "Rainbow styling is not supported - maintaining professional appearance" },
+    { pattern: "sparkle", reason: "Sparkle effects are not supported - maintaining professional appearance" },
+    { pattern: "marquee", reason: "Marquee elements are not supported - maintaining professional appearance" },
+    { pattern: "blink", reason: "Blinking text is not supported - maintaining professional appearance" },
+    { pattern: "comic sans", reason: "Comic Sans font is not supported - maintaining professional appearance" },
+    { pattern: "papyrus", reason: "Papyrus font is not supported - maintaining professional appearance" },
+  ];
+
+  for (const { pattern, reason } of unprofessionalRequestPatterns) {
+    if (lowerPrompt.includes(pattern)) {
+      return {
+        valid: false,
+        reason,
         category: "data_modification",
       };
     }
