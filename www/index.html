@@ -9974,6 +9974,9 @@
       } else if (lowerMsg.includes('guardrail') || lowerMsg.includes('blocked') || lowerMsg.includes('refused') || lowerMsg.includes('cannot')) {
         // Generic guardrail message - show the actual reason
         userMessage = errorMessage + ' Try a different approach.';
+      } else if (lowerMsg.includes('not possible') || lowerMsg.includes('not feasible') || lowerMsg.includes('pdfs are static') || lowerMsg.includes('static document')) {
+        // Impossible request detected early - show the actual helpful message from API
+        userMessage = errorMessage;
       } else {
         if (consecutiveFailures >= 2) {
           userMessage = 'Try a simpler request. Example: "Change the font to Arial" or "Make text larger".';
