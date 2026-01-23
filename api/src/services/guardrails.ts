@@ -246,10 +246,10 @@ function findUnprofessionalContent(html: string): string[] {
     { pattern: /glitter/i, reason: "Glitter effect detected" },
 
     // Gimmicky animations that are inappropriate for documents
-    { pattern: /@keyframes\s*(bounce|wiggle|pulse|shake|spin|rotate|flash|blink|tada|jello|heartbeat|swing|rubberband)/i, reason: "Gimmicky animation detected" },
+    // Removed 'pulse' as it's a legitimate animation name; removed 'rotate' as slight rotations are legitimate
+    { pattern: /@keyframes\s*(bounce|wiggle|shake|spin|flash|blink|tada|jello|heartbeat|swing|rubberband)/i, reason: "Gimmicky animation detected" },
     { pattern: /animation:\s*[^;]*(bounce|wiggle|shake|spin|flash|blink|tada|jello|heartbeat|swing|rubberband|wobble)/i, reason: "Gimmicky animation style detected" },
     { pattern: /animation:\s*[^;]*infinite/i, reason: "Infinite animation detected" },
-    { pattern: /transform:\s*[^;]*rotate\([^0)]/i, reason: "Rotation transform detected" },
 
     // Visual gimmicks
     { pattern: /rainbow|gradient.*rainbow/i, reason: "Rainbow styling detected" },
@@ -267,7 +267,10 @@ function findUnprofessionalContent(html: string): string[] {
     // Unprofessional fonts
     { pattern: /comic\s*sans/i, reason: "Comic Sans font detected" },
     { pattern: /papyrus/i, reason: "Papyrus font detected" },
-    { pattern: /curlz|jokerman|chiller|impact/i, reason: "Unprofessional font detected" },
+    // Only match these as font names in font-family declarations
+    { pattern: /font-family:\s*[^;]*(curlz|jokerman|chiller)/i, reason: "Unprofessional font detected" },
+    // Impact font specifically - only in font-family context
+    { pattern: /font-family:\s*[^;]*\bimpact\b/i, reason: "Impact font detected" },
 
     // Other inappropriate elements
     { pattern: /cursor:\s*(wait|progress|help|crosshair|grab|grabbing|zoom-in|zoom-out)/i, reason: "Unusual cursor style detected" },
