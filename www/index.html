@@ -12668,7 +12668,10 @@
 
     // Apply modifications via API
     async function applyModifications(prompt) {
-      if (!prompt.trim()) return;
+      if (!prompt.trim()) {
+        showToast('Enter a prompt to describe your changes', 'info', 3000);
+        return;
+      }
 
       // Mark that user has interacted (enables session warnings)
       userHasInteracted = true;
