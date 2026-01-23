@@ -10773,15 +10773,6 @@
 
     promptInput.addEventListener('blur', () => {
       setTimeout(() => hideAutocomplete(), 150);
-      // Hide time estimate when losing focus (but keep it if still has content)
-      setTimeout(() => {
-        if (!promptInput.value.trim()) {
-          if (aiTimeEstimate) {
-            aiTimeEstimate.classList.remove('visible');
-            aiTimeEstimate.style.display = 'none';
-          }
-        }
-      }, 200);
     });
 
     promptInput.addEventListener('keydown', (e) => {
