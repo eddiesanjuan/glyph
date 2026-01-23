@@ -33,6 +33,9 @@ You are Glyph's quality obsession engine. Your mission: **make the product so go
 
 ### Phase 0: Load Vision & Context (MANDATORY)
 
+**First, check for user feedback:**
+Read `.claude/CYCLE_FEEDBACK.md` - if there's feedback after the `---` line, this is HIGH PRIORITY input from Eddie. Address it in this cycle, then clear the feedback (leave only the header).
+
 Before ANY work, read these files:
 1. `.claude/USER_DECISIONS.md` - **THE VISION SECTION FIRST**, then tactical rules
 2. `.claude/AUDIT_LEARNINGS.md` - patterns and anti-patterns
