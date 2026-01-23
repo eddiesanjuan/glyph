@@ -28,9 +28,10 @@ You are the rapid development orchestrator for Glyph. Your job: **turn feedback 
 **Before parsing feedback, read `.claude/USER_DECISIONS.md`**
 
 This file contains:
-- **DO NOT ADD**: Features explicitly forbidden (Stripe styling, confetti, lying time estimates)
-- **MUST KEEP**: Features that must not be removed
-- **FOCUS AREAS**: P0/P1/P2 priorities
+- **THE VISION**: Make Glyph so good developers are addicted
+- **DO NOT ADD**: Gimmicks, dishonest estimates, slow demos
+- **MUST KEEP**: Instant actions, honest labels, self-check
+- **PRIORITY**: Developer experience > everything else
 
 **When parsing issues, REJECT any that violate USER_DECISIONS.**
 
@@ -156,9 +157,10 @@ Spawn @qa-agent to verify ALL fixes on production:
 6. No localhost:3000 errors
 
 **USER_DECISIONS Compliance Check:**
-- NO "Stripe styling" button exists
-- NO confetti animation exists
-- Time estimates are honest (~45-60s for AI, not <30s)
+- NO gimmicky animations
+- NO dishonest time estimates
+- Instant actions work (<1s)
+- Developer experience feels smooth
 
 **Use Agent Browser CLI:**
 ```bash

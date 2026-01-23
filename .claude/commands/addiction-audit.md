@@ -1,391 +1,353 @@
-# Addiction Audit v2
+# Addiction Audit - Developer Experience Deep Dive
 
-Thorough, learning audit system. Takes as long as needed. Quality over speed.
+**The only question that matters: Would a developer who tried Glyph ONCE want to use it for everything?**
+
+This is the thorough audit command. Takes as long as needed. Quality over speed.
 
 ## Usage
 
 ```bash
-/addiction-audit              # Full audit cycle
-/addiction-audit --quick      # Verify-only (no fixes)
-/addiction-audit --focus ai   # Focus on AI-First dimension
+/addiction-audit              # Full audit cycle with fixes
+/addiction-audit --quick      # Measure addiction score only (no fixes)
+/addiction-audit --deep       # Include real integration test
 ```
 
 ---
 
 ## ABSOLUTE RULE: ORCHESTRATOR NEVER DOES WORK
 
-**YOU ARE A COORDINATOR. EVERY action requires a sub-agent. NO EXCEPTIONS.**
-
-This is not optional. This is not flexible. Violating this rule will fill your context and cause failures.
+**YOU ARE A COORDINATOR. Delegate ALL work to sub-agents. NO EXCEPTIONS.**
 
 ### What You MAY Do Directly
 - Read/write files in `.claude/` directory ONLY
 - Synthesize agent outputs
 - Make prioritization decisions
-- Update todo list
 
 ### What You MUST Delegate
 
-| Action | Agent | Prompt Pattern |
-|--------|-------|----------------|
-| Explore code | `subagent_type=Explore` | "Find X in codebase" |
-| Check URLs | `subagent_type=qa-agent` | "Verify these URLs return 200" |
-| Test UI/UX | `subagent_type=auditor` | "Browser test X with Playwright" |
-| Write code | `subagent_type=developer` | "Implement X, commit, push" |
-| Verify fixes | `subagent_type=qa-agent` | "Test X works in production" |
-
-### RED FLAGS - If You Think These, STOP
-
-| Thought | Reality |
-|---------|---------|
-| "Let me just quickly grep for..." | NO. Spawn Explore agent. |
-| "I'll check this URL with curl..." | NO. Spawn QA agent. |
-| "Let me read this file to understand..." | NO (unless .claude/). Spawn Explore. |
-| "I'll just make this small edit..." | NO. Spawn developer. |
-| "Let me take a quick screenshot..." | NO. Spawn auditor. |
+| Action | Agent |
+|--------|-------|
+| Test developer journey | `subagent_type=qa-agent` |
+| Explore codebase | `subagent_type=Explore` |
+| Browser testing | `subagent_type=auditor` |
+| Write/fix code | `subagent_type=developer` |
+| Verify production | `subagent_type=qa-agent` |
 
 ---
 
 ## STATE FILES
 
-The audit uses THREE state files (all in `.claude/`):
+Read ALL THREE at start of every cycle:
 
-| File | Purpose | You May |
-|------|---------|---------|
-| `USER_DECISIONS.md` | Sacred user choices - NEVER violate | Read only |
-| `AUDIT_LEARNINGS.md` | Patterns, anti-patterns, what we learned | Read/write |
-| `VERIFIED_STATE.md` | What's ACTUALLY working (with evidence) | Read/write |
-
-**Read all three at start of every cycle.**
+| File | Purpose |
+|------|---------|
+| `USER_DECISIONS.md` | **THE VISION** + forbidden/required items |
+| `AUDIT_LEARNINGS.md` | Addiction framework + patterns |
+| `VERIFIED_STATE.md` | Current addiction score + gaps |
 
 ---
 
 ## THE CYCLE
 
-### Phase 0: Load Context (you do this directly)
+### Phase 0: Load Vision (orchestrator does this)
 
-Read these files:
-1. `.claude/USER_DECISIONS.md` - forbidden/required items
-2. `.claude/AUDIT_LEARNINGS.md` - patterns/anti-patterns
-3. `.claude/VERIFIED_STATE.md` - current known state
+Read the three state files. Internalize:
 
-**Create mental checklist:**
-- DO NOT ADD: [list from USER_DECISIONS]
-- MUST KEEP: [list from USER_DECISIONS]
-- FOCUS AREAS: [P0, P1, P2 from USER_DECISIONS]
-- KNOWN GAPS: [from VERIFIED_STATE]
-- ANTI-PATTERNS TO AVOID: [from AUDIT_LEARNINGS]
+> **THE VISION**: "Every app that generates a PDF uses Glyph. Not because they have to, but because nothing else comes close."
+
+**The Addiction Test**: Would a developer who tried Glyph ONCE want to use it for everything?
+
+**DO NOT ADD**: Gimmicks, dishonest estimates, slow demos
+**MUST KEEP**: Instant actions, honest labels, self-check
+**PRIORITY**: Developer experience > everything else
 
 ---
 
-### Phase 1: Deep Verification (spawn qa-agent)
+### Phase 1: Developer Journey Test (spawn qa-agent)
 
-```
-Task tool with subagent_type="qa-agent":
+```markdown
+## Developer Journey Audit
 
-## Deep Verification Audit
+You are a developer who just discovered Glyph. Test the REAL experience.
 
-Verify EVERY claim. Trust nothing. Use actual HTTP requests and browser tests.
+### Test 1: Discovery (< 30 seconds)
+Go to https://glyph.you
+- Can you understand what Glyph does in 10 seconds?
+- Is the value proposition clear?
+- Would you want to try it immediately?
 
-### URL Verification
-For each URL, run: curl -s -o /dev/null -w "%{http_code}" [URL]
+**Score 0-10 with evidence.**
 
-Required URLs:
-- https://glyph.you
-- https://docs.glyph.you
-- https://docs.glyph.you/integrations/mcp-server
-- https://docs.glyph.you/integrations/airtable
-- https://docs.glyph.you/integrations/zapier
-- https://docs.glyph.you/integrations/webhooks
-- https://dashboard.glyph.you
-- https://api.glyph.you/health
+### Test 2: First Demo (< 2 minutes)
+Try the demo without reading instructions:
+- Click an instant action - visible result in <2s?
+- Try a custom request - what happened?
+- Did you feel delighted or frustrated?
 
-Also check any links IN the hero section - click them, verify they work.
+**Score 0-10. What caused delight? What caused friction?**
 
-### Feature Verification (use Playwright browser tools)
-Test each feature, record ACTUAL response time with stopwatch:
-- Watermark instant action (should be <1s)
-- QR code instant action (should be <1s)
-- Grouping instant action (may not exist - record if missing)
-- Custom AI modification (type something, record actual seconds)
-- PDF download button
+### Test 3: Integration Path (< 10 minutes)
+Go to https://docs.glyph.you
+- Can you find the quickstart in <30 seconds?
+- Are code examples copy-pasteable?
+- Could you integrate in under 30 minutes?
+- Is MCP server documented and working?
 
-### Visual Verification (screenshots required for EACH)
-Take named screenshots:
-- verify-01-landing-desktop-1280.png
-- verify-02-landing-mobile-375.png
-- verify-03-docs-light-mode.png
-- verify-04-docs-dark-mode.png
-- verify-05-docs-search-light.png
-- verify-06-docs-search-dark.png
-- verify-07-dashboard.png
+**Score 0-10. Where did you get stuck?**
 
-Check each for:
-- Text contrast (can you read ALL text?)
-- Branding consistency (same colors everywhere?)
-- Theme switching (modals/inputs adapt?)
+### Test 4: Edge Case Resilience
+Try to BREAK it:
+- Empty prompt - graceful?
+- Impossible request - helpful error?
+- Rapid requests - handles queuing?
+- 320px mobile - usable?
 
-Return structured report:
-- URL status table (URL | HTTP code | Notes)
-- Feature status table (Feature | Status | Response time | Notes)
-- Visual status table (Screenshot | Contrast | Branding | Theme | Notes)
-- List of VERIFIED issues (not assumed - you saw them)
-```
+**Score 0-10. What broke ungracefully?**
 
----
+### The Addiction Question
+After all tests, answer honestly:
+**"Would I use Glyph for my next PDF project?"**
 
-### Phase 2: Score Dimensions (spawn auditor)
-
-```
-Task tool with subagent_type="auditor":
-
-## Dimension Scoring Audit
-
-Use Playwright browser tools to thoroughly test. Score each dimension 0-10.
-
-### 1. AI-First Developer Discovery (35% weight)
-Test as if you're an AI assistant helping a developer integrate Glyph:
-- Go to docs.glyph.you - can you find MCP setup in <30 seconds?
-- Is there a "tell your AI this" or "for AI assistants" section?
-- Click the MCP docs link - does it work?
-- Is documentation structured for AI consumption?
-
-Score 0-10 with specific evidence.
-
-### 2. SDK Integration & End User UX (45% weight)
-Test as an end user trying the demo:
-- Go to glyph.you - first impression (screenshot)
-- Try each quick action button - time them
-- Test mobile at 375px - is it usable?
-- Try a custom AI request - does it complete or timeout?
-- Check visual polish - fonts, spacing, loading states
-
-Score 0-10 with specific evidence.
-
-### 3. Low-Code/Airtable Integration (20% weight)
-Test as a non-developer:
-- Find Airtable docs - are they complete?
-- Find Zapier/Make docs - do they exist?
-- Could you set this up without writing code?
-
-Score 0-10 with specific evidence.
-
-**MANDATORY Checks (do not skip):**
-- [ ] Clicked every navigation link
-- [ ] Tested both light AND dark mode in docs
-- [ ] Tested at 1280px AND 375px viewport
-- [ ] Timed at least one AI operation
-- [ ] Verified search modal in both themes
-
-Return:
-- Dimension scores with evidence
-- Top 5 issues found (with dimension affected)
-- Weighted total score
+### Return Format
+{
+  "addictionScore": N,
+  "discoveryScore": N,
+  "demoScore": N,
+  "integrationScore": N,
+  "edgeCaseScore": N,
+  "delightMoments": ["..."],
+  "frictionPoints": ["..."],
+  "breakingPoints": ["..."],
+  "wouldUseAgain": true/false,
+  "whyOrWhyNot": "..."
+}
 ```
 
 ---
 
-### Phase 3: Filter & Prioritize (you do this directly)
+### Phase 2: Pressure Testing (spawn qa-agent)
 
-From Phase 1 and 2 outputs:
+```markdown
+## Pressure Test Suite
 
-**Step 1: Filter against USER_DECISIONS.md**
-- Remove any suggestion on DO NOT ADD list
-- Flag any suggestion that would remove MUST KEEP items
-- Reject and note: "Rejected [X] - USER_DECISIONS violation"
+Try to break Glyph in ways real developers might.
 
-**Step 2: Cross-reference AUDIT_LEARNINGS.md**
-- Check proposals against known anti-patterns
-- Apply learnings from previous cycles
+### Data Edge Cases
+- Empty data object
+- Missing required fields
+- Extremely long text (1000+ chars)
+- Special characters (<script>, unicode, emoji)
+- Type mismatches (numbers as strings)
 
-**Step 3: Prioritize by FOCUS AREAS**
-- P0 items first (from USER_DECISIONS)
-- Then by dimension score (fix lowest dimension first)
-- Then by addiction impact
+### Session Edge Cases
+- Request after session expiry
+- Simultaneous requests
+- Refresh mid-operation
 
-**Step 4: Select top 3-5 fixes**
+### AI Edge Cases
+- Contradictory instructions
+- Document-corrupting requests
+- Non-existent region references
+- Vague instructions ("make it better")
 
-Before proceeding, verify each selected fix:
-- [ ] Not on DO NOT ADD list
-- [ ] Doesn't remove MUST KEEP items
-- [ ] Aligns with FOCUS AREAS
-- [ ] Avoids known anti-patterns
+### For Each Test Record
+- Graceful failure? (yes/no)
+- Error message helpful? (yes/no)
+- Document corrupted? (yes/no)
+- User can recover? (yes/no)
+
+### Return
+{
+  "testsRun": N,
+  "gracefulFailures": N,
+  "ungracefulFailures": N,
+  "documentCorruptions": N,
+  "worstFailures": ["..."]
+}
+```
+
+---
+
+### Phase 3: Gap Analysis (orchestrator does this)
+
+From Phase 1-2 outputs, identify:
+
+1. **Addiction Blockers** (P0) - Would prevent a developer from using Glyph
+2. **Trust Destroyers** (P0) - Would make developers warn others away
+3. **Friction Points** (P1) - Would make developers hesitate to recommend
+4. **Polish Gaps** (P2) - Would make it feel "okay" instead of "amazing"
+
+**Filter against USER_DECISIONS.md**:
+- Reject anything on DO NOT ADD list
+- Flag anything removing MUST KEEP items
+
+**Prioritize by addiction impact**, not by ease of fix.
 
 ---
 
 ### Phase 4: Fix (spawn developer - ONE AT A TIME)
 
-For each prioritized fix, spawn separately and WAIT for completion:
+For each P0, then P1:
 
-```
-Task tool with subagent_type="developer":
-
+```markdown
 ## Fix: [Issue Title]
 
 Working Directory: /Users/eddiesanjuan/Projects/glyph
-Priority: [P0/P1/P2]
-Dimension: [AI-First | SDK/UX | Low-Code]
 
-### Problem
-[Specific description from audit]
+### Problem (Addiction Impact)
+[What it is and why it hurts developer experience]
 
 ### Solution
 [What to implement]
 
-### USER_DECISIONS Compliance
-This fix does NOT:
-- Add: Stripe styling button, confetti, lying time estimates
-- Remove: Instant actions, grouping demo, honest labels
+### Vision Alignment
+This serves the vision by: [how it makes Glyph more addictive]
 
-### Verification After Implementation
-- [Specific test to run]
-- [Expected result]
+### Verification
+- [Test that proves it's fixed]
+- [The delight moment it creates]
 
 ### Requirements
-- Implement the fix completely
-- Test it locally if possible
-- Commit with descriptive message
-- Push to main (Railway auto-deploys in ~2-3 min)
-- Report what was done and verification result
+- Implement completely
+- Commit with clear message
+- Push to main
+- Report verification
 ```
 
-**CRITICAL: Wait for each fix to complete before starting next.**
+**Wait for completion before next fix.**
 
 ---
 
-### Phase 5: Verify All Fixes (spawn qa-agent)
+### Phase 5: Verify (spawn qa-agent)
 
-```
-Task tool with subagent_type="qa-agent":
-
+```markdown
 ## Post-Fix Verification
 
-Wait 3 minutes for Railway deployment, then verify.
+Wait 3 minutes for Railway deployment.
 
-Production URLs:
-- https://glyph.you
-- https://docs.glyph.you
-- https://dashboard.glyph.you
+### Re-test Each Fix
+- Issue no longer occurs
+- No regressions
+- Improvement is noticeable
 
-### Fixes to Verify
-[List each fix with expected behavior]
+### Quick Addiction Re-test
+- Try demo fresh
+- Score: Would you use this?
 
-### Regression Suite
-Run these checks:
-- Landing page loads without console errors
-- Instant actions work: watermark (<1s), QR code (<1s)
-- Grouping instant action (if implemented)
-- Mobile 375px - preview visible and usable
-- Docs readable in light mode (text contrast)
-- Docs readable in dark mode
-- Search modal themes correctly (both modes)
-- Dashboard loads and matches branding
+### Compliance Check
+Verify DO NOT exist:
+- Gimmicky animations
+- Dishonest time estimates
+- Broken instant actions
 
-### USER_DECISIONS Compliance Check
-Verify these DO NOT exist:
-- "Stripe styling" button anywhere
-- Confetti animation anywhere
-- Time estimates that say <30s for AI operations
-
-Take screenshot evidence for each check.
-
-Return PASS/FAIL table with evidence.
+### Return
+{
+  "fixesVerified": N,
+  "fixesPassed": N,
+  "regressions": [],
+  "newAddictionScore": N,
+  "trend": "improving|stable|regressing"
+}
 ```
 
 ---
 
-### Phase 6: Validate & Learn (you do this directly)
+### Phase 6: Learn & Log (orchestrator does this)
 
-**Step 1: Validate no violations**
-- Check QA results for any USER_DECISIONS violations
-- If violation found: spawn developer to revert immediately
+**Update VERIFIED_STATE.md**:
+- New addiction score
+- Updated gap list
+- What changed
 
-**Step 2: Update VERIFIED_STATE.md**
-- Update URL status
-- Update feature status
-- Update visual status
-- Record what changed this cycle
+**Update AUDIT_LEARNINGS.md**:
+- What patterns caused addiction blockers?
+- What fixes had biggest impact?
 
-**Step 3: Update AUDIT_LEARNINGS.md**
-- Add new patterns that worked
-- Add anti-patterns discovered
-- Record any user preferences learned
+**Append to self-improve-log.md**:
 
-**Step 4: Calculate new scores**
-Based on verification results, update dimension scores.
+```markdown
+## Addiction Audit - [Date]
 
----
+### Addiction Score
+- Previous: X/10
+- Current: Y/10
+- Trend: [improving/stable/regressing]
 
-### Phase 7: Output Summary (you do this directly)
-
-Format your output:
-
-```
-## AUDIT COMPLETE - Cycle [N]
-
-**Score**: X.XX/10 (previous: Y.YY, delta: +/-Z.ZZ)
-
-### Dimension Breakdown
-| Dimension | Score | Weight | Weighted |
-|-----------|-------|--------|----------|
-| AI-First | X/10 | 35% | X.XX |
-| SDK/UX | X/10 | 45% | X.XX |
-| Low-Code | X/10 | 20% | X.XX |
-
-### Verified Working
-- [item] - evidence: [screenshot/test result]
+### Developer Journey Scores
+- Discovery: X/10
+- Demo: X/10
+- Integration: X/10
+- Edge Cases: X/10
 
 ### Fixed This Cycle
-- [commit] - [description]
+- [fix 1]
+- [fix 2]
 
-### Rejected (USER_DECISIONS)
-- [item] - reason: [which rule violated]
+### Remaining Blockers
+- P0: [blocker]
+- P1: [friction]
 
-### Remaining Gaps (for next cycle)
-- P0: [gap]
-- P1: [gap]
-- P2: [gap]
-
-### Learnings Added
-- Pattern: [what worked]
-- Anti-pattern: [what to avoid]
+### Key Learning
+[What did we learn about making Glyph addictive?]
 ```
 
-**Then STOP. Do not continue or ask questions.**
+---
+
+### Phase 7: Output Summary (orchestrator does this)
+
+```
+## AUDIT COMPLETE
+
+**Addiction Score**: X/10 (target: 9.5/10)
+**Trend**: [improving/stable/regressing]
+
+### Would Developers Use This?
+[Honest assessment based on testing]
+
+### Delight Moments Found
+- [moment 1]
+- [moment 2]
+
+### Fixed This Cycle
+- [fix 1]
+- [fix 2]
+
+### Remaining Blockers
+- P0: [would prevent usage]
+- P1: [would prevent recommendation]
+
+### Next Cycle Focus
+[What to tackle next to increase addiction score]
+```
+
+**Then STOP.**
 
 ---
 
-## Dimension Targets
+## Addiction Score Scale
 
-| Dimension | Weight | Target |
-|-----------|--------|--------|
-| AI-First Developer Discovery | 35% | 9.5/10 |
-| SDK Integration & End User UX | 45% | 10/10 |
-| Low-Code/Airtable Integration | 20% | 9.5/10 |
+| Score | Meaning |
+|-------|---------|
+| 10 | "I'd use this for everything. Why use anything else?" |
+| 8-9 | "Really good. I'd recommend it." |
+| 6-7 | "Works, but I might look at alternatives." |
+| 4-5 | "Meh. I'd use it if I had to." |
+| 0-3 | "I'd actively avoid this." |
 
-**Goal: 9.85/10 weighted score**
-
----
-
-## Quick Mode (--quick flag)
-
-Skip Phase 4 (fixes). Only verify and report current state.
-
-Useful for:
-- Checking production status
-- Post-deployment verification
-- Before starting new work
+**Target: 9.5/10**
 
 ---
 
-## Focus Mode (--focus flag)
+## Quick Mode (--quick)
 
-`--focus ai` - Prioritize AI-First dimension issues
-`--focus sdk` - Prioritize SDK/UX dimension issues
-`--focus lowcode` - Prioritize Low-Code dimension issues
+Only run Phase 0, 1, and 7. Measure and report. No fixes.
 
-Affects Phase 3 prioritization weighting.
+## Deep Mode (--deep)
+
+Add real integration test: Actually create a test project and integrate Glyph following the docs. Measure time-to-first-PDF.
 
 ---
 
 **Arguments:** $ARGUMENTS
+
+**Remember: The goal is a product so good developers can't stop talking about it.**
