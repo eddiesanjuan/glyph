@@ -309,7 +309,11 @@ Append to `/Users/eddiesanjuan/Projects/glyph/.claude/self-improve-log.md`:
 ### Addiction Score
 - Previous: X/10
 - Current: Y/10
+- Change: [+/-X.X]
 - Trend: [improving/stable/regressing]
+
+### Why Score Changed
+[REQUIRED - 1-3 sentences explaining WHY the score went up or down. Be specific about what improved or degraded. If score went DOWN, this is especially important - explain what broke or regressed.]
 
 ### Developer Experience Test
 - Discovery: X/10
