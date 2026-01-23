@@ -203,9 +203,19 @@ Working Directory: /Users/eddiesanjuan/Projects/glyph
 ### Vision Alignment
 This serves the vision by: [how it makes Glyph more addictive]
 
+### 🚫 FORBIDDEN - DO NOT ADD (from USER_DECISIONS.md)
+- **Confetti animation** - No "subtle" versions, no "100 particles", NO CONFETTI EVER
+- **Stripe styling button** - Too slow, times out, creates bad first impression
+- **Dishonest time estimates** - If it takes 55s, say 55s. Trust > comfort.
+- **Gimmicky celebration banners** - No "CELEBRATION TIME", no emoji spam
+
+**NO RATIONALIZATION.** "Subtle" confetti is still confetti. "Improved" Stripe is still Stripe. NO MEANS NO.
+If you find yourself about to implement any of these, STOP IMMEDIATELY.
+
 ### Verification
 - [Test that proves it's fixed]
 - [The delight moment it creates]
+- **CRITICAL**: Verify NO forbidden items were added
 
 ### Requirements
 - Implement completely
