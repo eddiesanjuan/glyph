@@ -48,7 +48,7 @@ done
 
 CLAUDE_BIN="/Users/eddiesanjuan/.npm-global/bin/claude"
 LOGFILE="plans/ralph-loop.log"
-STATE_FILE=".claude/addiction-audit-state.md"
+STATE_FILE=".claude/VERIFIED_STATE.md"
 TIMEOUT_CMD="/opt/homebrew/opt/coreutils/libexec/gnubin/timeout"
 CYCLE_TIMEOUT="30m"  # Kill cycle after 30 minutes
 
@@ -59,28 +59,26 @@ log() {
     echo "[$(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S CST')] $1" | tee -a "$LOGFILE"
 }
 
-# Extract current addiction score from state file
-# Handles formats like: "~7.85/10", "7.85/10", "NEEDS_ASSESSMENT"
+# Extract current addiction score from VERIFIED_STATE.md
+# Looks for "| **Overall Addiction** | X.X/10 |" pattern (column 3 in pipe-delimited table)
 get_score() {
     if [ -f "$STATE_FILE" ]; then
-        # Look for "Current: X.XX/10" pattern, strip tildes and non-numeric prefixes
-        raw=$(grep "Current:" "$STATE_FILE" | tail -1 | sed 's/.*Current:[[:space:]]*//' | sed 's/\/10.*//')
-        # Strip any leading non-numeric characters (like ~)
-        score=$(echo "$raw" | sed 's/^[^0-9]*//')
+        # Extract second data column (index 3 with awk -F'|')
+        raw=$(grep "Overall Addiction" "$STATE_FILE" | awk -F'|' '{print $3}' | sed 's/\/10.*//' | tr -d ' ')
         # Validate it's actually a number
-        if [[ "$score" =~ ^[0-9]+\.?[0-9]*$ ]]; then
-            echo "$score"
+        if [[ "$raw" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+            echo "$raw"
             return
         fi
     fi
     echo "0.0"  # Default if no valid score found
 }
 
-# Extract blockers/known issues from state file
+# Extract blockers/known gaps from VERIFIED_STATE.md
 get_blockers() {
     if [ -f "$STATE_FILE" ]; then
-        # Look for "Known Issues" section and extract items (macOS compatible)
-        blockers=$(sed -n '/Known Issues/,/^##/p' "$STATE_FILE" | grep -E '^[0-9]+\.|^-' | head -5)
+        # Look for "Must Fix" section and extract numbered items
+        blockers=$(sed -n '/Must Fix/,/^##/p' "$STATE_FILE" | grep -E '^[0-9]+\.' | head -5)
         if [ -n "$blockers" ]; then
             echo "$blockers"
             return
