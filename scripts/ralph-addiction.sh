@@ -6,7 +6,7 @@
 # Passes blockers between iterations for laser focus.
 #
 # Usage:
-#   ./ralph-addiction.sh                    # Default: target 9.85, max 50 cycles
+#   ./ralph-addiction.sh                    # Default: target 9.85, max 10 cycles
 #   ./ralph-addiction.sh --cycles 5         # Run exactly 5 cycles
 #   ./ralph-addiction.sh --target 9.5       # Run until score hits 9.5
 #   ./ralph-addiction.sh --cycles 3 --target 9.0  # Combine both
@@ -19,7 +19,7 @@ unset ANTHROPIC_API_KEY
 
 # Defaults
 TARGET_SCORE=9.85
-MAX_ITERATIONS=50
+MAX_ITERATIONS=10
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -114,7 +114,7 @@ should_continue() {
     return 0  # Continue
 }
 
-log "=== RALPH WIGGUM ADDICTION AUDIT ==="
+log "=== RALPH WIGGUM ADDICTION AUDIT v2.0 ==="
 log "Goal: Make alternatives feel like punishment"
 log "Target Score: $TARGET_SCORE/10"
 log "Max Iterations: $MAX_ITERATIONS (safety cap)"
