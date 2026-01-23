@@ -59,6 +59,8 @@ const COLOR_MAP: Record<string, string> = {
   white: '#ffffff',
   gray: '#6b7280',
   grey: '#6b7280',
+  lightgray: '#f3f4f6',
+  lightgrey: '#f3f4f6',
 };
 
 /**
@@ -123,6 +125,9 @@ export function canFastTransform(prompt: string): boolean {
 
   // Background color for header
   if (/(header|title)\s*background\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy)/i.test(lower)) return true;
+
+  // Document/page background color changes
+  if (/(change|make|set)\s*(the\s+)?(document|page|body)?\s*background\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy|gray|grey|white|black|light\s*gray|light\s*grey)/i.test(lower)) return true;
 
   // Logo additions (fast-path to prevent AI regeneration)
   // Only match simple "add logo" requests, not complex ones like "add company logo with text"
@@ -191,6 +196,13 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
     const target = colorMatch[3] || 'header';
     const color = colorMatch[6];
     return changeColor(html, target, color);
+  }
+
+  // === DOCUMENT BACKGROUND COLOR ===
+  const bgColorMatch = lower.match(/(change|make|set)\s*(the\s+)?(document|page|body)?\s*background\s*(color\s+)?(to\s+)?(blue|red|green|purple|orange|teal|pink|navy|gray|grey|white|black|light\s*gray|light\s*grey)/i);
+  if (bgColorMatch) {
+    const color = bgColorMatch[6].replace(/\s+/g, ''); // Remove spaces from "light gray"
+    return changeBackgroundColor(html, color);
   }
 
   // === LOGO ADDITIONS (Fast-path to prevent AI regeneration) ===
@@ -399,6 +411,58 @@ function changeColor(html: string, target: string, colorName: string): FastTrans
 
   if (changes.length === 0) {
     // Couldn't find a place to make the change, fall back to AI
+    return { html, changes: [], transformed: false };
+  }
+
+  return {
+    html: modifiedHtml,
+    changes,
+    transformed: true,
+  };
+}
+
+/**
+ * Change document/page background color
+ */
+function changeBackgroundColor(html: string, colorName: string): FastTransformResult {
+  const hexColor = COLOR_MAP[colorName.toLowerCase()] || colorName;
+  let modifiedHtml = html;
+  const changes: string[] = [];
+
+  // Strategy 1: Update existing body background-color
+  if (/<body[^>]*style="[^"]*background(-color)?:[^"]*"/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<body[^>]*style="[^"]*)(background(-color)?:\s*)([^;"]+)/gi,
+      `$1$2${hexColor}`
+    );
+    changes.push(`Changed document background to ${colorName} (${hexColor})`);
+  }
+  // Strategy 2: Add background to existing body style attribute
+  else if (/<body[^>]*style="/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<body[^>]*style=")([^"]*)/i,
+      `$1background-color:${hexColor};$2`
+    );
+    changes.push(`Added document background color: ${colorName} (${hexColor})`);
+  }
+  // Strategy 3: Add style attribute to body
+  else if (/<body([^>]*)>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /<body([^>]*)>/i,
+      `<body$1 style="background-color:${hexColor};">`
+    );
+    changes.push(`Added document background color: ${colorName} (${hexColor})`);
+  }
+  // Strategy 4: Add body style rule in CSS
+  else if (/<style[^>]*>/i.test(modifiedHtml)) {
+    modifiedHtml = modifiedHtml.replace(
+      /(<style[^>]*>)/i,
+      `$1\nbody { background-color: ${hexColor}; }`
+    );
+    changes.push(`Added document background color via CSS: ${colorName} (${hexColor})`);
+  }
+
+  if (changes.length === 0) {
     return { html, changes: [], transformed: false };
   }
 
