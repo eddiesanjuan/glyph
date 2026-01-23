@@ -7446,7 +7446,6 @@
     }
   </style>
   <!-- Canvas Confetti for first modification celebration -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
   <!-- Page Loading Skeleton - P2 FOUC Prevention -->
@@ -11827,21 +11826,12 @@
 
     // ============================================
     // First Instant Win Celebration
-    // Confetti burst + glow + special message on first instant action
-    // 100 particles - celebratory but not overwhelming
+    // Subtle glow + special message on first instant action
+    // Keeps it tasteful - no looping confetti, just a brief moment
     // ============================================
     function celebrateFirstInstantWin() {
       if (hasShownFirstInstantWin) return;
       hasShownFirstInstantWin = true;
-
-      // Fire confetti burst - subtle celebration (100 particles, not overwhelming)
-      if (typeof confetti === 'function') {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      }
 
       // Add subtle glow pulse to preview area (0.8s duration)
       const previewArea = document.querySelector('.playground__preview-area');
