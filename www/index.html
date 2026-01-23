@@ -3017,6 +3017,41 @@
       height: 18px;
     }
 
+    /* Save button ready-to-save pulse - subtle glow after first modification */
+    .playground__save-btn.ready-to-save {
+      animation: save-btn-pulse 2s ease-in-out 3;
+      color: var(--color-warning);
+      border-color: var(--color-warning);
+    }
+
+    @keyframes save-btn-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+      }
+    }
+
+    .playground__save-btn.ready-to-save::after {
+      content: 'Save it!';
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-warning);
+      white-space: nowrap;
+      animation: save-hint-fade 2s ease-in-out 3;
+      pointer-events: none;
+    }
+
+    @keyframes save-hint-fade {
+      0%, 100% { opacity: 0; }
+      30%, 70% { opacity: 1; }
+    }
+
     /* ============================================
        Save Version Modal
        ============================================ */
@@ -3199,6 +3234,31 @@
       background: var(--color-surface);
       border-radius: var(--radius-md);
       border: 1px dashed var(--color-border-subtle);
+    }
+
+    .saved-versions__slots {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--color-warning);
+      font-weight: 500;
+    }
+
+    /* First save celebration - subtle glow on saved versions section */
+    .saved-versions.first-save-glow {
+      animation: first-save-pulse 1s ease-out;
+    }
+
+    @keyframes first-save-pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
     }
 
     .saved-version-item {
@@ -8042,7 +8102,7 @@
                 </div>
                 <div class="saved-versions__list" id="saved-versions-list">
                   <div class="saved-versions__empty">
-                    Click the star to save a named version
+                    Save your best versions <span class="saved-versions__slots">10 slots available</span>
                   </div>
                 </div>
               </div>
@@ -11784,6 +11844,34 @@
 
       // Show special first-win toast message
       showToast('Nice! Your first modification worked instantly.', 'success', 3000);
+
+      // Pulse the save button to encourage saving (if no versions saved yet)
+      promptSaveAfterFirstWin();
+    }
+
+    // ============================================
+    // Prompt user to save after first successful modification
+    // Subtle visual nudge without being annoying
+    // ============================================
+    let hasPromptedSaveAfterWin = false;
+
+    function promptSaveAfterFirstWin() {
+      if (hasPromptedSaveAfterWin) return;
+      if (savedVersions.length > 0) return; // Already has saved versions
+
+      hasPromptedSaveAfterWin = true;
+
+      // Delay the pulse to not overlap with the first-win celebration
+      setTimeout(() => {
+        const saveBtn = document.getElementById('save-version-btn');
+        if (saveBtn) {
+          saveBtn.classList.add('ready-to-save');
+          // Remove after animation completes (3 pulses x 2s = 6s)
+          setTimeout(() => {
+            saveBtn.classList.remove('ready-to-save');
+          }, 6000);
+        }
+      }, 1500);
     }
 
     // ============================================
@@ -11879,7 +11967,7 @@
       els.savedVersionsCount.textContent = savedVersions.length + '/10';
 
       if (savedVersions.length === 0) {
-        els.savedVersionsList.innerHTML = '<div class="saved-versions__empty">Click the star to save a named version</div>';
+        els.savedVersionsList.innerHTML = '<div class="saved-versions__empty">Save your best versions <span class="saved-versions__slots">' + (MAX_SAVED_VERSIONS - savedVersions.length) + ' slots available</span></div>';
         return;
       }
 
@@ -11957,35 +12045,82 @@
       if (els.versionNameInput) els.versionNameInput.value = '';
     }
 
+    // Track if this is the user's first ever saved version
+    const FIRST_SAVE_KEY = 'glyph_first_save_complete';
+
+    function isFirstSave() {
+      try {
+        return !localStorage.getItem(FIRST_SAVE_KEY);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function markFirstSaveComplete() {
+      try {
+        localStorage.setItem(FIRST_SAVE_KEY, 'true');
+      } catch (e) {
+        // Private browsing - ignore
+      }
+    }
+
     // Save the current version
     function saveCurrentVersion() {
       const els = getSaveVersionElements();
       const name = els.versionNameInput ? els.versionNameInput.value.trim() : '';
-      
+
       if (!name) {
         showToast('Please enter a name', 'error');
         return;
       }
-      
+
       if (!currentHtml) {
         showToast('No document to save', 'error');
         return;
       }
-      
+
+      // Check if this is the first save BEFORE adding to savedVersions
+      const isFirst = isFirstSave();
+      const slotsRemaining = MAX_SAVED_VERSIONS - savedVersions.length - 1;
+
       const newVersion = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
         name: name,
         html: currentHtml,
         timestamp: Date.now()
       };
-      
+
       savedVersions.push(newVersion);
       persistSavedVersions();
       renderSavedVersions();
       closeSaveVersionModal();
-      
-      showToast('Version saved as "' + name + '"', 'success');
+
+      // Remove save button pulse if it was active
+      const saveBtn = document.getElementById('save-version-btn');
+      if (saveBtn) {
+        saveBtn.classList.remove('ready-to-save');
+      }
+
+      // Special celebration for first saved version
+      if (isFirst) {
+        markFirstSaveComplete();
+        showToast('First version saved! ' + slotsRemaining + ' slots remaining', 'success', 4000);
+        celebrateFirstSave();
+      } else {
+        showToast('Version saved as "' + name + '"', 'success');
+      }
       console.log('[Glyph] Saved version:', name);
+    }
+
+    // Celebrate first save with subtle visual feedback
+    function celebrateFirstSave() {
+      const savedVersionsSection = document.getElementById('saved-versions-section');
+      if (savedVersionsSection) {
+        savedVersionsSection.classList.add('first-save-glow');
+        setTimeout(() => {
+          savedVersionsSection.classList.remove('first-save-glow');
+        }, 1000);
+      }
     }
     
     // Restore a saved version
