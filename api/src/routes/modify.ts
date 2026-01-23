@@ -12,6 +12,7 @@ import { z } from "zod";
 import {
   modifyTemplate,
   modifyHtml,
+  validateRequestFeasibility,
 } from "../services/ai.js";
 import {
   validatePrompt,
@@ -248,6 +249,22 @@ modify.post("/", async (c) => {
           error: promptValidation.reason || "Invalid prompt",
           code: "GUARDRAIL_VIOLATION",
           details: { category: promptValidation.category },
+        };
+        return c.json(error, 400);
+      }
+
+      // PRE-FLIGHT CHECK: Detect impossible requests early (2-5 seconds vs 60 second timeout)
+      // This catches requests like "make this 3D and animated" before wasting time
+      const feasibilityCheck = await validateRequestFeasibility(prompt);
+      if (!feasibilityCheck.feasible) {
+        console.log(`[Modify] Request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms): "${prompt.substring(0, 50)}..."`);
+        const error: ApiError = {
+          error: feasibilityCheck.reason || "This modification is not possible for PDF documents.",
+          code: "REQUEST_NOT_FEASIBLE",
+          details: {
+            suggestion: feasibilityCheck.suggestion,
+            checkTimeMs: feasibilityCheck.checkTimeMs,
+          },
         };
         return c.json(error, 400);
       }
@@ -505,6 +522,21 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           error: promptValidation.reason || "Invalid instruction",
           code: "GUARDRAIL_VIOLATION",
           details: { category: promptValidation.category },
+        };
+        return c.json(error, 400);
+      }
+
+      // PRE-FLIGHT CHECK: Detect impossible requests early
+      const feasibilityCheck = await validateRequestFeasibility(instruction);
+      if (!feasibilityCheck.feasible) {
+        console.log(`[Modify] Direct mode request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms)`);
+        const error: ApiError = {
+          error: feasibilityCheck.reason || "This modification is not possible for PDF documents.",
+          code: "REQUEST_NOT_FEASIBLE",
+          details: {
+            suggestion: feasibilityCheck.suggestion,
+            checkTimeMs: feasibilityCheck.checkTimeMs,
+          },
         };
         return c.json(error, 400);
       }

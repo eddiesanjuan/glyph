@@ -17,6 +17,141 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+/**
+ * Result of pre-flight feasibility check
+ */
+export interface FeasibilityCheckResult {
+  feasible: boolean;
+  reason?: string;
+  suggestion?: string;
+  checkTimeMs: number;
+}
+
+/**
+ * Pre-flight validation to detect impossible/invalid AI requests BEFORE spending time on full processing.
+ * Uses Haiku (fast, cheap model) to quickly determine if a request is achievable for a static PDF document.
+ *
+ * This catches requests like:
+ * - "Make this 3D and animated"
+ * - "Add video to the document"
+ * - "Make the logo spin"
+ * - "Add interactive charts that update in real-time"
+ *
+ * Returns in 2-5 seconds instead of timing out after 60 seconds.
+ */
+export async function validateRequestFeasibility(prompt: string): Promise<FeasibilityCheckResult> {
+  const startTime = Date.now();
+
+  // Quick local check first - some patterns are obviously impossible without AI
+  const impossiblePatterns = [
+    { pattern: /\b3d\b|three[\s-]*dimensional/i, reason: "3D effects", suggestion: "Try depth effects with shadows or perspective styling instead." },
+    { pattern: /\banimated?\b|animation/i, reason: "animations", suggestion: "PDFs are static. Try styling changes like colors, fonts, or layout instead." },
+    { pattern: /\bvideo\b|play\s*(a\s+)?clip/i, reason: "video content", suggestion: "PDFs cannot contain videos. Consider adding a QR code linking to video content." },
+    { pattern: /\binteractive\b.*\b(chart|graph|element)/i, reason: "interactive elements", suggestion: "PDFs are static. Try adding a styled static chart or table instead." },
+    { pattern: /\breal[\s-]*time\b.*\b(update|data|chart)/i, reason: "real-time updates", suggestion: "PDFs are static documents generated at a point in time." },
+    { pattern: /\bclickable\b.*\b(button|link).*\b(action|script)/i, reason: "interactive buttons", suggestion: "PDFs have limited interactivity. Try adding styled static buttons or QR codes." },
+    { pattern: /\bspin(ning)?\b|\brotate?\s*(continuously|forever)/i, reason: "continuous rotation", suggestion: "PDFs cannot animate. Try a static rotated element instead." },
+    { pattern: /\bparticle\s*(effect|system)/i, reason: "particle effects", suggestion: "PDFs cannot show particle effects. Try subtle background patterns instead." },
+    { pattern: /\btransition\s*(effect|between)/i, reason: "transitions", suggestion: "PDFs are single-state documents. Try distinct styling for different sections." },
+    { pattern: /\bhover\s*(effect|state|style)/i, reason: "hover effects", suggestion: "PDFs don't support hover states. Apply the styling directly instead." },
+    { pattern: /\bscroll(ing)?\s*(animation|effect)/i, reason: "scroll effects", suggestion: "PDFs are paginated, not scrollable web pages. Try section breaks instead." },
+    { pattern: /\bmusic\b|\baudio\b|\bsound/i, reason: "audio content", suggestion: "PDFs cannot contain audio. Consider adding a QR code linking to audio content." },
+    { pattern: /\bflash(ing)?\b.*\b(text|element|color)/i, reason: "flashing effects", suggestion: "Flashing elements aren't supported. Try bold or highlighted styling instead." },
+    { pattern: /\btyping\s*(effect|animation)/i, reason: "typing animations", suggestion: "PDFs are static. The text will appear fully rendered." },
+    { pattern: /\bfade\s*(in|out)\b/i, reason: "fade animations", suggestion: "PDFs don't support animations. Try opacity or color styling instead." },
+    { pattern: /\bslide\s*(in|out|show)/i, reason: "slide animations", suggestion: "PDFs are static. Try positioned layout changes instead." },
+    { pattern: /\bbounce\b|\bpulse\b.*\b(animation|effect)/i, reason: "bounce/pulse animations", suggestion: "PDFs don't animate. Try emphasis with borders or colors instead." },
+  ];
+
+  for (const { pattern, reason, suggestion } of impossiblePatterns) {
+    if (pattern.test(prompt)) {
+      console.log(`[Feasibility] Quick reject (${Date.now() - startTime}ms): ${reason}`);
+      return {
+        feasible: false,
+        reason: `PDFs cannot have ${reason}.`,
+        suggestion,
+        checkTimeMs: Date.now() - startTime,
+      };
+    }
+  }
+
+  // For prompts that aren't obviously impossible, use Haiku for a quick AI check
+  // Only do this for prompts that seem like they might be requesting dynamic behavior
+  const maybeDynamicPatterns = [
+    /\bmake\s*(it|this|the).*\b(move|dance|wave|shake|wiggle)/i,
+    /\badd\s*(some|a)?\s*(motion|movement|dynamics)/i,
+    /\b(can|could)\s*(you|it)\s*(make|add).*\b(live|dynamic|change)/i,
+    /\bwhen\s*(user|someone|i)\s*(click|hover|scroll|touch)/i,
+    /\bupdate\s*(automatically|itself|when)/i,
+    /\breact\s*to\s*(user|input|click)/i,
+    /\bchange\s*(on|when|based\s*on)\s*(hover|click|input)/i,
+    /\bconnect\s*to\s*(api|database|server)/i,
+    /\bfetch\s*(data|from)/i,
+    /\blive\s*(preview|update|data)/i,
+  ];
+
+  const needsAICheck = maybeDynamicPatterns.some(p => p.test(prompt));
+
+  if (!needsAICheck) {
+    // Prompt seems like a standard styling/layout request - allow it
+    return {
+      feasible: true,
+      checkTimeMs: Date.now() - startTime,
+    };
+  }
+
+  // Use Haiku for a quick feasibility check
+  try {
+    console.log(`[Feasibility] AI check for: "${prompt.substring(0, 50)}..."`);
+
+    const message = await anthropic.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 150,
+      system: `You determine if PDF modification requests are possible. PDFs are STATIC documents - they cannot have animations, videos, real-time updates, hover effects, or any dynamic behavior.
+
+FEASIBLE: color changes, fonts, layout, spacing, borders, backgrounds, adding text/images, watermarks, QR codes, styling.
+NOT FEASIBLE: animations, 3D, video, audio, real-time updates, hover effects, interactive elements, live data.
+
+Reply ONLY with:
+FEASIBLE
+or
+NOT_FEASIBLE: [brief reason] | SUGGESTION: [alternative approach]`,
+      messages: [{
+        role: "user",
+        content: `Is this PDF modification feasible? "${prompt}"`,
+      }],
+    });
+
+    const response = message.content[0].type === "text" ? message.content[0].text.trim() : "";
+    const checkTimeMs = Date.now() - startTime;
+
+    console.log(`[Feasibility] AI response (${checkTimeMs}ms): ${response.substring(0, 100)}`);
+
+    if (response.startsWith("FEASIBLE")) {
+      return { feasible: true, checkTimeMs };
+    }
+
+    // Parse NOT_FEASIBLE response
+    const reasonMatch = response.match(/NOT_FEASIBLE:\s*([^|]+)/i);
+    const suggestionMatch = response.match(/SUGGESTION:\s*(.+)/i);
+
+    return {
+      feasible: false,
+      reason: reasonMatch ? reasonMatch[1].trim() : "This modification is not possible for PDF documents.",
+      suggestion: suggestionMatch ? suggestionMatch[1].trim() : "Try styling changes like colors, fonts, or layout instead.",
+      checkTimeMs,
+    };
+
+  } catch (error) {
+    // If feasibility check fails, allow the request to proceed to main AI
+    console.warn(`[Feasibility] Check failed, allowing request:`, error);
+    return {
+      feasible: true,
+      checkTimeMs: Date.now() - startTime,
+    };
+  }
+}
+
 export interface ModifyResult {
   html: string;
   changes: string[];
