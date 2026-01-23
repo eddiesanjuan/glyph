@@ -2324,6 +2324,33 @@
       opacity: 0.8;
     }
 
+    /* Hero suggestion buttons - visually emphasized for first-time users */
+    .playground__suggestion--hero {
+      background: linear-gradient(135deg, rgba(30, 58, 95, 0.15) 0%, rgba(37, 99, 235, 0.12) 100%);
+      border-color: rgba(37, 99, 235, 0.35);
+      color: var(--color-text);
+      position: relative;
+    }
+
+    .playground__suggestion--hero::before {
+      content: '★';
+      font-size: 8px;
+      margin-right: 4px;
+      color: var(--color-primary-bright);
+      opacity: 0.8;
+    }
+
+    .playground__suggestion--hero:hover:not(:disabled) {
+      background: var(--color-primary-bright);
+      border-color: var(--color-primary-bright);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+
+    .playground__suggestion--hero:hover:not(:disabled)::before {
+      color: white;
+      opacity: 1;
+    }
+
     .playground__hint {
       margin-top: 6px;
       font-size: 11px;
@@ -7967,9 +7994,11 @@
                 ></textarea>
               </div>
               <div class="playground__suggestions">
-                <button class="playground__suggestion" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
-                <button class="playground__suggestion" data-prompt="Group items by category with subtotals">Group by category <span class="playground__suggestion-duration">instant</span></button>
+                <!-- Hero actions: Most impressive instant effects, try these first -->
+                <button class="playground__suggestion playground__suggestion--hero" data-prompt="Add a diagonal watermark that says DRAFT across the page">Add watermark <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion playground__suggestion--hero" data-prompt="Add a QR code in the corner for quick mobile payment">Add QR code <span class="playground__suggestion-duration">instant</span></button>
+                <button class="playground__suggestion playground__suggestion--hero" data-prompt="Group items by category with subtotals">Group by category <span class="playground__suggestion-duration">instant</span></button>
+                <!-- Other instant actions -->
                 <button class="playground__suggestion" data-prompt="Add payment terms: Net 30 with 2% early payment discount if paid within 10 days">Add terms <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Make header text bold and larger">Bold header <span class="playground__suggestion-duration">instant</span></button>
                 <button class="playground__suggestion" data-prompt="Add today's date in the top right corner">Add date <span class="playground__suggestion-duration">instant</span></button>
