@@ -32,13 +32,26 @@ If the answer isn't an emphatic YES, we have work to do.
 
 ## Permanent Decisions
 
-### DO NOT ADD
+### DO NOT ADD - ABSOLUTE. NO EXCEPTIONS. NO RATIONALIZATION.
 
-| Item | Reason | Date |
-|------|--------|------|
-| Stripe styling button | Slow (45-60s), times out, doesn't demonstrate real capability | 2026-01-21 |
-| Confetti animation | Feels gimmicky, not professional | 2026-01-21 |
-| Dishonest time estimates | Trust is everything. If it takes 55s, say 55s. | 2026-01-22 |
+**These items are FORBIDDEN. Do not add them. Do not add "subtle versions." Do not add "small amounts." Do not rationalize that "a little is okay." THE ANSWER IS NO.**
+
+| Item | Reason | NO MEANS NO |
+|------|--------|-------------|
+| **Confetti animation** | Gimmicky, unprofessional | No "subtle" confetti. No "100 particles." No "first-win only." NO CONFETTI. PERIOD. |
+| **Stripe styling button** | Slow (45-60s), times out | No Stripe. Not as demo. Not as option. NO. |
+| **Dishonest time estimates** | Trust is everything | If it takes 55s, say 55s. No "~30s" lies. |
+
+**If an audit suggests adding ANY of these items, the audit is WRONG. Reject and revert immediately.**
+
+**Violation history:**
+- 2026-01-21: Stripe styling removed after explicit user request
+- 2026-01-21: Confetti removed after explicit user request
+- 2026-01-22: Stripe styling wrongly re-added → reverted
+- 2026-01-22: Confetti wrongly re-added → reverted
+- 2026-01-22: Confetti wrongly re-added AGAIN ("subtle 100-particle burst") → reverted
+
+**FOUR TIMES these have been wrongly added. There is no ambiguity. NO MEANS NO.**
 
 ### MUST KEEP
 
