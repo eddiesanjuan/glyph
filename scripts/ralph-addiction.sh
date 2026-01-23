@@ -87,6 +87,18 @@ get_blockers() {
     echo "No specific blockers identified yet."
 }
 
+# Extract FORBIDDEN items from USER_DECISIONS.md - these MUST be passed to every agent
+get_forbidden_items() {
+    if [ -f ".claude/USER_DECISIONS.md" ]; then
+        # Extract the DO NOT ADD table rows
+        sed -n '/DO NOT ADD/,/^###/p' ".claude/USER_DECISIONS.md" | grep -E '^\| \*\*' | head -5
+    else
+        echo "| **Confetti animation** | Gimmicky | NO CONFETTI EVER |"
+        echo "| **Stripe styling** | Too slow | NO STRIPE EVER |"
+        echo "| **Dishonest estimates** | Trust killer | NO LIES EVER |"
+    fi
+}
+
 # Check if we should continue (score < target and iterations < max)
 should_continue() {
     local current_score=$1
@@ -126,6 +138,7 @@ log "Starting score: $current_score/10"
 while should_continue "$current_score" "$iteration"; do
     iteration=$((iteration + 1))
     blockers=$(get_blockers)
+    forbidden=$(get_forbidden_items)
 
     log ""
     log "=== CYCLE $iteration ==="
@@ -144,6 +157,13 @@ CYCLE CONTEXT:
 - Target: $TARGET_SCORE/10
 - Current: $current_score/10
 - Gap: $(echo "$TARGET_SCORE - $current_score" | bc) points needed
+
+## ABSOLUTE FORBIDDEN - NEVER ADD THESE (from USER_DECISIONS.md)
+$forbidden
+
+**VIOLATION = IMMEDIATE REVERT. No 'subtle versions'. No rationalization. NO MEANS NO.**
+
+When spawning sub-agents, YOU MUST include this forbidden list in their prompt.
 
 BLOCKERS FROM PREVIOUS CYCLE:
 $blockers
