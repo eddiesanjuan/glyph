@@ -12641,6 +12641,84 @@
       return firstSentence || 'This request cannot be completed';
     }
 
+    // STREAMING: Process SSE stream from /v1/modify?stream=true
+    async function processStreamingResponse(response, callbacks) {
+      const { onStart, onDelta, onChanges, onComplete, onError } = callbacks;
+
+      if (!response.body) {
+        throw new Error('No response body for streaming');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let result = null;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE events from buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          let currentEvent = '';
+          let currentData = '';
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              currentEvent = line.slice(7);
+            } else if (line.startsWith('data: ')) {
+              currentData = line.slice(6);
+            } else if (line === '' && currentEvent && currentData) {
+              // Empty line = end of event, process it
+              try {
+                const parsed = JSON.parse(currentData);
+
+                switch (currentEvent) {
+                  case 'start':
+                    if (onStart) onStart(parsed);
+                    break;
+                  case 'delta':
+                    if (onDelta) onDelta(parsed);
+                    break;
+                  case 'changes':
+                    if (onChanges) onChanges(parsed);
+                    break;
+                  case 'complete':
+                    result = parsed;
+                    if (onComplete) onComplete(parsed);
+                    break;
+                  case 'error':
+                    if (onError) onError(parsed);
+                    throw new Error(parsed.error || 'Stream error');
+                }
+              } catch (parseErr) {
+                if (parseErr.message !== 'Stream error') {
+                  console.warn('[Glyph] Failed to parse SSE data:', currentData);
+                } else {
+                  throw parseErr;
+                }
+              }
+              currentEvent = '';
+              currentData = '';
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      if (!result) {
+        throw new Error('Stream ended without complete event');
+      }
+
+      return result;
+    }
+
     // Apply modifications via API
     async function applyModifications(prompt) {
       if (!prompt.trim()) {
@@ -12736,7 +12814,8 @@
 
         // Try session-based modification if we have sessionId
         if (sessionId) {
-          const response = await fetch(`${API_URL}/v1/modify`, {
+          // STREAMING: Use streaming endpoint for progressive feedback
+          const response = await fetch(`${API_URL}/v1/modify?stream=true`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -12758,8 +12837,41 @@
             throw new Error(errorMsg);
           }
 
+          // Track streaming progress
+          let deltaCount = 0;
+          let streamingHtml = '';
+
+          // Process streaming response with progress callbacks
+          const data = await processStreamingResponse(response, {
+            onStart: (event) => {
+              console.log('[Glyph Stream] Started:', event.model);
+              const modelName = event.model?.includes('haiku') ? 'fast AI' : 'full AI';
+              setStatus(`Building with ${modelName}...`);
+              // Update progress indicator message
+              const msgEl = document.getElementById('glyph-ai-message');
+              if (msgEl) msgEl.textContent = `Building with ${modelName}...`;
+            },
+            onDelta: (event) => {
+              deltaCount++;
+              streamingHtml += event.html || '';
+              // Update progress message periodically
+              if (deltaCount % 10 === 0) {
+                const msgEl = document.getElementById('glyph-ai-message');
+                if (msgEl) msgEl.textContent = `Generating... (${deltaCount} chunks)`;
+              }
+            },
+            onChanges: (event) => {
+              console.log('[Glyph Stream] Changes:', event.changes);
+            },
+            onComplete: (event) => {
+              console.log('[Glyph Stream] Complete:', event.fastPath ? 'fast path' : `${deltaCount} chunks`);
+            },
+            onError: (event) => {
+              console.error('[Glyph Stream] Error:', event);
+            }
+          });
+
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-          const data = await response.json();
 
           // Issue #1: Check for AI refusal before rendering
           if (isAiRefusalResponse(data.html)) {
@@ -12805,7 +12917,7 @@
           showModificationSuccessToast(elapsed);
 
           setStatus(`Done in ${elapsed}s`);
-          console.log(`[Glyph] Modification completed in ${elapsed}s`);
+          console.log(`[Glyph] Modification completed in ${elapsed}s (${data.fastPath ? 'fast path' : deltaCount + ' stream chunks'})`);
           setTimeout(() => setStatus('Ready'), 2000);
 
           // Start background validation polling
