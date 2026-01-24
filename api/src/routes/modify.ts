@@ -8,11 +8,15 @@
  */
 
 import { Hono } from "hono";
+import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import {
   modifyTemplate,
+  modifyTemplateStream,
+  parseAiResponse,
   modifyHtml,
   validateRequestFeasibility,
+  isSimpleModification,
 } from "../services/ai.js";
 import {
   validatePrompt,
@@ -25,6 +29,8 @@ import { supabase, getSupabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
 import { getDevSession, updateDevSession, isDevSessionId, findTemplateForRenderedHtml, addTemplateToHistory } from "../lib/devSessions.js";
 import { validateModification as selfCheckValidation } from "../services/validator.js";
+import { canFastTransform, fastTransform } from "../services/fastTransform.js";
+import type { Context } from "hono";
 
 const modify = new Hono();
 
@@ -154,6 +160,13 @@ const directModifySchema = z.object({
 });
 
 modify.post("/", async (c) => {
+  // Check if streaming is requested
+  const wantsStream = c.req.query("stream") === "true";
+
+  if (wantsStream) {
+    return handleStreamingModify(c);
+  }
+
   try {
     const body = await c.req.json();
 
@@ -716,6 +729,416 @@ async function runBackgroundValidation(
 
     } catch (error) {
       console.error(`[SelfCheck] Validation error for session ${sessionId}:`, error);
+    }
+  });
+}
+
+/**
+ * Handle streaming modification requests
+ * Returns SSE stream with events: start, delta, changes, complete, error
+ */
+async function handleStreamingModify(c: Context) {
+  return streamSSE(c, async (stream) => {
+    try {
+      // Parse and validate request (same as synchronous path)
+      const body = await c.req.json();
+
+      // Only support session mode for streaming
+      if (!("sessionId" in body)) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: "Streaming only supported for session-based modifications",
+            code: "VALIDATION_ERROR",
+          }),
+        });
+        return;
+      }
+
+      const parsed = sessionModifySchema.safeParse(body);
+      if (!parsed.success) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: "Validation failed",
+            code: "VALIDATION_ERROR",
+            details: parsed.error.issues,
+          }),
+        });
+        return;
+      }
+
+      const { sessionId, prompt, region } = parsed.data;
+      const apiKeyId = c.get("apiKeyId") as string | undefined;
+      const isDevSession = isDevSessionId(sessionId);
+
+      // Get session from storage
+      let session: {
+        current_html: string;
+        original_html: string;
+        template_html: string;
+        data: Record<string, unknown>;
+        modifications: Array<{
+          prompt: string;
+          region: string | null;
+          timestamp: string;
+          changes: string[];
+        }>;
+        template: string;
+        api_key_id?: string;
+        expires_at?: string;
+      } | null = null;
+
+      if (isDevSession) {
+        const devSession = getDevSession(sessionId);
+        if (!devSession) {
+          await stream.writeSSE({
+            event: "error",
+            data: JSON.stringify({
+              error: "Development session not found or expired. Please create a new preview.",
+              code: "DEV_SESSION_NOT_FOUND",
+            }),
+          });
+          return;
+        }
+        session = devSession;
+      } else if (supabase) {
+        const { data, error: sessionError } = await getSupabase()
+          .from("sessions")
+          .select("*")
+          .eq("id", sessionId)
+          .single();
+
+        if (sessionError || !data) {
+          await stream.writeSSE({
+            event: "error",
+            data: JSON.stringify({
+              error: "Session not found. It may have expired or been deleted.",
+              code: "SESSION_NOT_FOUND",
+            }),
+          });
+          return;
+        }
+        session = data;
+      } else {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: "Database not configured. Use a development session ID (dev_*) for local testing.",
+            code: "CONFIG_ERROR",
+          }),
+        });
+        return;
+      }
+
+      if (!session) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({ error: "Session not found", code: "SESSION_NOT_FOUND" }),
+        });
+        return;
+      }
+
+      // Check session not expired
+      if (session.expires_at && new Date(session.expires_at) < new Date()) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: "Session has expired. Please create a new preview to continue editing.",
+            code: "SESSION_EXPIRED",
+          }),
+        });
+        return;
+      }
+
+      // Verify session belongs to this API key
+      if (!isDevSession && apiKeyId && session.api_key_id !== apiKeyId) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({ error: "Session not found", code: "SESSION_NOT_FOUND" }),
+        });
+        return;
+      }
+
+      // GUARDRAIL: Validate prompt before calling AI
+      const promptValidation = validatePrompt(prompt);
+      if (!promptValidation.valid) {
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: promptValidation.reason || "Invalid prompt",
+            code: "GUARDRAIL_VIOLATION",
+            category: promptValidation.category,
+          }),
+        });
+        return;
+      }
+
+      // PRE-FLIGHT CHECK: Detect impossible requests early
+      const feasibilityCheck = await validateRequestFeasibility(prompt);
+      if (!feasibilityCheck.feasible) {
+        console.log(`[Streaming] Request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms): "${prompt.substring(0, 50)}..."`);
+        await stream.writeSSE({
+          event: "error",
+          data: JSON.stringify({
+            error: feasibilityCheck.reason || "This modification is not possible for PDF documents.",
+            code: "REQUEST_NOT_FEASIBLE",
+            suggestion: feasibilityCheck.suggestion,
+          }),
+        });
+        return;
+      }
+
+      // Clear stale validation results
+      if (isDevSession) {
+        updateDevSession(sessionId, {
+          validation_result: undefined,
+          suggested_fix_html: undefined,
+        });
+      }
+
+      // Determine which template to use
+      let templateToModify = session.template_html || session.current_html;
+
+      const clientHtml = parsed.data.html;
+      if (isDevSession && clientHtml && clientHtml !== session.current_html) {
+        console.info(`[Streaming] Client HTML differs - checking history for undo support`);
+        const matchingTemplate = findTemplateForRenderedHtml(sessionId, clientHtml);
+        if (matchingTemplate) {
+          templateToModify = matchingTemplate;
+        } else {
+          templateToModify = session.original_html;
+        }
+      }
+
+      // FAST PATH CHECK: Handle instantly without streaming
+      if (canFastTransform(prompt)) {
+        const fastResult = fastTransform(templateToModify, prompt);
+        if (fastResult.transformed) {
+          console.log(`[Streaming FAST] Transformed: "${prompt.substring(0, 50)}..."`);
+
+          // Render with data
+          let renderedHtml: string;
+          try {
+            renderedHtml = templateEngine.renderRaw(fastResult.html, session.data);
+          } catch {
+            renderedHtml = fastResult.html;
+          }
+
+          // Update session
+          const modifications = [
+            ...(session.modifications || []),
+            {
+              prompt,
+              region: region || null,
+              timestamp: new Date().toISOString(),
+              changes: fastResult.changes,
+            },
+          ];
+
+          if (isDevSession) {
+            updateDevSession(sessionId, {
+              current_html: renderedHtml,
+              template_html: fastResult.html,
+              modifications,
+            });
+            addTemplateToHistory(sessionId, fastResult.html, renderedHtml);
+          } else if (supabase) {
+            await getSupabase()
+              .from("sessions")
+              .update({
+                current_html: renderedHtml,
+                template_html: fastResult.html,
+                modifications,
+              })
+              .eq("id", sessionId);
+          }
+
+          // Emit complete event immediately for fast path
+          await stream.writeSSE({
+            event: "complete",
+            data: JSON.stringify({
+              html: renderedHtml,
+              changes: fastResult.changes,
+              tokensUsed: 0,
+              fastPath: true,
+            }),
+          });
+          return;
+        }
+      }
+
+      // STREAMING AI PATH
+      const model = isSimpleModification(prompt)
+        ? "claude-3-5-haiku-20241022"
+        : "claude-sonnet-4-20250514";
+
+      // Emit start event
+      await stream.writeSSE({
+        event: "start",
+        data: JSON.stringify({
+          sessionId,
+          model,
+          estimatedTime: model.includes("haiku") ? 3000 : 8000,
+        }),
+      });
+
+      // Stream AI response
+      let fullResponse = "";
+      let chunkIndex = 0;
+
+      for await (const chunk of modifyTemplateStream(templateToModify, prompt, region)) {
+        fullResponse += chunk.text;
+
+        // Emit delta for each text chunk
+        if (chunk.text.length > 0) {
+          await stream.writeSSE({
+            event: "delta",
+            data: JSON.stringify({ html: chunk.text, index: chunkIndex++ }),
+          });
+        }
+      }
+
+      // Parse final response
+      const result = parseAiResponse(fullResponse);
+      let modifiedTemplateHtml = result.html;
+
+      // Check if HTML appears truncated and needs repair
+      if (isHtmlTruncated(modifiedTemplateHtml)) {
+        console.warn("[Streaming] HTML appears truncated, attempting repair...");
+        const repairResult = repairHtml(modifiedTemplateHtml);
+        if (repairResult.repairsApplied.length > 0) {
+          console.log(`[Streaming] Applied HTML repairs: ${repairResult.repairsApplied.join(", ")}`);
+          modifiedTemplateHtml = repairResult.html;
+        }
+      } else {
+        const repairResult = repairHtml(modifiedTemplateHtml);
+        if (repairResult.repairsApplied.length > 0) {
+          console.log(`[Streaming] Applied minor HTML repairs: ${repairResult.repairsApplied.join(", ")}`);
+          modifiedTemplateHtml = repairResult.html;
+        }
+      }
+
+      // FAST security check
+      const hasScriptInjection =
+        /<script/i.test(modifiedTemplateHtml) ||
+        /javascript:/i.test(modifiedTemplateHtml) ||
+        /<iframe/i.test(modifiedTemplateHtml) ||
+        /\son\w+\s*=/i.test(modifiedTemplateHtml);
+
+      if (hasScriptInjection) {
+        modifiedTemplateHtml = sanitizeHtml(modifiedTemplateHtml);
+        console.warn("[Streaming Security] Applied HTML sanitization for potential script injection");
+      }
+
+      // Check for content loss / document corruption
+      const guardrailResult = validateGuardrails(templateToModify, modifiedTemplateHtml);
+      if (!guardrailResult.valid) {
+        const contentLossViolation = guardrailResult.violations.find(
+          (v) => v.includes("content loss") || v.includes("improperly cleared")
+        );
+
+        if (contentLossViolation) {
+          console.error(`[Streaming Security] Content loss detected: ${contentLossViolation}`);
+          await stream.writeSSE({
+            event: "error",
+            data: JSON.stringify({
+              error: "This type of modification cannot be applied. The AI attempted to remove document content which is not allowed.",
+              code: "CONTENT_LOSS_BLOCKED",
+            }),
+          });
+          return;
+        }
+
+        const unprofessionalViolation = guardrailResult.violations.find(
+          (v) =>
+            v.includes("Unprofessional content") ||
+            v.includes("Celebration") ||
+            v.includes("Confetti") ||
+            v.includes("Gimmicky animation")
+        );
+
+        if (unprofessionalViolation) {
+          console.error(`[Streaming Security] Unprofessional content blocked: ${unprofessionalViolation}`);
+          await stream.writeSSE({
+            event: "error",
+            data: JSON.stringify({
+              error: "This modification would add unprofessional elements to your document. Please try a different styling approach.",
+              code: "UNPROFESSIONAL_CONTENT_BLOCKED",
+            }),
+          });
+          return;
+        }
+
+        console.warn(`[Streaming Security] Guardrail violations: ${guardrailResult.violations.join(", ")}`);
+      }
+
+      // Re-render the modified template with the original data
+      let renderedHtml: string;
+      try {
+        renderedHtml = templateEngine.renderRaw(modifiedTemplateHtml, session.data);
+      } catch (renderError) {
+        console.error("Streaming template re-render failed:", renderError);
+        renderedHtml = modifiedTemplateHtml;
+      }
+
+      // Update session with new HTML and modification history
+      const modifications = [
+        ...(session.modifications || []),
+        {
+          prompt,
+          region: region || null,
+          timestamp: new Date().toISOString(),
+          changes: result.changes,
+        },
+      ];
+
+      if (isDevSession) {
+        updateDevSession(sessionId, {
+          current_html: renderedHtml,
+          template_html: modifiedTemplateHtml,
+          modifications,
+        });
+        addTemplateToHistory(sessionId, modifiedTemplateHtml, renderedHtml);
+      } else if (supabase) {
+        await getSupabase()
+          .from("sessions")
+          .update({
+            current_html: renderedHtml,
+            template_html: modifiedTemplateHtml,
+            modifications,
+          })
+          .eq("id", sessionId);
+      }
+
+      // Emit changes event (for UI toast)
+      await stream.writeSSE({
+        event: "changes",
+        data: JSON.stringify({ changes: result.changes }),
+      });
+
+      // Emit complete event
+      await stream.writeSSE({
+        event: "complete",
+        data: JSON.stringify({
+          html: renderedHtml,
+          changes: result.changes,
+          tokensUsed: result.tokensUsed,
+          selfCheckPassed: true,
+        }),
+      });
+
+      // Background validation (non-blocking)
+      runBackgroundValidation(templateToModify, modifiedTemplateHtml, prompt, sessionId);
+    } catch (error) {
+      console.error("[Streaming] Error:", error);
+      await stream.writeSSE({
+        event: "error",
+        data: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+          code: "STREAM_ERROR",
+        }),
+      });
     }
   });
 }
