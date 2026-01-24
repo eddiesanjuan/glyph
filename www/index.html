@@ -12845,19 +12845,26 @@
           const data = await processStreamingResponse(response, {
             onStart: (event) => {
               console.log('[Glyph Stream] Started:', event.model);
+              // CRITICAL: Stop the timer-based progress updates when streaming starts
+              // This prevents the old "Analyzing your request (~45-60s)" messages from overwriting
+              if (elapsedTimerInterval) {
+                clearInterval(elapsedTimerInterval);
+                elapsedTimerInterval = null;
+              }
               const modelName = event.model?.includes('haiku') ? 'fast AI' : 'full AI';
               setStatus(`Building with ${modelName}...`);
-              // Update progress indicator message
-              const msgEl = document.getElementById('glyph-ai-message');
-              if (msgEl) msgEl.textContent = `Building with ${modelName}...`;
+              // Update the actual loading text element (not glyph-ai-message which doesn't exist)
+              const loadingText = document.getElementById('loading-text');
+              if (loadingText) loadingText.textContent = `Building with ${modelName}...`;
             },
             onDelta: (event) => {
               deltaCount++;
               streamingHtml += event.html || '';
-              // Update progress message periodically
-              if (deltaCount % 10 === 0) {
-                const msgEl = document.getElementById('glyph-ai-message');
-                if (msgEl) msgEl.textContent = `Generating... (${deltaCount} chunks)`;
+              // Update progress message periodically - shows streaming is active
+              if (deltaCount % 5 === 0) {
+                const loadingText = document.getElementById('loading-text');
+                if (loadingText) loadingText.textContent = `Generating... (${deltaCount} chunks received)`;
+                setStatus(`Streaming... ${deltaCount} chunks`);
               }
             },
             onChanges: (event) => {
@@ -12865,6 +12872,15 @@
             },
             onComplete: (event) => {
               console.log('[Glyph Stream] Complete:', event.fastPath ? 'fast path' : `${deltaCount} chunks`);
+              // Clear timer on complete (handles fast path which skips start event)
+              if (elapsedTimerInterval) {
+                clearInterval(elapsedTimerInterval);
+                elapsedTimerInterval = null;
+              }
+              const loadingText = document.getElementById('loading-text');
+              if (loadingText) {
+                loadingText.textContent = event.fastPath ? 'Applied instantly!' : 'Finishing up...';
+              }
             },
             onError: (event) => {
               console.error('[Glyph Stream] Error:', event);
