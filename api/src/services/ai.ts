@@ -1449,6 +1449,134 @@ INSTRUCTIONS:
   };
 }
 
+/**
+ * Result of parsing streamed AI response
+ */
+export interface ParsedAiResponse {
+  html: string;
+  changes: string[];
+  tokensUsed: number;
+}
+
+/**
+ * Parse a complete AI response text to extract HTML and changes list
+ * Used after streaming completes to get the final structured result
+ */
+export function parseAiResponse(responseText: string): ParsedAiResponse {
+  // Extract HTML from markdown code block or raw
+  const htmlMatch = responseText.match(/```html\n([\s\S]*?)\n```/);
+  let html = htmlMatch ? htmlMatch[1] : responseText;
+
+  // If no code block, try to extract HTML directly
+  if (!htmlMatch) {
+    const docStart =
+      responseText.indexOf("<!DOCTYPE html>") !== -1
+        ? responseText.indexOf("<!DOCTYPE html>")
+        : responseText.indexOf("<html");
+    const docEnd = responseText.lastIndexOf("</html>") + 7;
+    if (docStart !== -1 && docEnd > docStart) {
+      html = responseText.slice(docStart, docEnd);
+    }
+  }
+
+  // Extract changes list
+  const changesMatch = responseText.match(/CHANGES:\s*([\s\S]*?)(?:$|```)/);
+  const changes: string[] = [];
+  if (changesMatch) {
+    const changeLines = changesMatch[1].trim().split("\n");
+    for (const line of changeLines) {
+      const cleanLine = line.replace(/^[-*•]\s*/, "").trim();
+      if (cleanLine) changes.push(cleanLine);
+    }
+  }
+
+  return {
+    html,
+    changes: changes.length > 0 ? changes : ["Template modified as requested"],
+    tokensUsed: 0, // Token count comes from stream completion event
+  };
+}
+
+/**
+ * Streaming version of modifyTemplate
+ * Yields text chunks as they arrive from Claude
+ *
+ * IMPORTANT: Fast path (QR, watermark, color) is handled in the route layer,
+ * not here. This function is AI-only.
+ */
+export async function* modifyTemplateStream(
+  currentHtml: string,
+  userPrompt: string,
+  region?: string
+): AsyncGenerator<{ text: string; done: boolean }> {
+  // Enhance the prompt with detected intent
+  const { enhancedPrompt, detectedIntent } = detectAndEnhanceFieldRequest(userPrompt);
+
+  // Build context with region-specific guidance
+  const regionContext = getRegionContext(region);
+  const contextPrompt = region
+    ? `The user selected the "${region}" section and wants: ${enhancedPrompt}${regionContext}`
+    : enhancedPrompt;
+
+  // Log for debugging
+  if (detectedIntent) {
+    console.log(`[AI Stream] Detected intent: ${detectedIntent}`);
+  }
+
+  // Use Haiku for speed on simple modifications, Sonnet for complex ones
+  const useHaiku = isSimpleModification(userPrompt);
+  const model = useHaiku ? "claude-3-5-haiku-20241022" : "claude-sonnet-4-20250514";
+  const systemPrompt = useHaiku ? FAST_MODIFY_PROMPT : DOCUMENT_ARCHITECT_PROMPT;
+  const maxTokens = useHaiku ? 8192 : 16384;
+
+  console.log(`[AI Stream] Using ${model} for: "${userPrompt.substring(0, 50)}..."`);
+  const startTime = Date.now();
+
+  // Use streaming API
+  const stream = anthropic.messages.stream({
+    model,
+    max_tokens: maxTokens,
+    system: systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: `Current HTML document template:
+
+\`\`\`html
+${currentHtml}
+\`\`\`
+
+Modification request: ${contextPrompt}
+
+INSTRUCTIONS:
+1. Output the COMPLETE modified HTML document (including <!DOCTYPE html>)
+2. Preserve ALL existing Mustache placeholders exactly as they appear
+3. Preserve ALL data-glyph-region attributes
+4. When adding new fields, use the exact Mustache syntax from the schema
+5. After the HTML, write "CHANGES:" followed by a bullet list of modifications`,
+      },
+    ],
+  });
+
+  // Yield text deltas as they arrive
+  for await (const event of stream) {
+    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+      yield { text: event.delta.text, done: false };
+    }
+  }
+
+  // Signal completion
+  yield { text: "", done: true };
+
+  console.log(`[AI Stream] Completed in ${Date.now() - startTime}ms`);
+}
+
+/**
+ * Check if a modification is simple enough for the Haiku model
+ * Exported for use in streaming route handler
+ */
+export { isSimpleModification };
+
 // Validate that modification didn't break critical elements
 export function validateModification(
   originalHtml: string,
