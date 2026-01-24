@@ -21,6 +21,16 @@ export interface ApiClientConfig {
 }
 
 /**
+ * SSE events for streaming modify
+ */
+export type ModifyStreamEvent =
+  | { type: 'start'; sessionId: string; model: string; estimatedTime: number }
+  | { type: 'delta'; html: string; index: number }
+  | { type: 'changes'; changes: string[] }
+  | { type: 'complete'; html: string; changes: string[]; tokensUsed: number; fastPath?: boolean; selfCheckPassed?: boolean }
+  | { type: 'error'; error: string; code: string };
+
+/**
  * Main API client for traditional request/response patterns
  */
 export class GlyphApiClient {
@@ -345,6 +355,89 @@ export class GlyphAPI {
       },
       45000 // 45s timeout for AI operations
     );
+  }
+
+  /**
+   * Modify with streaming - yields events as AI generates response
+   * This provides real-time feedback as the document is being modified.
+   *
+   * Events:
+   * - start: AI processing has begun
+   * - delta: Chunk of HTML from AI (partial response)
+   * - changes: List of changes being made
+   * - complete: Final HTML and metadata
+   * - error: Something went wrong
+   */
+  async *modifyStream(
+    sessionId: string,
+    prompt: string,
+    region?: string
+  ): AsyncGenerator<ModifyStreamEvent> {
+    const url = `${this.baseUrl}/v1/modify?stream=true`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId, prompt, region }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Request failed: ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body for streaming');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        let currentEvent = '';
+        let currentData = '';
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7);
+          } else if (line.startsWith('data: ')) {
+            currentData = line.slice(6);
+          } else if (line === '' && currentEvent && currentData) {
+            // Empty line = end of event
+            try {
+              const parsed = JSON.parse(currentData);
+
+              // Debug logging
+              if (typeof localStorage !== 'undefined' && localStorage.getItem('GLYPH_DEBUG_STREAM')) {
+                console.log('[Glyph Stream]', currentEvent, parsed);
+              }
+
+              yield { type: currentEvent, ...parsed } as ModifyStreamEvent;
+            } catch {
+              console.warn('[Glyph] Failed to parse SSE data:', currentData);
+            }
+            currentEvent = '';
+            currentData = '';
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 
   /**
