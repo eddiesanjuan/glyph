@@ -340,4 +340,80 @@ export const baseStyles = `
       animation: none;
     }
   }
+
+  /* ============================================
+     Streaming Preview Styles
+     ============================================ */
+
+  /* Streaming preview state - slightly transparent to indicate building */
+  .glyph-preview-frame.glyph-streaming-frame {
+    opacity: 0.8;
+    filter: blur(0.3px);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+
+  /* Pulse animation for progress bar during streaming */
+  .glyph-ai-progress-bar-fill.streaming {
+    animation: glyph-stream-pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes glyph-stream-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  /* Building indicator for streaming state */
+  .glyph-streaming-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(20, 184, 166, 0.9);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    animation: glyph-streaming-fade-in 0.2s ease;
+  }
+
+  @keyframes glyph-streaming-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .glyph-streaming-indicator::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: glyph-streaming-dot 1s ease-in-out infinite;
+  }
+
+  @keyframes glyph-streaming-dot {
+    0%, 100% { opacity: 0.5; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  /* When streaming is complete, fade out */
+  .glyph-streaming-indicator.complete {
+    animation: glyph-streaming-fade-out 0.3s ease forwards;
+  }
+
+  @keyframes glyph-streaming-fade-out {
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
 `;

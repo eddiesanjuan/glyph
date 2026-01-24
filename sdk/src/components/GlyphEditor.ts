@@ -1877,6 +1877,7 @@ export class GlyphEditor extends HTMLElement {
 
   /**
    * Execute an AI modification command
+   * Uses streaming API for real-time feedback, falls back to sync on error
    */
   private async executeCommand(command: string, pillElement?: HTMLElement) {
     if (!this.api || !this.sessionId || this.isLoading) return;
@@ -1897,17 +1898,72 @@ export class GlyphEditor extends HTMLElement {
     this.setLoading(true, true); // true = isAiOperation
 
     try {
-      const result = await this.api.modify(
-        this.sessionId,
-        command,
-        this.selectedRegion || undefined
-      );
+      // Use streaming API for real-time feedback
+      let finalResult: { html: string; changes: string[] } | null = null;
+      const streamingHtml: string[] = [];
+
+      try {
+        for await (const event of this.api.modifyStream(
+          this.sessionId,
+          command,
+          this.selectedRegion || undefined
+        )) {
+          switch (event.type) {
+            case 'start':
+              // Update progress indicator with model info
+              this.updateProgressMessage(
+                event.model.includes('haiku') ? 'Processing quickly...' : 'AI is thinking...'
+              );
+              break;
+
+            case 'delta':
+              // Accumulate HTML chunks
+              streamingHtml.push(event.html);
+              // Progressive rendering - update preview periodically
+              if (streamingHtml.length % 5 === 0) {
+                this.updateStreamingPreview(streamingHtml.join(''));
+              }
+              break;
+
+            case 'changes':
+              // Early feedback - show what's being changed
+              if (event.changes.length > 0) {
+                this.updateProgressMessage(`Applying: ${event.changes[0]}`);
+              }
+              break;
+
+            case 'complete':
+              finalResult = { html: event.html, changes: event.changes };
+              // Clean up streaming preview
+              this.cleanupStreamingPreview();
+              break;
+
+            case 'error':
+              throw new Error(event.error);
+          }
+        }
+      } catch (streamError) {
+        // Fallback to synchronous modify on stream error
+        console.warn('[Glyph] Streaming failed, falling back to sync:', streamError);
+        this.cleanupStreamingPreview();
+
+        // Try synchronous API
+        finalResult = await this.api.modify(
+          this.sessionId,
+          command,
+          this.selectedRegion || undefined
+        );
+      }
+
+      if (!finalResult) {
+        throw new Error('Stream ended without complete event');
+      }
 
       // Check for AI refusal before rendering to document
       // AI might return explanatory text instead of HTML for unsupported requests
-      if (this.isAiRefusalResponse(result.html)) {
+      if (this.isAiRefusalResponse(finalResult.html)) {
         console.warn('[Glyph] AI refusal detected, not rendering to document');
-        const refusalMsg = this.extractRefusalMessage(result.html);
+        const refusalMsg = this.extractRefusalMessage(finalResult.html);
 
         // Undo the optimistic history save since we're not applying changes
         if (this.history.length > 0 && this.historyIndex >= 0) {
@@ -1932,16 +1988,16 @@ export class GlyphEditor extends HTMLElement {
         return;
       }
 
-      this.currentHtml = result.html;
+      this.currentHtml = finalResult.html;
       this.saveToHistory(); // Also save the new state so we can redo
       this.renderPreview();
 
       // Clear region selection after successful modification
       this.selectedRegion = null;
       this.hideRegionActions();
-      const input = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
-      if (input) {
-        input.placeholder = "What would you like to change?";
+      const inputAfter = this.shadow.querySelector('.glyph-command-input') as HTMLInputElement;
+      if (inputAfter) {
+        inputAfter.placeholder = "What would you like to change?";
       }
 
       // Show success state on pill
@@ -1953,7 +2009,7 @@ export class GlyphEditor extends HTMLElement {
         }, 1500);
       }
 
-      const changeMessage = result.changes?.[0] || 'Changes applied successfully';
+      const changeMessage = finalResult.changes?.[0] || 'Changes applied successfully';
       this.showToast(changeMessage);
 
       // Show validation success toast
@@ -1966,7 +2022,7 @@ export class GlyphEditor extends HTMLElement {
       this.hasModifications = true;
       this.updateSaveButtonState();
 
-      this.emit('glyph:modified', { command, changes: result.changes });
+      this.emit('glyph:modified', { command, changes: finalResult.changes });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to apply changes';
       this.showToast(message, true);
@@ -1988,6 +2044,72 @@ export class GlyphEditor extends HTMLElement {
         input.classList.remove('processing');
       }
       this.setLoading(false);
+    }
+  }
+
+  /**
+   * Update preview with partial HTML during streaming
+   * Shows "building" state while HTML is incomplete
+   */
+  private updateStreamingPreview(partialHtml: string) {
+    const previewArea = this.shadow.querySelector('.glyph-preview-area');
+    if (!previewArea) return;
+
+    // Check if HTML is complete enough to render
+    const hasBasicStructure = partialHtml.includes('<body') || partialHtml.includes('<div');
+    if (!hasBasicStructure) return;
+
+    // Create/update streaming preview iframe
+    let iframe = previewArea.querySelector('.glyph-streaming-frame') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.className = 'glyph-preview-frame glyph-streaming-frame';
+      iframe.setAttribute('sandbox', 'allow-same-origin');
+      iframe.title = 'Document preview (building...)';
+
+      // Hide main preview, show streaming preview
+      const mainIframe = previewArea.querySelector('.glyph-preview-frame:not(.glyph-streaming-frame)');
+      if (mainIframe) {
+        (mainIframe as HTMLElement).style.display = 'none';
+      }
+      previewArea.appendChild(iframe);
+    }
+
+    // Write partial HTML
+    const doc = iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(this.wrapHtmlWithStyles(partialHtml));
+      doc.close();
+    }
+  }
+
+  /**
+   * Clean up streaming preview iframe
+   */
+  private cleanupStreamingPreview() {
+    const previewArea = this.shadow.querySelector('.glyph-preview-area');
+    if (!previewArea) return;
+
+    const streamingFrame = previewArea.querySelector('.glyph-streaming-frame');
+    if (streamingFrame) {
+      streamingFrame.remove();
+    }
+
+    // Show main preview again
+    const mainIframe = previewArea.querySelector('.glyph-preview-frame');
+    if (mainIframe) {
+      (mainIframe as HTMLElement).style.display = '';
+    }
+  }
+
+  /**
+   * Update the AI progress indicator message
+   */
+  private updateProgressMessage(message: string) {
+    const messageEl = this.shadow.getElementById('glyph-ai-message');
+    if (messageEl) {
+      messageEl.textContent = message;
     }
   }
 
