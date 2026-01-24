@@ -1,0 +1,51 @@
+{
+  "invoice": {
+    "number": "INV-2026-0042",
+    "date": "January 23, 2026",
+    "dueDate": "February 22, 2026"
+  },
+  "company": {
+    "name": "Acme Web Studio",
+    "address": "123 Main Street\nSan Francisco, CA 94102",
+    "email": "billing@acmewebstudio.com",
+    "phone": "(415) 555-0123"
+  },
+  "client": {
+    "name": "TechCorp Industries",
+    "company": "TechCorp Industries Inc.",
+    "address": "456 Tech Parkway\nAustin, TX 78701",
+    "email": "accounts@techcorp.com"
+  },
+  "lineItems": [
+    {
+      "description": "Website Redesign",
+      "details": "Complete redesign of corporate website",
+      "quantity": 1,
+      "unitPrice": 8500,
+      "total": 8500
+    },
+    {
+      "description": "Frontend Development",
+      "details": "React implementation with responsive design",
+      "quantity": 40,
+      "unit": "hours",
+      "unitPrice": 150,
+      "total": 6000
+    },
+    {
+      "description": "Backend API Integration",
+      "details": "REST API integration with existing systems",
+      "quantity": 20,
+      "unit": "hours",
+      "unitPrice": 175,
+      "total": 3500
+    }
+  ],
+  "totals": {
+    "subtotal": 18000,
+    "tax": 1620,
+    "taxRate": 9,
+    "total": 19620
+  },
+  "notes": "Thank you for your business!"
+}
