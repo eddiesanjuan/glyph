@@ -574,8 +574,48 @@ export function App() {
           {/* ==================== LOGIN PAGE ==================== */}
           {page === 'login' && !data && (
             <div class="auth-card animate-in">
-              <h1>API Dashboard</h1>
-              <p class="subtitle">Enter your API key to view usage and manage your account.</p>
+              {/* Value Preview - Show what users get before asking for login */}
+              <div class="value-preview">
+                <div class="value-preview-item">
+                  <div class="value-preview-icon">
+                    {Icons.key}
+                  </div>
+                  <div class="value-preview-text">
+                    <strong>Your API Keys</strong>
+                    <span>Manage and regenerate keys</span>
+                  </div>
+                </div>
+                <div class="value-preview-item">
+                  <div class="value-preview-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 20V10"/>
+                      <path d="M12 20V4"/>
+                      <path d="M6 20v-6"/>
+                    </svg>
+                  </div>
+                  <div class="value-preview-text">
+                    <strong>Usage Analytics</strong>
+                    <span>Track requests and limits</span>
+                  </div>
+                </div>
+                <div class="value-preview-item">
+                  <div class="value-preview-icon">
+                    {Icons.docs}
+                  </div>
+                  <div class="value-preview-text">
+                    <strong>Integration Setup</strong>
+                    <span>Code snippets and guides</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="value-preview-cta">
+                <span class="free-tier-badge">Free tier: 100 PDFs/month</span>
+              </div>
+
+              <div class="auth-divider">
+                <span>Sign in to access</span>
+              </div>
 
               <form onSubmit={handleSubmit} class="auth-form">
                 <div class="input-group">
