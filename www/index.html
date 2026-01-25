@@ -45,10 +45,10 @@
   <meta name="twitter:title" content="Glyph - Natural Language PDF Customization">
   <meta name="twitter:description" content="AI-powered PDF SDK with MCP Server integration.">
 
-  <!-- Fonts - Inter for body, Geist for logo -->
+  <!-- Fonts - Inter for body, Archivo Expanded ExtraLight for logo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,200&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Favicon - G lettermark -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -97,9 +97,9 @@
       --color-warning: #F59E0B;
       --color-error: #EF4444;
 
-      /* Typography - Inter for body, Geist for logo (distinctive, less AI-generated feel) */
+      /* Typography - Inter for body, Archivo Expanded ExtraLight for logo */
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --font-logo: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-logo: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
       /* Border radius */
@@ -329,9 +329,11 @@
 
     .nav__logo-text {
       font-family: var(--font-logo);
-      font-size: 20px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-size: 22px;
+      font-weight: 200;
+      font-stretch: 125%;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     .nav__links {
@@ -5736,8 +5738,11 @@
 
     .footer__logo-text {
       font-family: var(--font-logo);
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 200;
+      font-stretch: 125%;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     .footer__tagline {
