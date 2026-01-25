@@ -8071,7 +8071,7 @@
               </div>
               <p class="playground__hint" id="playground-hint">
                 <span class="playground__hint-instant">Quick actions above are instant.</span>
-                Custom prompts use AI and take 45-60s.
+                Custom prompts use AI and may take 60-90s.
               </p>
               <div class="playground__button-row">
                 <button class="playground__apply-btn" id="apply-btn">
@@ -12362,11 +12362,11 @@
 
     // Get context-aware status message based on elapsed time
     function getTimeAwareMessage(elapsedSeconds) {
-      if (elapsedSeconds < 10) return 'Analyzing your request (~45-60s total)...';
-      if (elapsedSeconds < 20) return 'Generating modifications...';
-      if (elapsedSeconds < 35) return 'Applying changes...';
-      if (elapsedSeconds < 50) return 'Almost there...';
-      if (elapsedSeconds < 60) return 'Finishing up...';
+      if (elapsedSeconds < 10) return 'Analyzing your request (~60-90s for complex changes)...';
+      if (elapsedSeconds < 25) return 'Generating modifications...';
+      if (elapsedSeconds < 45) return 'Applying changes...';
+      if (elapsedSeconds < 65) return 'Almost there...';
+      if (elapsedSeconds < 80) return 'Finishing up...';
       return 'This one\'s complex - hang tight!';
     }
 
@@ -12485,13 +12485,13 @@
 
         // Initial message with time estimate for AI requests
         if (loadingText) {
-          loadingText.textContent = 'AI requests typically take 45-60 seconds. Analyzing... (0s)';
+          loadingText.textContent = 'AI requests may take 60-90 seconds. Analyzing... (0s)';
         }
 
-        // Animate progress with logarithmic curve for 60 second operations
+        // Animate progress with logarithmic curve for 90 second operations
         // Fast start, progressively slower as it approaches 95%
         const startTime = Date.now();
-        const duration = 60000; // 60 seconds to reach ~95%
+        const duration = 90000; // 90 seconds to reach ~95%
 
         loadingProgressInterval = setInterval(() => {
           const elapsed = Date.now() - startTime;
@@ -12499,11 +12499,11 @@
           // Uses log curve that reaches ~95% at duration, continues slowly after
           const t = elapsed / duration;
           if (t <= 1) {
-            // During first 60s: logarithmic curve from 0 to 95%
+            // During first 90s: logarithmic curve from 0 to 95%
             loadingProgress = 95 * (1 - Math.pow(1 - t, 2.5));
           } else {
-            // After 60s: very slow crawl from 95% toward 98% (never reaches)
-            const extraTime = (elapsed - duration) / 60000; // additional minutes
+            // After 90s: very slow crawl from 95% toward 98% (never reaches)
+            const extraTime = (elapsed - duration) / 90000; // additional 90s intervals
             loadingProgress = 95 + 3 * (1 - Math.exp(-extraTime));
           }
           progressBar.style.width = loadingProgress + '%';
@@ -12785,14 +12785,33 @@
 
       const startTime = Date.now();
 
-      // TIMEOUT FIX: Create AbortController for 60-second timeout
+      // TIMEOUT FIX: Activity-based timeout for AI requests
       // Store globally so cancel button can access it
-      const MODIFICATION_TIMEOUT_MS = 60000; // 60 seconds max
+      const MODIFICATION_TIMEOUT_MS = 90000; // 90 seconds absolute max for complex AI requests
+      const ACTIVITY_TIMEOUT_MS = 15000; // Abort if no streaming activity for 15 seconds
       const WARNING_TIMEOUT_MS = 45000; // Show warning at 45 seconds
       currentAbortController = new AbortController();
-      const timeoutId = setTimeout(() => {
+
+      // Absolute maximum timeout (safety net)
+      const absoluteTimeoutId = setTimeout(() => {
+        console.warn('[Glyph] Absolute timeout reached (90s)');
         currentAbortController.abort();
       }, MODIFICATION_TIMEOUT_MS);
+
+      // Activity-based timeout - resets every time we receive streaming data
+      let activityTimeoutId = setTimeout(() => {
+        console.warn('[Glyph] No streaming activity for 15s, aborting');
+        currentAbortController.abort();
+      }, ACTIVITY_TIMEOUT_MS);
+
+      // Function to reset activity timeout (called on each streaming chunk)
+      function resetActivityTimeout() {
+        clearTimeout(activityTimeoutId);
+        activityTimeoutId = setTimeout(() => {
+          console.warn('[Glyph] No streaming activity for 15s, aborting');
+          currentAbortController.abort();
+        }, ACTIVITY_TIMEOUT_MS);
+      }
 
       // FIX 2: Show encouraging message at 45 seconds (complex requests take time)
       const warningTimeoutId = setTimeout(() => {
@@ -12871,6 +12890,9 @@
               deltaCount++;
               streamingHtml += event.html || '';
 
+              // ACTIVITY TIMEOUT: Reset timeout on every chunk - AI is actively working
+              resetActivityTimeout();
+
               // Progress through stages based on content received
               // Typical response is ~500-1000 chunks, so we pace the stages
               if (deltaCount === 20) {
@@ -12939,7 +12961,7 @@
             showToast(refusalMsg, 'warning', 5000);
             setStatus('Request not supported');
             setTimeout(() => setStatus('Ready'), 3000);
-            clearTimeout(timeoutId);
+            clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
             return;
           }
 
@@ -12975,7 +12997,7 @@
           if (sessionId) {
             startValidationPolling(sessionId);
           }
-          clearTimeout(timeoutId);
+          clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
           return;
         }
 
@@ -13016,7 +13038,7 @@
           showToast(refusalMsg, 'warning', 5000);
           setStatus('Request not supported');
           setTimeout(() => setStatus('Ready'), 3000);
-          clearTimeout(timeoutId);
+          clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
           return;
         }
 
@@ -13049,7 +13071,7 @@
 
       } catch (err) {
         // Clear timeout on error
-        clearTimeout(timeoutId);
+        clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
         // CRITICAL FIX: Show user-visible error instead of silent simulation
         // Never pretend changes applied when API failed
         console.error('[Glyph] API modification failed:', err);
@@ -13085,7 +13107,7 @@
         setTimeout(() => setStatus('Ready'), 3000);
       } finally {
         // Always clear the timeouts to prevent memory leaks
-        clearTimeout(timeoutId);
+        clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
         clearTimeout(warningTimeoutId);
         currentAbortController = null;  // Clear abort controller
         isProcessingModification = false;
