@@ -6412,21 +6412,29 @@
 
     .airtable-style-btn {
       flex: 1;
-      padding: 16px;
+      padding: 12px;
       background: var(--color-surface);
       border: 2px solid var(--color-border-subtle);
       border-radius: var(--radius-md);
       color: var(--color-text-muted);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: all var(--transition-fast);
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
     }
 
     .airtable-style-btn:hover {
       border-color: var(--color-text-muted);
       color: var(--color-text);
+    }
+
+    .airtable-style-btn:hover .airtable-style-preview {
+      border-color: var(--color-text-muted);
     }
 
     .airtable-style-btn.selected {
@@ -6435,9 +6443,39 @@
       color: var(--color-primary-bright);
     }
 
-    .airtable-style-btn__icon {
-      font-size: 24px;
-      margin-bottom: 8px;
+    .airtable-style-btn.selected .airtable-style-preview {
+      border-color: var(--color-primary);
+    }
+
+    .airtable-style-preview {
+      width: 100%;
+      aspect-ratio: 8.5 / 11;
+      max-height: 140px;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-subtle);
+      overflow: hidden;
+      transition: border-color var(--transition-fast);
+    }
+
+    .airtable-style-preview svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .airtable-style-btn__label {
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .airtable-style-btn__desc {
+      font-size: 11px;
+      color: var(--color-text-subtle);
+      line-height: 1.3;
+    }
+
+    .airtable-style-btn.selected .airtable-style-btn__desc {
+      color: var(--color-primary);
     }
 
     /* Preview Area */
@@ -7375,7 +7413,22 @@
       }
 
       .airtable-styles {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .airtable-style-btn {
+        flex: 1 1 calc(33% - 8px);
+        min-width: 90px;
+        padding: 8px;
+      }
+
+      .airtable-style-preview {
+        max-height: 100px;
+      }
+
+      .airtable-style-btn__desc {
+        display: none;
       }
 
       .airtable-modal__footer {
@@ -9230,16 +9283,136 @@
             <label class="airtable-input-label">Style Preset</label>
             <div class="airtable-styles">
               <button class="airtable-style-btn selected" data-style="modern">
-                <div class="airtable-style-btn__icon">&#9632;</div>
-                Modern
+                <div class="airtable-style-preview">
+                  <!-- Modern: Clean lines, lots of whitespace, sans-serif feel -->
+                  <svg viewBox="0 0 85 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="85" height="110" fill="#FAFAFA"/>
+                    <!-- Header accent bar -->
+                    <rect x="8" y="8" width="69" height="4" rx="1" fill="#1E3A5F"/>
+                    <!-- Logo placeholder -->
+                    <rect x="8" y="18" width="18" height="8" rx="2" fill="#E2E8F0"/>
+                    <!-- Company name -->
+                    <rect x="8" y="30" width="35" height="3" rx="1" fill="#1E3A5F"/>
+                    <!-- Invoice title - modern right aligned -->
+                    <rect x="45" y="18" width="32" height="5" rx="1" fill="#1E3A5F"/>
+                    <rect x="55" y="26" width="22" height="2" rx="0.5" fill="#94A3B8"/>
+                    <!-- Divider line -->
+                    <rect x="8" y="40" width="69" height="0.5" fill="#E2E8F0"/>
+                    <!-- Two column layout - modern -->
+                    <rect x="8" y="46" width="28" height="2" rx="0.5" fill="#64748B"/>
+                    <rect x="8" y="50" width="24" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="8" y="54" width="20" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="50" y="46" width="27" height="2" rx="0.5" fill="#64748B"/>
+                    <rect x="50" y="50" width="22" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="50" y="54" width="18" height="2" rx="0.5" fill="#94A3B8"/>
+                    <!-- Table header with accent -->
+                    <rect x="8" y="64" width="69" height="6" rx="1" fill="#1E3A5F"/>
+                    <!-- Table rows - clean lines -->
+                    <rect x="8" y="72" width="30" height="2" rx="0.5" fill="#475569"/>
+                    <rect x="60" y="72" width="17" height="2" rx="0.5" fill="#475569"/>
+                    <rect x="8" y="77" width="25" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="60" y="77" width="14" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="8" y="82" width="28" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="60" y="82" width="15" height="2" rx="0.5" fill="#94A3B8"/>
+                    <!-- Subtle divider -->
+                    <rect x="8" y="88" width="69" height="0.5" fill="#E2E8F0"/>
+                    <!-- Total - bold modern style -->
+                    <rect x="45" y="92" width="18" height="2" rx="0.5" fill="#64748B"/>
+                    <rect x="65" y="92" width="12" height="3" rx="0.5" fill="#1E3A5F"/>
+                    <!-- Footer accent -->
+                    <rect x="8" y="102" width="69" height="2" rx="0.5" fill="#1E3A5F" opacity="0.3"/>
+                  </svg>
+                </div>
+                <div class="airtable-style-btn__label">Modern</div>
+                <div class="airtable-style-btn__desc">Clean, minimal whitespace</div>
               </button>
               <button class="airtable-style-btn" data-style="professional">
-                <div class="airtable-style-btn__icon">&#9633;</div>
-                Professional
+                <div class="airtable-style-preview">
+                  <!-- Professional: Traditional layout, structured, serif accents -->
+                  <svg viewBox="0 0 85 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="85" height="110" fill="#FFFFFF"/>
+                    <!-- Traditional border -->
+                    <rect x="4" y="4" width="77" height="102" stroke="#1E40AF" stroke-width="1" fill="none"/>
+                    <!-- Logo centered top -->
+                    <rect x="33" y="10" width="19" height="10" rx="1" fill="#CBD5E1"/>
+                    <!-- Company name - centered -->
+                    <rect x="22" y="24" width="41" height="3" rx="0.5" fill="#1E40AF"/>
+                    <rect x="28" y="29" width="29" height="2" rx="0.5" fill="#64748B"/>
+                    <!-- Double line divider -->
+                    <rect x="12" y="36" width="61" height="0.5" fill="#1E40AF"/>
+                    <rect x="12" y="38" width="61" height="0.5" fill="#1E40AF"/>
+                    <!-- Invoice header - traditional -->
+                    <rect x="12" y="44" width="25" height="3" rx="0.5" fill="#1E40AF"/>
+                    <rect x="58" y="44" width="15" height="2" rx="0.5" fill="#475569"/>
+                    <!-- Bill to / Ship to boxes -->
+                    <rect x="12" y="52" width="26" height="18" stroke="#E2E8F0" stroke-width="0.5" fill="#F8FAFC"/>
+                    <rect x="12" y="52" width="26" height="4" fill="#1E40AF" opacity="0.1"/>
+                    <rect x="14" y="54" width="12" height="2" rx="0.5" fill="#1E40AF"/>
+                    <rect x="14" y="59" width="18" height="1.5" rx="0.5" fill="#64748B"/>
+                    <rect x="14" y="62" width="16" height="1.5" rx="0.5" fill="#94A3B8"/>
+                    <rect x="14" y="65" width="14" height="1.5" rx="0.5" fill="#94A3B8"/>
+                    <rect x="47" y="52" width="26" height="18" stroke="#E2E8F0" stroke-width="0.5" fill="#F8FAFC"/>
+                    <rect x="47" y="52" width="26" height="4" fill="#1E40AF" opacity="0.1"/>
+                    <rect x="49" y="54" width="10" height="2" rx="0.5" fill="#1E40AF"/>
+                    <rect x="49" y="59" width="18" height="1.5" rx="0.5" fill="#64748B"/>
+                    <rect x="49" y="62" width="16" height="1.5" rx="0.5" fill="#94A3B8"/>
+                    <!-- Table with borders -->
+                    <rect x="12" y="74" width="61" height="5" fill="#1E40AF"/>
+                    <rect x="12" y="79" width="61" height="0.5" fill="#CBD5E1"/>
+                    <rect x="12" y="80" width="25" height="2" rx="0.5" fill="#475569"/>
+                    <rect x="55" y="80" width="15" height="2" rx="0.5" fill="#475569"/>
+                    <rect x="12" y="84" width="61" height="0.5" fill="#E2E8F0"/>
+                    <rect x="12" y="86" width="22" height="2" rx="0.5" fill="#94A3B8"/>
+                    <rect x="55" y="86" width="12" height="2" rx="0.5" fill="#94A3B8"/>
+                    <!-- Total box -->
+                    <rect x="47" y="92" width="26" height="8" stroke="#1E40AF" stroke-width="0.5" fill="#F8FAFC"/>
+                    <rect x="49" y="94" width="10" height="2" rx="0.5" fill="#475569"/>
+                    <rect x="63" y="94" width="8" height="3" rx="0.5" fill="#1E40AF"/>
+                  </svg>
+                </div>
+                <div class="airtable-style-btn__label">Professional</div>
+                <div class="airtable-style-btn__desc">Traditional, structured</div>
               </button>
               <button class="airtable-style-btn" data-style="minimal">
-                <div class="airtable-style-btn__icon">&#9675;</div>
-                Minimal
+                <div class="airtable-style-preview">
+                  <!-- Minimal: Bare essentials, maximum simplicity -->
+                  <svg viewBox="0 0 85 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background - pure white -->
+                    <rect width="85" height="110" fill="#FFFFFF"/>
+                    <!-- Simple logo - just text -->
+                    <rect x="10" y="12" width="28" height="3" rx="0.5" fill="#374151"/>
+                    <!-- Invoice - right aligned, simple -->
+                    <rect x="55" y="12" width="20" height="2" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="60" y="16" width="15" height="1.5" rx="0.5" fill="#D1D5DB"/>
+                    <!-- Single thin line -->
+                    <rect x="10" y="26" width="65" height="0.5" fill="#E5E7EB"/>
+                    <!-- Minimal address - left aligned -->
+                    <rect x="10" y="34" width="8" height="1.5" rx="0.5" fill="#6B7280"/>
+                    <rect x="10" y="38" width="24" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="10" y="42" width="20" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="10" y="46" width="18" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <!-- Table - no borders, just alignment -->
+                    <rect x="10" y="58" width="20" height="1.5" rx="0.5" fill="#6B7280"/>
+                    <rect x="55" y="58" width="12" height="1.5" rx="0.5" fill="#6B7280"/>
+                    <rect x="10" y="64" width="65" height="0.25" fill="#E5E7EB"/>
+                    <rect x="10" y="68" width="30" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="55" y="68" width="16" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="10" y="74" width="26" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="55" y="74" width="14" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="10" y="80" width="28" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <rect x="55" y="80" width="15" height="1.5" rx="0.5" fill="#9CA3AF"/>
+                    <!-- Subtle total line -->
+                    <rect x="45" y="88" width="30" height="0.25" fill="#E5E7EB"/>
+                    <rect x="45" y="92" width="12" height="1.5" rx="0.5" fill="#6B7280"/>
+                    <rect x="60" y="92" width="15" height="2" rx="0.5" fill="#374151"/>
+                    <!-- Minimal footer - just a note -->
+                    <rect x="10" y="102" width="35" height="1" rx="0.5" fill="#D1D5DB"/>
+                  </svg>
+                </div>
+                <div class="airtable-style-btn__label">Minimal</div>
+                <div class="airtable-style-btn__desc">Simple, essential only</div>
               </button>
             </div>
           </div>
