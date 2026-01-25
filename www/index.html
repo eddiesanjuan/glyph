@@ -7011,6 +7011,136 @@
       color: var(--color-text);
     }
 
+    /* Input validation error message */
+    .airtable-input-error {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      color: #f87171;
+    }
+
+    .airtable-input-error.visible {
+      display: flex;
+    }
+
+    .airtable-input-error svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Demo Mode Badge */
+    .airtable-demo-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: 12px;
+    }
+
+    .airtable-demo-badge.visible {
+      display: flex;
+    }
+
+    .airtable-demo-badge svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Connection Error Toast with Action Button */
+    .airtable-error-toast {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--color-bg-card);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      min-width: 320px;
+      max-width: 400px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .airtable-error-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .airtable-error-toast__message {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .airtable-error-toast__message svg {
+      width: 20px;
+      height: 20px;
+      color: #f87171;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .airtable-error-toast__message span {
+      font-size: 14px;
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    .airtable-error-toast__actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .airtable-error-toast__btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .airtable-error-toast__btn--secondary {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .airtable-error-toast__btn--secondary:hover {
+      background: var(--color-bg-secondary);
+      color: var(--color-text);
+    }
+
+    .airtable-error-toast__btn--primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .airtable-error-toast__btn--primary:hover {
+      background: var(--color-primary-hover);
+    }
+
     /* Validation Toast - for self-check warnings */
     .validation-toast {
       position: fixed;
@@ -8966,6 +9096,12 @@
             <div class="airtable-modal__title">Connect Airtable</div>
             <div class="airtable-modal__subtitle">Generate templates from your data</div>
           </div>
+          <div class="airtable-demo-badge" id="airtable-demo-badge">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            DEMO MODE
+          </div>
         </div>
         <button class="airtable-modal__close" id="airtable-modal-close">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -9020,6 +9156,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">Get your API token from Airtable</a>
+            </div>
+            <div class="airtable-input-error" id="airtable-token-error">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Token must start with "pat" (Personal Access Token)</span>
             </div>
           </div>
 
@@ -14325,6 +14467,8 @@
       airtableState.style = 'modern';
       airtableState.generatedTemplate = null;
       airtableState.generatedHtml = '';
+      airtableState.isDemoMode = false;
+      airtableState.isDemo = false;
 
       // Reset UI
       airtableKeyInput.value = '';
@@ -14337,6 +14481,14 @@
       airtableDescription.value = '';
       airtableStyleBtns.forEach(btn => btn.classList.remove('selected'));
       airtableStyleBtns[0].classList.add('selected');
+
+      // Hide demo badge and validation error
+      airtableDemoBadge.classList.remove('visible');
+      airtableTokenError.classList.remove('visible');
+
+      // Remove any lingering error toasts
+      const existingErrorToast = document.querySelector('.airtable-error-toast');
+      if (existingErrorToast) existingErrorToast.remove();
 
       goToStep(1);
     }
@@ -14409,8 +14561,20 @@
       airtableNextBtn.disabled = disabled;
     }
 
-    // Input validation
-    airtableKeyInput.addEventListener('input', updateNextButton);
+    // Input validation with error message display
+    const airtableTokenError = document.getElementById('airtable-token-error');
+    const airtableDemoBadge = document.getElementById('airtable-demo-badge');
+
+    airtableKeyInput.addEventListener('input', () => {
+      const value = airtableKeyInput.value.trim();
+      // Show error if user has typed something but it doesn't start with 'pat'
+      if (value.length > 0 && !value.startsWith('pat')) {
+        airtableTokenError.classList.add('visible');
+      } else {
+        airtableTokenError.classList.remove('visible');
+      }
+      updateNextButton();
+    });
     airtableDescription.addEventListener('input', updateNextButton);
 
     // Style selection
@@ -14494,14 +14658,63 @@
 
         const data = await response.json();
         airtableState.bases = data.bases || [];
+        airtableState.isDemoMode = false;
+        airtableDemoBadge.classList.remove('visible');
         populateBases(airtableState.bases);
         goToStep(2);
       } catch (err) {
         console.error('Airtable connection failed:', err);
-        // Auto-fallback to demo mode with a toast notification
-        showAirtableToast('Connecting with demo data...', 'info');
-        loadDemoData();
+        // Show error toast with option to continue with demo data
+        showConnectionErrorToast();
       }
+    }
+
+    // Show connection error toast with demo option
+    function showConnectionErrorToast() {
+      // Remove any existing error toast
+      const existingToast = document.querySelector('.airtable-error-toast');
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement('div');
+      toast.className = 'airtable-error-toast';
+      toast.innerHTML = `
+        <div class="airtable-error-toast__message">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Could not connect to Airtable. Please check your token and try again.</span>
+        </div>
+        <div class="airtable-error-toast__actions">
+          <button class="airtable-error-toast__btn airtable-error-toast__btn--secondary" id="airtable-retry-btn">Try Again</button>
+          <button class="airtable-error-toast__btn airtable-error-toast__btn--primary" id="airtable-demo-btn">Continue with Demo Data</button>
+        </div>
+      `;
+      document.querySelector('.airtable-modal').appendChild(toast);
+
+      // Show with animation
+      setTimeout(() => toast.classList.add('visible'), 10);
+
+      // Retry button - just dismiss the toast
+      document.getElementById('airtable-retry-btn').addEventListener('click', () => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+        airtableKeyInput.focus();
+      });
+
+      // Demo button - load demo data and show badge
+      document.getElementById('airtable-demo-btn').addEventListener('click', () => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+        enterDemoMode();
+      });
+    }
+
+    // Enter demo mode with clear visual indicator
+    function enterDemoMode() {
+      airtableState.isDemoMode = true;
+      airtableDemoBadge.classList.add('visible');
+      showAirtableToast('Using demo data for preview', 'warning');
+      loadDemoData();
     }
 
     // Toast notification for Airtable modal
@@ -14624,6 +14837,8 @@
       };
 
       airtableState.isDemo = true;
+      airtableState.isDemoMode = true;
+      airtableDemoBadge.classList.add('visible');
       goToStep(2);
     }
 
