@@ -12842,33 +12842,66 @@
           let streamingHtml = '';
 
           // Process streaming response with progress callbacks
+          // User-friendly messages instead of technical "chunks"
+          const progressMessages = [
+            'Understanding your request...',
+            'Building the layout...',
+            'Adding content...',
+            'Styling elements...',
+            'Refining details...',
+            'Almost there...'
+          ];
+          let currentMessageIndex = 0;
+
           const data = await processStreamingResponse(response, {
             onStart: (event) => {
               console.log('[Glyph Stream] Started:', event.model);
               // CRITICAL: Stop the timer-based progress updates when streaming starts
-              // This prevents the old "Analyzing your request (~45-60s)" messages from overwriting
               if (elapsedTimerInterval) {
                 clearInterval(elapsedTimerInterval);
                 elapsedTimerInterval = null;
               }
-              const modelName = event.model?.includes('haiku') ? 'fast AI' : 'full AI';
-              setStatus(`Building with ${modelName}...`);
-              // Update the actual loading text element (not glyph-ai-message which doesn't exist)
+              // Activate first stage
+              activateStage('analyze');
               const loadingText = document.getElementById('loading-text');
-              if (loadingText) loadingText.textContent = `Building with ${modelName}...`;
+              if (loadingText) loadingText.textContent = progressMessages[0];
+              setStatus('AI is working...');
             },
             onDelta: (event) => {
               deltaCount++;
               streamingHtml += event.html || '';
-              // Update progress message periodically - shows streaming is active
-              if (deltaCount % 5 === 0) {
+
+              // Progress through stages based on content received
+              // Typical response is ~500-1000 chunks, so we pace the stages
+              if (deltaCount === 20) {
+                activateStage('generate');
+              } else if (deltaCount === 150) {
+                activateStage('apply');
+              }
+
+              // Rotate through friendly messages every ~80 chunks
+              const newMessageIndex = Math.min(
+                Math.floor(deltaCount / 80),
+                progressMessages.length - 1
+              );
+              if (newMessageIndex !== currentMessageIndex) {
+                currentMessageIndex = newMessageIndex;
                 const loadingText = document.getElementById('loading-text');
-                if (loadingText) loadingText.textContent = `Generating... (${deltaCount} chunks received)`;
-                setStatus(`Streaming... ${deltaCount} chunks`);
+                if (loadingText) loadingText.textContent = progressMessages[currentMessageIndex];
+              }
+
+              // Update status indicator with elapsed time instead of chunks
+              if (deltaCount % 20 === 0) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                setStatus(`AI is working... ${elapsed}s`);
               }
             },
             onChanges: (event) => {
               console.log('[Glyph Stream] Changes:', event.changes);
+              // Activate apply stage when we receive changes
+              activateStage('apply');
+              const loadingText = document.getElementById('loading-text');
+              if (loadingText) loadingText.textContent = 'Applying your changes...';
             },
             onComplete: (event) => {
               console.log('[Glyph Stream] Complete:', event.fastPath ? 'fast path' : `${deltaCount} chunks`);
@@ -12877,9 +12910,11 @@
                 clearInterval(elapsedTimerInterval);
                 elapsedTimerInterval = null;
               }
+              // Activate final stage briefly
+              activateStage('validate');
               const loadingText = document.getElementById('loading-text');
               if (loadingText) {
-                loadingText.textContent = event.fastPath ? 'Applied instantly!' : 'Finishing up...';
+                loadingText.textContent = event.fastPath ? 'Applied instantly!' : 'Validating output...';
               }
             },
             onError: (event) => {
