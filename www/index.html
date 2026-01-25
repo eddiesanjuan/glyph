@@ -9914,6 +9914,7 @@
     let lastFailedPrompt = null;
     let apiErrorToastTimeout = null;
     let consecutiveFailures = 0; // Track consecutive failures for guidance
+    let lastErrorWasSessionError = false; // Track if session needs refresh on retry
 
     // Get API error toast elements
     function getApiErrorElements() {
@@ -9959,8 +9960,9 @@
         } else {
           userMessage = 'This request was too complex to complete in time. Try a more specific instruction - the AI works best with clear, focused changes. Your document is safe.';
         }
-      } else if (lowerMsg.includes('session') || lowerMsg.includes('expired')) {
+      } else if (lowerMsg.includes('session') || lowerMsg.includes('expired') || lowerMsg.includes('dev_session_not_found')) {
         userMessage = 'Session expired. Click Retry to start fresh.';
+        lastErrorWasSessionError = true; // Mark for auto-refresh on retry
       } else if (lowerMsg.includes('rate') || lowerMsg.includes('429')) {
         userMessage = 'Too many requests. Wait 10 seconds, then click Retry.';
       } else if (lowerMsg.includes('500') || lowerMsg.includes('502') || lowerMsg.includes('503')) {
@@ -10028,9 +10030,24 @@
     }
 
     // Retry failed modification
-    function retryFailedModification() {
+    async function retryFailedModification() {
       hideApiError();
       if (lastFailedPrompt) {
+        // If session was expired/lost, reinitialize preview first to get fresh session
+        if (lastErrorWasSessionError) {
+          console.log('[Glyph] Session error detected, refreshing session before retry');
+          setStatus('Refreshing session...');
+          lastErrorWasSessionError = false; // Reset flag
+          try {
+            await initializePreview();
+            // Small delay to ensure session is ready
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (err) {
+            console.error('[Glyph] Failed to refresh session:', err);
+            showToast('Unable to refresh session. Please reload the page.', 'error');
+            return;
+          }
+        }
         // Re-apply the failed prompt
         applyModifications(lastFailedPrompt);
       }
@@ -12982,6 +12999,7 @@
 
           // Cycle 6: Reset failure counter on success
           consecutiveFailures = 0;
+          lastErrorWasSessionError = false;
 
           // Show success CTA after first modification
           showSuccessCta();
@@ -13058,6 +13076,7 @@
 
         // Cycle 6: Reset failure counter on success
         consecutiveFailures = 0;
+        lastErrorWasSessionError = false;
 
         // Show success CTA after first modification
         showSuccessCta();
