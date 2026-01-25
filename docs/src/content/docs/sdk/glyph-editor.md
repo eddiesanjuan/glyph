@@ -137,7 +137,7 @@ The editor consists of:
 3. **Command Input** - Text input for custom AI commands
 4. **Download Button** - Generates and downloads PDF
 
-```
+```text
 ┌─────────────────────────────────────┐
 │         Preview Area                │
 │   ┌─────────────────────────────┐   │

@@ -188,7 +188,7 @@ The MCP server also exposes these resources for direct access:
 
 Here's a typical conversation with your AI assistant:
 
-```
+```text
 You: Create a quote for John Doe for website design services, $3500
 
 AI: [Uses glyph_preview to create the document]

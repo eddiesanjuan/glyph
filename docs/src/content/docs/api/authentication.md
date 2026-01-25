@@ -22,7 +22,7 @@ Store your API key securely. If compromised, revoke it immediately and create a 
 
 Glyph API keys follow a specific format:
 
-```
+```text
 gk_xxxxxxxxxxxxxxxxxxxx
 ```
 

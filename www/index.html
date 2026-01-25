@@ -53,6 +53,15 @@
   <!-- Favicon - G lettermark -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
+  <!-- Skip hero animation for returning visitors (within session) -->
+  <script>
+    (function() {
+      if (sessionStorage.getItem('glyph_hero_animation_played')) {
+        document.documentElement.className += ' hero-animation-played';
+      }
+    })();
+  </script>
+
   <style>
     /* ============================================
        CSS Variables & Reset
@@ -919,6 +928,17 @@
       }
     }
 
+    /* Skip hero animation for returning visitors (within session) */
+    html.hero-animation-played .hero__badge,
+    html.hero-animation-played .hero__title,
+    html.hero-animation-played .hero__subtitle,
+    html.hero-animation-played .hero__actions,
+    html.hero-animation-played .hero__mcp,
+    html.hero-animation-played .hero__demo {
+      animation-duration: 0.05s !important;
+      animation-delay: 0s !important;
+    }
+
     /* ============================================
        Integration Options Section (below hero)
        ============================================ */
@@ -1375,9 +1395,10 @@
 
       /* CRITICAL FIX: Make preview area visible and scrollable on mobile
          Cycle 6 consolidated - explicit visibility, proper sizing for 375px viewport
-         P2 enhancement: Added visual prominence with subtle border */
+         P2 enhancement: Added visual prominence with subtle border
+         Friction Fix #1: Enhanced visual hierarchy for mobile users */
       .playground__preview-area {
-        padding: 12px;
+        padding: 16px;
         min-height: 450px;
         max-height: none;
         display: flex !important;
@@ -1385,8 +1406,11 @@
         overflow: visible;
         visibility: visible !important;
         opacity: 1 !important;
-        border-top: 2px solid var(--color-primary);
-        background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
+        border-top: 3px solid var(--color-primary);
+        border-radius: 12px 12px 0 0;
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 30%, var(--color-bg-elevated) 100%);
+        margin-top: 12px;
+        box-shadow: 0 -4px 20px rgba(59, 130, 246, 0.15);
       }
 
       /* CRITICAL FIX: Preview container must be visible with proper dimensions
@@ -1511,15 +1535,41 @@
         gap: 6px;
       }
 
-      /* Preview label - more prominent on mobile */
+      /* Preview label - more prominent on mobile
+         Friction Fix #1: Enhanced visual hierarchy with icon indicator */
       .playground__preview-label {
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding: 10px 14px;
         flex-shrink: 0;
         color: var(--color-text);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        background: rgba(59, 130, 246, 0.12);
+        border-radius: 8px;
+        border-left: 3px solid var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* Arrow indicator pointing to preview content */
+      .playground__preview-label::before {
+        content: '';
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-left: 6px solid var(--color-primary);
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        margin-right: 8px;
+        animation: pulse-arrow 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-arrow {
+        0%, 100% { opacity: 1; transform: translateX(0); }
+        50% { opacity: 0.6; transform: translateX(2px); }
       }
 
       /* CRITICAL FIX: Make zoom button fixed and always accessible
@@ -2362,6 +2412,58 @@
       opacity: 1;
     }
 
+    /* Applied state for instant action buttons */
+    .playground__suggestion--applied {
+      background: rgba(34, 197, 94, 0.15) !important;
+      border-color: rgba(34, 197, 94, 0.5) !important;
+      color: rgb(34, 197, 94) !important;
+      position: relative;
+    }
+
+    .playground__suggestion--applied::after {
+      content: '\2713';
+      font-size: 10px;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+
+    .playground__suggestion--applied .playground__suggestion-duration {
+      display: none;
+    }
+
+    .playground__suggestion--applied:hover:not(:disabled) {
+      background: rgba(34, 197, 94, 0.25) !important;
+      border-color: rgba(34, 197, 94, 0.6) !important;
+      color: rgb(34, 197, 94) !important;
+    }
+
+    /* Hero buttons also get the applied state */
+    .playground__suggestion--hero.playground__suggestion--applied::before {
+      content: '\2713';
+      color: rgb(34, 197, 94);
+      opacity: 1;
+    }
+
+    /* Highlight animation for empty prompt guidance */
+    .playground__suggestion--highlight {
+      animation: quick-action-highlight 0.6s ease-out;
+    }
+
+    @keyframes quick-action-highlight {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.2);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+      }
+    }
+
     .playground__hint {
       margin-top: 8px;
       font-size: 11px;
@@ -2404,6 +2506,20 @@
       }
       100% {
         box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    /* Content Updated Highlight - subtle flash for any modification */
+    .playground__preview-area.content-updated {
+      animation: content-flash 0.5s ease-out;
+    }
+
+    @keyframes content-flash {
+      0% {
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+      }
+      100% {
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
       }
     }
 
@@ -5601,7 +5717,7 @@
     }
 
     .footer__column a:hover {
-      color: var(--color-text);
+      color: var(--color-primary);
     }
 
     .footer__bottom {
@@ -5730,24 +5846,32 @@
         flex-shrink: 0;
       }
 
-      /* Mobile preview area - full width, prominent height for document visibility */
+      /* Mobile preview area - full width, prominent height for document visibility
+         Friction Fix #1: Enhanced visual hierarchy for tablet/mobile users */
       .playground__preview-area {
         width: 100%;
         min-height: 400px;
         padding: 16px;
-        border-top: 2px solid var(--color-primary);
-        background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 20%);
+        border-top: 3px solid var(--color-primary);
+        border-radius: 12px 12px 0 0;
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, rgba(59, 130, 246, 0.02) 25%, var(--color-bg-elevated) 100%);
         display: flex;
         flex-direction: column;
+        margin-top: 12px;
+        box-shadow: 0 -4px 16px rgba(59, 130, 246, 0.1);
       }
 
-      /* Mobile preview label - prominent header */
+      /* Mobile preview label - prominent header with visual indicator */
       .playground__preview-label {
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--color-text);
         margin-bottom: 12px;
+        padding: 10px 14px;
         flex-shrink: 0;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 8px;
+        border-left: 3px solid var(--color-primary);
       }
 
       /* Mobile preview container - document must be readable without zoom */
@@ -6300,6 +6424,40 @@
 
     .airtable-input-hint a:hover {
       text-decoration: underline;
+    }
+
+    .airtable-trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .airtable-trust-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .airtable-trust-badge svg {
+      color: var(--color-primary-bright);
+      flex-shrink: 0;
+    }
+
+    .airtable-input-error a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    .airtable-input-error a:hover {
+      color: var(--color-primary-bright);
     }
 
     /* Select Dropdowns */
@@ -7660,6 +7818,12 @@
           }, 400);
         }, 100);
       }
+
+      // P2: Mark hero animation as played after it completes (1s total duration)
+      // This ensures returning visitors (within session) see instant load
+      setTimeout(function() {
+        sessionStorage.setItem('glyph_hero_animation_played', 'true');
+      }, 1000);
     });
     // Fallback: hide after 3 seconds even if load doesn't fire
     setTimeout(function() {
@@ -8194,7 +8358,7 @@
             <button class="playground__tab" data-template="quote-bold">Bold</button>
           </div>
           <!-- Session Timer - Shows remaining time before session expires -->
-          <div class="session-timer" id="session-timer" title="Session time remaining">
+          <div class="session-timer" id="session-timer" title="Demo session lasts 60 minutes. Changes are lost when session expires. Download PDF to save your work.">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
@@ -9194,7 +9358,7 @@
         <div class="airtable-step-content active" data-step="1">
           <h3 class="airtable-step__title">Connect Your Airtable</h3>
           <p class="airtable-step__description">
-            Enter your Airtable Personal Access Token to get started. We'll read your bases and tables automatically.
+            We need a Personal Access Token to read your base structure and generate a matching PDF template. It takes 30 seconds to create one.
           </p>
 
           <div class="airtable-input-group">
@@ -9208,28 +9372,54 @@
             />
             <div class="airtable-input-hint">
               <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
               </svg>
-              <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">Get your API token from Airtable</a>
+              <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">Create a token in Airtable (30 sec)</a>
+            </div>
+            <div class="airtable-trust-badges">
+              <span class="airtable-trust-badge">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Read-only access
+              </span>
+              <span class="airtable-trust-badge">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Token never stored
+              </span>
+              <span class="airtable-trust-badge">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Client-side only
+              </span>
             </div>
             <div class="airtable-input-error" id="airtable-token-error">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              <span>Token must start with "pat" (Personal Access Token)</span>
+              <span>Token must start with "pat". <a href="https://airtable.com/create/tokens" target="_blank" rel="noopener">Create one here</a></span>
             </div>
           </div>
 
           <div class="airtable-info-card" style="margin-top: 24px;">
             <div class="airtable-info-card__title">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              Your data is secure
+              How to create your token
             </div>
             <div class="airtable-data-preview">
-              Your API key is used client-side only and is never stored on our servers.
-              We only read your schema and sample data to generate templates.
+              <ol style="margin: 0; padding-left: 16px; line-height: 1.8;">
+                <li>Click the link above to open Airtable's token page</li>
+                <li>Name it something like "Glyph PDF Templates"</li>
+                <li>Under Scopes, add: <strong>data.records:read</strong> and <strong>schema.bases:read</strong></li>
+                <li>Under Access, select the bases you want to use</li>
+                <li>Click "Create token" and paste it here</li>
+              </ol>
             </div>
           </div>
         </div>
@@ -10008,17 +10198,20 @@
     const MAX_REDO_HISTORY = 20;
     let redoHistory = [];
 
+    // Track applied instant actions - shows visual "applied" state on buttons
+    const appliedActions = new Set();
+
     // ============================================
     // Session Timer Management - CRITICAL UX
     // ============================================
     const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour in milliseconds
     const WARNING_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes warning
-    const URGENT_THRESHOLD_MS = 2 * 60 * 1000;   // 2 minutes urgent
+    const URGENT_THRESHOLD_MS = 5 * 60 * 1000;   // 5 minutes urgent
 
     let sessionStartTime = null;
     let sessionTimerInterval = null;
     let hasShown10MinWarning = false;
-    let hasShown2MinWarning = false;
+    let hasShown5MinWarning = false;
     let userHasInteracted = false; // Track if user has performed any action (prevents stale toasts on load)
     let hasShownSuccessCta = false; // Track if we've shown the success CTA (show once per session)
     let hasShownFirstInstantWin = false; // Track if we've shown the first instant action celebration (once per session)
@@ -10054,7 +10247,7 @@
     function startSessionTimer() {
       sessionStartTime = Date.now();
       hasShown10MinWarning = false;
-      hasShown2MinWarning = false;
+      hasShown5MinWarning = false;
 
       // Clear any existing interval
       if (sessionTimerInterval) {
@@ -10080,12 +10273,16 @@
       // Update display
       els.timerText.textContent = formatTimeRemaining(remaining);
 
-      // Update timer styling based on remaining time
+      // Update timer styling and tooltip based on remaining time
       els.timer.classList.remove('warning', 'urgent');
       if (remaining <= URGENT_THRESHOLD_MS) {
         els.timer.classList.add('urgent');
+        els.timer.title = 'Session expiring soon! Download PDF now to save your work.';
       } else if (remaining <= WARNING_THRESHOLD_MS) {
         els.timer.classList.add('warning');
+        els.timer.title = 'Less than 10 minutes remaining. Consider saving your work.';
+      } else {
+        els.timer.title = 'Demo session lasts 60 minutes. Changes are lost when session expires. Download PDF to save your work.';
       }
 
       // Show 10-minute warning toast
@@ -10098,11 +10295,11 @@
         );
       }
 
-      // Show 2-minute urgent warning toast
-      if (remaining <= URGENT_THRESHOLD_MS && remaining > 0 && !hasShown2MinWarning) {
-        hasShown2MinWarning = true;
+      // Show 5-minute urgent warning toast
+      if (remaining <= URGENT_THRESHOLD_MS && remaining > 0 && !hasShown5MinWarning) {
+        hasShown5MinWarning = true;
         showSessionWarning(
-          'Session expires in 2 minutes!',
+          'Session expires in 5 minutes!',
           'Your changes will be lost. Download PDF immediately!',
           true
         );
@@ -11666,9 +11863,13 @@
       currentHtml = previousHtml;
       renderPreview(currentHtml);
 
+      // Refresh applied action button states based on restored HTML
+      refreshAppliedActionsFromHtml(currentHtml);
+
       // Success animation
       previewContainer.classList.add('success');
       setTimeout(() => previewContainer.classList.remove('success'), 500);
+      flashPreviewArea(); // Mobile visual feedback
 
       setStatus('Undone');
       console.log('[Glyph] Undo performed, history length:', undoHistory.length);
@@ -11691,6 +11892,8 @@
     function clearUndoHistory() {
       undoHistory = [];
       updateUndoButtonState();
+      // Also clear applied action states when switching templates
+      clearAllAppliedActions();
     }
 
 
@@ -11746,6 +11949,9 @@
       currentHtml = nextHtml;
       renderPreview(currentHtml);
 
+      // Refresh applied action button states based on restored HTML
+      refreshAppliedActionsFromHtml(currentHtml);
+
       // CRITICAL: Sync currentHistoryIndex with redo
       // This ensures historyEntries stay in sync when user redos
       if (currentHistoryIndex < historyEntries.length - 1) {
@@ -11753,6 +11959,10 @@
         updateHistoryCount();
         renderHistoryPanel();
       }
+
+      setStatus('Redone');
+      console.log('[Glyph] Redo performed, history length:', redoHistory.length);
+      setTimeout(() => setStatus('Ready'), 1500);
 
       updateUndoButtonState();
     }
@@ -11774,6 +11984,9 @@
       currentHtml = previousHtml;
       renderPreview(currentHtml);
 
+      // Refresh applied action button states based on restored HTML
+      refreshAppliedActionsFromHtml(currentHtml);
+
       // CRITICAL: Sync currentHistoryIndex with undo
       // This ensures historyEntries truncates correctly when user makes new change after undo
       if (currentHistoryIndex > 0) {
@@ -11781,6 +11994,10 @@
         updateHistoryCount();
         renderHistoryPanel();
       }
+
+      setStatus('Undone');
+      console.log('[Glyph] Undo performed, history length:', undoHistory.length);
+      setTimeout(() => setStatus('Ready'), 1500);
 
       updateUndoButtonState();
     };
@@ -12161,6 +12378,127 @@
     }
 
     // ============================================
+    // Flash preview area on content update (mobile visual feedback)
+    // Friction Fix #1: Help mobile users see where changes appear
+    // ============================================
+    function flashPreviewArea() {
+      const previewArea = document.querySelector('.playground__preview-area');
+      if (previewArea) {
+        previewArea.classList.remove('content-updated');
+        // Force reflow to restart animation
+        void previewArea.offsetWidth;
+        previewArea.classList.add('content-updated');
+        setTimeout(() => {
+          previewArea.classList.remove('content-updated');
+        }, 500);
+      }
+    }
+
+    // ============================================
+    // Highlight quick action buttons - guides users with empty prompt
+    // P2 Friction Fix #5: Empty prompt error could suggest quick actions
+    // ============================================
+    function highlightQuickActions() {
+      // Get all hero suggestions (the most prominent quick actions)
+      const heroButtons = document.querySelectorAll('.playground__suggestion--hero:not(.playground__suggestion--applied)');
+
+      heroButtons.forEach((btn, index) => {
+        // Stagger the animation slightly for visual appeal
+        setTimeout(() => {
+          btn.classList.add('playground__suggestion--highlight');
+          // Remove the highlight class after animation completes
+          setTimeout(() => {
+            btn.classList.remove('playground__suggestion--highlight');
+          }, 600);
+        }, index * 100);
+      });
+
+      // Also scroll to make sure the suggestions are visible
+      const suggestionsRow = document.querySelector('.playground__suggestions');
+      if (suggestionsRow && window.innerWidth <= 480) {
+        suggestionsRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // ============================================
+    // Mark instant action as applied - shows checkmark on button
+    // Friction Fix #6: Users need to know which actions are active
+    // ============================================
+    function markActionApplied(prompt) {
+      // Find the button that matches this prompt
+      const suggestions = document.querySelectorAll('.playground__suggestion');
+      suggestions.forEach(btn => {
+        if (btn.dataset.prompt === prompt) {
+          btn.classList.add('playground__suggestion--applied');
+          appliedActions.add(prompt);
+        }
+      });
+    }
+
+    // Clear applied state from a button (used on undo)
+    function clearActionApplied(prompt) {
+      const suggestions = document.querySelectorAll('.playground__suggestion');
+      suggestions.forEach(btn => {
+        if (btn.dataset.prompt === prompt) {
+          btn.classList.remove('playground__suggestion--applied');
+          appliedActions.delete(prompt);
+        }
+      });
+    }
+
+    // Clear all applied states (used on template switch or reset)
+    function clearAllAppliedActions() {
+      const suggestions = document.querySelectorAll('.playground__suggestion');
+      suggestions.forEach(btn => {
+        btn.classList.remove('playground__suggestion--applied');
+      });
+      appliedActions.clear();
+    }
+
+    // Refresh applied states based on current HTML content
+    // Called after undo to sync button states with actual document state
+    function refreshAppliedActionsFromHtml(html) {
+      const suggestions = document.querySelectorAll('.playground__suggestion');
+      console.log('[Glyph] Refreshing applied action states from HTML');
+
+      suggestions.forEach(btn => {
+        const prompt = btn.dataset.prompt;
+        const lowPrompt = prompt.toLowerCase();
+        let isApplied = false;
+
+        // Check for each action type's unique marker class in the HTML
+        // Use specific glyph-* classes as definitive markers
+        if (/watermark/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-watermark');
+        } else if (/qr\s*code/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-qr-code');
+        } else if (/group.*category/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-category-group');
+        } else if (/payment\s*terms|net\s*\d+/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-payment-terms');
+        } else if (/bold.*header|header.*bold/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-bold-header');
+        } else if (/add.*date|today.*date/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-date-added');
+        } else if (/add.*border|border.*document/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-document-border');
+        } else if (/thank\s*you.*note|add.*thank/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-thank-you');
+        } else if (/add.*signature|signature.*line/i.test(lowPrompt)) {
+          isApplied = html.includes('glyph-signature-line');
+        }
+
+        if (isApplied) {
+          btn.classList.add('playground__suggestion--applied');
+          appliedActions.add(prompt);
+        } else {
+          btn.classList.remove('playground__suggestion--applied');
+          appliedActions.delete(prompt);
+        }
+      });
+    }
+
+    // ============================================
     // Prompt user to save after first successful modification
     // Subtle visual nudge without being annoying
     // ============================================
@@ -12444,10 +12782,11 @@
       
       currentHtml = version.html;
       renderPreview(currentHtml);
-      
+
       // Success animation
       previewContainer.classList.add('success');
       setTimeout(() => previewContainer.classList.remove('success'), 500);
+      flashPreviewArea(); // Mobile visual feedback
       
       setStatus('Restored');
       setTimeout(() => setStatus('Ready'), 1500);
@@ -13056,7 +13395,8 @@
     // Apply modifications via API
     async function applyModifications(prompt) {
       if (!prompt.trim()) {
-        showToast('Enter a prompt to describe your changes', 'info', 3000);
+        showToast('Try a quick action above! They work instantly.', 'info', 3000);
+        highlightQuickActions();
         return;
       }
 
@@ -13080,6 +13420,9 @@
         // Apply the instant transformation
         simulateModification(prompt);
 
+        // Mark this action button as applied (shows checkmark)
+        markActionApplied(prompt);
+
         // Clear the prompt input
         promptInput.value = '';
 
@@ -13089,6 +13432,7 @@
         } else {
           // Normal success toast for subsequent instant actions
           showToast('Changes applied instantly!', 'success', 2000);
+          flashPreviewArea(); // Mobile visual feedback
         }
 
         // Auto-scroll to preview on mobile after instant action success
@@ -13313,6 +13657,7 @@
           // Success animation
           previewContainer.classList.add('success');
           setTimeout(() => previewContainer.classList.remove('success'), 500);
+          flashPreviewArea(); // Mobile visual feedback
 
           // Cycle 6: Reset failure counter on success
           consecutiveFailures = 0;
@@ -13390,6 +13735,7 @@
 
         previewContainer.classList.add('success');
         setTimeout(() => previewContainer.classList.remove('success'), 500);
+        flashPreviewArea(); // Mobile visual feedback
 
         // Cycle 6: Reset failure counter on success
         consecutiveFailures = 0;
@@ -13759,6 +14105,7 @@
           // Add success animation to preview
           previewContainer.classList.add('success');
           setTimeout(() => previewContainer.classList.remove('success'), 500);
+          flashPreviewArea(); // Mobile visual feedback
 
           setTimeout(() => {
             dismissValidationToast(toast);
@@ -14129,6 +14476,7 @@
 
       previewContainer.classList.add('success');
       setTimeout(() => previewContainer.classList.remove('success'), 500);
+      flashPreviewArea(); // Mobile visual feedback
 
       setStatus('Demo: Updated!');
       setTimeout(() => setStatus('Demo Mode'), 2000);

@@ -15,7 +15,7 @@ Custom templates are available on Pro tier and above. Contact us for Enterprise 
 
 A Glyph template consists of three files:
 
-```
+```text
 my-template/
   template.html    # HTML structure with Mustache placeholders
   styles.css       # Template-specific styles

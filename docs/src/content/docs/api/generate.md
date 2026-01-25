@@ -55,7 +55,7 @@ This endpoint counts against your monthly PDF generation limit. See [Rate Limits
 When no `Accept: application/json` header is provided, the response is the raw file:
 
 **Headers:**
-```
+```http
 Content-Type: application/pdf
 Content-Disposition: attachment; filename="document-1705320000000.pdf"
 Content-Length: 45678

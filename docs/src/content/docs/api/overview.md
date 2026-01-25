@@ -7,7 +7,7 @@ The Glyph API provides programmatic access to document generation and AI-powered
 
 ## Base URL
 
-```
+```text
 https://api.glyph.you
 ```
 

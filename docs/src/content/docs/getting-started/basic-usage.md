@@ -13,7 +13,7 @@ Glyph follows a simple three-step workflow:
 2. **Modify** - Let users customize with AI
 3. **Generate** - Export to PDF
 
-```
+```text
 Data + Template  -->  Preview  -->  AI Edits  -->  PDF
 ```
 

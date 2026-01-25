@@ -791,6 +791,135 @@ th, td {
   border-radius: 8px;
 }
 
+/* ============================================
+   SEARCH BAR PROMINENCE - Header Search Button
+   ============================================ */
+
+/* Base styling for the search trigger button in header */
+button[data-open-modal][aria-label="Search"] {
+  border-radius: 10px !important;
+  padding: 0.5rem 1rem 0.5rem 0.875rem !important;
+  min-width: 200px;
+  transition: all 0.2s ease !important;
+  font-size: 0.9rem !important;
+}
+
+/* Light mode: Search button prominence */
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"] {
+  background: #f8fafc !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"]:hover {
+  background: #ffffff !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+}
+
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"]:focus {
+  outline: none !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1), 0 2px 8px rgba(124, 58, 237, 0.15);
+}
+
+/* Light mode: Search text styling */
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"] span {
+  color: #64748b !important;
+}
+
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"]:hover span {
+  color: #475569 !important;
+}
+
+/* Light mode: Keyboard shortcut badge */
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"] kbd {
+  background: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+}
+
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"]:hover kbd {
+  background: #ddd6fe !important;
+  border-color: #c4b5fd !important;
+  color: #5b21b6 !important;
+}
+
+/* Dark mode: Search button prominence */
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"] {
+  background: #1e293b !important;
+  border: 1.5px solid #475569 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"]:hover {
+  background: #263548 !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.25);
+}
+
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"]:focus {
+  outline: none !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 2px 12px rgba(139, 92, 246, 0.25);
+}
+
+/* Dark mode: Search text styling */
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"] span {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"]:hover span {
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode: Keyboard shortcut badge */
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"] kbd {
+  background: #334155 !important;
+  border: 1px solid #475569 !important;
+  color: #cbd5e1 !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+}
+
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"]:hover kbd {
+  background: #4c1d95 !important;
+  border-color: #7c3aed !important;
+  color: #ddd6fe !important;
+}
+
+/* Search icon styling */
+button[data-open-modal][aria-label="Search"] svg {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+button[data-open-modal][aria-label="Search"]:hover svg {
+  opacity: 1;
+}
+
+:root[data-theme='light'] button[data-open-modal][aria-label="Search"]:hover svg {
+  color: #7c3aed !important;
+}
+
+:root[data-theme='dark'] button[data-open-modal][aria-label="Search"]:hover svg {
+  color: #a78bfa !important;
+}
+
+/* Mobile: Ensure search remains visible */
+@media (max-width: 50rem) {
+  button[data-open-modal][aria-label="Search"] {
+    min-width: auto;
+    padding: 0.5rem !important;
+  }
+}
+
 /* Footer styling */
 .sl-container footer {
   border-top: 1px solid var(--sl-color-gray-2);

@@ -19,7 +19,7 @@ Glyph templates are pre-designed document layouts that you populate with your da
 
 Each template consists of:
 
-```
+```text
 templates/
   quote-modern/
     template.html    # HTML structure with Mustache placeholders

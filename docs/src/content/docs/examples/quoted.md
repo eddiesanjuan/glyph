@@ -9,7 +9,7 @@ import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │                  Quoted Platform                     │
 ├─────────────────────────────────────────────────────┤

@@ -32,7 +32,7 @@ Applies only to `/v1/generate` endpoint. Resets on the 1st of each month.
 
 Every API response includes rate limit headers:
 
-```
+```http
 X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 45
 X-RateLimit-Reset: 1705320060
@@ -46,7 +46,7 @@ X-RateLimit-Reset: 1705320060
 
 For the generate endpoint, additional headers show monthly usage:
 
-```
+```http
 X-Monthly-Limit: 1000
 X-Monthly-Used: 150
 X-Monthly-Remaining: 850
@@ -71,7 +71,7 @@ HTTP Status: `429 Too Many Requests`
 
 The `Retry-After` header indicates seconds until you can retry:
 
-```
+```http
 Retry-After: 45
 ```
 

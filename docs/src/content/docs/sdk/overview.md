@@ -65,7 +65,7 @@ import { GlyphEditor, GlyphAPI } from '@glyph/sdk';
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │           <glyph-editor>                │
 │  ┌─────────────────────────────────┐    │
