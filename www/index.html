@@ -15230,36 +15230,548 @@
     function generateDemoTemplate() {
       const accentColor = airtableState.style === 'modern' ? '#1E3A5F' :
                           airtableState.style === 'professional' ? '#1E40AF' : '#6B7280';
+      const secondaryColor = airtableState.style === 'modern' ? '#64748b' :
+                             airtableState.style === 'professional' ? '#475569' : '#9CA3AF';
+      const bgColor = airtableState.style === 'minimal' ? '#fafafa' : '#f9fafb';
 
       const sampleData = airtableState.records[0]?.fields || {};
       const fieldNames = airtableState.fields.map(f => f.name).slice(0, 5);
+      const description = (airtableState.description || '').toLowerCase();
+      const companyName = airtableState.selectedBase?.name || 'Your Company';
+      const today = new Date().toLocaleDateString();
+      const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
 
-      const html = `<!DOCTYPE html>
+      // Detect document type from description
+      const docType = detectDocumentType(description);
+      let html;
+
+      switch (docType) {
+        case 'invoice':
+          html = generateInvoiceTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today, dueDate);
+          break;
+        case 'receipt':
+          html = generateReceiptTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today);
+          break;
+        case 'packing':
+          html = generatePackingSlipTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today);
+          break;
+        case 'report':
+          html = generateReportTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today);
+          break;
+        default:
+          html = generateDataTableTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today);
+      }
+
+      airtableState.generatedHtml = html;
+      renderAirtablePreview(html);
+      displayDataPreview();
+    }
+
+    function detectDocumentType(description) {
+      if (/\b(invoice|invoices|billing|bill)\b/i.test(description)) return 'invoice';
+      if (/\b(receipt|receipts|payment\s+confirmation|paid)\b/i.test(description)) return 'receipt';
+      if (/\b(packing|shipping|slip|shipment|delivery)\b/i.test(description)) return 'packing';
+      if (/\b(report|summary|analysis|overview)\b/i.test(description)) return 'report';
+      return 'data';
+    }
+
+    function findFieldValue(sampleData, keywords, fallback) {
+      const lowerKeys = Object.keys(sampleData).map(k => ({ orig: k, lower: k.toLowerCase() }));
+      for (const keyword of keywords) {
+        const found = lowerKeys.find(k => k.lower.includes(keyword.toLowerCase()));
+        if (found && sampleData[found.orig]) return sampleData[found.orig];
+      }
+      return fallback;
+    }
+
+    function generateInvoiceTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today, dueDate) {
+      const customerName = findFieldValue(sampleData, ['name', 'customer', 'client', 'company', 'contact'], 'Customer Name');
+      const email = findFieldValue(sampleData, ['email', 'mail'], 'customer@example.com');
+      const address = findFieldValue(sampleData, ['address', 'location', 'street'], '123 Main Street');
+      const itemDesc = findFieldValue(sampleData, ['item', 'product', 'service', 'description', 'title'], 'Professional Services');
+      const qty = findFieldValue(sampleData, ['qty', 'quantity', 'units', 'count'], '1');
+      const rate = findFieldValue(sampleData, ['rate', 'price', 'cost', 'amount'], '500.00');
+
+      const subtotal = 1000.00;
+      const tax = 100.00;
+      const total = 1100.00;
+
+      return `<!DOCTYPE html>
 <html>
 <head>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; background: white; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #1a1a1a; padding: 40px; background: white; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+  .company { font-size: 24px; font-weight: 700; color: ${accentColor}; }
+  .company-details { font-size: 11px; color: ${secondaryColor}; margin-top: 4px; }
+  .doc-title { font-size: 32px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
+  .invoice-meta { display: flex; gap: 40px; margin-bottom: 32px; }
+  .meta-block { }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 4px; }
+  .meta-value { font-weight: 600; font-size: 14px; }
+  .addresses { display: flex; gap: 60px; margin-bottom: 32px; }
+  .address-block { }
+  .address-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 8px; font-weight: 600; }
+  .address-content { line-height: 1.6; }
+  .address-name { font-weight: 600; }
+  .line-items { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .line-items th { background: ${accentColor}; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .line-items th:last-child, .line-items td:last-child { text-align: right; }
+  .line-items th:nth-child(2), .line-items td:nth-child(2),
+  .line-items th:nth-child(3), .line-items td:nth-child(3) { text-align: center; }
+  .line-items td { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; }
+  .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: 16px; }
+  .total-row { display: flex; gap: 40px; font-size: 13px; }
+  .total-label { color: ${secondaryColor}; min-width: 80px; }
+  .total-value { font-weight: 500; min-width: 100px; text-align: right; }
+  .total-final { font-size: 16px; font-weight: 700; color: ${accentColor}; padding-top: 8px; border-top: 2px solid ${accentColor}; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 10px; }
+  .notes { background: ${bgColor}; padding: 16px; border-radius: 8px; margin-top: 32px; }
+  .notes-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="company">${companyName}</div>
+      <div class="company-details">123 Business Ave, Suite 100<br>contact@company.com</div>
+    </div>
+    <div class="doc-title">Invoice</div>
+  </div>
+
+  <div class="invoice-meta">
+    <div class="meta-block">
+      <div class="meta-label">Invoice #</div>
+      <div class="meta-value">INV-001</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-label">Date</div>
+      <div class="meta-value">${today}</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-label">Due Date</div>
+      <div class="meta-value">${dueDate}</div>
+    </div>
+  </div>
+
+  <div class="addresses">
+    <div class="address-block">
+      <div class="address-label">Bill To</div>
+      <div class="address-content">
+        <div class="address-name">${customerName}</div>
+        <div>${address}</div>
+        <div>${email}</div>
+      </div>
+    </div>
+  </div>
+
+  <table class="line-items">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>${itemDesc}</td>
+        <td>${qty}</td>
+        <td>$${parseFloat(rate).toFixed(2)}</td>
+        <td>$${(parseFloat(qty) * parseFloat(rate) || 500).toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td>Additional Services</td>
+        <td>2</td>
+        <td>$250.00</td>
+        <td>$500.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="total-row">
+      <span class="total-label">Subtotal</span>
+      <span class="total-value">$${subtotal.toFixed(2)}</span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Tax (10%)</span>
+      <span class="total-value">$${tax.toFixed(2)}</span>
+    </div>
+    <div class="total-row total-final">
+      <span class="total-label">Total</span>
+      <span class="total-value">$${total.toFixed(2)}</span>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="notes-title">Payment Terms</div>
+    <div>Payment is due within 30 days. Please include invoice number with payment.</div>
+  </div>
+
+  <div class="footer">
+    Generated with Glyph - AI-Powered PDF Customization
+  </div>
+</body>
+</html>`;
+    }
+
+    function generateReceiptTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today) {
+      const customerName = findFieldValue(sampleData, ['name', 'customer', 'client', 'contact'], 'Customer Name');
+      const email = findFieldValue(sampleData, ['email', 'mail'], 'customer@example.com');
+      const itemDesc = findFieldValue(sampleData, ['item', 'product', 'service', 'description'], 'Product/Service');
+      const paymentMethod = findFieldValue(sampleData, ['payment', 'method', 'card'], 'Credit Card');
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #1a1a1a; padding: 40px; background: white; max-width: 400px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid ${accentColor}; }
+  .company { font-size: 24px; font-weight: 700; color: ${accentColor}; margin-bottom: 4px; }
+  .company-details { font-size: 11px; color: ${secondaryColor}; }
+  .doc-title { font-size: 20px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 16px; }
+  .receipt-meta { background: ${bgColor}; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+  .meta-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .meta-row:last-child { margin-bottom: 0; }
+  .meta-label { color: ${secondaryColor}; font-size: 11px; }
+  .meta-value { font-weight: 600; }
+  .items { margin-bottom: 24px; }
+  .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e5e5; }
+  .item-name { font-weight: 500; }
+  .item-price { font-weight: 600; }
+  .totals { border-top: 2px solid #e5e5e5; padding-top: 16px; }
+  .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .total-final { font-size: 18px; font-weight: 700; color: ${accentColor}; margin-top: 12px; padding-top: 12px; border-top: 2px solid ${accentColor}; }
+  .paid-stamp { text-align: center; margin: 24px 0; padding: 12px; border: 3px solid #22c55e; border-radius: 8px; color: #22c55e; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  .footer { margin-top: 32px; text-align: center; color: #999; font-size: 10px; }
+  .thank-you { font-size: 14px; color: ${accentColor}; font-weight: 600; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="company">${companyName}</div>
+    <div class="company-details">123 Business Ave | contact@company.com</div>
+    <div class="doc-title">Receipt</div>
+  </div>
+
+  <div class="receipt-meta">
+    <div class="meta-row">
+      <span class="meta-label">Receipt #</span>
+      <span class="meta-value">RCP-001</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Date</span>
+      <span class="meta-value">${today}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Customer</span>
+      <span class="meta-value">${customerName}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Payment Method</span>
+      <span class="meta-value">${paymentMethod}</span>
+    </div>
+  </div>
+
+  <div class="items">
+    <div class="item-row">
+      <span class="item-name">${itemDesc}</span>
+      <span class="item-price">$500.00</span>
+    </div>
+    <div class="item-row">
+      <span class="item-name">Service Fee</span>
+      <span class="item-price">$50.00</span>
+    </div>
+  </div>
+
+  <div class="totals">
+    <div class="total-row">
+      <span>Subtotal</span>
+      <span>$550.00</span>
+    </div>
+    <div class="total-row">
+      <span>Tax</span>
+      <span>$55.00</span>
+    </div>
+    <div class="total-row total-final">
+      <span>Total Paid</span>
+      <span>$605.00</span>
+    </div>
+  </div>
+
+  <div class="paid-stamp">Paid</div>
+
+  <div class="footer">
+    <div class="thank-you">Thank you for your business!</div>
+    <div>Generated with Glyph - AI-Powered PDF Customization</div>
+  </div>
+</body>
+</html>`;
+    }
+
+    function generatePackingSlipTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today) {
+      const customerName = findFieldValue(sampleData, ['name', 'customer', 'client', 'contact', 'recipient'], 'Recipient Name');
+      const address = findFieldValue(sampleData, ['address', 'location', 'street', 'shipping'], '456 Delivery Lane');
+      const city = findFieldValue(sampleData, ['city', 'town'], 'Anytown');
+      const itemDesc = findFieldValue(sampleData, ['item', 'product', 'sku', 'description'], 'Product Item');
+      const qty = findFieldValue(sampleData, ['qty', 'quantity', 'units', 'count'], '2');
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #1a1a1a; padding: 40px; background: white; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 3px solid ${accentColor}; }
+  .company { font-size: 24px; font-weight: 700; color: ${accentColor}; }
+  .doc-title { font-size: 28px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
+  .shipping-info { display: flex; gap: 60px; margin-bottom: 32px; }
+  .address-block { flex: 1; }
+  .address-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 8px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  .address-content { line-height: 1.8; padding: 12px; background: ${bgColor}; border-radius: 8px; }
+  .address-name { font-weight: 700; font-size: 14px; }
+  .order-meta { background: ${bgColor}; padding: 16px 24px; border-radius: 8px; margin-bottom: 32px; display: flex; gap: 40px; }
+  .meta-block { }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 4px; }
+  .meta-value { font-weight: 600; font-size: 14px; }
+  .items-table { width: 100%; border-collapse: collapse; }
+  .items-table th { background: ${accentColor}; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .items-table th:last-child { text-align: center; width: 100px; }
+  .items-table td { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; }
+  .items-table td:last-child { text-align: center; font-weight: 600; }
+  .item-sku { font-size: 10px; color: ${secondaryColor}; margin-top: 2px; }
+  .checkbox { width: 16px; height: 16px; border: 2px solid ${accentColor}; border-radius: 3px; display: inline-block; margin-right: 8px; vertical-align: middle; }
+  .summary { margin-top: 24px; text-align: right; font-size: 14px; }
+  .summary-value { font-weight: 700; color: ${accentColor}; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 10px; }
+  .signature-line { margin-top: 48px; display: flex; gap: 40px; }
+  .sig-block { flex: 1; }
+  .sig-label { font-size: 10px; text-transform: uppercase; color: ${secondaryColor}; margin-bottom: 8px; }
+  .sig-line { border-bottom: 1px solid #333; height: 40px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="company">${companyName}</div>
+    <div class="doc-title">Packing Slip</div>
+  </div>
+
+  <div class="order-meta">
+    <div class="meta-block">
+      <div class="meta-label">Order #</div>
+      <div class="meta-value">ORD-12345</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-label">Ship Date</div>
+      <div class="meta-value">${today}</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-label">Carrier</div>
+      <div class="meta-value">Standard Shipping</div>
+    </div>
+  </div>
+
+  <div class="shipping-info">
+    <div class="address-block">
+      <div class="address-label">Ship From</div>
+      <div class="address-content">
+        <div class="address-name">${companyName}</div>
+        <div>123 Warehouse Blvd</div>
+        <div>Distribution Center, ST 12345</div>
+      </div>
+    </div>
+    <div class="address-block">
+      <div class="address-label">Ship To</div>
+      <div class="address-content">
+        <div class="address-name">${customerName}</div>
+        <div>${address}</div>
+        <div>${city}, ST 67890</div>
+      </div>
+    </div>
+  </div>
+
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Item Description</th>
+        <th>Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <span class="checkbox"></span>${itemDesc}
+          <div class="item-sku">SKU: ITEM-001</div>
+        </td>
+        <td>${qty}</td>
+      </tr>
+      <tr>
+        <td>
+          <span class="checkbox"></span>Packaging Materials
+          <div class="item-sku">SKU: PKG-001</div>
+        </td>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary">
+    Total Items: <span class="summary-value">${parseInt(qty) + 1}</span>
+  </div>
+
+  <div class="signature-line">
+    <div class="sig-block">
+      <div class="sig-label">Packed By</div>
+      <div class="sig-line"></div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-label">Date</div>
+      <div class="sig-line"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated with Glyph - AI-Powered PDF Customization
+  </div>
+</body>
+</html>`;
+    }
+
+    function generateReportTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today) {
+      const title = findFieldValue(sampleData, ['title', 'name', 'report', 'subject'], 'Data Report');
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #1a1a1a; padding: 40px; background: white; }
+  .header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 3px solid ${accentColor}; }
+  .company { font-size: 14px; color: ${secondaryColor}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .doc-title { font-size: 28px; font-weight: 700; color: ${accentColor}; }
+  .subtitle { font-size: 14px; color: ${secondaryColor}; margin-top: 8px; }
+  .meta-bar { display: flex; gap: 32px; background: ${bgColor}; padding: 16px 24px; border-radius: 8px; margin-bottom: 32px; }
+  .meta-item { }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 4px; }
+  .meta-value { font-weight: 600; }
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 16px; font-weight: 700; color: ${accentColor}; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid ${accentColor}; }
+  .summary-cards { display: flex; gap: 16px; margin-bottom: 32px; }
+  .summary-card { flex: 1; background: ${bgColor}; padding: 20px; border-radius: 8px; text-align: center; }
+  .card-value { font-size: 28px; font-weight: 700; color: ${accentColor}; }
+  .card-label { font-size: 11px; color: ${secondaryColor}; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { background: ${accentColor}; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .data-table td { padding: 12px 16px; border-bottom: 1px solid #e5e5e5; }
+  .data-table tr:nth-child(even) { background: ${bgColor}; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 10px; }
+  .notes { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-top: 24px; }
+  .notes-title { font-weight: 600; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="company">${companyName}</div>
+    <div class="doc-title">${title}</div>
+    <div class="subtitle">Comprehensive data overview and analysis</div>
+  </div>
+
+  <div class="meta-bar">
+    <div class="meta-item">
+      <div class="meta-label">Report Date</div>
+      <div class="meta-value">${today}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Period</div>
+      <div class="meta-value">Current Quarter</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Status</div>
+      <div class="meta-value">Final</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Summary</div>
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-value">${fieldNames.length}</div>
+        <div class="card-label">Data Fields</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-value">${Object.keys(sampleData).length}</div>
+        <div class="card-label">Values</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-value">100%</div>
+        <div class="card-label">Complete</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Data Overview</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${fieldNames.map(name => `
+        <tr>
+          <td>${name}</td>
+          <td>${sampleData[name] || '{{' + name + '}}'}</td>
+        </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="notes">
+    <div class="notes-title">Note</div>
+    <div>This report was automatically generated from your Airtable data. You can customize the layout and add additional sections using Glyph's AI-powered editor.</div>
+  </div>
+
+  <div class="footer">
+    Generated with Glyph - AI-Powered PDF Customization
+  </div>
+</body>
+</html>`;
+    }
+
+    function generateDataTableTemplate(accentColor, secondaryColor, bgColor, sampleData, fieldNames, companyName, today) {
+      return `<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; background: white; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid ${accentColor}; margin-bottom: 24px; }
   .company { font-size: 20px; font-weight: 700; color: ${accentColor}; }
   .doc-title { font-size: 28px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
-  .meta { display: flex; gap: 40px; background: #f9fafb; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; }
+  .meta { display: flex; gap: 40px; background: ${bgColor}; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; }
   .meta-item { }
-  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 4px; }
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${secondaryColor}; margin-bottom: 4px; }
   .meta-value { font-weight: 600; font-size: 14px; }
   .section { margin-bottom: 24px; }
   .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: ${accentColor}; margin-bottom: 12px; font-weight: 600; }
   table { width: 100%; border-collapse: collapse; }
   th { background: ${accentColor}; color: white; padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
   td { padding: 14px 16px; border-bottom: 1px solid #e5e5e5; }
-  .field-name { color: #666; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-name { color: ${secondaryColor}; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
   .field-value { font-weight: 500; margin-top: 4px; }
   .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; color: #999; font-size: 10px; }
 </style>
 </head>
 <body>
   <div class="header">
-    <div class="company">${airtableState.selectedBase?.name || 'Your Company'}</div>
+    <div class="company">${companyName}</div>
     <div class="doc-title">Document</div>
   </div>
 
@@ -15270,7 +15782,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">Generated</div>
-      <div class="meta-value">${new Date().toLocaleDateString()}</div>
+      <div class="meta-value">${today}</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">Style</div>
@@ -15303,10 +15815,6 @@
   </div>
 </body>
 </html>`;
-
-      airtableState.generatedHtml = html;
-      renderAirtablePreview(html);
-      displayDataPreview();
     }
 
     function renderAirtablePreview(html) {
