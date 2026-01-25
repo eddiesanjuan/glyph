@@ -53,7 +53,7 @@ const generateSchema = z.object({
   description: z.string().min(10, "Please provide a more detailed description"),
   // Optional style preset
   style: z
-    .enum(["modern", "classic", "vibrant", "minimal", "invoice", "report"])
+    .enum(["modern", "professional", "classic", "vibrant", "minimal", "invoice", "report"])
     .optional(),
   // Include sample data for preview
   includeSample: z.boolean().optional().default(true),
@@ -346,6 +346,8 @@ templates.post(
 /**
  * GET /styles
  * List available style presets
+ * NOTE: These affect visual styling only. Document structure is determined
+ * automatically from the user's description (invoice, receipt, report, etc.)
  */
 templates.get("/styles", (c) => {
   return c.json({
@@ -357,10 +359,16 @@ templates.get("/styles", (c) => {
           "Clean, minimal design with lots of whitespace. Sans-serif fonts, subtle borders.",
       },
       {
+        id: "professional",
+        name: "Professional",
+        description:
+          "Traditional business style. Clean and formal, corporate appearance.",
+      },
+      {
         id: "classic",
         name: "Classic",
         description:
-          "Traditional business style. Serif headings, formal and authoritative.",
+          "Traditional formal style. Serif headings, authoritative appearance.",
       },
       {
         id: "vibrant",
@@ -378,7 +386,7 @@ templates.get("/styles", (c) => {
         id: "invoice",
         name: "Invoice",
         description:
-          "Structured layout for invoices/quotes. Line items table, totals section.",
+          "Optimized for financial documents. Clear tables and totals.",
       },
       {
         id: "report",

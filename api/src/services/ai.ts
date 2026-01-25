@@ -1702,27 +1702,58 @@ export interface GenerateTemplateResult {
 
 /**
  * Style presets for template generation
+ * NOTE: These ONLY affect visual styling, NOT document structure.
+ * Document structure is determined by document type detection.
  */
 const STYLE_PRESETS: Record<string, string> = {
-  modern: `Clean, minimal design with lots of whitespace. Use a sans-serif font (Inter or system fonts).
-    Colors: Dark navy (#1e3a5f) for headers, light gray (#f9fafb) backgrounds for sections.
-    Subtle borders and rounded corners. Professional but approachable.`,
+  modern: `VISUAL STYLE: Clean, minimal design with lots of whitespace.
+    - Font: Sans-serif (Inter, system fonts)
+    - Colors: Dark navy (#1e3a5f) for headers, light gray (#f9fafb) section backgrounds
+    - Borders: Subtle, with rounded corners (4-8px border-radius)
+    - Spacing: Generous padding (24-32px sections)
+    - Tone: Professional but approachable`,
 
-  classic: `Traditional business document style. Serif fonts for headings, sans-serif for body.
-    Colors: Black text, blue (#2563eb) accents. Sharp corners. Formal and authoritative.`,
+  professional: `VISUAL STYLE: Traditional business document appearance.
+    - Font: Sans-serif for body, can use serif for headings
+    - Colors: Dark gray (#1f2937) text, blue (#2563eb) accents
+    - Borders: Clean 1px borders, minimal or no border-radius
+    - Spacing: Structured, consistent margins
+    - Tone: Formal, trustworthy, corporate`,
 
-  vibrant: `Bold, colorful design with gradient accents. Modern sans-serif fonts.
-    Use the brand's accent color prominently. Rounded corners, subtle shadows.
-    Eye-catching but still professional.`,
+  classic: `VISUAL STYLE: Traditional formal document style.
+    - Font: Serif for headings (Georgia, Times), sans-serif for body
+    - Colors: Black text, navy (#1e3a8a) accents
+    - Borders: Sharp corners, traditional table borders
+    - Spacing: Conservative padding
+    - Tone: Formal and authoritative`,
 
-  minimal: `Ultra-minimal design. Maximum whitespace. Single accent color.
-    Typography-focused with clear hierarchy. No borders, just spacing and type weight.`,
+  vibrant: `VISUAL STYLE: Bold, colorful modern design.
+    - Font: Modern sans-serif (bold weights for headings)
+    - Colors: Vibrant accent color, gradients allowed
+    - Borders: Rounded corners (8-12px), subtle shadows
+    - Spacing: Dynamic, with accent backgrounds
+    - Tone: Eye-catching but still professional`,
 
-  invoice: `Structured invoice/quote layout. Clear sections for company info, client info, line items, totals.
-    Table for line items with proper alignment. Prominent total section.`,
+  minimal: `VISUAL STYLE: Ultra-minimal, typography-focused.
+    - Font: Clean sans-serif, clear weight hierarchy
+    - Colors: Single accent color, mostly black/white/gray
+    - Borders: No borders, use whitespace and typography for structure
+    - Spacing: Maximum whitespace, generous margins
+    - Tone: Clean, modern, distraction-free`,
 
-  report: `Professional report layout. Cover page style header with title and date.
-    Sections with clear headings. Good for data summaries and overviews.`,
+  invoice: `VISUAL STYLE: Optimized for financial documents.
+    - Font: Clean sans-serif, numbers in tabular figures if possible
+    - Colors: Professional blue (#2563eb) or navy accents
+    - Borders: Clear table structure with alternating row colors
+    - Spacing: Aligned columns, clear totals section
+    - Tone: Clear, accurate, easy to scan`,
+
+  report: `VISUAL STYLE: Professional report/summary appearance.
+    - Font: Clear hierarchy with distinct heading sizes
+    - Colors: Neutral with single accent for highlights
+    - Borders: Section dividers, metric cards with subtle borders
+    - Spacing: Well-defined sections with breathing room
+    - Tone: Informative, organized, scannable`,
 };
 
 /**
@@ -1731,6 +1762,147 @@ const STYLE_PRESETS: Record<string, string> = {
 const TEMPLATE_GENERATOR_PROMPT = `You are GLYPH TEMPLATE ARCHITECT - an expert at creating beautiful HTML/CSS document templates from database schemas.
 
 You take a user's natural language description and an Airtable schema, then produce a professional Mustache template.
+
+═══════════════════════════════════════════════════════════════════════════════
+                      CRITICAL: DOCUMENT TYPE DETECTION
+═══════════════════════════════════════════════════════════════════════════════
+
+BEFORE generating any HTML, you MUST identify the document type from the user's description.
+Different document types have COMPLETELY DIFFERENT layouts - not just styling differences.
+
+DOCUMENT TYPE → REQUIRED STRUCTURE:
+
+INVOICE / QUOTE / ESTIMATE:
+  ┌─────────────────────────────────────┐
+  │ [LOGO]           INVOICE #12345     │
+  │ Company Name     Date: Jan 25, 2026 │
+  │ Company Address  Due: Feb 25, 2026  │
+  ├─────────────────────────────────────┤
+  │ BILL TO:                            │
+  │ Client Name                         │
+  │ Client Address                      │
+  ├─────────────────────────────────────┤
+  │ Description      Qty    Rate   Amt  │
+  │ ─────────────────────────────────── │
+  │ Service 1         2    $100   $200  │
+  │ Service 2         1    $150   $150  │
+  ├─────────────────────────────────────┤
+  │                      Subtotal: $350 │
+  │                          Tax: $35   │
+  │                      TOTAL: $385    │
+  ├─────────────────────────────────────┤
+  │ Payment terms / Notes               │
+  └─────────────────────────────────────┘
+
+RECEIPT / PAYMENT CONFIRMATION:
+  ┌─────────────────────────────────────┐
+  │ [LOGO]        RECEIPT               │
+  │ Company Name                        │
+  ├─────────────────────────────────────┤
+  │ Receipt #: REC-001                  │
+  │ Date: Jan 25, 2026                  │
+  │ Payment Method: Credit Card         │
+  ├─────────────────────────────────────┤
+  │ Customer: John Doe                  │
+  ├─────────────────────────────────────┤
+  │ Items Purchased:                    │
+  │ • Product A - $50                   │
+  │ • Product B - $30                   │
+  ├─────────────────────────────────────┤
+  │ TOTAL PAID: $80                     │
+  ├─────────────────────────────────────┤
+  │ Thank you for your purchase!        │
+  └─────────────────────────────────────┘
+
+PACKING SLIP / SHIPPING DOCUMENT:
+  ┌─────────────────────────────────────┐
+  │ [LOGO]        PACKING SLIP          │
+  │ Order #: ORD-12345                  │
+  ├─────────────────────────────────────┤
+  │ SHIP TO:         │  FROM:           │
+  │ Customer Name    │  Company Name    │
+  │ Address          │  Warehouse Addr  │
+  ├─────────────────────────────────────┤
+  │ Item             │ Qty │ SKU        │
+  │ ─────────────────────────────────── │
+  │ Product A        │  2  │ SKU-001    │
+  │ Product B        │  1  │ SKU-002    │
+  ├─────────────────────────────────────┤
+  │ Total Items: 3                      │
+  │ Shipped: Jan 25, 2026               │
+  └─────────────────────────────────────┘
+
+REPORT / SUMMARY:
+  ┌─────────────────────────────────────┐
+  │ [LOGO]                              │
+  │ REPORT TITLE                        │
+  │ Subtitle / Date Range               │
+  ├─────────────────────────────────────┤
+  │ Executive Summary                   │
+  │ Overview text here...               │
+  ├─────────────────────────────────────┤
+  │ Key Metrics                         │
+  │ ┌────┐ ┌────┐ ┌────┐               │
+  │ │ $X │ │ Y% │ │ Z  │               │
+  │ └────┘ └────┘ └────┘               │
+  ├─────────────────────────────────────┤
+  │ Detailed Data Table                 │
+  │ [data rows]                         │
+  ├─────────────────────────────────────┤
+  │ Notes / Recommendations             │
+  └─────────────────────────────────────┘
+
+LETTER / CORRESPONDENCE:
+  ┌─────────────────────────────────────┐
+  │ [LOGO]                              │
+  │ Company Name                        │
+  │ Company Address                     │
+  │                                     │
+  │ Date: Jan 25, 2026                  │
+  │                                     │
+  │ To:                                 │
+  │ Recipient Name                      │
+  │ Recipient Address                   │
+  │                                     │
+  │ Dear [Name],                        │
+  │                                     │
+  │ [Body text...]                      │
+  │                                     │
+  │ Sincerely,                          │
+  │ [Signature area]                    │
+  │ Sender Name                         │
+  │ Sender Title                        │
+  └─────────────────────────────────────┘
+
+CERTIFICATE / AWARD:
+  ┌─────────────────────────────────────┐
+  │      ═══ CERTIFICATE OF ═══        │
+  │           ACHIEVEMENT               │
+  │                                     │
+  │      This is to certify that        │
+  │                                     │
+  │      ★ RECIPIENT NAME ★            │
+  │                                     │
+  │   has successfully completed...     │
+  │                                     │
+  │   [Achievement details]             │
+  │                                     │
+  │   Date: Jan 25, 2026               │
+  │                                     │
+  │   [Signature]      [Seal/Logo]      │
+  │   Issuer Name                       │
+  └─────────────────────────────────────┘
+
+GENERIC DATA DOCUMENT (ONLY if no specific type matches):
+  ┌─────────────────────────────────────┐
+  │ [LOGO]        DOCUMENT TITLE        │
+  ├─────────────────────────────────────┤
+  │ Field Label: Field Value            │
+  │ Field Label: Field Value            │
+  │ Field Label: Field Value            │
+  ├─────────────────────────────────────┤
+  │ [Additional sections as needed]     │
+  └─────────────────────────────────────┘
 
 ═══════════════════════════════════════════════════════════════════════════════
                               MUSTACHE SYNTAX
@@ -1765,6 +1937,7 @@ ATTACHMENTS (common pattern):
 5. PRINT-FRIENDLY - Include @media print rules, proper page breaks
 6. RESPONSIVE - Works on screen and when printed
 7. PROFESSIONAL - Clean typography, proper spacing, visual hierarchy
+8. DOCUMENT-APPROPRIATE LAYOUT - The structure MUST match the document type
 
 ═══════════════════════════════════════════════════════════════════════════════
                               FIELD TYPE HANDLING
@@ -1853,14 +2026,45 @@ ${stylePreset}
 
 ${options.sampleData ? `SAMPLE DATA FOR REFERENCE:\n${JSON.stringify(options.sampleData, null, 2)}` : ""}
 
-INSTRUCTIONS:
+═══════════════════════════════════════════════════════════════════════════════
+                         STEP-BY-STEP INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+STEP 1: DETECT DOCUMENT TYPE
+Analyze the user's description "${description}" to determine the document type.
+Look for keywords:
+- "invoice", "quote", "estimate", "bill" → INVOICE layout
+- "receipt", "payment", "confirmation" → RECEIPT layout
+- "packing", "shipping", "slip", "manifest" → PACKING SLIP layout
+- "report", "summary", "analysis", "overview" → REPORT layout
+- "letter", "correspondence", "memo" → LETTER layout
+- "certificate", "award", "diploma" → CERTIFICATE layout
+- Otherwise → GENERIC DATA DOCUMENT layout
+
+STEP 2: USE THE CORRECT STRUCTURE
+Use the document type structure from the system prompt above. This is CRITICAL.
+Do NOT create a generic data table if the user asked for an invoice.
+An invoice MUST have: header with company info, bill-to section, line items table, totals.
+
+STEP 3: MAP FIELDS INTELLIGENTLY
+Match available Airtable fields to the appropriate sections of your document type:
+- Currency fields → prices, totals, amounts
+- Date fields → invoice date, due date, ship date
+- Attachment fields → logos, signatures, photos
+- Text fields → descriptions, notes, addresses
+- Number fields → quantities, counts
+
+STEP 4: APPLY STYLING
+Apply the style preset AFTER you have the correct structure.
+The style affects colors, fonts, and visual details - NOT the document structure.
+
+STEP 5: OUTPUT
 1. Create a complete HTML document with embedded CSS
 2. Use the exact Mustache paths shown above for each field
-3. Make intelligent decisions about which fields to include based on the description
-4. Wrap all optional fields with conditional blocks
-5. If the description mentions "invoice" or "quote", include a line items table structure
-6. If the description mentions "logo", use the attachment pattern for images
-7. After the HTML, list "FIELDS_USED:" with each field name you included`;
+3. Wrap all optional fields with conditional blocks: {{#fields.X}}...{{/fields.X}}
+4. After the HTML, list "FIELDS_USED:" with each field name you included
+
+CRITICAL REMINDER: If the description says "invoice", the output MUST look like an invoice with proper sections (header, bill-to, line items table, totals). NOT a generic list of fields.`;
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
