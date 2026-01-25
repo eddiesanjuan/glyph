@@ -1,0 +1,4165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glyph Beta - Turn Airtable into a PDF powerhouse</title>
+  <meta name="description" content="Join the Glyph beta. Connect your Airtable bases, describe your document, generate beautiful PDFs in seconds.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Glyph Beta - Airtable Early Access">
+  <meta property="og:description" content="Turn Airtable into a PDF powerhouse. Join the closed beta.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://glyph.you/beta">
+  <meta property="og:image" content="https://glyph.you/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Glyph Beta - Airtable Early Access">
+  <meta name="twitter:description" content="Turn Airtable into a PDF powerhouse. Join the closed beta.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================
+       CSS Variables & Reset
+       ============================================ */
+    :root {
+      --bg-base: #0d1117;
+      --bg-elevated: #161b22;
+      --bg-surface: #21262d;
+      --brand-teal: #2dd4bf;
+      --brand-teal-hover: #3ee8d0;
+      --brand-blue: #2563eb;
+      --airtable-yellow: #fcb400;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #484f58;
+      --border-default: #30363d;
+      --success-green: #22c55e;
+      --error-red: #ef4444;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+
+      --transition-fast: 0.15s ease;
+      --transition-smooth: 0.25s ease;
+      --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    /* ============================================
+       Background Effects
+       ============================================ */
+    .gradient-mesh {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.12;
+      will-change: transform;
+    }
+
+    .gradient-orb--1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--brand-teal) 0%, transparent 70%);
+      top: -200px;
+      left: -100px;
+      animation: floatOrb1 25s ease-in-out infinite;
+    }
+
+    .gradient-orb--2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--airtable-yellow) 0%, transparent 70%);
+      top: 40%;
+      right: -150px;
+      opacity: 0.08;
+      animation: floatOrb2 30s ease-in-out infinite;
+    }
+
+    .gradient-orb--3 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, var(--brand-blue) 0%, transparent 70%);
+      bottom: -100px;
+      left: 30%;
+      opacity: 0.1;
+      animation: floatOrb3 22s ease-in-out infinite;
+    }
+
+    @keyframes floatOrb1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(60px, 40px) scale(1.05); }
+      66% { transform: translate(-30px, 80px) scale(0.95); }
+    }
+
+    @keyframes floatOrb2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(-50px, -60px) scale(1.08); }
+      66% { transform: translate(40px, 30px) scale(0.92); }
+    }
+
+    @keyframes floatOrb3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(40px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 50px) scale(0.95); }
+    }
+
+    /* ============================================
+       Layout
+       ============================================ */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================
+       Header
+       ============================================ */
+    header {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* ============================================
+       Main Content
+       ============================================ */
+    main {
+      flex: 1;
+      padding: 0 24px 60px;
+    }
+
+    /* ============================================
+       Hero Section
+       ============================================ */
+    .hero {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 0 60px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(252, 180, 0, 0.1);
+      border: 1px solid rgba(252, 180, 0, 0.3);
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--airtable-yellow);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease both;
+    }
+
+    .badge-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    h1 {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.6s ease 0.1s both;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--brand-teal) 0%, var(--airtable-yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subheadline {
+      font-size: 20px;
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin: 0 auto 32px;
+      animation: fadeInUp 0.6s ease 0.2s both;
+    }
+
+    .value-props {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+      max-width: 480px;
+      margin: 0 auto;
+      animation: fadeInUp 0.6s ease 0.3s both;
+    }
+
+    .value-props li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .value-props li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      background: var(--brand-teal);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    /* ============================================
+       Visual Flow Section
+       ============================================ */
+    .visual-flow {
+      max-width: 900px;
+      margin: 0 auto 80px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0;
+      animation: fadeInUp 0.6s ease 0.4s both;
+    }
+
+    .flow-step {
+      flex: 1;
+      max-width: 280px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      transition: transform var(--transition-smooth), border-color var(--transition-smooth);
+    }
+
+    .flow-step:hover {
+      transform: translateY(-4px);
+      border-color: var(--brand-teal);
+    }
+
+    .flow-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+    }
+
+    .flow-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .flow-icon--airtable svg {
+      color: var(--airtable-yellow);
+    }
+
+    .flow-icon--glyph svg {
+      color: var(--brand-teal);
+    }
+
+    .flow-icon--pdf svg {
+      color: var(--error-red);
+    }
+
+    .flow-step h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .flow-step p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .flow-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      flex-shrink: 0;
+    }
+
+    .flow-connector svg {
+      width: 24px;
+      height: 24px;
+      color: var(--text-muted);
+    }
+
+    /* ============================================
+       Form Section
+       ============================================ */
+    .form-section {
+      max-width: 480px;
+      margin: 0 auto 60px;
+      animation: fadeInUp 0.6s ease 0.5s both;
+    }
+
+    .form-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-card h2 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    /* Floating Label System */
+    .form-group.floating-label {
+      padding-top: 8px;
+    }
+
+    .form-group.floating-label label {
+      position: absolute;
+      left: 16px;
+      top: 22px;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: left center;
+      background: transparent;
+      padding: 0 4px;
+      margin: 0;
+    }
+
+    .form-group.floating-label .form-input:focus ~ label,
+    .form-group.floating-label .form-input:not(:placeholder-shown) ~ label,
+    .form-group.floating-label .form-input.has-value ~ label {
+      top: 0;
+      left: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--brand-teal);
+      background: var(--bg-elevated);
+    }
+
+    .form-group.floating-label .form-input.valid ~ label {
+      color: var(--success-green);
+    }
+
+    /* Premium Input Styling */
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      padding-right: 40px;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-default);
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text-primary);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      min-height: 48px;
+      position: relative;
+    }
+
+    .form-input::placeholder {
+      color: transparent;
+    }
+
+    .form-group:not(.floating-label) .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Gradient Border Focus Effect */
+    .form-input:focus {
+      outline: none;
+      border-color: transparent;
+      background:
+        linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
+        linear-gradient(135deg, var(--brand-teal) 0%, var(--brand-blue) 50%, var(--airtable-yellow) 100%) border-box;
+      box-shadow:
+        0 0 0 4px rgba(45, 212, 191, 0.1),
+        0 0 20px rgba(45, 212, 191, 0.15);
+      animation: inputGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes inputGlow {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.1), 0 0 20px rgba(45, 212, 191, 0.15); }
+      50% { box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.15), 0 0 30px rgba(45, 212, 191, 0.2); }
+    }
+
+    /* Valid State */
+    .form-input.valid {
+      border-color: var(--success-green);
+      background:
+        linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
+        linear-gradient(135deg, var(--success-green), var(--brand-teal)) border-box;
+    }
+
+    .form-input.valid:focus {
+      box-shadow:
+        0 0 0 4px rgba(34, 197, 94, 0.1),
+        0 0 20px rgba(34, 197, 94, 0.15);
+    }
+
+    /* Success Checkmark */
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-check {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%) scale(0);
+      width: 20px;
+      height: 20px;
+      background: var(--success-green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s var(--transition-bounce);
+      pointer-events: none;
+    }
+
+    .input-check svg {
+      width: 12px;
+      height: 12px;
+      color: white;
+    }
+
+    .form-input.valid ~ .input-check {
+      transform: translateY(-50%) scale(1);
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 100px;
+      padding-right: 16px;
+    }
+
+    textarea.form-input ~ .input-check {
+      top: 24px;
+      transform: translateY(0) scale(0);
+    }
+
+    textarea.form-input.valid ~ .input-check {
+      transform: translateY(0) scale(1);
+    }
+
+    /* Field Microcopy */
+    .field-microcopy {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.2s ease;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .form-group:focus-within .field-microcopy,
+    .field-microcopy.visible {
+      opacity: 1;
+      transform: translateY(0);
+      height: auto;
+      margin-top: 8px;
+    }
+
+    .field-microcopy.success {
+      color: var(--success-green);
+    }
+
+    .form-helper {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Shake Animation for Errors */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+      20%, 40%, 60%, 80% { transform: translateX(4px); }
+    }
+
+    .form-input.shake {
+      animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      min-height: 48px;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, var(--brand-teal) 0%, #20b2aa 100%);
+      color: var(--bg-base);
+      box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--brand-teal-hover) 0%, var(--brand-teal) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
+    }
+
+    /* Button Press Effect */
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 2px 10px rgba(45, 212, 191, 0.3);
+      transition: transform 0.1s ease;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Ripple Effect */
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: ripple 0.6s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    /* Progress Bar Loading State */
+    .btn-loading {
+      color: transparent !important;
+      pointer-events: none;
+    }
+
+    .btn-loading .btn-text {
+      opacity: 0;
+    }
+
+    .btn-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.3) 0%,
+        rgba(255,255,255,0.8) 50%,
+        rgba(255,255,255,0.3) 100%);
+      background-size: 200% 100%;
+      animation: progressSlide 1.5s ease-in-out infinite;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-loading .btn-progress {
+      opacity: 1;
+      width: 100%;
+    }
+
+    @keyframes progressSlide {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Loading Spinner (centered) */
+    .btn-spinner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top-color: var(--bg-base);
+      border-radius: 50%;
+      opacity: 0;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .btn-loading .btn-spinner {
+      opacity: 1;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success State Button */
+    .btn-success {
+      background: var(--success-green) !important;
+      pointer-events: none;
+    }
+
+    .btn-success .btn-text {
+      opacity: 0;
+    }
+
+    .btn-success .btn-checkmark {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .btn-checkmark {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s var(--transition-bounce);
+    }
+
+    .btn-checkmark svg {
+      width: 100%;
+      height: 100%;
+      stroke: var(--bg-base);
+      stroke-width: 3;
+      fill: none;
+    }
+
+    .btn-checkmark svg path {
+      stroke-dasharray: 30;
+      stroke-dashoffset: 30;
+      animation: checkDraw 0.4s ease forwards 0.1s;
+    }
+
+    @keyframes checkDraw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+      color: var(--text-primary);
+    }
+
+    /* Success State */
+    .success-state {
+      text-align: center;
+      padding: 20px 0;
+      position: relative;
+    }
+
+    /* Confetti Container */
+    .confetti-container {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 200px;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      opacity: 0;
+    }
+
+    .confetti.active {
+      animation: confettiFall 3s ease-out forwards;
+    }
+
+    .confetti:nth-child(odd) {
+      background: var(--brand-teal);
+      border-radius: 50%;
+    }
+
+    .confetti:nth-child(even) {
+      background: var(--airtable-yellow);
+      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    }
+
+    .confetti:nth-child(3n) {
+      background: var(--brand-blue);
+      border-radius: 2px;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(300px) translateX(var(--drift, 50px)) rotate(720deg) scale(0.5);
+      }
+    }
+
+    /* Staggered Reveal Animations */
+    .success-state.revealing .success-icon {
+      animation: revealBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .success-state.revealing h3 {
+      animation: revealSlide 0.5s ease forwards 0.15s;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .success-state.revealing > p {
+      animation: revealSlide 0.5s ease forwards 0.25s;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .success-state.revealing .queue-position {
+      animation: revealSlide 0.5s ease forwards 0.35s, slotMachine 0.8s ease forwards 0.35s;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    @keyframes revealBounce {
+      0% {
+        opacity: 0;
+        transform: scale(0);
+      }
+      60% {
+        transform: scale(1.2);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes revealSlide {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slotMachine {
+      0%, 20% { transform: translateY(20px); }
+      40% { transform: translateY(-5px); }
+      60% { transform: translateY(3px); }
+      80% { transform: translateY(-1px); }
+      100% { transform: translateY(0); }
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(45, 212, 191, 0.1) 100%);
+      border: 2px solid rgba(34, 197, 94, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .success-icon::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--success-green), var(--brand-teal));
+      opacity: 0.2;
+      animation: successRing 2s ease-in-out infinite;
+    }
+
+    @keyframes successRing {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.1); opacity: 0.1; }
+    }
+
+    .success-icon svg {
+      width: 36px;
+      height: 36px;
+      color: var(--success-green);
+      position: relative;
+      z-index: 1;
+    }
+
+    .success-icon svg path {
+      stroke-dasharray: 40;
+      stroke-dashoffset: 40;
+      animation: checkmarkDraw 0.6s ease forwards 0.3s;
+    }
+
+    @keyframes checkmarkDraw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .success-state h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--brand-teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .success-state > p {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .queue-position {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(45, 212, 191, 0.05) 100%);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--brand-teal);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .queue-position::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.1), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      100% { left: 100%; }
+    }
+
+    /* Welcome Badge */
+    .welcome-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(252, 180, 0, 0.1);
+      border: 1px solid rgba(252, 180, 0, 0.3);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--airtable-yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      animation: revealSlide 0.5s ease forwards 0.45s;
+      opacity: 0;
+    }
+
+    /* ============================================
+       Enhanced Activation Success Styles
+       ============================================ */
+
+    /* Sparkle Particles Container */
+    .sparkle-container {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120%;
+      height: 300px;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      opacity: 0;
+    }
+
+    .sparkle.active {
+      animation: sparkleBurst 2s ease-out forwards;
+    }
+
+    .sparkle::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: currentColor;
+      border-radius: 50%;
+      box-shadow: 0 0 6px currentColor, 0 0 12px currentColor;
+    }
+
+    .sparkle::after {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 2px;
+      left: -50%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, transparent, currentColor, transparent);
+    }
+
+    @keyframes sparkleBurst {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx, 50px), var(--ty, 50px)) scale(0);
+      }
+    }
+
+    /* Star Particles */
+    .star-particle {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .star-particle.active {
+      animation: starFloat 3s ease-out forwards;
+    }
+
+    .star-particle svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+
+    @keyframes starFloat {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx, 30px), var(--ty, -100px)) rotate(180deg) scale(0.3);
+      }
+    }
+
+    /* Enhanced Success Icon with Morphing Animation */
+    .activation-success .success-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 28px;
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.2) 0%, rgba(252, 180, 0, 0.15) 100%);
+      border: 2px solid rgba(45, 212, 191, 0.4);
+      position: relative;
+    }
+
+    .activation-success .success-icon::before {
+      background: linear-gradient(135deg, var(--brand-teal), var(--airtable-yellow));
+      animation: successPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes successPulse {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.2); opacity: 0.1; }
+    }
+
+    .activation-success .success-icon svg {
+      width: 44px;
+      height: 44px;
+      color: var(--brand-teal);
+    }
+
+    /* Morphing checkmark animation */
+    .activation-success.revealing .success-icon {
+      animation: iconMorph 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes iconMorph {
+      0% {
+        opacity: 0;
+        transform: scale(0) rotate(-180deg);
+      }
+      50% {
+        transform: scale(1.3) rotate(10deg);
+      }
+      70% {
+        transform: scale(0.9) rotate(-5deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    /* Welcome Message */
+    .welcome-message {
+      animation: revealSlide 0.5s ease forwards 0.2s;
+      opacity: 0;
+    }
+
+    .welcome-message h3 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--brand-teal) 0%, var(--airtable-yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-message .welcome-name {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Beta Pioneer Badge */
+    .pioneer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgba(252, 180, 0, 0.15) 0%, rgba(45, 212, 191, 0.1) 100%);
+      border: 1px solid rgba(252, 180, 0, 0.4);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--airtable-yellow);
+      margin-bottom: 24px;
+      animation: revealSlide 0.5s ease forwards 0.3s, badgeGlow 3s ease-in-out infinite 0.8s;
+      opacity: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pioneer-badge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(252, 180, 0, 0.2), transparent);
+      animation: badgeShimmer 3s infinite;
+    }
+
+    @keyframes badgeShimmer {
+      0% { left: -100%; }
+      50%, 100% { left: 100%; }
+    }
+
+    @keyframes badgeGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(252, 180, 0, 0.1); }
+      50% { box-shadow: 0 0 30px rgba(252, 180, 0, 0.2); }
+    }
+
+    .pioneer-badge svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Beta User Counter */
+    .beta-counter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      animation: revealSlide 0.5s ease forwards 0.35s;
+      opacity: 0;
+    }
+
+    .beta-counter .counter-number {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--brand-teal);
+      padding: 4px 10px;
+      background: rgba(45, 212, 191, 0.1);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Enhanced API Key Section - One Time Reveal */
+    .api-key-reveal {
+      margin-bottom: 32px;
+      animation: revealSlide 0.5s ease forwards 0.45s;
+      opacity: 0;
+    }
+
+    .api-key-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .api-key-header .key-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--airtable-yellow);
+    }
+
+    .api-key-header h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .api-key-warning-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(252, 180, 0, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+      border: 1px solid rgba(252, 180, 0, 0.3);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .api-key-warning-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--airtable-yellow);
+    }
+
+    .api-key-warning-box svg {
+      width: 20px;
+      height: 20px;
+      color: var(--airtable-yellow);
+      flex-shrink: 0;
+    }
+
+    .api-key-warning-box p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .api-key-warning-box strong {
+      color: var(--airtable-yellow);
+      font-weight: 600;
+    }
+
+    /* Enhanced API Key Box */
+    .api-key-box-enhanced {
+      background: var(--bg-base);
+      border: 2px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .api-key-box-enhanced:hover {
+      border-color: var(--brand-teal);
+    }
+
+    .api-key-box-enhanced.copied {
+      border-color: var(--success-green);
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+    }
+
+    .api-key-inner {
+      display: flex;
+      gap: 8px;
+    }
+
+    .api-key-value-enhanced {
+      flex: 1;
+      padding: 14px 16px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      outline: none;
+      letter-spacing: 0.02em;
+    }
+
+    .copy-btn-enhanced {
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--brand-teal) 0%, #20b2aa 100%);
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--bg-base);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 100px;
+      justify-content: center;
+    }
+
+    .copy-btn-enhanced:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
+    }
+
+    .copy-btn-enhanced.copied {
+      background: var(--success-green);
+    }
+
+    .copy-btn-enhanced svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .copy-btn-enhanced:hover svg {
+      transform: scale(1.1);
+    }
+
+    /* Copy Success Indicator */
+    .copy-success-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: var(--radius-md);
+      margin-top: 12px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+    }
+
+    .copy-success-indicator.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .copy-success-indicator svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success-green);
+    }
+
+    .copy-success-indicator span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--success-green);
+    }
+
+    /* Onboarding Steps */
+    .onboarding-section {
+      margin-bottom: 32px;
+      animation: revealSlide 0.5s ease forwards 0.55s;
+      opacity: 0;
+    }
+
+    .onboarding-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .onboarding-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .onboarding-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+
+    .onboarding-step:hover {
+      border-color: var(--brand-teal);
+      transform: translateX(4px);
+    }
+
+    .onboarding-step.completed {
+      border-color: var(--success-green);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%);
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .onboarding-step.completed .step-number {
+      background: var(--success-green);
+      border-color: var(--success-green);
+      color: white;
+    }
+
+    .onboarding-step.completed .step-number::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      background: white;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    .onboarding-step.completed .step-number span {
+      display: none;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h5 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .step-action {
+      flex-shrink: 0;
+    }
+
+    .step-action a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .step-action a:hover {
+      border-color: var(--brand-teal);
+      color: var(--brand-teal);
+    }
+
+    .step-action a svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Airtable Wizard Preview */
+    .wizard-preview {
+      margin-bottom: 32px;
+      animation: revealSlide 0.5s ease forwards 0.65s;
+      opacity: 0;
+    }
+
+    .wizard-preview-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .wizard-preview-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wizard-preview-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--airtable-yellow), var(--brand-teal));
+    }
+
+    .wizard-mockup {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mockup-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mockup-label {
+      width: 80px;
+      height: 12px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .mockup-dropdown {
+      flex: 1;
+      height: 36px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      justify-content: space-between;
+    }
+
+    .mockup-dropdown-text {
+      width: 60%;
+      height: 10px;
+      background: var(--text-muted);
+      border-radius: 3px;
+      opacity: 0.3;
+    }
+
+    .mockup-dropdown-arrow {
+      width: 12px;
+      height: 12px;
+      color: var(--text-muted);
+    }
+
+    .mockup-table-preview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px;
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+    }
+
+    .mockup-cell {
+      height: 24px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+    }
+
+    .mockup-cell.header {
+      background: linear-gradient(135deg, rgba(252, 180, 0, 0.2), rgba(252, 180, 0, 0.1));
+    }
+
+    .wizard-preview-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--brand-teal);
+      font-weight: 500;
+    }
+
+    .wizard-preview-cta svg {
+      width: 16px;
+      height: 16px;
+      animation: bounceRight 1.5s ease-in-out infinite;
+    }
+
+    @keyframes bounceRight {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
+    }
+
+    /* Enhanced CTA Buttons */
+    .cta-section {
+      animation: revealSlide 0.5s ease forwards 0.75s;
+      opacity: 0;
+    }
+
+    .cta-buttons-enhanced {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-airtable {
+      width: 100%;
+      background: linear-gradient(135deg, var(--airtable-yellow) 0%, #e5a400 100%);
+      color: var(--bg-base);
+      box-shadow: 0 4px 15px rgba(252, 180, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-airtable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(252, 180, 0, 0.4);
+    }
+
+    .btn-airtable::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-airtable:hover::before {
+      left: 100%;
+    }
+
+    .btn-airtable svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .btn-airtable:hover svg {
+      animation: arrowBounce 0.6s ease infinite;
+    }
+
+    @keyframes arrowBounce {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
+    }
+
+    .secondary-ctas {
+      display: flex;
+      gap: 12px;
+    }
+
+    .secondary-ctas .btn {
+      flex: 1;
+    }
+
+    /* ============================================
+       Activation Section
+       ============================================ */
+    .activation-section {
+      max-width: 480px;
+      margin: 0 auto 80px;
+      animation: fadeInUp 0.6s ease 0.6s both;
+    }
+
+    .activation-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+    }
+
+    .activation-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .activation-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .activation-row .form-input {
+      flex: 1;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding-right: 16px;
+    }
+
+    .activation-row .form-input::placeholder {
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .activation-row .btn {
+      flex-shrink: 0;
+      min-width: 140px;
+      width: auto;
+    }
+
+    /* Activation Success */
+    .activation-success {
+      text-align: center;
+      position: relative;
+    }
+
+    .activation-success.revealing .success-icon {
+      animation: revealBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .activation-success.revealing h3 {
+      animation: revealSlide 0.5s ease forwards 0.15s;
+      opacity: 0;
+    }
+
+    .activation-success.revealing > p {
+      animation: revealSlide 0.5s ease forwards 0.25s;
+      opacity: 0;
+    }
+
+    .activation-success.revealing .features-unlocked {
+      animation: revealSlide 0.5s ease forwards 0.35s;
+      opacity: 0;
+    }
+
+    .activation-success.revealing .api-key-section {
+      animation: revealSlide 0.5s ease forwards 0.45s;
+      opacity: 0;
+    }
+
+    .activation-success.revealing .cta-buttons {
+      animation: revealSlide 0.5s ease forwards 0.55s;
+      opacity: 0;
+    }
+
+    .activation-success h3 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--brand-teal) 0%, var(--airtable-yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .activation-success > p {
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      font-size: 16px;
+    }
+
+    .features-unlocked {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .features-unlocked h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .features-list {
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+
+    .features-list li::before {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background: var(--success-green);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    .api-key-section {
+      margin-bottom: 24px;
+    }
+
+    .api-key-warning {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--airtable-yellow);
+      margin-bottom: 12px;
+      justify-content: center;
+    }
+
+    .api-key-warning svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .api-key-box {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 4px;
+    }
+
+    .api-key-value {
+      flex: 1;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      outline: none;
+    }
+
+    .copy-btn {
+      padding: 10px 16px;
+      background: var(--bg-surface);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .copy-btn:hover {
+      background: var(--border-default);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: var(--success-green);
+      color: var(--bg-base);
+    }
+
+    .copy-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cta-buttons .btn-primary {
+      background: var(--brand-teal);
+    }
+
+    /* ============================================
+       Footer
+       ============================================ */
+    footer {
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border-default);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color var(--transition-fast);
+    }
+
+    .footer-links a:hover {
+      color: var(--text-secondary);
+    }
+
+    /* ============================================
+       Animations
+       ============================================ */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ============================================
+       Error States
+       ============================================ */
+    .form-error {
+      color: var(--error-red);
+      font-size: 14px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-error svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .form-input.error {
+      border-color: var(--error-red);
+      background:
+        linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
+        linear-gradient(135deg, var(--error-red), #dc2626) border-box;
+    }
+
+    .form-input.error:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+
+    .field-error {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--error-red);
+      margin-top: 8px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.2s ease;
+    }
+
+    .field-error.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .field-error svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================
+       Responsive Design
+       ============================================ */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 36px;
+      }
+
+      .subheadline {
+        font-size: 18px;
+      }
+
+      .visual-flow {
+        flex-direction: column;
+        gap: 16px;
+        padding: 0 20px;
+      }
+
+      .flow-step {
+        max-width: 100%;
+      }
+
+      .flow-connector {
+        width: 100%;
+        height: 32px;
+        transform: rotate(90deg);
+      }
+
+      .form-card,
+      .activation-card {
+        padding: 24px;
+      }
+
+      .activation-row {
+        flex-direction: column;
+      }
+
+      .activation-row .btn {
+        width: 100%;
+      }
+
+      .hero {
+        padding: 24px 0 48px;
+      }
+
+      /* Enhanced Activation - Tablet */
+      .welcome-message h3 {
+        font-size: 32px;
+      }
+
+      .onboarding-step {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .step-action {
+        width: 100%;
+      }
+
+      .step-action a {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .secondary-ctas {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 32px;
+      }
+
+      .badge {
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
+      .subheadline {
+        font-size: 16px;
+      }
+
+      .value-props li {
+        font-size: 15px;
+      }
+
+      .form-section,
+      .activation-section {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .form-card,
+      .activation-card {
+        padding: 20px;
+        border-radius: var(--radius-lg);
+      }
+
+      .cta-buttons .btn {
+        font-size: 15px;
+        padding: 12px 20px;
+      }
+
+      /* Mobile touch feedback */
+      .btn:active {
+        transform: scale(0.97);
+      }
+
+      .form-input {
+        font-size: 16px; /* Prevents iOS zoom */
+      }
+
+      /* Smaller floating labels on mobile */
+      .form-group.floating-label label {
+        font-size: 15px;
+      }
+
+      .form-group.floating-label .form-input:focus ~ label,
+      .form-group.floating-label .form-input:not(:placeholder-shown) ~ label {
+        font-size: 11px;
+      }
+
+      /* Enhanced Activation - Mobile */
+      .welcome-message h3 {
+        font-size: 28px;
+      }
+
+      .pioneer-badge {
+        font-size: 12px;
+        padding: 8px 16px;
+      }
+
+      .beta-counter {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .api-key-header h4 {
+        font-size: 15px;
+      }
+
+      .api-key-warning-box {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+      }
+
+      .api-key-warning-box p {
+        font-size: 12px;
+      }
+
+      .api-key-inner {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .api-key-value-enhanced {
+        text-align: center;
+        font-size: 13px;
+        padding: 12px;
+      }
+
+      .copy-btn-enhanced {
+        width: 100%;
+      }
+
+      .onboarding-header {
+        font-size: 13px;
+      }
+
+      .onboarding-step {
+        padding: 14px;
+      }
+
+      .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+      }
+
+      .step-content h5 {
+        font-size: 14px;
+      }
+
+      .step-content p {
+        font-size: 12px;
+      }
+
+      .wizard-preview-header {
+        font-size: 13px;
+      }
+
+      .wizard-preview-card {
+        padding: 16px;
+      }
+
+      .mockup-table-preview {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .wizard-preview-cta {
+        font-size: 13px;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .btn-airtable {
+        font-size: 15px;
+        padding: 14px 20px;
+      }
+
+      .copy-success-indicator {
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+      }
+
+      .copy-success-indicator span {
+        font-size: 12px;
+      }
+    }
+
+    /* ============================================
+       Mobile Excellence - 375px (iPhone SE/Standard)
+       ============================================ */
+    @media (max-width: 375px) {
+      /* Typography Refinements */
+      h1 {
+        font-size: 28px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+
+      .gradient-text {
+        /* Ensure gradient text doesn't wrap awkwardly */
+        display: inline;
+      }
+
+      .subheadline {
+        font-size: 15px;
+        line-height: 1.5;
+        padding: 0 4px;
+      }
+
+      .badge {
+        font-size: 12px;
+        padding: 6px 10px;
+        gap: 6px;
+      }
+
+      .badge-icon {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* Value Props Mobile */
+      .value-props {
+        padding: 0 8px;
+      }
+
+      .value-props li {
+        font-size: 14px;
+        gap: 10px;
+      }
+
+      .value-props li::before {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Visual Flow - Vertical Stack */
+      .visual-flow {
+        padding: 0 12px;
+        gap: 12px;
+        margin-bottom: 48px;
+      }
+
+      .flow-step {
+        padding: 20px 16px;
+      }
+
+      .flow-step h3 {
+        font-size: 16px;
+      }
+
+      .flow-step p {
+        font-size: 13px;
+      }
+
+      .flow-icon {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 12px;
+      }
+
+      .flow-icon svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .flow-connector {
+        height: 28px;
+      }
+
+      .flow-connector svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      /* Form Section Mobile Excellence */
+      main {
+        padding: 0 16px 48px;
+      }
+
+      .form-section {
+        margin-bottom: 40px;
+      }
+
+      .form-card {
+        padding: 20px 16px;
+      }
+
+      .form-card h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      /* Touch-friendly inputs - minimum 48px height */
+      .form-input {
+        min-height: 52px;
+        padding: 16px 14px;
+        padding-right: 44px;
+        font-size: 16px; /* Prevents iOS zoom */
+      }
+
+      textarea.form-input {
+        min-height: 110px;
+        padding-right: 14px;
+      }
+
+      /* Floating labels mobile adjustments */
+      .form-group.floating-label label {
+        font-size: 14px;
+        left: 14px;
+        top: 24px;
+      }
+
+      .form-group.floating-label .form-input:focus ~ label,
+      .form-group.floating-label .form-input:not(:placeholder-shown) ~ label,
+      .form-group.floating-label .form-input.has-value ~ label {
+        top: 2px;
+        left: 10px;
+        font-size: 10px;
+      }
+
+      /* Touch-friendly button - 48px minimum */
+      .btn {
+        min-height: 52px;
+        padding: 16px 20px;
+        font-size: 16px;
+      }
+
+      .btn-primary {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      /* Active states for touch feedback */
+      .btn:active:not(:disabled) {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+
+      .form-helper {
+        font-size: 12px;
+        margin-top: 12px;
+        line-height: 1.4;
+      }
+
+      /* Success State Mobile */
+      .success-state {
+        padding: 16px 0;
+      }
+
+      .success-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 20px;
+      }
+
+      .success-icon svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      .success-state h3 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      .success-state > p {
+        font-size: 14px;
+        margin-bottom: 20px;
+        padding: 0 8px;
+      }
+
+      .queue-position {
+        font-size: 14px;
+        padding: 10px 16px;
+      }
+
+      /* Confetti - reduce particle count on mobile */
+      .confetti-container {
+        height: 150px;
+      }
+
+      /* Activation Section Mobile */
+      .activation-card {
+        padding: 20px 16px;
+      }
+
+      .activation-card h2 {
+        font-size: 20px;
+      }
+
+      .activation-success .success-icon {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 24px;
+      }
+
+      .activation-success .success-icon svg {
+        width: 36px;
+        height: 36px;
+      }
+
+      .welcome-message h3 {
+        font-size: 24px;
+      }
+
+      .welcome-message .welcome-name {
+        font-size: 12px;
+      }
+
+      .pioneer-badge {
+        font-size: 11px;
+        padding: 8px 14px;
+        gap: 6px;
+      }
+
+      .pioneer-badge svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .beta-counter {
+        font-size: 12px;
+        gap: 4px;
+        flex-wrap: wrap;
+        padding: 0 8px;
+      }
+
+      .beta-counter .counter-number {
+        font-size: 12px;
+        padding: 3px 8px;
+      }
+
+      /* API Key Section Mobile */
+      .api-key-header h4 {
+        font-size: 14px;
+      }
+
+      .api-key-header .key-icon {
+        width: 20px;
+        height: 20px;
+      }
+
+      .api-key-warning-box {
+        padding: 10px 12px;
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+      }
+
+      .api-key-warning-box p {
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .api-key-warning-box svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .api-key-box-enhanced {
+        padding: 3px;
+      }
+
+      .api-key-inner {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .api-key-value-enhanced {
+        font-size: 12px;
+        padding: 12px;
+        text-align: center;
+        word-break: break-all;
+      }
+
+      /* Copy button - full width, touch-friendly */
+      .copy-btn-enhanced {
+        width: 100%;
+        min-height: 48px;
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+
+      .copy-btn-enhanced svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .copy-success-indicator {
+        padding: 8px;
+        gap: 6px;
+      }
+
+      .copy-success-indicator svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .copy-success-indicator span {
+        font-size: 11px;
+      }
+
+      /* Onboarding Steps Mobile */
+      .onboarding-header {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+
+      .onboarding-steps {
+        gap: 10px;
+      }
+
+      .onboarding-step {
+        padding: 14px 12px;
+        gap: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .step-number {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+      }
+
+      .step-content h5 {
+        font-size: 14px;
+      }
+
+      .step-content p {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      /* Step action links - touch-friendly */
+      .step-action {
+        width: 100%;
+        margin-top: 4px;
+      }
+
+      .step-action a {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 44px;
+      }
+
+      .step-action a svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Wizard Preview Mobile */
+      .wizard-preview-header {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+
+      .wizard-preview-card {
+        padding: 14px;
+      }
+
+      .mockup-row {
+        gap: 8px;
+      }
+
+      .mockup-label {
+        width: 60px;
+        height: 10px;
+      }
+
+      .mockup-dropdown {
+        height: 32px;
+        padding: 0 10px;
+      }
+
+      .mockup-table-preview {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        padding: 10px;
+      }
+
+      .mockup-cell {
+        height: 20px;
+      }
+
+      .wizard-preview-cta {
+        font-size: 12px;
+        margin-top: 12px;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .wizard-preview-cta svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* CTA Buttons Mobile */
+      .btn-airtable {
+        min-height: 52px;
+        font-size: 15px;
+        padding: 16px 20px;
+      }
+
+      .btn-airtable svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .secondary-ctas .btn {
+        min-height: 48px;
+        font-size: 14px;
+      }
+
+      /* Header Mobile */
+      header {
+        padding: 16px 16px;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .logo-text {
+        font-size: 20px;
+      }
+
+      /* Hero section mobile */
+      .hero {
+        padding: 20px 0 36px;
+      }
+
+      /* Sparkle container - reduce on mobile */
+      .sparkle-container {
+        width: 100%;
+        height: 200px;
+      }
+
+      /* Reduce gradient orb sizes on mobile for performance */
+      .gradient-orb--1 {
+        width: 300px;
+        height: 300px;
+        filter: blur(60px);
+      }
+
+      .gradient-orb--2 {
+        width: 250px;
+        height: 250px;
+        filter: blur(60px);
+      }
+
+      .gradient-orb--3 {
+        width: 220px;
+        height: 220px;
+        filter: blur(60px);
+      }
+    }
+
+    /* ============================================
+       Mobile Excellence - 320px (iPhone SE 1st Gen / Narrow)
+       ============================================ */
+    @media (max-width: 320px) {
+      /* Typography - Pressure Test */
+      h1 {
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .subheadline {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 5px 8px;
+        gap: 5px;
+      }
+
+      .badge-icon {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* Value props ultra-compact */
+      .value-props li {
+        font-size: 13px;
+        gap: 8px;
+      }
+
+      .value-props li::before {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Visual Flow Ultra-Compact */
+      .visual-flow {
+        padding: 0 8px;
+        gap: 10px;
+        margin-bottom: 36px;
+      }
+
+      .flow-step {
+        padding: 16px 12px;
+      }
+
+      .flow-step h3 {
+        font-size: 15px;
+      }
+
+      .flow-step p {
+        font-size: 12px;
+      }
+
+      .flow-icon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .flow-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .flow-connector {
+        height: 24px;
+      }
+
+      /* Form Ultra-Compact */
+      main {
+        padding: 0 12px 40px;
+      }
+
+      .form-card {
+        padding: 16px 12px;
+      }
+
+      .form-card h2 {
+        font-size: 18px;
+      }
+
+      .form-input {
+        min-height: 50px;
+        padding: 14px 12px;
+        padding-right: 40px;
+        font-size: 16px;
+      }
+
+      .form-group.floating-label label {
+        font-size: 13px;
+        left: 12px;
+      }
+
+      .btn {
+        min-height: 50px;
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+
+      /* Success State Ultra-Compact */
+      .success-icon {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 16px;
+      }
+
+      .success-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .success-state h3 {
+        font-size: 20px;
+      }
+
+      .success-state > p {
+        font-size: 13px;
+      }
+
+      .queue-position {
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+
+      /* Activation Ultra-Compact */
+      .activation-card {
+        padding: 16px 12px;
+      }
+
+      .activation-card h2 {
+        font-size: 18px;
+      }
+
+      .activation-success .success-icon {
+        width: 64px;
+        height: 64px;
+      }
+
+      .activation-success .success-icon svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      .welcome-message h3 {
+        font-size: 20px;
+      }
+
+      .pioneer-badge {
+        font-size: 10px;
+        padding: 6px 12px;
+      }
+
+      .beta-counter {
+        font-size: 11px;
+      }
+
+      .beta-counter .counter-number {
+        font-size: 11px;
+        padding: 2px 6px;
+      }
+
+      /* API Key Ultra-Compact */
+      .api-key-header h4 {
+        font-size: 13px;
+      }
+
+      .api-key-warning-box p {
+        font-size: 10px;
+      }
+
+      .api-key-value-enhanced {
+        font-size: 11px;
+        padding: 10px;
+      }
+
+      .copy-btn-enhanced {
+        min-height: 46px;
+        font-size: 14px;
+      }
+
+      /* Onboarding Ultra-Compact */
+      .onboarding-step {
+        padding: 12px 10px;
+      }
+
+      .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+      }
+
+      .step-content h5 {
+        font-size: 13px;
+      }
+
+      .step-content p {
+        font-size: 11px;
+      }
+
+      .step-action a {
+        padding: 10px 14px;
+        font-size: 13px;
+        min-height: 42px;
+      }
+
+      /* Wizard Preview Ultra-Compact */
+      .wizard-preview-card {
+        padding: 12px;
+      }
+
+      .mockup-label {
+        width: 50px;
+        height: 8px;
+      }
+
+      .mockup-dropdown {
+        height: 28px;
+      }
+
+      .mockup-cell {
+        height: 18px;
+      }
+
+      .wizard-preview-cta {
+        font-size: 11px;
+      }
+
+      /* CTA Ultra-Compact */
+      .btn-airtable {
+        min-height: 50px;
+        font-size: 14px;
+      }
+
+      .secondary-ctas .btn {
+        min-height: 46px;
+        font-size: 13px;
+      }
+
+      /* Header Ultra-Compact */
+      header {
+        padding: 12px;
+      }
+
+      .logo-icon {
+        width: 26px;
+        height: 26px;
+      }
+
+      .logo-text {
+        font-size: 18px;
+      }
+
+      .hero {
+        padding: 16px 0 28px;
+      }
+
+      /* Disable complex animations on very small screens */
+      .gradient-orb {
+        animation-duration: 40s !important;
+      }
+
+      /* Reduce sparkle/confetti counts */
+      .sparkle:nth-child(n+16),
+      .confetti:nth-child(n+16) {
+        display: none;
+      }
+    }
+
+    /* ============================================
+       iOS Safari Specific Fixes
+       ============================================ */
+    @supports (-webkit-touch-callout: none) {
+      /* Fix for iOS input zoom */
+      .form-input {
+        font-size: 16px !important;
+      }
+
+      /* Fix for iOS safe area */
+      .content-wrapper {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
+
+      /* Fix for iOS momentum scrolling */
+      body {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Improve tap highlight */
+      .btn,
+      .step-action a,
+      .copy-btn-enhanced {
+        -webkit-tap-highlight-color: rgba(45, 212, 191, 0.1);
+      }
+    }
+
+    /* ============================================
+       Touch Device Optimizations
+       ============================================ */
+    @media (hover: none) and (pointer: coarse) {
+      /* Remove hover effects on touch devices */
+      .flow-step:hover {
+        transform: none;
+        border-color: var(--border-default);
+      }
+
+      .onboarding-step:hover {
+        transform: none;
+        border-color: var(--border-default);
+      }
+
+      .btn-primary:hover:not(:disabled),
+      .btn-airtable:hover {
+        transform: none;
+      }
+
+      .copy-btn-enhanced:hover {
+        transform: none;
+      }
+
+      /* Add active states instead */
+      .flow-step:active {
+        transform: scale(0.98);
+        border-color: var(--brand-teal);
+      }
+
+      .onboarding-step:active {
+        transform: scale(0.99);
+        border-color: var(--brand-teal);
+      }
+
+      .btn-primary:active:not(:disabled),
+      .btn-airtable:active {
+        transform: scale(0.98);
+      }
+
+      .copy-btn-enhanced:active {
+        transform: scale(0.97);
+      }
+
+      /* Ensure touch targets are at least 44x44px */
+      .step-action a {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      .copy-btn-enhanced {
+        min-height: 48px;
+      }
+
+      .btn {
+        min-height: 48px;
+      }
+    }
+
+    /* ============================================
+       Reduced Motion Preferences
+       ============================================ */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .gradient-orb {
+        animation: none !important;
+      }
+
+      .confetti {
+        display: none !important;
+      }
+
+      .sparkle {
+        display: none !important;
+      }
+
+      .star-particle {
+        display: none !important;
+      }
+
+      .btn-ripple {
+        display: none !important;
+      }
+
+      .form-input:focus {
+        animation: none !important;
+      }
+
+      .queue-position::before {
+        animation: none !important;
+      }
+
+      .pioneer-badge::before {
+        animation: none !important;
+      }
+
+      .btn-airtable::before {
+        display: none !important;
+      }
+
+      .btn-airtable svg {
+        animation: none !important;
+      }
+
+      .wizard-preview-cta svg {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Effects -->
+  <div class="gradient-mesh">
+    <div class="gradient-orb gradient-orb--1"></div>
+    <div class="gradient-orb gradient-orb--2"></div>
+    <div class="gradient-orb gradient-orb--3"></div>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Header -->
+    <header>
+      <a href="/" class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="url(#logo-gradient)"/>
+          <path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V14H10V12Z" fill="white"/>
+          <path d="M10 16H22V18H10V16Z" fill="white" fill-opacity="0.8"/>
+          <path d="M10 20H18V22H10V20Z" fill="white" fill-opacity="0.6"/>
+          <defs>
+            <linearGradient id="logo-gradient" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#2dd4bf"/>
+              <stop offset="1" stop-color="#2563eb"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">Glyph</span>
+      </a>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero">
+        <span class="badge">
+          <svg class="badge-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          Airtable Early Access
+        </span>
+        <h1>Turn Airtable into a <span class="gradient-text">PDF powerhouse</span></h1>
+        <p class="subheadline">Connect your bases. Describe your document. Generate beautiful PDFs in seconds. No export chains. No code.</p>
+        <ul class="value-props">
+          <li>Native Airtable integration - connect your bases in 30 seconds</li>
+          <li>AI-powered templates - describe what you need, we build it</li>
+          <li>One API call to PDF - invoices, quotes, reports, anything</li>
+          <li>Built for developers who live in Airtable</li>
+        </ul>
+      </section>
+
+      <!-- Visual Flow Section -->
+      <section class="visual-flow">
+        <div class="flow-step">
+          <div class="flow-icon flow-icon--airtable">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+          </div>
+          <h3>Connect Your Base</h3>
+          <p>Paste your Personal Access Token. We'll find your bases and tables automatically.</p>
+        </div>
+
+        <div class="flow-connector">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+
+        <div class="flow-step">
+          <div class="flow-icon flow-icon--glyph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a10 10 0 1 0 10 10"/>
+              <path d="M12 12l6-6"/>
+              <path d="M16 4h4v4"/>
+            </svg>
+          </div>
+          <h3>Describe in Plain English</h3>
+          <p>Tell us what you need: "Modern invoice with line items" or "Quote with company branding." AI handles the rest.</p>
+        </div>
+
+        <div class="flow-connector">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+
+        <div class="flow-step">
+          <div class="flow-icon flow-icon--pdf">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6"/>
+              <path d="M10 13h4"/>
+              <path d="M10 17h4"/>
+            </svg>
+          </div>
+          <h3>Generate & Download</h3>
+          <p>One API call. Professional PDFs. Ready to send to clients in seconds.</p>
+        </div>
+      </section>
+
+      <!-- Request Form Section -->
+      <section class="form-section" id="request">
+        <div class="form-card">
+          <div id="request-form-container">
+            <h2>Request Early Access</h2>
+            <form id="request-form" novalidate>
+              <div class="form-group floating-label">
+                <div class="input-wrapper">
+                  <input type="email" id="email" class="form-input" placeholder=" " required autocomplete="email">
+                  <label for="email">Email</label>
+                  <span class="input-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="field-microcopy" data-field="email">We'll send your invite code here</div>
+                <div class="field-error" data-field="email">
+                  <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  <span></span>
+                </div>
+              </div>
+              <div class="form-group floating-label">
+                <div class="input-wrapper">
+                  <input type="text" id="name" class="form-input" placeholder=" " required autocomplete="name">
+                  <label for="name">Name</label>
+                  <span class="input-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="field-microcopy" data-field="name">What should we call you?</div>
+                <div class="field-error" data-field="name">
+                  <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                  <span></span>
+                </div>
+              </div>
+              <div class="form-group floating-label">
+                <div class="input-wrapper">
+                  <input type="text" id="company" class="form-input" placeholder=" " autocomplete="organization">
+                  <label for="company">Company (optional)</label>
+                  <span class="input-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="field-microcopy" data-field="company">Company or project name</div>
+              </div>
+              <div class="form-group floating-label">
+                <div class="input-wrapper">
+                  <textarea id="usecase" class="form-input" placeholder=" " rows="3"></textarea>
+                  <label for="usecase">Use Case (optional)</label>
+                  <span class="input-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="field-microcopy" data-field="usecase">Detailed use cases get priority access</div>
+              </div>
+              <button type="submit" class="btn btn-primary" id="request-btn">
+                <span class="btn-text">Request My Invite</span>
+                <span class="btn-spinner"></span>
+                <span class="btn-checkmark">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </span>
+                <span class="btn-progress"></span>
+              </button>
+              <p class="form-helper">We're hand-selecting developers who will push Glyph to its limits.</p>
+            </form>
+            <div id="request-error" class="form-error hidden">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span id="request-error-text"></span>
+            </div>
+          </div>
+
+          <div id="request-success" class="success-state hidden">
+            <div class="confetti-container" id="confetti-container"></div>
+            <div class="success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <h3>You're on the list.</h3>
+            <p>We're hand-picking developers who will shape the future of Airtable-to-PDF. Watch your inbox for your invite.</p>
+            <span class="queue-position" id="queue-position"></span>
+            <div class="welcome-badge">Welcome to the inner circle</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activation Section -->
+      <section class="activation-section" id="activate">
+        <div class="activation-card">
+          <div id="activation-form-container">
+            <h2>Already have an invite code?</h2>
+            <div class="activation-row">
+              <input type="text" id="invite-code" class="form-input" placeholder="GLYPH-XXXX-XXXX" maxlength="16">
+              <button type="button" class="btn btn-primary" id="activate-btn">
+                <span class="btn-text">Unlock Glyph</span>
+                <span class="btn-spinner"></span>
+                <span class="btn-checkmark">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </span>
+                <span class="btn-progress"></span>
+              </button>
+            </div>
+            <div id="activation-error" class="form-error hidden">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span id="activation-error-text"></span>
+            </div>
+          </div>
+
+          <div id="activation-success" class="activation-success hidden">
+            <!-- Sparkle Particles Container -->
+            <div class="sparkle-container" id="sparkle-container"></div>
+            <div class="confetti-container" id="activation-confetti-container"></div>
+
+            <!-- Success Icon with Morphing Animation -->
+            <div class="success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+
+            <!-- Welcome Message -->
+            <div class="welcome-message">
+              <h3>You're in!</h3>
+              <p class="welcome-name" id="welcome-name">Welcome, Beta Pioneer</p>
+            </div>
+
+            <!-- Beta Pioneer Badge -->
+            <div class="pioneer-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>Beta Pioneer</span>
+            </div>
+
+            <!-- Beta User Counter -->
+            <div class="beta-counter">
+              <span>You're one of</span>
+              <span class="counter-number" id="beta-user-count">#147</span>
+              <span>early adopters</span>
+            </div>
+
+            <!-- Enhanced API Key Section -->
+            <div class="api-key-reveal">
+              <div class="api-key-header">
+                <svg class="key-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                </svg>
+                <h4>Your API Key</h4>
+              </div>
+
+              <div class="api-key-warning-box">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <p><strong>One-time reveal.</strong> This key will not be shown again. Copy it now and store it securely.</p>
+              </div>
+
+              <div class="api-key-box-enhanced" id="api-key-box">
+                <div class="api-key-inner">
+                  <input type="text" id="api-key-value" class="api-key-value-enhanced" readonly>
+                  <button type="button" class="copy-btn-enhanced" id="copy-api-key">
+                    <svg id="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    <svg id="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: none;">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="copy-success-indicator" id="copy-success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span>Saved to clipboard - don't lose it!</span>
+              </div>
+            </div>
+
+            <!-- Onboarding Steps -->
+            <div class="onboarding-section">
+              <p class="onboarding-header">What's Next</p>
+              <div class="onboarding-steps">
+                <div class="onboarding-step" id="step-copy">
+                  <div class="step-number"><span>1</span></div>
+                  <div class="step-content">
+                    <h5>Copy your API key</h5>
+                    <p>Store it somewhere safe. You'll need it for integration.</p>
+                  </div>
+                </div>
+
+                <div class="onboarding-step" id="step-connect">
+                  <div class="step-number"><span>2</span></div>
+                  <div class="step-content">
+                    <h5>Connect your Airtable base</h5>
+                    <p>Link your bases and we'll auto-detect your tables.</p>
+                  </div>
+                  <div class="step-action">
+                    <a href="https://dashboard.glyph.you" target="_blank">
+                      Dashboard
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
+                <div class="onboarding-step" id="step-generate">
+                  <div class="step-number"><span>3</span></div>
+                  <div class="step-content">
+                    <h5>Generate your first PDF</h5>
+                    <p>Describe what you need. AI builds your template.</p>
+                  </div>
+                  <div class="step-action">
+                    <a href="https://glyph.you/#airtable" target="_blank">
+                      Try it
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Airtable Wizard Preview -->
+            <div class="wizard-preview">
+              <p class="wizard-preview-header">Airtable Integration Preview</p>
+              <div class="wizard-preview-card">
+                <div class="wizard-mockup">
+                  <div class="mockup-row">
+                    <div class="mockup-label"></div>
+                    <div class="mockup-dropdown">
+                      <div class="mockup-dropdown-text"></div>
+                      <svg class="mockup-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="mockup-row">
+                    <div class="mockup-label"></div>
+                    <div class="mockup-dropdown">
+                      <div class="mockup-dropdown-text"></div>
+                      <svg class="mockup-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="mockup-table-preview">
+                    <div class="mockup-cell header"></div>
+                    <div class="mockup-cell header"></div>
+                    <div class="mockup-cell header"></div>
+                    <div class="mockup-cell"></div>
+                    <div class="mockup-cell"></div>
+                    <div class="mockup-cell"></div>
+                    <div class="mockup-cell"></div>
+                    <div class="mockup-cell"></div>
+                    <div class="mockup-cell"></div>
+                  </div>
+                </div>
+                <div class="wizard-preview-cta">
+                  <span>See your Airtable data become PDFs</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Enhanced CTA Buttons -->
+            <div class="cta-section">
+              <div class="cta-buttons-enhanced">
+                <a href="https://glyph.you/#airtable" class="btn btn-airtable">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                  <span>Start with Airtable</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+                <div class="secondary-ctas">
+                  <a href="https://docs.glyph.you" class="btn btn-secondary" target="_blank">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    <span>Read the docs</span>
+                  </a>
+                  <a href="https://dashboard.glyph.you" class="btn btn-secondary" target="_blank">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                      <rect x="3" y="3" width="7" height="7"/>
+                      <rect x="14" y="3" width="7" height="7"/>
+                      <rect x="14" y="14" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="https://docs.glyph.you">Docs</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================
+    // Configuration
+    // ============================================
+    const API_URL = 'https://api.glyph.you';
+
+    // ============================================
+    // DOM Elements
+    // ============================================
+    const requestForm = document.getElementById('request-form');
+    const requestFormContainer = document.getElementById('request-form-container');
+    const requestSuccess = document.getElementById('request-success');
+    const requestBtn = document.getElementById('request-btn');
+    const requestError = document.getElementById('request-error');
+    const requestErrorText = document.getElementById('request-error-text');
+    const queuePosition = document.getElementById('queue-position');
+    const confettiContainer = document.getElementById('confetti-container');
+
+    const inviteCodeInput = document.getElementById('invite-code');
+    const activateBtn = document.getElementById('activate-btn');
+    const activationFormContainer = document.getElementById('activation-form-container');
+    const activationSuccess = document.getElementById('activation-success');
+    const activationError = document.getElementById('activation-error');
+    const activationErrorText = document.getElementById('activation-error-text');
+    const apiKeyValue = document.getElementById('api-key-value');
+    const copyApiKeyBtn = document.getElementById('copy-api-key');
+
+    // Form fields
+    const emailInput = document.getElementById('email');
+    const nameInput = document.getElementById('name');
+    const companyInput = document.getElementById('company');
+    const usecaseInput = document.getElementById('usecase');
+
+    // Track which fields have been touched (for validation timing)
+    const touchedFields = new Set();
+
+    // ============================================
+    // Ripple Effect for Buttons
+    // ============================================
+    function createRipple(event, button) {
+      const rect = button.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const ripple = document.createElement('span');
+      ripple.classList.add('btn-ripple');
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+
+      button.appendChild(ripple);
+
+      ripple.addEventListener('animationend', () => {
+        ripple.remove();
+      });
+    }
+
+    // Add ripple to all primary buttons
+    document.querySelectorAll('.btn-primary').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (!btn.disabled) {
+          createRipple(e, btn);
+        }
+      });
+    });
+
+    // ============================================
+    // Field Validation
+    // ============================================
+    const validators = {
+      email: (value) => {
+        if (!value.trim()) return { valid: false, message: 'Email is required' };
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return { valid: false, message: 'Please enter a valid email address' };
+        return { valid: true };
+      },
+      name: (value) => {
+        if (!value.trim()) return { valid: false, message: 'Name is required' };
+        if (value.trim().length < 2) return { valid: false, message: 'Name is too short' };
+        return { valid: true };
+      },
+      company: (value) => {
+        // Optional field - always valid, but show checkmark if filled
+        return { valid: true, showCheck: value.trim().length > 0 };
+      },
+      usecase: (value) => {
+        // Optional field - always valid, but show checkmark if has substantial content
+        return { valid: true, showCheck: value.trim().length > 10 };
+      }
+    };
+
+    function validateField(input, showError = true) {
+      const fieldName = input.id;
+      const validator = validators[fieldName];
+      if (!validator) return true;
+
+      const result = validator(input.value);
+      const fieldError = document.querySelector(`.field-error[data-field="${fieldName}"]`);
+      const microcopy = document.querySelector(`.field-microcopy[data-field="${fieldName}"]`);
+
+      // Remove previous states
+      input.classList.remove('valid', 'error', 'shake');
+
+      if (result.valid) {
+        // Show checkmark for valid required fields or optional fields with content
+        if (fieldName === 'email' || fieldName === 'name' || result.showCheck) {
+          input.classList.add('valid');
+        }
+        if (fieldError) {
+          fieldError.classList.remove('visible');
+        }
+        if (microcopy && result.showCheck) {
+          microcopy.classList.add('success');
+        }
+        return true;
+      } else {
+        if (showError && touchedFields.has(fieldName)) {
+          input.classList.add('error', 'shake');
+          if (fieldError) {
+            fieldError.querySelector('span').textContent = result.message;
+            fieldError.classList.add('visible');
+          }
+          // Remove shake after animation
+          setTimeout(() => input.classList.remove('shake'), 500);
+        }
+        return false;
+      }
+    }
+
+    // Add validation listeners
+    [emailInput, nameInput, companyInput, usecaseInput].forEach(input => {
+      if (!input) return;
+
+      // Track when field is first blurred
+      input.addEventListener('blur', () => {
+        touchedFields.add(input.id);
+        validateField(input);
+      });
+
+      // Validate on input (after first blur)
+      input.addEventListener('input', () => {
+        if (touchedFields.has(input.id)) {
+          validateField(input);
+        }
+        // Update has-value class for floating labels
+        if (input.value.trim()) {
+          input.classList.add('has-value');
+        } else {
+          input.classList.remove('has-value');
+        }
+      });
+    });
+
+    // ============================================
+    // Confetti Effect
+    // ============================================
+    function createConfetti() {
+      const colors = ['var(--brand-teal)', 'var(--airtable-yellow)', 'var(--brand-blue)', 'var(--success-green)'];
+      const confettiCount = 30;
+
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+
+        // Random starting position
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = '-10px';
+
+        // Random animation delay
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+
+        // Random size
+        const size = Math.random() * 8 + 6;
+        confetti.style.width = size + 'px';
+        confetti.style.height = size + 'px';
+
+        // Random horizontal drift
+        const drift = (Math.random() - 0.5) * 200;
+        confetti.style.setProperty('--drift', drift + 'px');
+
+        // Apply random color directly (override CSS)
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+        confettiContainer.appendChild(confetti);
+
+        // Trigger animation
+        setTimeout(() => confetti.classList.add('active'), 10);
+
+        // Clean up after animation
+        setTimeout(() => confetti.remove(), 3500);
+      }
+    }
+
+    // ============================================
+    // Invite Code Formatting
+    // ============================================
+    inviteCodeInput.addEventListener('input', (e) => {
+      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      // Format as GLYPH-XXXX-XXXX
+      if (value.length > 5) {
+        value = value.slice(0, 5) + '-' + value.slice(5);
+      }
+      if (value.length > 10) {
+        value = value.slice(0, 10) + '-' + value.slice(10);
+      }
+      if (value.length > 15) {
+        value = value.slice(0, 15);
+      }
+
+      e.target.value = value;
+    });
+
+    // ============================================
+    // Request Early Access
+    // ============================================
+    async function requestAccess(data) {
+      const res = await fetch(`${API_URL}/v1/beta/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Request failed' }));
+        throw new Error(error.message || 'Request failed');
+      }
+
+      return res.json();
+    }
+
+    requestForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+      const name = nameInput.value.trim();
+      const company = companyInput.value.trim();
+      const usecase = usecaseInput.value.trim();
+
+      // Mark all required fields as touched
+      touchedFields.add('email');
+      touchedFields.add('name');
+
+      // Validate all fields
+      const emailValid = validateField(emailInput);
+      const nameValid = validateField(nameInput);
+
+      if (!emailValid || !nameValid) {
+        // Focus first invalid field
+        if (!emailValid) {
+          emailInput.focus();
+        } else if (!nameValid) {
+          nameInput.focus();
+        }
+        return;
+      }
+
+      requestBtn.classList.add('btn-loading');
+      requestBtn.disabled = true;
+      hideRequestError();
+
+      try {
+        const result = await requestAccess({ email, name, company, usecase });
+
+        // Show success button state briefly
+        requestBtn.classList.remove('btn-loading');
+        requestBtn.classList.add('btn-success');
+
+        // Transition to success state after button animation
+        setTimeout(() => {
+          requestFormContainer.classList.add('hidden');
+          requestSuccess.classList.remove('hidden');
+
+          // Trigger reveal animations
+          requestSuccess.classList.add('revealing');
+
+          // Trigger confetti
+          setTimeout(createConfetti, 200);
+
+          if (result.position) {
+            queuePosition.textContent = `#${result.position} in queue`;
+            queuePosition.classList.remove('hidden');
+          }
+        }, 600);
+      } catch (error) {
+        showRequestError(error.message || 'Something went wrong. Please try again.');
+        requestBtn.classList.remove('btn-loading');
+        requestBtn.disabled = false;
+      }
+    });
+
+    function showRequestError(message) {
+      requestErrorText.textContent = message;
+      requestError.classList.remove('hidden');
+      // Shake the error message in
+      requestError.style.animation = 'none';
+      requestError.offsetHeight; // Trigger reflow
+      requestError.style.animation = 'shake 0.5s ease';
+    }
+
+    function hideRequestError() {
+      requestError.classList.add('hidden');
+    }
+
+    // ============================================
+    // Activate Invite Code
+    // ============================================
+    async function activateCode(code) {
+      const res = await fetch(`${API_URL}/v1/beta/activate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Activation failed' }));
+        throw new Error(error.message || 'Invalid invite code');
+      }
+
+      return res.json();
+    }
+
+    const activationConfettiContainer = document.getElementById('activation-confetti-container');
+    const sparkleContainer = document.getElementById('sparkle-container');
+    const apiKeyBox = document.getElementById('api-key-box');
+    const copySuccess = document.getElementById('copy-success');
+    const stepCopy = document.getElementById('step-copy');
+    const copyIcon = document.getElementById('copy-icon');
+    const checkIcon = document.getElementById('check-icon');
+
+    function createActivationConfetti() {
+      const colors = ['var(--brand-teal)', 'var(--airtable-yellow)', 'var(--brand-blue)', 'var(--success-green)'];
+      const confettiCount = 40;
+
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = '-10px';
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+
+        const size = Math.random() * 10 + 6;
+        confetti.style.width = size + 'px';
+        confetti.style.height = size + 'px';
+
+        const drift = (Math.random() - 0.5) * 200;
+        confetti.style.setProperty('--drift', drift + 'px');
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+        activationConfettiContainer.appendChild(confetti);
+
+        setTimeout(() => confetti.classList.add('active'), 10);
+        setTimeout(() => confetti.remove(), 3500);
+      }
+    }
+
+    // ============================================
+    // Sparkle Effect (Premium Particles)
+    // ============================================
+    function createSparkles() {
+      const colors = ['#2dd4bf', '#fcb400', '#60a5fa', '#22c55e'];
+      const sparkleCount = 25;
+
+      for (let i = 0; i < sparkleCount; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.classList.add('sparkle');
+
+        // Random starting position (center-ish)
+        sparkle.style.left = (40 + Math.random() * 20) + '%';
+        sparkle.style.top = '50px';
+
+        // Random color
+        sparkle.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+        // Random size
+        const size = Math.random() * 6 + 4;
+        sparkle.style.width = size + 'px';
+        sparkle.style.height = size + 'px';
+
+        // Random trajectory
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 80 + Math.random() * 120;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 50; // Bias upward
+
+        sparkle.style.setProperty('--tx', tx + 'px');
+        sparkle.style.setProperty('--ty', ty + 'px');
+
+        // Random delay
+        sparkle.style.animationDelay = (Math.random() * 0.3) + 's';
+
+        sparkleContainer.appendChild(sparkle);
+
+        setTimeout(() => sparkle.classList.add('active'), 10);
+        setTimeout(() => sparkle.remove(), 2500);
+      }
+    }
+
+    // Star Particles
+    function createStars() {
+      const colors = ['#fcb400', '#2dd4bf', '#60a5fa'];
+      const starCount = 8;
+
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star-particle');
+
+        // Random position
+        star.style.left = (30 + Math.random() * 40) + '%';
+        star.style.top = '60px';
+
+        // Random color
+        star.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+        // Random size
+        const size = 12 + Math.random() * 8;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+
+        // Random trajectory
+        const tx = (Math.random() - 0.5) * 150;
+        const ty = -80 - Math.random() * 100;
+        star.style.setProperty('--tx', tx + 'px');
+        star.style.setProperty('--ty', ty + 'px');
+
+        // Star SVG
+        star.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+        // Random delay
+        star.style.animationDelay = (Math.random() * 0.5) + 's';
+
+        sparkleContainer.appendChild(star);
+
+        setTimeout(() => star.classList.add('active'), 10);
+        setTimeout(() => star.remove(), 3500);
+      }
+    }
+
+    // Combined celebration effect
+    function createCelebration() {
+      createActivationConfetti();
+      createSparkles();
+      setTimeout(createStars, 100);
+    }
+
+    activateBtn.addEventListener('click', async () => {
+      const code = inviteCodeInput.value.trim();
+
+      if (!code || code.length < 15) {
+        showActivationError('Please enter a valid invite code.');
+        inviteCodeInput.classList.add('shake');
+        setTimeout(() => inviteCodeInput.classList.remove('shake'), 500);
+        return;
+      }
+
+      activateBtn.classList.add('btn-loading');
+      activateBtn.disabled = true;
+      hideActivationError();
+
+      try {
+        const result = await activateCode(code);
+
+        // Show success button state
+        activateBtn.classList.remove('btn-loading');
+        activateBtn.classList.add('btn-success');
+
+        // Transition to success state
+        setTimeout(() => {
+          activationFormContainer.classList.add('hidden');
+          activationSuccess.classList.remove('hidden');
+
+          // Trigger reveal animations
+          activationSuccess.classList.add('revealing');
+
+          // Trigger celebration effects
+          setTimeout(createCelebration, 200);
+
+          if (result.apiKey) {
+            apiKeyValue.value = result.apiKey;
+          }
+
+          // Update welcome name if available
+          if (result.name) {
+            const welcomeName = document.getElementById('welcome-name');
+            welcomeName.textContent = `Welcome, ${result.name}`;
+          }
+
+          // Update beta user count if available
+          if (result.userNumber) {
+            const betaUserCount = document.getElementById('beta-user-count');
+            betaUserCount.textContent = `#${result.userNumber}`;
+          }
+        }, 600);
+      } catch (error) {
+        showActivationError(error.message || 'Invalid invite code. Please check and try again.');
+        activateBtn.classList.remove('btn-loading');
+        activateBtn.disabled = false;
+      }
+    });
+
+    // Allow Enter key to submit activation
+    inviteCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        activateBtn.click();
+      }
+    });
+
+    function showActivationError(message) {
+      activationErrorText.textContent = message;
+      activationError.classList.remove('hidden');
+      inviteCodeInput.classList.add('error');
+    }
+
+    function hideActivationError() {
+      activationError.classList.add('hidden');
+      inviteCodeInput.classList.remove('error');
+    }
+
+    // ============================================
+    // Copy API Key - Enhanced
+    // ============================================
+    copyApiKeyBtn.addEventListener('click', async () => {
+      const key = apiKeyValue.value;
+
+      async function handleCopySuccess() {
+        // Update button state
+        copyApiKeyBtn.classList.add('copied');
+        copyApiKeyBtn.querySelector('span').textContent = 'Copied!';
+
+        // Swap icons
+        if (copyIcon) copyIcon.style.display = 'none';
+        if (checkIcon) checkIcon.style.display = 'block';
+
+        // Update API key box
+        if (apiKeyBox) apiKeyBox.classList.add('copied');
+
+        // Show success indicator
+        if (copySuccess) copySuccess.classList.add('visible');
+
+        // Mark step 1 as completed
+        if (stepCopy) stepCopy.classList.add('completed');
+
+        // Reset after delay (but keep step completed)
+        setTimeout(() => {
+          copyApiKeyBtn.classList.remove('copied');
+          copyApiKeyBtn.querySelector('span').textContent = 'Copy';
+          if (copyIcon) copyIcon.style.display = 'block';
+          if (checkIcon) checkIcon.style.display = 'none';
+          if (apiKeyBox) apiKeyBox.classList.remove('copied');
+        }, 3000);
+
+        // Keep success indicator visible longer
+        setTimeout(() => {
+          if (copySuccess) copySuccess.classList.remove('visible');
+        }, 5000);
+      }
+
+      try {
+        await navigator.clipboard.writeText(key);
+        handleCopySuccess();
+      } catch (err) {
+        // Fallback for older browsers
+        apiKeyValue.select();
+        document.execCommand('copy');
+        handleCopySuccess();
+      }
+    });
+
+    // ============================================
+    // URL Handling
+    // ============================================
+    function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      if (code) {
+        // Pre-fill the activation code
+        let formattedCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (formattedCode.length > 5) {
+          formattedCode = formattedCode.slice(0, 5) + '-' + formattedCode.slice(5);
+        }
+        if (formattedCode.length > 10) {
+          formattedCode = formattedCode.slice(0, 10) + '-' + formattedCode.slice(10);
+        }
+        inviteCodeInput.value = formattedCode.slice(0, 15);
+
+        // Scroll to activation section
+        setTimeout(() => {
+          document.getElementById('activate').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+      }
+
+      // Handle hash-based navigation
+      if (window.location.hash === '#activate') {
+        setTimeout(() => {
+          document.getElementById('activate').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+      }
+    }
+
+    // Run on page load
+    handleUrlParams();
+
+    // Handle hash changes
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash === '#activate') {
+        document.getElementById('activate').scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  </script>
+</body>
+</html>
