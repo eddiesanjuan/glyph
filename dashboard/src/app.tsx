@@ -24,10 +24,44 @@ interface DashboardData {
   }
 }
 
+interface BetaRequest {
+  id: string
+  email: string
+  name: string | null
+  company: string | null
+  useCase: string | null
+  status: string
+  createdAt: string
+  reviewedAt: string | null
+}
+
+interface BetaInvite {
+  id: string
+  code: string
+  email: string
+  name: string | null
+  company: string | null
+  useCase: string | null
+  createdAt: string
+  activatedAt: string | null
+  revoked: boolean
+}
+
+interface BetaStats {
+  pending: number
+  approved: number
+  rejected: number
+  activated: number
+  totalRequests: number
+}
+
 // Config - Use public URL for production, localhost for development
 const API_URL = import.meta.env.DEV
   ? 'http://localhost:3000'
   : 'https://api.glyph.you'
+
+// Page type for routing
+type Page = 'login' | 'signup' | 'request-access' | 'activate' | 'dashboard' | 'admin'
 
 // Icons as inline SVGs for zero dependencies
 const Icons = {
@@ -76,17 +110,68 @@ const Icons = {
       <polyline points="10 9 9 9 8 9"/>
     </svg>
   ),
+  sparkles: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/>
+    </svg>
+  ),
+  key: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+    </svg>
+  ),
+  users: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  checkCircle: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  ),
+  x: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+  mail: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  ),
+  shield: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  ),
+  arrowLeft: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+  ),
 }
 
 // Tier badge colors - matching landing page navy blue palette
 const tierColors: Record<string, string> = {
   free: '#64748B',
+  beta: '#14B8A6',
   pro: '#2563EB',
   scale: '#1E3A5F',
   enterprise: '#059669',
 }
 
 export function App() {
+  // Navigation
+  const [page, setPage] = useState<Page>('login')
+
+  // Auth state
   const [apiKey, setApiKey] = useState('')
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -96,12 +181,41 @@ export function App() {
   const [regenerating, setRegenerating] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
-  // Signup flow state
-  const [showSignup, setShowSignup] = useState(false)
-  const [signupEmail, setSignupEmail] = useState('')
-  const [signupLoading, setSignupLoading] = useState(false)
-  const [signupSuccess, setSignupSuccess] = useState(false)
-  const [generatedKey, setGeneratedKey] = useState<string | null>(null)
+
+  // Beta request state
+  const [requestEmail, setRequestEmail] = useState('')
+  const [requestName, setRequestName] = useState('')
+  const [requestCompany, setRequestCompany] = useState('')
+  const [requestUseCase, setRequestUseCase] = useState('')
+  const [requestSubmitting, setRequestSubmitting] = useState(false)
+  const [requestSuccess, setRequestSuccess] = useState(false)
+  const [requestPosition, setRequestPosition] = useState<number | null>(null)
+
+  // Activation state
+  const [activateCode, setActivateCode] = useState('')
+  const [activating, setActivating] = useState(false)
+  const [activatedKey, setActivatedKey] = useState<string | null>(null)
+  const [activationSuccess, setActivationSuccess] = useState(false)
+
+  // Admin state
+  const [adminToken, setAdminToken] = useState('')
+  const [adminAuthed, setAdminAuthed] = useState(false)
+  const [betaRequests, setBetaRequests] = useState<BetaRequest[]>([])
+  const [betaInvites, setBetaInvites] = useState<BetaInvite[]>([])
+  const [betaStats, setBetaStats] = useState<BetaStats | null>(null)
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [adminView, setAdminView] = useState<'requests' | 'invites'>('requests')
+  const [approvedCode, setApprovedCode] = useState<string | null>(null)
+
+  // Check for activation code in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (code) {
+      setActivateCode(code)
+      setPage('activate')
+    }
+  }, [])
 
   const fetchDashboard = useCallback(async (key: string) => {
     if (!key.trim()) return
@@ -123,6 +237,7 @@ export function App() {
 
       const data = await res.json()
       setData(data)
+      setPage('dashboard')
       // Save key to localStorage for convenience
       localStorage.setItem('glyph_api_key', key)
     } catch (err) {
@@ -147,9 +262,9 @@ export function App() {
     fetchDashboard(apiKey)
   }
 
-  const handleCopy = async () => {
-    const keyToCopy = newKey || apiKey
-    await navigator.clipboard.writeText(keyToCopy)
+  const handleCopy = async (keyToCopy?: string) => {
+    const key = keyToCopy || newKey || activatedKey || apiKey
+    await navigator.clipboard.writeText(key)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -185,44 +300,204 @@ export function App() {
     }
   }
 
-  // Handle signup / get free API key
-  const handleSignup = async (e: Event) => {
+  // Handle beta access request
+  const handleRequestAccess = async (e: Event) => {
     e.preventDefault()
-    if (!signupEmail.trim() || !signupEmail.includes('@')) {
+    if (!requestEmail.trim() || !requestEmail.includes('@')) {
       setError('Please enter a valid email address')
       return
     }
 
-    setSignupLoading(true)
+    setRequestSubmitting(true)
     setError(null)
 
     try {
-      // For now, generate a demo key format (will connect to Supabase later)
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const res = await fetch(`${API_URL}/v1/beta/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: requestEmail,
+          name: requestName || undefined,
+          company: requestCompany || undefined,
+          useCase: requestUseCase || undefined,
+        }),
+      })
 
-      // Generate a unique-looking key for demo purposes
-      const timestamp = Date.now().toString(36)
-      const random = Math.random().toString(36).substring(2, 10)
-      const demoKey = `gk_free_${timestamp}${random}`
+      const result = await res.json()
 
-      setGeneratedKey(demoKey)
-      setSignupSuccess(true)
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to submit request')
+      }
 
-      console.log('[Glyph] Free API key requested for:', signupEmail)
+      setRequestSuccess(true)
+      setRequestPosition(result.position || null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create API key')
+      setError(err instanceof Error ? err.message : 'Failed to submit request')
     } finally {
-      setSignupLoading(false)
+      setRequestSubmitting(false)
     }
   }
 
-  // Copy generated key
-  const handleCopyGeneratedKey = async () => {
-    if (generatedKey) {
-      await navigator.clipboard.writeText(generatedKey)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+  // Handle invite code activation
+  const handleActivate = async (e: Event) => {
+    e.preventDefault()
+    if (!activateCode.trim()) {
+      setError('Please enter your invite code')
+      return
+    }
+
+    setActivating(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/beta/activate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: activateCode,
+        }),
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to activate code')
+      }
+
+      setActivatedKey(result.apiKey)
+      setActivationSuccess(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to activate code')
+    } finally {
+      setActivating(false)
+    }
+  }
+
+  // Admin functions
+  const fetchAdminData = async () => {
+    setAdminLoading(true)
+    setError(null)
+
+    try {
+      const [requestsRes, invitesRes, statsRes] = await Promise.all([
+        fetch(`${API_URL}/v1/beta/requests`, {
+          headers: { 'X-Admin-Token': adminToken },
+        }),
+        fetch(`${API_URL}/v1/beta/invites`, {
+          headers: { 'X-Admin-Token': adminToken },
+        }),
+        fetch(`${API_URL}/v1/beta/stats`, {
+          headers: { 'X-Admin-Token': adminToken },
+        }),
+      ])
+
+      if (!requestsRes.ok || !invitesRes.ok || !statsRes.ok) {
+        throw new Error('Admin access denied')
+      }
+
+      const [requestsData, invitesData, statsData] = await Promise.all([
+        requestsRes.json(),
+        invitesRes.json(),
+        statsRes.json(),
+      ])
+
+      setBetaRequests(requestsData.requests)
+      setBetaInvites(invitesData.invites)
+      setBetaStats(statsData)
+      setAdminAuthed(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Admin access denied')
+      setAdminAuthed(false)
+    } finally {
+      setAdminLoading(false)
+    }
+  }
+
+  const handleAdminLogin = (e: Event) => {
+    e.preventDefault()
+    fetchAdminData()
+  }
+
+  const handleApprove = async (requestId: string) => {
+    setAdminLoading(true)
+    setError(null)
+    setApprovedCode(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/beta/approve/${requestId}`, {
+        method: 'POST',
+        headers: { 'X-Admin-Token': adminToken },
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to approve')
+      }
+
+      setApprovedCode(result.inviteCode)
+      // Refresh data
+      fetchAdminData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve request')
+    } finally {
+      setAdminLoading(false)
+    }
+  }
+
+  const handleReject = async (requestId: string) => {
+    if (!confirm('Are you sure you want to reject this request?')) return
+
+    setAdminLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/beta/reject/${requestId}`, {
+        method: 'POST',
+        headers: { 'X-Admin-Token': adminToken },
+      })
+
+      if (!res.ok) {
+        const result = await res.json()
+        throw new Error(result.error || 'Failed to reject')
+      }
+
+      // Refresh data
+      fetchAdminData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject request')
+    } finally {
+      setAdminLoading(false)
+    }
+  }
+
+  const handleRevoke = async (inviteId: string) => {
+    if (!confirm('Are you sure you want to revoke this invite? The user will lose access.')) return
+
+    setAdminLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/beta/revoke/${inviteId}`, {
+        method: 'POST',
+        headers: { 'X-Admin-Token': adminToken },
+      })
+
+      if (!res.ok) {
+        const result = await res.json()
+        throw new Error(result.error || 'Failed to revoke')
+      }
+
+      // Refresh data
+      fetchAdminData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke invite')
+    } finally {
+      setAdminLoading(false)
     }
   }
 
@@ -235,6 +510,16 @@ export function App() {
     })
   }
 
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return 'Never'
+    return new Date(dateStr).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'var(--error)'
     if (percentage >= 75) return 'var(--warning)'
@@ -242,6 +527,14 @@ export function App() {
   }
 
   const maskedKey = apiKey ? `${apiKey.slice(0, 11)}${'*'.repeat(16)}` : ''
+
+  const handleSignOut = () => {
+    setData(null)
+    setApiKey('')
+    setNewKey(null)
+    setPage('login')
+    localStorage.removeItem('glyph_api_key')
+  }
 
   return (
     <div class="dashboard">
@@ -267,6 +560,9 @@ export function App() {
               {Icons.docs}
               <span>Docs</span>
             </a>
+            {page === 'dashboard' && data && (
+              <button class="nav-link" onClick={handleSignOut}>Sign Out</button>
+            )}
           </nav>
         </div>
       </header>
@@ -274,8 +570,9 @@ export function App() {
       {/* Main Content */}
       <main class="main">
         <div class="container">
-          {/* API Key Input */}
-          {!data && !showSignup && (
+
+          {/* ==================== LOGIN PAGE ==================== */}
+          {page === 'login' && !data && (
             <div class="auth-card animate-in">
               <h1>API Dashboard</h1>
               <p class="subtitle">Enter your API key to view usage and manage your account.</p>
@@ -321,46 +618,96 @@ export function App() {
                 <span>or</span>
               </div>
 
-              <button
-                class="btn btn-signup"
-                onClick={() => { setShowSignup(true); setError(null); }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="8.5" cy="7" r="4"/>
-                  <line x1="20" y1="8" x2="20" y2="14"/>
-                  <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg>
-                Get a Free API Key
-              </button>
+              <div class="auth-options">
+                <button
+                  class="btn btn-beta"
+                  onClick={() => { setPage('request-access'); setError(null); }}
+                >
+                  {Icons.sparkles}
+                  <span>Request Early Access</span>
+                </button>
 
-              <p class="free-tier-note">Free tier: 100 PDFs/month, upgrade anytime</p>
+                <button
+                  class="btn btn-secondary"
+                  onClick={() => { setPage('activate'); setError(null); }}
+                >
+                  {Icons.key}
+                  <span>Activate Invite Code</span>
+                </button>
+              </div>
+
+              <p class="admin-link">
+                <button class="btn-link" onClick={() => { setPage('admin'); setError(null); }}>
+                  Admin Panel
+                </button>
+              </p>
             </div>
           )}
 
-          {/* Signup / Get Free API Key */}
-          {!data && showSignup && (
+          {/* ==================== REQUEST ACCESS PAGE ==================== */}
+          {page === 'request-access' && (
             <div class="auth-card animate-in">
-              {!signupSuccess ? (
+              {!requestSuccess ? (
                 <>
-                  <h1>Get Your Free API Key</h1>
-                  <p class="subtitle">Start building with Glyph. Free tier includes 100 PDFs/month.</p>
+                  <div class="beta-badge">
+                    {Icons.sparkles}
+                    <span>Closed Beta</span>
+                  </div>
 
-                  <form onSubmit={handleSignup} class="auth-form">
+                  <h1>Request Early Access</h1>
+                  <p class="subtitle">
+                    We're letting in developers who will push Glyph to its limits.
+                    Tell us about yourself.
+                  </p>
+
+                  <form onSubmit={handleRequestAccess} class="auth-form">
                     <div class="input-group">
                       <input
                         type="email"
-                        value={signupEmail}
-                        onInput={(e) => setSignupEmail((e.target as HTMLInputElement).value)}
-                        placeholder="you@example.com"
+                        value={requestEmail}
+                        onInput={(e) => setRequestEmail((e.target as HTMLInputElement).value)}
+                        placeholder="you@example.com *"
                         class="api-input"
                         autoComplete="email"
                         autoFocus
+                        required
                       />
                     </div>
 
-                    <button type="submit" class="btn btn-primary" disabled={signupLoading || !signupEmail.trim()}>
-                      {signupLoading ? 'Creating...' : 'Get Free API Key'}
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        value={requestName}
+                        onInput={(e) => setRequestName((e.target as HTMLInputElement).value)}
+                        placeholder="Your name"
+                        class="api-input"
+                        autoComplete="name"
+                      />
+                    </div>
+
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        value={requestCompany}
+                        onInput={(e) => setRequestCompany((e.target as HTMLInputElement).value)}
+                        placeholder="Company / Project"
+                        class="api-input"
+                        autoComplete="organization"
+                      />
+                    </div>
+
+                    <div class="input-group">
+                      <textarea
+                        value={requestUseCase}
+                        onInput={(e) => setRequestUseCase((e.target as HTMLTextAreaElement).value)}
+                        placeholder="What will you build with Glyph? (optional)"
+                        class="api-input textarea"
+                        rows={3}
+                      />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled={requestSubmitting || !requestEmail.trim()}>
+                      {requestSubmitting ? 'Submitting...' : 'Request Access'}
                     </button>
                   </form>
 
@@ -373,60 +720,47 @@ export function App() {
 
                   <button
                     class="btn btn-ghost back-link"
-                    onClick={() => { setShowSignup(false); setError(null); }}
+                    onClick={() => { setPage('login'); setError(null); }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                    Already have a key? Sign in
+                    {Icons.arrowLeft}
+                    Back to sign in
                   </button>
                 </>
               ) : (
                 <>
-                  <div class="success-icon">
-                    {Icons.check}
-                  </div>
-                  <h1>Your API Key is Ready!</h1>
-                  <p class="subtitle">Copy your key now - you won't see it again.</p>
-
-                  <div class="generated-key-display">
-                    <code class="mono">{generatedKey}</code>
-                    <button class="btn btn-icon" onClick={handleCopyGeneratedKey}>
-                      {copied ? Icons.check : Icons.copy}
-                    </button>
+                  <div class="success-icon success-icon--large">
+                    {Icons.checkCircle}
                   </div>
 
-                  <div class="signup-actions">
-                    <button class="btn btn-primary" onClick={handleCopyGeneratedKey}>
-                      {copied ? 'Copied!' : 'Copy Key'}
-                    </button>
-                  </div>
+                  <h1>You're on the list.</h1>
+                  <p class="subtitle success-message">
+                    We're letting in developers who will push Glyph to its limits.
+                    We'll reach out when it's your turn.
+                  </p>
 
-                  <div class="free-tier-features">
+                  {requestPosition && (
+                    <div class="position-badge">
+                      <span class="position-number">#{requestPosition}</span>
+                      <span class="position-label">in queue</span>
+                    </div>
+                  )}
+
+                  <div class="waitlist-features">
                     <div class="feature-item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      <span>100 PDFs per month</span>
+                      {Icons.mail}
+                      <span>Check your email for updates</span>
                     </div>
                     <div class="feature-item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      <span>All templates included</span>
-                    </div>
-                    <div class="feature-item">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 13l4 4L19 7"/>
-                      </svg>
-                      <span>Upgrade anytime</span>
+                      {Icons.sparkles}
+                      <span>Detailed use cases get priority</span>
                     </div>
                   </div>
 
                   <button
                     class="btn btn-ghost back-link"
-                    onClick={() => { setShowSignup(false); setSignupSuccess(false); setGeneratedKey(null); setSignupEmail(''); }}
+                    onClick={() => { setPage('login'); setRequestSuccess(false); setError(null); }}
                   >
+                    {Icons.arrowLeft}
                     Back to sign in
                   </button>
                 </>
@@ -434,8 +768,339 @@ export function App() {
             </div>
           )}
 
-          {/* Dashboard Content */}
-          {data && (
+          {/* ==================== ACTIVATE CODE PAGE ==================== */}
+          {page === 'activate' && (
+            <div class="auth-card animate-in">
+              {!activationSuccess ? (
+                <>
+                  <div class="invite-icon">
+                    {Icons.key}
+                  </div>
+
+                  <h1>Activate Your Access</h1>
+                  <p class="subtitle">
+                    Enter your invite code to unlock Glyph.
+                  </p>
+
+                  <form onSubmit={handleActivate} class="auth-form">
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        value={activateCode}
+                        onInput={(e) => setActivateCode((e.target as HTMLInputElement).value.toUpperCase())}
+                        placeholder="GLYPH-XXXX-XXXX"
+                        class="api-input mono code-input"
+                        autoComplete="off"
+                        autoFocus
+                      />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled={activating || !activateCode.trim()}>
+                      {activating ? 'Activating...' : 'Activate Code'}
+                    </button>
+                  </form>
+
+                  {error && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    class="btn btn-ghost back-link"
+                    onClick={() => { setPage('login'); setError(null); setActivateCode(''); }}
+                  >
+                    {Icons.arrowLeft}
+                    Back to sign in
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div class="success-icon success-icon--large success-icon--glow">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  </div>
+
+                  <h1>You're in.</h1>
+                  <p class="subtitle success-message">
+                    Let's build something incredible.
+                  </p>
+
+                  <div class="generated-key-display">
+                    <div class="key-label">Your API Key</div>
+                    <code class="mono">{activatedKey}</code>
+                    <button class="btn btn-icon" onClick={() => handleCopy(activatedKey || '')}>
+                      {copied ? Icons.check : Icons.copy}
+                    </button>
+                  </div>
+
+                  <div class="key-warning">
+                    {Icons.warning}
+                    <span>Copy this key now. It won't be shown again.</span>
+                  </div>
+
+                  <div class="activation-actions">
+                    <button class="btn btn-primary" onClick={() => handleCopy(activatedKey || '')}>
+                      {copied ? 'Copied!' : 'Copy API Key'}
+                    </button>
+                  </div>
+
+                  <div class="beta-features">
+                    <div class="feature-item">
+                      {Icons.check}
+                      <span>500 PDFs per month</span>
+                    </div>
+                    <div class="feature-item">
+                      {Icons.check}
+                      <span>All AI features unlocked</span>
+                    </div>
+                    <div class="feature-item">
+                      {Icons.check}
+                      <span>Priority support</span>
+                    </div>
+                  </div>
+
+                  <button
+                    class="btn btn-secondary"
+                    onClick={() => {
+                      if (activatedKey) {
+                        setApiKey(activatedKey)
+                        localStorage.setItem('glyph_api_key', activatedKey)
+                        fetchDashboard(activatedKey)
+                      }
+                    }}
+                  >
+                    Go to Dashboard
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ==================== ADMIN PANEL ==================== */}
+          {page === 'admin' && (
+            <div class="admin-panel animate-in">
+              {!adminAuthed ? (
+                <div class="auth-card">
+                  <div class="admin-icon">
+                    {Icons.shield}
+                  </div>
+
+                  <h1>Admin Panel</h1>
+                  <p class="subtitle">Enter admin token to manage beta invites.</p>
+
+                  <form onSubmit={handleAdminLogin} class="auth-form">
+                    <div class="input-group">
+                      <input
+                        type="password"
+                        value={adminToken}
+                        onInput={(e) => setAdminToken((e.target as HTMLInputElement).value)}
+                        placeholder="Admin token"
+                        class="api-input"
+                        autoComplete="off"
+                        autoFocus
+                      />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled={adminLoading || !adminToken.trim()}>
+                      {adminLoading ? 'Authenticating...' : 'Access Admin'}
+                    </button>
+                  </form>
+
+                  {error && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    class="btn btn-ghost back-link"
+                    onClick={() => { setPage('login'); setError(null); setAdminToken(''); }}
+                  >
+                    {Icons.arrowLeft}
+                    Back to sign in
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div class="admin-header">
+                    <h1>Beta Admin</h1>
+                    <button class="btn btn-ghost" onClick={() => { setAdminAuthed(false); setAdminToken(''); }}>
+                      Sign Out
+                    </button>
+                  </div>
+
+                  {/* Stats */}
+                  {betaStats && (
+                    <div class="admin-stats">
+                      <div class="stat-card stat-card--pending">
+                        <span class="stat-value">{betaStats.pending}</span>
+                        <span class="stat-label">Pending</span>
+                      </div>
+                      <div class="stat-card stat-card--approved">
+                        <span class="stat-value">{betaStats.approved}</span>
+                        <span class="stat-label">Approved</span>
+                      </div>
+                      <div class="stat-card stat-card--activated">
+                        <span class="stat-value">{betaStats.activated}</span>
+                        <span class="stat-label">Activated</span>
+                      </div>
+                      <div class="stat-card">
+                        <span class="stat-value">{betaStats.totalRequests}</span>
+                        <span class="stat-label">Total</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabs */}
+                  <div class="admin-tabs">
+                    <button
+                      class={`tab ${adminView === 'requests' ? 'active' : ''}`}
+                      onClick={() => setAdminView('requests')}
+                    >
+                      {Icons.users}
+                      Requests ({betaRequests.length})
+                    </button>
+                    <button
+                      class={`tab ${adminView === 'invites' ? 'active' : ''}`}
+                      onClick={() => setAdminView('invites')}
+                    >
+                      {Icons.key}
+                      Invites ({betaInvites.length})
+                    </button>
+                  </div>
+
+                  {/* Approved Code Modal */}
+                  {approvedCode && (
+                    <div class="approved-code-banner">
+                      <div class="approved-header">
+                        {Icons.checkCircle}
+                        <strong>Invite Code Generated</strong>
+                      </div>
+                      <div class="approved-code">
+                        <code class="mono">{approvedCode}</code>
+                        <button class="btn btn-icon" onClick={() => handleCopy(approvedCode)}>
+                          {copied ? Icons.check : Icons.copy}
+                        </button>
+                      </div>
+                      <button class="btn btn-ghost" onClick={() => setApprovedCode(null)}>
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  {/* Requests List */}
+                  {adminView === 'requests' && (
+                    <div class="admin-list">
+                      {betaRequests.length === 0 ? (
+                        <div class="empty-state">
+                          <p>No pending requests</p>
+                        </div>
+                      ) : (
+                        betaRequests.map(req => (
+                          <div key={req.id} class="request-card">
+                            <div class="request-header">
+                              <div class="request-email">{req.email}</div>
+                              <div class="request-date">{formatDateTime(req.createdAt)}</div>
+                            </div>
+                            {req.name && <div class="request-meta"><strong>Name:</strong> {req.name}</div>}
+                            {req.company && <div class="request-meta"><strong>Company:</strong> {req.company}</div>}
+                            {req.useCase && <div class="request-usecase">{req.useCase}</div>}
+                            <div class="request-actions">
+                              <button
+                                class="btn btn-approve"
+                                onClick={() => handleApprove(req.id)}
+                                disabled={adminLoading}
+                              >
+                                {Icons.check}
+                                Approve
+                              </button>
+                              <button
+                                class="btn btn-reject"
+                                onClick={() => handleReject(req.id)}
+                                disabled={adminLoading}
+                              >
+                                {Icons.x}
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {/* Invites List */}
+                  {adminView === 'invites' && (
+                    <div class="admin-list">
+                      {betaInvites.length === 0 ? (
+                        <div class="empty-state">
+                          <p>No invites yet</p>
+                        </div>
+                      ) : (
+                        betaInvites.map(inv => (
+                          <div key={inv.id} class={`invite-card ${inv.revoked ? 'revoked' : ''}`}>
+                            <div class="invite-header">
+                              <div class="invite-code mono">{inv.code}</div>
+                              <div class={`invite-status ${inv.activatedAt ? 'activated' : inv.revoked ? 'revoked' : 'pending'}`}>
+                                {inv.activatedAt ? 'Activated' : inv.revoked ? 'Revoked' : 'Pending'}
+                              </div>
+                            </div>
+                            <div class="invite-email">{inv.email}</div>
+                            {inv.name && <div class="invite-meta">{inv.name} {inv.company ? `at ${inv.company}` : ''}</div>}
+                            <div class="invite-dates">
+                              <span>Created: {formatDateTime(inv.createdAt)}</span>
+                              {inv.activatedAt && <span>Activated: {formatDateTime(inv.activatedAt)}</span>}
+                            </div>
+                            {!inv.revoked && !inv.activatedAt && (
+                              <div class="invite-actions">
+                                <button class="btn btn-icon" onClick={() => handleCopy(inv.code)}>
+                                  {Icons.copy}
+                                </button>
+                              </div>
+                            )}
+                            {!inv.revoked && inv.activatedAt && (
+                              <div class="invite-actions">
+                                <button
+                                  class="btn btn-revoke"
+                                  onClick={() => handleRevoke(inv.id)}
+                                  disabled={adminLoading}
+                                >
+                                  Revoke Access
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    class="btn btn-ghost back-link"
+                    onClick={() => { setPage('login'); setAdminAuthed(false); setAdminToken(''); setError(null); }}
+                  >
+                    {Icons.arrowLeft}
+                    Back to sign in
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ==================== DASHBOARD PAGE ==================== */}
+          {page === 'dashboard' && data && (
             <div class="dashboard-content animate-in">
               {/* New Key Alert */}
               {newKey && (
@@ -446,7 +1111,7 @@ export function App() {
                   </div>
                   <div class="new-key-display">
                     <code class="mono">{newKey}</code>
-                    <button class="btn btn-icon" onClick={handleCopy}>
+                    <button class="btn btn-icon" onClick={() => handleCopy()}>
                       {copied ? Icons.check : Icons.copy}
                     </button>
                   </div>
@@ -478,7 +1143,7 @@ export function App() {
                       </button>
                       <button
                         class="btn btn-icon"
-                        onClick={handleCopy}
+                        onClick={() => handleCopy()}
                         aria-label="Copy key"
                       >
                         {copied ? Icons.check : Icons.copy}
@@ -562,15 +1227,7 @@ export function App() {
               )}
 
               {/* Sign Out */}
-              <button
-                class="btn btn-ghost sign-out"
-                onClick={() => {
-                  setData(null)
-                  setApiKey('')
-                  setNewKey(null)
-                  localStorage.removeItem('glyph_api_key')
-                }}
-              >
+              <button class="btn btn-ghost sign-out" onClick={handleSignOut}>
                 Sign Out
               </button>
             </div>
@@ -605,7 +1262,7 @@ export function App() {
 
       {/* Footer */}
       <footer class="footer">
-        <span>Glyph v0.2.0</span>
+        <span>Glyph v0.3.0</span>
         <span class="footer-sep">|</span>
         <a href="https://docs.glyph.you">Documentation</a>
         <span class="footer-sep">|</span>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're in. Welcome to Glyph.</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* Reset */
+    body, table, td, p, a { margin: 0; padding: 0; }
+    body { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+
+    /* Base styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #0B1120;
+      color: #F8FAFC;
+      line-height: 1.6;
+    }
+
+    .wrapper {
+      width: 100%;
+      background-color: #0B1120;
+      padding: 48px 20px;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: linear-gradient(135deg, #111827 0%, #0B1120 100%);
+      border: 1px solid #1E3A5F;
+      border-radius: 16px;
+      padding: 48px 40px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .headline {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #F8FAFC;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subheadline {
+      font-size: 16px;
+      color: #94A3B8;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .intro {
+      font-size: 15px;
+      color: #94A3B8;
+      margin-bottom: 32px;
+    }
+
+    .intro strong {
+      color: #F8FAFC;
+    }
+
+    .features {
+      margin: 32px 0;
+      padding: 24px;
+      background: rgba(30, 58, 95, 0.15);
+      border-radius: 12px;
+      border-left: 3px solid #2563EB;
+    }
+
+    .feature {
+      font-size: 14px;
+      color: #94A3B8;
+      padding: 8px 0;
+    }
+
+    .feature-highlight {
+      color: #F8FAFC;
+      font-weight: 500;
+    }
+
+    .code-box {
+      background: #1E293B;
+      border: 2px solid #1E3A5F;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 32px 0;
+      text-align: center;
+    }
+
+    .code-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748B;
+      margin-bottom: 12px;
+    }
+
+    .code-value {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #2563EB;
+      background: linear-gradient(135deg, #2563EB 0%, #14B8A6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cta-button {
+      display: block;
+      width: 100%;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%);
+      color: #FFFFFF !important;
+      text-decoration: none;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      margin: 32px 0;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .cta-button:hover {
+      background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+    }
+
+    .instruction {
+      font-size: 13px;
+      color: #64748B;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, #1E3A5F 50%, transparent 100%);
+      margin: 40px 0;
+    }
+
+    .closing {
+      font-size: 15px;
+      color: #94A3B8;
+      margin-bottom: 32px;
+    }
+
+    .signature {
+      font-size: 14px;
+      color: #64748B;
+    }
+
+    .signature strong {
+      color: #F8FAFC;
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 32px;
+      margin-top: 32px;
+      border-top: 1px solid #1E293B;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .footer-link {
+      color: #64748B;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      color: #94A3B8;
+    }
+
+    /* Mobile responsive */
+    @media only screen and (max-width: 600px) {
+      .card {
+        padding: 32px 24px;
+      }
+
+      .headline {
+        font-size: 24px;
+      }
+
+      .code-value {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="card">
+        <!-- Logo -->
+        <div class="logo">
+          <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2C8.268 2 2 8.268 2 16C2 23.732 8.268 30 16 30C23.732 30 30 23.732 30 16V14H16V18H25.5C24.5 22.5 20.6 26 16 26C10.477 26 6 21.523 6 16C6 10.477 10.477 6 16 6C19.5 6 22.6 7.8 24.5 10.5L28 8C25.3 4.3 21 2 16 2Z" fill="#1E3A5F"/>
+          </svg>
+        </div>
+
+        <!-- Header -->
+        <h1 class="headline">You're in.</h1>
+        <p class="subheadline">Welcome to the future of PDF generation.</p>
+
+        <!-- Intro -->
+        <p class="intro">
+          <strong>{{NAME}}</strong>,
+        </p>
+        <p class="intro">
+          We've been building something that will change how developers think about PDFs forever.
+        </p>
+
+        <!-- Features -->
+        <div class="features">
+          <div class="feature">
+            <span class="feature-highlight">Natural language.</span> Describe what you want, watch it happen.
+          </div>
+          <div class="feature">
+            <span class="feature-highlight">Any document.</span> Invoices, contracts, reports, receipts.
+          </div>
+          <div class="feature">
+            <span class="feature-highlight">Your data.</span> Connect once, generate forever.
+          </div>
+          <div class="feature">
+            <span class="feature-highlight">Two lines of code.</span> That's all it takes.
+          </div>
+        </div>
+
+        <p class="intro">
+          You've been selected for early access to Glyph.
+        </p>
+
+        <!-- Invite Code -->
+        <div class="code-box">
+          <div class="code-label">Your Invite Code</div>
+          <div class="code-value">{{INVITE_CODE}}</div>
+        </div>
+
+        <!-- CTA -->
+        <a href="https://dashboard.glyph.you/activate?code={{INVITE_CODE}}" class="cta-button">
+          Activate Your Access
+        </a>
+        <p class="instruction">
+          This code is yours alone. Use it at dashboard.glyph.you/activate
+        </p>
+
+        <div class="divider"></div>
+
+        <!-- Closing -->
+        <p class="closing">
+          We're not building another PDF library. We're building the last one you'll ever need.
+        </p>
+        <p class="closing">
+          Welcome to the future.
+        </p>
+
+        <!-- Signature -->
+        <div class="signature">
+          <strong>The Glyph Team</strong>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+          <p class="footer-text">
+            <a href="https://glyph.you" class="footer-link">glyph.you</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://docs.glyph.you" class="footer-link">Documentation</a>
+          </p>
+          <p class="footer-text" style="margin-top: 12px;">
+            You're receiving this because you requested early access to Glyph.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

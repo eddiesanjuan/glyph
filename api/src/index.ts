@@ -25,6 +25,7 @@ import airtable from "./routes/airtable.js";
 import templates from "./routes/templates.js";
 import webhooks from "./routes/webhooks.js";
 import analyze from "./routes/analyze.js";
+import beta from "./routes/beta.js";
 
 const app = new Hono();
 
@@ -65,6 +66,10 @@ import webhooksPublic from "./routes/webhooks-public.js";
 // Mount public webhook routes BEFORE auth middleware
 app.route("/v1/webhooks", webhooksPublic);
 
+// Beta invite system - public routes (request, activate) before auth
+// These endpoints don't require API key authentication
+app.route("/v1/beta", beta);
+
 // Authentication first (to get tier info for rate limiting)
 app.use("/v1/*", authMiddleware);
 
@@ -75,7 +80,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.9.1",
+    version: "0.10.0",
     timestamp: new Date().toISOString(),
   });
 });
@@ -84,7 +89,7 @@ app.get("/health", (c) => {
 app.get("/", (c) => {
   return c.json({
     name: "Glyph API",
-    version: "0.9.1",
+    version: "0.10.0",
     documentation: "https://docs.glyph.you",
     endpoints: {
       health: "GET /health",
@@ -122,6 +127,13 @@ app.get("/", (c) => {
       webhookReceive: "POST /v1/webhooks/airtable/:id",
       webhookPdf: "GET /v1/webhooks/pdfs/:id",
       webhookTest: "GET /v1/webhooks/test/:id",
+      // Beta invite system
+      betaRequest: "POST /v1/beta/request",
+      betaActivate: "POST /v1/beta/activate",
+      betaRequests: "GET /v1/beta/requests (admin)",
+      betaApprove: "POST /v1/beta/approve/:id (admin)",
+      betaInvites: "GET /v1/beta/invites (admin)",
+      betaStats: "GET /v1/beta/stats (admin)",
     },
   });
 });
