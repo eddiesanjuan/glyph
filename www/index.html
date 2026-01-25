@@ -560,6 +560,11 @@
       background: var(--color-primary-bright);
     }
 
+    .btn--primary:active {
+      transform: scale(0.97);
+      transition: transform 0.1s ease;
+    }
+
     .btn--secondary {
       background: transparent;
       color: var(--color-text);
@@ -568,6 +573,17 @@
 
     .btn--secondary:hover {
       border-color: var(--color-text-muted);
+    }
+
+    .btn--secondary:active {
+      transform: scale(0.97);
+      transition: transform 0.1s ease;
+    }
+
+    /* Keyboard focus ring for accessibility */
+    .btn:focus-visible {
+      outline: 2px solid var(--color-primary-bright);
+      outline-offset: 2px;
     }
 
     .btn__icon {
@@ -2079,8 +2095,8 @@
 
     .playground__input:focus {
       outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+      border-color: var(--color-primary-bright);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
     }
 
     .playground__input::placeholder {
@@ -2880,6 +2896,16 @@
       background: var(--color-primary-bright);
     }
 
+    .playground__apply-btn:active:not(:disabled) {
+      transform: scale(0.97);
+      transition: transform 0.1s ease;
+    }
+
+    .playground__apply-btn:focus-visible {
+      outline: 2px solid var(--color-primary-bright);
+      outline-offset: 2px;
+    }
+
     .playground__apply-btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -3013,6 +3039,18 @@
       color: #10B981;
     }
 
+    /* Checkmark draw animation when CTA appears */
+    @keyframes checkDraw {
+      0% { stroke-dashoffset: 24; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    .playground__success-cta.visible .playground__success-cta-icon svg path {
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+      animation: checkDraw 0.4s ease-out 0.2s forwards;
+    }
+
     .playground__success-cta-message {
       font-size: 14px;
       color: var(--color-text);
@@ -3043,6 +3081,21 @@
     .playground__success-cta-btn:hover {
       background: #059669;
       transform: translateY(-1px);
+    }
+
+    .playground__success-cta-btn:active {
+      transform: scale(0.97) translateY(0);
+      transition: transform 0.1s ease;
+    }
+
+    /* Subtle pulse animation to draw attention */
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
+
+    .playground__success-cta.visible .playground__success-cta-btn {
+      animation: ctaPulse 2s ease-in-out 0.5s 3;
     }
 
     .playground__success-cta-btn svg {
@@ -13023,13 +13076,14 @@
     ];
 
     // Tips that rotate during loading (shown after 10 seconds)
+    // Focus on building anticipation and demonstrating value
     const loadingTips = [
-      'Glyph uses AI to understand your intent, not just keywords',
-      'Try "Add QR code linking to our website" for a quick modification',
-      'The AI is reviewing multiple approaches for the best result',
-      'Complex styling changes may take a bit longer',
-      'Every modification is validated for quality',
-      'You can click any region to target specific changes'
+      'AI is finding the best way to apply your change...',
+      'Glyph validates every edit to protect your document structure',
+      'Fun fact: This same AI powers enterprise PDF workflows',
+      'Your changes are reversible - use Undo anytime',
+      'Try instant actions like "Add watermark" for immediate results',
+      'MCP integration lets Claude Code do this automatically for you'
     ];
     let currentTipIndex = 0;
     let tipRotationInterval = null;
