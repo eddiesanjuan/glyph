@@ -494,6 +494,7 @@ beta.post("/reissue", async (c) => {
     const { key, hash, prefix } = generateApiKey();
 
     // Create new API key in database
+    console.log("Creating API key with hash:", hash, "prefix:", prefix);
     const { data: apiKeyRecord, error: keyError } = await getSupabase()
       .from("api_keys")
       .insert({
@@ -510,8 +511,22 @@ beta.post("/reissue", async (c) => {
 
     if (keyError) {
       console.error("API key creation error:", keyError);
-      throw new HTTPException(500, { message: "Failed to create API key" });
+      throw new HTTPException(500, { message: "Failed to create API key: " + keyError.message });
     }
+
+    if (!apiKeyRecord) {
+      console.error("API key creation returned no record");
+      throw new HTTPException(500, { message: "Failed to create API key: no record returned" });
+    }
+
+    // Verify the key was stored correctly
+    const { data: verifyKey, error: verifyError } = await getSupabase()
+      .from("api_keys")
+      .select("id, key_hash, is_active")
+      .eq("id", apiKeyRecord.id)
+      .single();
+
+    console.log("Verification:", verifyKey ? `Found key ${verifyKey.id} with hash ${verifyKey.key_hash?.slice(0, 16)}...` : "NOT FOUND", verifyError?.message || "");
 
     // Update invite with new API key ID
     await getSupabase()
@@ -528,6 +543,12 @@ beta.post("/reissue", async (c) => {
       tier: "beta",
       monthlyLimit: 500,
       message: "New API key issued. Your previous key has been deactivated.",
+      // Debug info (remove after fixing)
+      _debug: {
+        storedHash: hash.slice(0, 16) + "...",
+        keyId: apiKeyRecord.id,
+        verifySuccess: !!verifyKey,
+      },
     });
   } catch (err) {
     if (err instanceof HTTPException) throw err;
