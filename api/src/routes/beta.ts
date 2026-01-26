@@ -6,6 +6,7 @@
  * POST /v1/beta/approve/:requestId - Approve request and generate invite code (admin)
  * POST /v1/beta/reject/:requestId - Reject request (admin)
  * POST /v1/beta/activate - Activate invite code and get API key (public)
+ * POST /v1/beta/reissue - Re-issue API key for already-activated invite (public)
  * GET /v1/beta/invites - List all invites (admin)
  * POST /v1/beta/revoke/:inviteId - Revoke invite access (admin)
  */
@@ -425,6 +426,113 @@ beta.post("/activate", async (c) => {
     if (err instanceof HTTPException) throw err;
     console.error("Activate invite error:", err);
     throw new HTTPException(500, { message: "Failed to activate invite" });
+  }
+});
+
+/**
+ * POST /v1/beta/reissue
+ * Public endpoint - Re-issue API key for already-activated invite
+ * Use when the original API key doesn't work
+ */
+beta.post("/reissue", async (c) => {
+  const body = await c.req.json();
+  const { code } = body;
+
+  if (!code) {
+    throw new HTTPException(400, { message: "Invite code is required" });
+  }
+
+  const normalizedCode = code.toUpperCase().trim();
+
+  if (!supabase) {
+    // Development mode
+    const { key, prefix } = generateApiKey();
+    return c.json({
+      success: true,
+      apiKey: key,
+      prefix: prefix,
+      tier: "beta",
+      message: "New API key issued (development mode)",
+    });
+  }
+
+  try {
+    // Find the invite
+    const { data: invite, error: fetchError } = await getSupabase()
+      .from("beta_invites")
+      .select("*")
+      .eq("code", normalizedCode)
+      .single();
+
+    if (fetchError || !invite) {
+      throw new HTTPException(404, {
+        message: "Invalid invite code. Please check and try again."
+      });
+    }
+
+    if (!invite.activated_at) {
+      throw new HTTPException(400, {
+        message: "This invite code hasn't been activated yet. Use /activate instead."
+      });
+    }
+
+    if (invite.revoked) {
+      throw new HTTPException(403, {
+        message: "This invite code has been revoked."
+      });
+    }
+
+    // Delete the old API key if it exists
+    if (invite.api_key_id) {
+      await getSupabase()
+        .from("api_keys")
+        .delete()
+        .eq("id", invite.api_key_id);
+    }
+
+    // Generate new API key
+    const { key, hash, prefix } = generateApiKey();
+
+    // Create new API key in database
+    const { data: apiKeyRecord, error: keyError } = await getSupabase()
+      .from("api_keys")
+      .insert({
+        key_hash: hash,
+        key_prefix: prefix,
+        name: `Beta Access - ${invite.email}`,
+        owner_email: invite.email,
+        tier: "pro",
+        monthly_limit: 500,
+        is_active: true,
+      })
+      .select("id")
+      .single();
+
+    if (keyError) {
+      console.error("API key creation error:", keyError);
+      throw new HTTPException(500, { message: "Failed to create API key" });
+    }
+
+    // Update invite with new API key ID
+    await getSupabase()
+      .from("beta_invites")
+      .update({
+        api_key_id: apiKeyRecord.id,
+      })
+      .eq("id", invite.id);
+
+    return c.json({
+      success: true,
+      apiKey: key,
+      prefix: prefix,
+      tier: "beta",
+      monthlyLimit: 500,
+      message: "New API key issued. Your previous key has been deactivated.",
+    });
+  } catch (err) {
+    if (err instanceof HTTPException) throw err;
+    console.error("Reissue API key error:", err);
+    throw new HTTPException(500, { message: "Failed to reissue API key" });
   }
 });
 
