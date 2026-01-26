@@ -443,8 +443,42 @@
       font-size: 18px;
       color: var(--color-text-muted);
       line-height: 1.7;
-      margin-bottom: 40px;
+      margin-bottom: 32px;
       animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    /* Hero Metrics - Social Proof Bar */
+    .hero__metrics {
+      display: flex;
+      justify-content: flex-start;
+      gap: 2rem;
+      margin-bottom: 32px;
+      padding: 1.25rem 1.5rem;
+      background: rgba(30, 58, 95, 0.15);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(45, 212, 191, 0.15);
+      animation: fadeInUp 0.6s ease-out 0.25s both;
+    }
+
+    .hero__metric {
+      text-align: center;
+    }
+
+    .hero__metric-value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2dd4bf;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero__metric-label {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
     }
 
     .hero__actions {
@@ -522,6 +556,24 @@
 
     /* Mobile: stack MCP section vertically */
     @media (max-width: 768px) {
+      .hero__metrics {
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .hero__metric {
+        flex: 0 0 calc(50% - 0.5rem);
+      }
+
+      .hero__metric-value {
+        font-size: 1.25rem;
+      }
+
+      .hero__metric-label {
+        font-size: 0.7rem;
+      }
+
       .hero__mcp {
         flex-direction: column;
         align-items: flex-start;
@@ -951,6 +1003,7 @@
     html.hero-animation-played .hero__badge,
     html.hero-animation-played .hero__title,
     html.hero-animation-played .hero__subtitle,
+    html.hero-animation-played .hero__metrics,
     html.hero-animation-played .hero__actions,
     html.hero-animation-played .hero__mcp,
     html.hero-animation-played .hero__demo {
@@ -1365,7 +1418,25 @@
 
       .hero__subtitle {
         font-size: 15px;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
+      }
+
+      .hero__metrics {
+        gap: 0.75rem;
+        padding: 0.75rem;
+        margin-bottom: 20px;
+      }
+
+      .hero__metric {
+        flex: 0 0 calc(50% - 0.375rem);
+      }
+
+      .hero__metric-value {
+        font-size: 1.1rem;
+      }
+
+      .hero__metric-label {
+        font-size: 0.65rem;
       }
 
       /* Make playground body stack vertically - flexbox for proper stacking */
@@ -5724,7 +5795,7 @@
 
     .footer__content {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
       gap: 48px;
       margin-bottom: 48px;
     }
@@ -7988,6 +8059,27 @@
             Describe what you want in plain English. Glyph handles the rest.
             Works with Claude Code, Cursor, Windsurf, or any MCP-compatible tool.
           </p>
+
+          <!-- Social Proof Metrics -->
+          <div class="hero__metrics">
+            <div class="hero__metric">
+              <span class="hero__metric-value">&lt;500ms</span>
+              <span class="hero__metric-label">Instant Actions</span>
+            </div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">2 Lines</span>
+              <span class="hero__metric-label">To Integrate</span>
+            </div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">~35KB</span>
+              <span class="hero__metric-label">SDK Size</span>
+            </div>
+            <div class="hero__metric">
+              <span class="hero__metric-value">AI-Native</span>
+              <span class="hero__metric-label">MCP Server</span>
+            </div>
+          </div>
+
           <div class="hero__actions">
             <a href="#playground" class="btn btn--primary">
               Try the Playground
@@ -9338,6 +9430,15 @@
             <li><a href="https://docs.glyph.you/api">API Reference</a></li>
             <li><a href="https://github.com/glyph-so/glyph">GitHub</a></li>
             <li><a href="/examples.html">Examples</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__column">
+          <h4>Compare</h4>
+          <ul>
+            <li><a href="/compare/glyph-vs-pdfmonkey.html">vs PDFMonkey</a></li>
+            <li><a href="/compare/glyph-vs-docraptor.html">vs DocRaptor</a></li>
+            <li><a href="/compare/glyph-vs-craftmypdf.html">vs CraftMyPDF</a></li>
           </ul>
         </div>
 

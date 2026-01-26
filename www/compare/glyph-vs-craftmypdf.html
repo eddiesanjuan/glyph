@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glyph vs CraftMyPDF: AI-Powered vs Drag-and-Drop PDF Generation</title>
+  <meta name="description" content="Compare Glyph and CraftMyPDF for PDF generation. Glyph generates from descriptions while CraftMyPDF uses visual drag-and-drop. See which fits your workflow.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Glyph vs CraftMyPDF: AI-Powered vs Drag-and-Drop">
+  <meta property="og:description" content="CraftMyPDF requires manual design. Glyph generates it from a description.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://glyph.you/compare/glyph-vs-craftmypdf">
+  <meta property="og:image" content="https://glyph.you/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Glyph vs CraftMyPDF: AI-Powered vs Drag-and-Drop">
+  <meta name="twitter:description" content="Compare AI-powered PDF generation with visual template building.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@110,200&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+
+  <style>
+    :root {
+      --color-bg: #0B1120;
+      --color-bg-elevated: #111827;
+      --color-bg-card: #1E293B;
+      --color-surface: #1E3A5F;
+      --color-border: rgba(30, 58, 95, 0.3);
+      --color-border-subtle: #1E293B;
+      --color-primary: #1E3A5F;
+      --color-primary-bright: #2563EB;
+      --color-primary-dark: #172554;
+      --color-accent-teal: #2dd4bf;
+      --color-text: #F8FAFC;
+      --color-text-muted: #94A3B8;
+      --color-text-subtle: #64748B;
+      --color-success: #22C55E;
+      --color-warning: #F59E0B;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-logo: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --transition-fast: 0.15s ease;
+      --transition-smooth: 0.2s ease;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Background Effects */
+    .gradient-mesh {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+    }
+
+    .gradient-orb--1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, #1E3A5F 0%, transparent 70%);
+      top: -200px;
+      left: -100px;
+    }
+
+    .gradient-orb--2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #14B8A6 0%, transparent 70%);
+      top: 40%;
+      right: -150px;
+      opacity: 0.1;
+    }
+
+    @media (max-width: 768px) {
+      .gradient-orb { filter: blur(60px); opacity: 0.1; }
+      .gradient-orb--2 { display: none; }
+    }
+
+    /* Layout */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      background: rgba(11, 17, 32, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--color-text);
+    }
+
+    .nav__logo-mark {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .nav__logo-text {
+      font-family: var(--font-logo);
+      font-size: 21px;
+      font-weight: 200;
+      font-stretch: 110%;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav__link {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color var(--transition-fast);
+    }
+
+    .nav__link:hover {
+      color: var(--color-text);
+    }
+
+    .nav__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--color-primary);
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+    }
+
+    .nav__cta:hover {
+      background: var(--color-primary-bright);
+    }
+
+    @media (max-width: 768px) {
+      .nav__links { display: none; }
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 140px 0 80px;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(30, 58, 95, 0.2);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-primary-bright);
+      margin-bottom: 24px;
+    }
+
+    .hero__title {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero__title span {
+      color: var(--color-primary-bright);
+    }
+
+    .hero__subtitle {
+      font-size: 18px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Verdict Box */
+    .verdict {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px 32px;
+      max-width: 700px;
+      margin: 0 auto 60px;
+    }
+
+    .verdict__label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-accent-teal);
+      margin-bottom: 12px;
+    }
+
+    .verdict__text {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    /* Comparison Table */
+    .comparison {
+      position: relative;
+      padding: 60px 0;
+      z-index: 2;
+    }
+
+    .section__title {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .comparison-table th {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+      background: var(--color-bg-elevated);
+    }
+
+    .comparison-table th:first-child {
+      border-radius: var(--radius-md) 0 0 0;
+    }
+
+    .comparison-table th:last-child {
+      border-radius: 0 var(--radius-md) 0 0;
+    }
+
+    .comparison-table td {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      background: var(--color-bg-card);
+    }
+
+    .comparison-table td:first-child {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .comparison-table tr:last-child td:first-child {
+      border-radius: 0 0 0 var(--radius-md);
+    }
+
+    .comparison-table tr:last-child td:last-child {
+      border-radius: 0 0 var(--radius-md) 0;
+    }
+
+    .check {
+      color: var(--color-success);
+      font-weight: 600;
+    }
+
+    .cross {
+      color: var(--color-text-subtle);
+    }
+
+    /* Does It All Section */
+    .does-it-all {
+      background: rgba(45, 212, 191, 0.05);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin: 0 0 40px;
+    }
+
+    .does-it-all__title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-accent-teal);
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .does-it-all__intro {
+      font-size: 15px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .does-it-all__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .does-it-all__grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .does-it-all__column h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .does-it-all__column--ai h4 {
+      color: var(--color-accent-teal);
+    }
+
+    .does-it-all__list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .does-it-all__list li {
+      font-size: 14px;
+      color: var(--color-text);
+      padding: 8px 0;
+      padding-left: 28px;
+      position: relative;
+    }
+
+    .does-it-all__list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 13px;
+      width: 16px;
+      height: 16px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2322C55E'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-size: contain;
+    }
+
+    /* Differentiators */
+    .differentiators {
+      position: relative;
+      padding: 80px 0;
+      z-index: 2;
+    }
+
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .diff-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .diff-card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: border-color var(--transition-smooth);
+    }
+
+    .diff-card:hover {
+      border-color: var(--color-primary);
+    }
+
+    .diff-card__number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .diff-card__title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .diff-card__text {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    /* Use Cases */
+    .use-cases {
+      position: relative;
+      padding: 80px 0;
+      z-index: 2;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 768px) {
+      .use-cases-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .use-case-card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+    }
+
+    .use-case-card--glyph {
+      border-color: var(--color-primary);
+    }
+
+    .use-case-card__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .use-case-card__logo {
+      width: 40px;
+      height: 40px;
+      background: var(--color-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .use-case-card__logo--competitor {
+      background: #8B5CF6;
+    }
+
+    .use-case-card__name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .use-case-card__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-subtle);
+      margin-bottom: 16px;
+    }
+
+    .use-case-card__list {
+      list-style: none;
+    }
+
+    .use-case-card__list li {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .use-case-card__list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 14px;
+      width: 8px;
+      height: 8px;
+      background: var(--color-primary-bright);
+      border-radius: 50%;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      position: relative;
+      padding: 100px 0;
+      z-index: 2;
+      text-align: center;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .cta-section__title {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .cta-section__text {
+      font-size: 16px;
+      color: var(--color-text-muted);
+      margin-bottom: 32px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), transform 0.1s ease;
+      border: none;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .btn--primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .btn--primary:hover {
+      background: var(--color-primary-bright);
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--color-text);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .btn--secondary:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      padding: 60px 0 40px;
+      z-index: 2;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .footer__inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .footer__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--color-text);
+    }
+
+    .footer__logo-text {
+      font-family: var(--font-logo);
+      font-size: 18px;
+      font-weight: 200;
+      font-stretch: 110%;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .footer__links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer__link {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color var(--transition-fast);
+    }
+
+    .footer__link:hover {
+      color: var(--color-text);
+    }
+
+    .footer__compare {
+      width: 100%;
+      padding-top: 24px;
+      margin-top: 24px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .footer__compare-title {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-subtle);
+      margin-bottom: 12px;
+    }
+
+    .footer__compare-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer__compare-link {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 12px;
+      background: var(--color-bg-elevated);
+      border-radius: var(--radius-sm);
+      transition: color var(--transition-fast), background var(--transition-fast);
+    }
+
+    .footer__compare-link:hover {
+      color: var(--color-text);
+      background: var(--color-bg-card);
+    }
+
+    .footer__compare-link--active {
+      color: var(--color-primary-bright);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .footer__inner {
+        flex-direction: column;
+        text-align: center;
+      }
+      .footer__links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .footer__compare-links {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Effects -->
+  <div class="gradient-mesh">
+    <div class="gradient-orb gradient-orb--1"></div>
+    <div class="gradient-orb gradient-orb--2"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container">
+      <div class="nav__inner">
+        <a href="/" class="nav__logo">
+          <svg class="nav__logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="8" fill="#1E3A5F"/>
+            <path d="M20 8C13.373 8 8 13.373 8 20s5.373 12 12 12c2.122 0 4.122-.548 5.856-1.512l-1.928-3.34A7.96 7.96 0 0120 28c-4.418 0-8-3.582-8-8s3.582-8 8-8c1.613 0 3.116.477 4.372 1.296l1.928-3.34A11.94 11.94 0 0020 8z" fill="white"/>
+            <path d="M28 20a8 8 0 01-3.072 6.296l1.928 3.34A11.94 11.94 0 0032 20c0-4.038-1.994-7.604-5.056-9.78l-1.928 3.34A7.96 7.96 0 0128 20z" fill="#14B8A6"/>
+          </svg>
+          <span class="nav__logo-text">Glyph</span>
+        </a>
+        <ul class="nav__links">
+          <li><a href="/" class="nav__link">Home</a></li>
+          <li><a href="https://docs.glyph.you" class="nav__link">Docs</a></li>
+          <li><a href="https://dashboard.glyph.you" class="nav__link">Dashboard</a></li>
+        </ul>
+        <a href="/#playground" class="nav__cta">Try Playground</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero__badge">Comparison Guide</div>
+      <h1 class="hero__title">Glyph vs CraftMyPDF: <span>AI-Powered</span> vs Drag-and-Drop</h1>
+      <p class="hero__subtitle">CraftMyPDF requires manual design. Glyph generates it from a description.</p>
+
+      <div class="verdict">
+        <div class="verdict__label">Quick Verdict</div>
+        <p class="verdict__text">Glyph can work with visual templates like CraftMyPDF, but goes further with AI that generates and modifies designs from plain English descriptions. Same template capabilities, plus intelligence that makes customization effortless.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Does It All Section -->
+  <section class="comparison">
+    <div class="container">
+      <div class="does-it-all">
+        <h2 class="does-it-all__title">Everything CraftMyPDF Does, Plus More</h2>
+        <p class="does-it-all__intro">Glyph isn't a different approach to PDF generation - it's a superset. You get all the capabilities you expect from CraftMyPDF:</p>
+        <div class="does-it-all__grid">
+          <div class="does-it-all__column">
+            <h4>Standard PDF Capabilities</h4>
+            <ul class="does-it-all__list">
+              <li>Template-based generation</li>
+              <li>Data binding from any source</li>
+              <li>API-first integration</li>
+              <li>Programmatic PDF creation</li>
+            </ul>
+          </div>
+          <div class="does-it-all__column does-it-all__column--ai">
+            <h4>Plus AI-Powered Features</h4>
+            <ul class="does-it-all__list">
+              <li>Natural language customization</li>
+              <li>Click-to-target region editing</li>
+              <li>Instant actions without waiting</li>
+              <li>Native MCP server for AI agents</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="comparison">
+    <div class="container">
+      <h2 class="section__title">Feature Comparison</h2>
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Glyph</th>
+              <th>CraftMyPDF</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Core PDF Generation</strong></td>
+              <td><span class="check">Yes, plus AI</span></td>
+              <td>Baseline only</td>
+            </tr>
+            <tr>
+              <td>Design Approach</td>
+              <td>AI from description + templates</td>
+              <td>Drag-and-drop editor only</td>
+            </tr>
+            <tr>
+              <td>AI Customization</td>
+              <td><span class="check">Native, Claude-powered</span></td>
+              <td><span class="cross">No</span></td>
+            </tr>
+            <tr>
+              <td>MCP Server</td>
+              <td><span class="check">Native, built-in</span></td>
+              <td>Third-party (Pipedream)</td>
+            </tr>
+            <tr>
+              <td>Learning Curve</td>
+              <td>None</td>
+              <td>Learn editor interface</td>
+            </tr>
+            <tr>
+              <td>Template Changes</td>
+              <td>Describe in English</td>
+              <td>Manual editing</td>
+            </tr>
+            <tr>
+              <td>Integration</td>
+              <td>2 lines of code</td>
+              <td>API + templates</td>
+            </tr>
+            <tr>
+              <td>Preview</td>
+              <td><span class="check">Real-time streaming</span></td>
+              <td>Static</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Differentiators -->
+  <section class="differentiators">
+    <div class="container">
+      <h2 class="section__title">Why Choose Glyph</h2>
+      <div class="diff-grid">
+        <div class="diff-card">
+          <div class="diff-card__number">1</div>
+          <h3 class="diff-card__title">AI-Powered Design</h3>
+          <p class="diff-card__text">Describe what you want instead of dragging elements. "Add a professional header with our logo" beats manually positioning every element.</p>
+        </div>
+        <div class="diff-card">
+          <div class="diff-card__number">2</div>
+          <h3 class="diff-card__title">Native MCP Integration</h3>
+          <p class="diff-card__text">Built-in MCP server, not a third-party wrapper. Works seamlessly with Claude Code, Cursor, Windsurf, and other AI IDEs.</p>
+        </div>
+        <div class="diff-card">
+          <div class="diff-card__number">3</div>
+          <h3 class="diff-card__title">Instant Modifications</h3>
+          <p class="diff-card__text">Quick actions apply in under 500ms without waiting. No need to save, re-render, or wait for the editor to refresh.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="use-cases">
+    <div class="container">
+      <h2 class="section__title">When to Choose Each</h2>
+      <div class="use-cases-grid">
+        <div class="use-case-card">
+          <div class="use-case-card__header">
+            <div class="use-case-card__logo use-case-card__logo--competitor">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+            </div>
+            <span class="use-case-card__name">CraftMyPDF</span>
+          </div>
+          <div class="use-case-card__label">Choose CraftMyPDF only if:</div>
+          <ul class="use-case-card__list">
+            <li>You specifically want drag-and-drop only</li>
+            <li>You prefer pixel-by-pixel manual control</li>
+            <li>You explicitly don't want AI capabilities</li>
+          </ul>
+        </div>
+        <div class="use-case-card use-case-card--glyph">
+          <div class="use-case-card__header">
+            <div class="use-case-card__logo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <span class="use-case-card__name">Glyph</span>
+          </div>
+          <div class="use-case-card__label">Choose Glyph for everything else:</div>
+          <ul class="use-case-card__list">
+            <li>All the same template generation capabilities</li>
+            <li>Plus AI that creates designs from descriptions</li>
+            <li>Plus native MCP for AI agent integration</li>
+            <li>Plus instant modifications in under 500ms</li>
+            <li>Works for designers and non-designers alike</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2 class="cta-section__title">Ready to Try AI-Powered PDF Customization?</h2>
+      <p class="cta-section__text">Experience the difference natural language makes. No signup required to try the playground.</p>
+      <div class="cta-buttons">
+        <a href="/#playground" class="btn btn--primary">Try Playground</a>
+        <a href="https://dashboard.glyph.you" class="btn btn--secondary">Get API Key</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <a href="/" class="footer__logo">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="8" fill="#1E3A5F"/>
+            <path d="M20 8C13.373 8 8 13.373 8 20s5.373 12 12 12c2.122 0 4.122-.548 5.856-1.512l-1.928-3.34A7.96 7.96 0 0120 28c-4.418 0-8-3.582-8-8s3.582-8 8-8c1.613 0 3.116.477 4.372 1.296l1.928-3.34A11.94 11.94 0 0020 8z" fill="white"/>
+            <path d="M28 20a8 8 0 01-3.072 6.296l1.928 3.34A11.94 11.94 0 0032 20c0-4.038-1.994-7.604-5.056-9.78l-1.928 3.34A7.96 7.96 0 0128 20z" fill="#14B8A6"/>
+          </svg>
+          <span class="footer__logo-text">Glyph</span>
+        </a>
+        <ul class="footer__links">
+          <li><a href="/" class="footer__link">Home</a></li>
+          <li><a href="https://docs.glyph.you" class="footer__link">Documentation</a></li>
+          <li><a href="https://dashboard.glyph.you" class="footer__link">Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="footer__compare">
+        <div class="footer__compare-title">More Comparisons</div>
+        <div class="footer__compare-links">
+          <a href="glyph-vs-pdfmonkey.html" class="footer__compare-link">Glyph vs PDFMonkey</a>
+          <a href="glyph-vs-docraptor.html" class="footer__compare-link">Glyph vs DocRaptor</a>
+          <a href="glyph-vs-craftmypdf.html" class="footer__compare-link footer__compare-link--active">Glyph vs CraftMyPDF</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
