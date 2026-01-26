@@ -691,7 +691,14 @@ beta.post("/debug-key", async (c) => {
 
   console.log(`[Debug] Testing key lookup for hash: ${keyHash}`);
 
-  // Try to find by hash
+  // Try to find by hash - EXACT SAME QUERY AS AUTH MIDDLEWARE
+  const { data: authStyleLookup, error: authStyleError } = await getSupabase()
+    .from("api_keys")
+    .select("id, tier, monthly_limit, is_active, expires_at")
+    .eq("key_hash", keyHash)
+    .single();
+
+  // Try to find by hash - FULL FIELDS
   const { data: byHash, error: hashError } = await getSupabase()
     .from("api_keys")
     .select("id, key_hash, key_prefix, tier, is_active, owner_email, name, created_at")
@@ -713,11 +720,27 @@ beta.post("/debug-key", async (c) => {
     .order("created_at", { ascending: false })
     .limit(10);
 
+  // Test if we can use the same supabase instance that auth uses
+  const supabaseInstance = getSupabase();
+  const supabaseInfo = {
+    instanceExists: !!supabaseInstance,
+    // @ts-ignore - accessing internal for debug
+    url: supabaseInstance?.supabaseUrl || "unknown",
+  };
+
   return c.json({
+    supabaseInfo,
     input: {
       apiKey: apiKey.slice(0, 8) + "...",
       computedHash: keyHash,
       prefix: prefix,
+    },
+    // This mimics exactly what auth middleware does
+    authStyleLookup: {
+      found: !!authStyleLookup,
+      data: authStyleLookup,
+      error: authStyleError?.message,
+      errorDetails: authStyleError ? JSON.stringify(authStyleError) : null,
     },
     lookupByHash: {
       found: !!byHash,

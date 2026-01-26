@@ -64,9 +64,12 @@ export async function authMiddleware(c: Context, next: Next) {
         .eq("key_hash", keyHash)
         .single();
 
-      console.log(`[Auth] Result:`, keyRecord ? `Found key ${keyRecord.id}` : "NOT FOUND", error?.message || "");
+      console.log(`[Auth] Result:`, keyRecord ? `Found key ${keyRecord.id}` : "NOT FOUND", error?.message || "", error?.code || "");
+      console.log(`[Auth] Full error:`, JSON.stringify(error));
+      console.log(`[Auth] Key record:`, JSON.stringify(keyRecord));
 
       if (error || !keyRecord) {
+        console.log(`[Auth] REJECTING: error=${!!error}, keyRecord=${!!keyRecord}`);
         throw new HTTPException(401, {
           message: "Invalid API key",
         });
