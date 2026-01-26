@@ -56,12 +56,15 @@ export async function authMiddleware(c: Context, next: Next) {
     try {
       // Hash the key to look up
       const keyHash = createHash("sha256").update(token).digest("hex");
+      console.log(`[Auth] Looking up key with hash: ${keyHash.slice(0, 16)}...`);
 
       const { data: keyRecord, error } = await getSupabase()
         .from("api_keys")
         .select("id, tier, monthly_limit, is_active, expires_at")
         .eq("key_hash", keyHash)
         .single();
+
+      console.log(`[Auth] Result:`, keyRecord ? `Found key ${keyRecord.id}` : "NOT FOUND", error?.message || "");
 
       if (error || !keyRecord) {
         throw new HTTPException(401, {

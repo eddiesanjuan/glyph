@@ -671,6 +671,91 @@ beta.post("/revoke/:inviteId", async (c) => {
 });
 
 /**
+ * POST /v1/beta/debug-key
+ * Debug endpoint - Test key lookup directly (TEMPORARY)
+ */
+beta.post("/debug-key", async (c) => {
+  const body = await c.req.json();
+  const { apiKey } = body;
+
+  if (!apiKey) {
+    return c.json({ error: "apiKey is required" });
+  }
+
+  if (!supabase) {
+    return c.json({ error: "Supabase not configured" });
+  }
+
+  const { createHash } = await import("crypto");
+  const keyHash = createHash("sha256").update(apiKey).digest("hex");
+
+  console.log(`[Debug] Testing key lookup for hash: ${keyHash}`);
+
+  // Try to find by hash
+  const { data: byHash, error: hashError } = await getSupabase()
+    .from("api_keys")
+    .select("id, key_hash, key_prefix, tier, is_active, owner_email, name, created_at")
+    .eq("key_hash", keyHash)
+    .single();
+
+  // Also try to find by prefix
+  const prefix = apiKey.slice(0, 11);
+  const { data: byPrefix, error: prefixError } = await getSupabase()
+    .from("api_keys")
+    .select("id, key_hash, key_prefix, tier, is_active, owner_email, name, created_at")
+    .eq("key_prefix", prefix)
+    .single();
+
+  // List all keys for debugging
+  const { data: allKeys, error: listError } = await getSupabase()
+    .from("api_keys")
+    .select("id, key_hash, key_prefix, is_active, owner_email")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return c.json({
+    input: {
+      apiKey: apiKey.slice(0, 8) + "...",
+      computedHash: keyHash,
+      prefix: prefix,
+    },
+    lookupByHash: {
+      found: !!byHash,
+      data: byHash ? {
+        id: byHash.id,
+        hashMatch: byHash.key_hash === keyHash,
+        storedHash: byHash.key_hash?.slice(0, 16) + "...",
+        prefix: byHash.key_prefix,
+        tier: byHash.tier,
+        isActive: byHash.is_active,
+        email: byHash.owner_email,
+      } : null,
+      error: hashError?.message,
+    },
+    lookupByPrefix: {
+      found: !!byPrefix,
+      data: byPrefix ? {
+        id: byPrefix.id,
+        hashMatch: byPrefix.key_hash === keyHash,
+        storedHash: byPrefix.key_hash?.slice(0, 16) + "...",
+        prefix: byPrefix.key_prefix,
+        tier: byPrefix.tier,
+        isActive: byPrefix.is_active,
+      } : null,
+      error: prefixError?.message,
+    },
+    recentKeys: allKeys?.map(k => ({
+      id: k.id,
+      prefix: k.key_prefix,
+      hashStart: k.key_hash?.slice(0, 12) + "...",
+      isActive: k.is_active,
+      email: k.owner_email,
+    })),
+    listError: listError?.message,
+  });
+});
+
+/**
  * GET /v1/beta/stats
  * Admin endpoint - Get beta program stats
  */
