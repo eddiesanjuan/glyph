@@ -14,6 +14,10 @@ import {
   type TemplateType,
   type TemplateStyle,
   type SavedTemplate,
+  type SourceType,
+  type CreateSourceParams,
+  type GenerateFromSourceParams,
+  type LinkTemplateParams,
 } from "./api.js";
 
 // Template detection patterns for auto-template feature
@@ -575,6 +579,207 @@ This permanently removes the template. Use with caution.`,
         },
       },
       required: ["id"],
+    },
+  },
+
+  // ===========================================================================
+  // Data Source Tools
+  // ===========================================================================
+
+  {
+    name: "glyph_create_source",
+    description: `Connect a data source (Airtable, REST API, etc.) for PDF generation.
+
+This creates a reusable connection to your data source that can be linked to templates.
+
+Supported source types:
+- **airtable**: Connect to an Airtable base. Config needs: apiKey, baseId, tableName
+- **rest_api**: Connect to a REST API endpoint. Config needs: url, headers (optional), auth (optional)
+- **webhook**: Set up a webhook endpoint to receive data. Config is optional.
+
+Example for Airtable:
+{
+  "type": "airtable",
+  "name": "Invoices Table",
+  "config": {
+    "apiKey": "pat...",
+    "baseId": "app...",
+    "tableName": "Invoices"
+  }
+}`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["airtable", "rest_api", "webhook"],
+          description: "Type of data source",
+        },
+        name: {
+          type: "string",
+          description: "Human-readable name for this source",
+        },
+        config: {
+          type: "object",
+          description: "Type-specific configuration (e.g., API keys, base IDs)",
+          additionalProperties: true,
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["type", "name", "config"],
+    },
+  },
+  {
+    name: "glyph_list_sources",
+    description: `List all connected data sources.
+
+Returns all data sources linked to your API key, including their status and configuration.
+Use the source ID with glyph_generate_from_source or glyph_link_template.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["airtable", "rest_api", "webhook"],
+          description: "Filter by source type",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+    },
+  },
+  {
+    name: "glyph_generate_from_source",
+    description: `Generate PDF from a saved template and connected data source.
+
+This is the smart way to generate PDFs:
+1. Uses your saved template (created with glyph_template_save)
+2. Pulls data from your connected source (created with glyph_create_source)
+3. Applies field mappings (set with glyph_link_template)
+4. Generates one or multiple PDFs
+
+You can generate:
+- A single PDF by specifying recordId
+- Multiple PDFs by using filter (e.g., all invoices from this month)
+
+If sourceId is not specified, uses the default source linked to the template.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string",
+          description: "ID of the saved template (from glyph_templates_list)",
+        },
+        sourceId: {
+          type: "string",
+          description: "ID of the data source (optional - uses default if not specified)",
+        },
+        recordId: {
+          type: "string",
+          description: "Specific record ID to generate from (e.g., Airtable record ID)",
+        },
+        filter: {
+          type: "object",
+          description: "Filter for multiple records",
+          properties: {
+            formula: {
+              type: "string",
+              description: "Filter formula (Airtable formula syntax for Airtable sources)",
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of records to process",
+            },
+          },
+        },
+        outputPath: {
+          type: "string",
+          description: "Optional file path to save PDF (for single record only)",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["templateId"],
+    },
+  },
+  {
+    name: "glyph_suggest_mappings",
+    description: `Get AI-powered field mapping suggestions between a template and data source.
+
+When linking a template to a data source, field names often don't match exactly.
+This tool uses AI to suggest the best mappings:
+
+- Analyzes template placeholders (e.g., {{client.name}})
+- Analyzes source fields (e.g., "Customer Name")
+- Suggests mappings with confidence scores
+
+Use the suggestions with glyph_link_template to create the actual mapping.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string",
+          description: "ID of the template (from glyph_templates_list)",
+        },
+        sourceId: {
+          type: "string",
+          description: "ID of the data source (from glyph_list_sources)",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["templateId", "sourceId"],
+    },
+  },
+  {
+    name: "glyph_link_template",
+    description: `Link a template to a data source with field mappings.
+
+This creates the connection between your template placeholders and your data source fields.
+
+Example:
+- Template has: {{client.name}}, {{client.email}}, {{total}}
+- Source has: "Customer Name", "Email Address", "Invoice Total"
+- Mapping: { "client.name": "Customer Name", "client.email": "Email Address", "total": "Invoice Total" }
+
+Set isDefault=true to make this source the default for this template.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string",
+          description: "ID of the template",
+        },
+        sourceId: {
+          type: "string",
+          description: "ID of the data source",
+        },
+        fieldMappings: {
+          type: "object",
+          description: "Field mappings from template placeholder to source field name",
+          additionalProperties: {
+            type: "string",
+          },
+        },
+        isDefault: {
+          type: "boolean",
+          description: "Set as default source for this template",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["templateId", "sourceId", "fieldMappings"],
     },
   },
 ];
@@ -1414,6 +1619,271 @@ export async function handleGlyphTemplateDelete(args: {
 }
 
 // =============================================================================
+// Data Source Tool Handlers
+// =============================================================================
+
+export async function handleGlyphCreateSource(args: {
+  type: SourceType;
+  name: string;
+  config: Record<string, unknown>;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.createSource({
+      type: args.type,
+      name: args.name,
+      config: args.config,
+    });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              source: {
+                id: result.source.id,
+                type: result.source.type,
+                name: result.source.name,
+                status: result.source.status,
+                createdAt: result.source.createdAt,
+              },
+              message: `Data source "${args.name}" created successfully`,
+              nextSteps: [
+                `Use glyph_suggest_mappings with sourceId "${result.source.id}" to get field mapping suggestions`,
+                `Use glyph_link_template to connect this source to a template`,
+                `Use glyph_generate_from_source to generate PDFs from this source`,
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphListSources(args: {
+  type?: SourceType;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.listSources(args.type);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              sources: result.sources.map((s) => ({
+                id: s.id,
+                type: s.type,
+                name: s.name,
+                status: s.status,
+                lastSyncAt: s.lastSyncAt,
+                createdAt: s.createdAt,
+              })),
+              total: result.total,
+              message: `Found ${result.total} data source(s)`,
+              usage: "Use source ID with glyph_link_template or glyph_generate_from_source",
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphGenerateFromSource(args: {
+  templateId: string;
+  sourceId?: string;
+  recordId?: string;
+  filter?: { formula?: string; limit?: number };
+  outputPath?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.generateFromSource({
+      templateId: args.templateId,
+      sourceId: args.sourceId,
+      recordId: args.recordId,
+      filter: args.filter,
+    });
+
+    // If outputPath is provided and single record, save the file
+    if (args.outputPath && result.generated.length === 1) {
+      const { writeFile } = await import("fs/promises");
+      const firstResult = result.generated[0];
+      const base64Data = firstResult.url.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+      await writeFile(args.outputPath, buffer);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                success: true,
+                savedTo: args.outputPath,
+                recordId: firstResult.recordId,
+                format: firstResult.format,
+                size: firstResult.size,
+                message: `PDF saved to ${args.outputPath} (${formatBytes(firstResult.size)})`,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              generated: result.generated.map((g) => ({
+                recordId: g.recordId,
+                format: g.format,
+                size: formatBytes(g.size),
+                url: g.url.substring(0, 100) + "...[base64 data]",
+              })),
+              total: result.total,
+              errors: result.errors,
+              message: `Generated ${result.total} PDF(s)${result.errors?.length ? `, ${result.errors.length} failed` : ""}`,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphSuggestMappings(args: {
+  templateId: string;
+  sourceId: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.suggestMappings(args.templateId, args.sourceId);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              suggestions: result.suggestions.map((s) => ({
+                templateField: s.templateField,
+                sourceField: s.sourceField,
+                confidence: `${Math.round(s.confidence * 100)}%`,
+                reason: s.reason,
+              })),
+              unmappedTemplateFields: result.unmappedTemplateFields,
+              unmappedSourceFields: result.unmappedSourceFields,
+              message: `Found ${result.suggestions.length} mapping suggestion(s)`,
+              nextSteps: [
+                "Review the suggestions and adjust as needed",
+                "Use glyph_link_template with the accepted mappings",
+              ],
+              exampleUsage: {
+                tool: "glyph_link_template",
+                params: {
+                  templateId: args.templateId,
+                  sourceId: args.sourceId,
+                  fieldMappings: Object.fromEntries(
+                    result.suggestions
+                      .filter((s) => s.confidence >= 0.7)
+                      .map((s) => [s.templateField, s.sourceField])
+                  ),
+                  isDefault: true,
+                },
+              },
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphLinkTemplate(args: {
+  templateId: string;
+  sourceId: string;
+  fieldMappings: Record<string, string>;
+  isDefault?: boolean;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.linkTemplate({
+      templateId: args.templateId,
+      sourceId: args.sourceId,
+      fieldMappings: args.fieldMappings,
+      isDefault: args.isDefault,
+    });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              mapping: {
+                id: result.mapping.id,
+                templateId: result.mapping.templateId,
+                sourceId: result.mapping.sourceId,
+                isDefault: result.mapping.isDefault,
+                fieldCount: Object.keys(result.mapping.fieldMappings).length,
+              },
+              message: `Template linked to source with ${Object.keys(args.fieldMappings).length} field mapping(s)`,
+              nextSteps: [
+                `Use glyph_generate_from_source with templateId "${args.templateId}" to generate PDFs`,
+                args.isDefault
+                  ? "This source is now the default - you can omit sourceId in future calls"
+                  : "Set isDefault=true to make this the default source for the template",
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -1609,6 +2079,27 @@ export async function handleTool(
     case "glyph_template_delete":
       return handleGlyphTemplateDelete(
         args as Parameters<typeof handleGlyphTemplateDelete>[0]
+      );
+    // Data Source tools
+    case "glyph_create_source":
+      return handleGlyphCreateSource(
+        args as Parameters<typeof handleGlyphCreateSource>[0]
+      );
+    case "glyph_list_sources":
+      return handleGlyphListSources(
+        args as Parameters<typeof handleGlyphListSources>[0]
+      );
+    case "glyph_generate_from_source":
+      return handleGlyphGenerateFromSource(
+        args as Parameters<typeof handleGlyphGenerateFromSource>[0]
+      );
+    case "glyph_suggest_mappings":
+      return handleGlyphSuggestMappings(
+        args as Parameters<typeof handleGlyphSuggestMappings>[0]
+      );
+    case "glyph_link_template":
+      return handleGlyphLinkTemplate(
+        args as Parameters<typeof handleGlyphLinkTemplate>[0]
       );
     default:
       return {

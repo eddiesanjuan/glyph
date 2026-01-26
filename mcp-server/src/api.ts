@@ -190,6 +190,103 @@ export interface DeleteTemplateResult {
   deleted: string;
 }
 
+// =============================================================================
+// Data Sources Types
+// =============================================================================
+
+export type SourceType = "airtable" | "rest_api" | "webhook";
+
+export interface DataSource {
+  id: string;
+  type: SourceType;
+  name: string;
+  config: Record<string, unknown>;
+  status: "active" | "inactive" | "error";
+  lastSyncAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSourceParams {
+  type: SourceType;
+  name: string;
+  config: Record<string, unknown>;
+}
+
+export interface CreateSourceResult {
+  success: boolean;
+  source: DataSource;
+}
+
+export interface ListSourcesResult {
+  success: boolean;
+  sources: DataSource[];
+  total: number;
+}
+
+export interface FieldMapping {
+  templateField: string;
+  sourceField: string;
+  transform?: string;
+}
+
+export interface SuggestMappingsResult {
+  success: boolean;
+  suggestions: Array<{
+    templateField: string;
+    sourceField: string;
+    confidence: number;
+    reason: string;
+  }>;
+  unmappedTemplateFields: string[];
+  unmappedSourceFields: string[];
+}
+
+export interface LinkTemplateParams {
+  templateId: string;
+  sourceId: string;
+  fieldMappings: Record<string, string>;
+  isDefault?: boolean;
+}
+
+export interface LinkTemplateResult {
+  success: boolean;
+  mapping: {
+    id: string;
+    templateId: string;
+    sourceId: string;
+    fieldMappings: Record<string, string>;
+    isDefault: boolean;
+    createdAt: string;
+  };
+}
+
+export interface GenerateFromSourceParams {
+  templateId: string;
+  sourceId?: string;
+  recordId?: string;
+  filter?: {
+    formula?: string;
+    limit?: number;
+  };
+  outputPath?: string;
+}
+
+export interface GenerateFromSourceResult {
+  success: boolean;
+  generated: Array<{
+    recordId: string;
+    url: string;
+    format: "pdf" | "png";
+    size: number;
+  }>;
+  total: number;
+  errors?: Array<{
+    recordId: string;
+    error: string;
+  }>;
+}
+
 export class GlyphApiError extends Error {
   code: string;
   details?: unknown;
@@ -421,6 +518,68 @@ export class GlyphApiClient {
   async deleteSavedTemplate(id: string): Promise<DeleteTemplateResult> {
     return this.request<DeleteTemplateResult>(`/v1/templates/saved/${id}`, {
       method: "DELETE",
+    });
+  }
+
+  // ===========================================================================
+  // Data Sources API
+  // ===========================================================================
+
+  /**
+   * Create a new data source connection
+   */
+  async createSource(params: CreateSourceParams): Promise<CreateSourceResult> {
+    return this.request<CreateSourceResult>("/v1/sources", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * List all connected data sources
+   */
+  async listSources(type?: SourceType): Promise<ListSourcesResult> {
+    const params = new URLSearchParams();
+    if (type) params.set("type", type);
+
+    const queryString = params.toString();
+    const endpoint = `/v1/sources${queryString ? "?" + queryString : ""}`;
+
+    return this.request<ListSourcesResult>(endpoint, { method: "GET" });
+  }
+
+  /**
+   * Get AI-powered field mapping suggestions
+   */
+  async suggestMappings(
+    templateId: string,
+    sourceId: string
+  ): Promise<SuggestMappingsResult> {
+    return this.request<SuggestMappingsResult>("/v1/ai/suggest-mappings", {
+      method: "POST",
+      body: JSON.stringify({ templateId, sourceId }),
+    });
+  }
+
+  /**
+   * Link a template to a data source with field mappings
+   */
+  async linkTemplate(params: LinkTemplateParams): Promise<LinkTemplateResult> {
+    return this.request<LinkTemplateResult>("/v1/mappings", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * Generate PDF(s) from a saved template and connected data source
+   */
+  async generateFromSource(
+    params: GenerateFromSourceParams
+  ): Promise<GenerateFromSourceResult> {
+    return this.request<GenerateFromSourceResult>("/v1/generate/smart", {
+      method: "POST",
+      body: JSON.stringify(params),
     });
   }
 

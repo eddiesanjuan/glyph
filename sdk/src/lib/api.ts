@@ -10,7 +10,28 @@ import type {
   GeneratePdfOptions,
   ChatMessage,
   GlyphError,
-  QuoteData
+  QuoteData,
+  // Template-Data System Types
+  DataSource,
+  CreateSourceRequest,
+  UpdateSourceRequest,
+  SourceRecord,
+  FieldMappings,
+  TemplateSourceMapping,
+  LinkedSource,
+  LinkSourceOptions,
+  UpdateMappingOptions,
+  GenerateResult,
+  GenerateFromSourceOptions,
+  BatchGenerateOptions,
+  BatchStatus,
+  MappingSuggestion,
+  InferredSchema,
+  TemplateMatch,
+  ListSourcesOptions,
+  GetRecordsOptions,
+  TestConnectionResult,
+  SyncResult
 } from './types';
 
 const DEFAULT_API_URL = 'https://api.glyph.you';
@@ -156,6 +177,288 @@ export class GlyphApiClient {
   async validateKey(): Promise<ApiResponse<{ valid: boolean; tier: string }>> {
     return this.request('/v1/auth/validate');
   }
+
+  // ============================================
+  // Sources Management (client.sources.*)
+  // ============================================
+
+  /**
+   * Data sources management methods
+   */
+  sources = {
+    /**
+     * Create a new data source
+     */
+    create: async (config: CreateSourceRequest): Promise<ApiResponse<DataSource>> => {
+      return this.request<DataSource>('/v1/sources', {
+        method: 'POST',
+        body: JSON.stringify(config)
+      });
+    },
+
+    /**
+     * List available data sources
+     */
+    list: async (options?: ListSourcesOptions): Promise<ApiResponse<DataSource[]>> => {
+      const params = new URLSearchParams();
+      if (options?.type) params.set('type', options.type);
+      if (options?.status) params.set('status', options.status);
+      if (options?.limit) params.set('limit', String(options.limit));
+      if (options?.offset) params.set('offset', String(options.offset));
+      const query = params.toString();
+      return this.request<DataSource[]>(`/v1/sources${query ? `?${query}` : ''}`);
+    },
+
+    /**
+     * Get a specific data source by ID
+     */
+    get: async (id: string): Promise<ApiResponse<DataSource>> => {
+      return this.request<DataSource>(`/v1/sources/${id}`);
+    },
+
+    /**
+     * Update an existing data source
+     */
+    update: async (id: string, config: UpdateSourceRequest): Promise<ApiResponse<DataSource>> => {
+      return this.request<DataSource>(`/v1/sources/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(config)
+      });
+    },
+
+    /**
+     * Delete a data source
+     */
+    delete: async (id: string): Promise<ApiResponse<void>> => {
+      return this.request<void>(`/v1/sources/${id}`, {
+        method: 'DELETE'
+      });
+    },
+
+    /**
+     * Test connection to a data source
+     */
+    test: async (id: string): Promise<ApiResponse<TestConnectionResult>> => {
+      return this.request<TestConnectionResult>(`/v1/sources/${id}/test`, {
+        method: 'POST'
+      });
+    },
+
+    /**
+     * Sync data source schema and detect drift
+     */
+    sync: async (id: string): Promise<ApiResponse<SyncResult>> => {
+      return this.request<SyncResult>(`/v1/sources/${id}/sync`, {
+        method: 'POST'
+      });
+    },
+
+    /**
+     * Get records from a data source
+     */
+    getRecords: async (id: string, options?: GetRecordsOptions): Promise<ApiResponse<SourceRecord[]>> => {
+      const params = new URLSearchParams();
+      if (options?.limit) params.set('limit', String(options.limit));
+      if (options?.offset) params.set('offset', String(options.offset));
+      if (options?.filter) params.set('filter', options.filter);
+      if (options?.sort) params.set('sort', options.sort);
+      if (options?.fields) params.set('fields', options.fields.join(','));
+      const query = params.toString();
+      return this.request<SourceRecord[]>(`/v1/sources/${id}/records${query ? `?${query}` : ''}`);
+    }
+  };
+
+  // ============================================
+  // Template-Source Mappings (extends client.templates.*)
+  // ============================================
+
+  /**
+   * Template management methods including source linking
+   */
+  templates = {
+    /**
+     * Get a template by ID
+     */
+    get: async (templateId: string): Promise<ApiResponse<GlyphTemplate>> => {
+      return this.request<GlyphTemplate>(`/v1/templates/${templateId}`);
+    },
+
+    /**
+     * List available templates
+     */
+    list: async (): Promise<ApiResponse<GlyphTemplate[]>> => {
+      return this.request<GlyphTemplate[]>('/v1/templates');
+    },
+
+    /**
+     * Link a data source to a template with field mappings
+     */
+    linkSource: async (
+      templateId: string,
+      sourceId: string,
+      mappings: FieldMappings,
+      options?: LinkSourceOptions
+    ): Promise<ApiResponse<TemplateSourceMapping>> => {
+      return this.request<TemplateSourceMapping>(`/v1/templates/${templateId}/sources`, {
+        method: 'POST',
+        body: JSON.stringify({
+          source_id: sourceId,
+          field_mappings: mappings,
+          is_default: options?.isDefault ?? false,
+          transformations: options?.transformations
+        })
+      });
+    },
+
+    /**
+     * Get all linked sources for a template
+     */
+    getLinkedSources: async (templateId: string): Promise<ApiResponse<LinkedSource[]>> => {
+      return this.request<LinkedSource[]>(`/v1/templates/${templateId}/sources`);
+    },
+
+    /**
+     * Update field mappings for a template-source link
+     */
+    updateMapping: async (
+      templateId: string,
+      sourceId: string,
+      updates: UpdateMappingOptions
+    ): Promise<ApiResponse<TemplateSourceMapping>> => {
+      return this.request<TemplateSourceMapping>(`/v1/templates/${templateId}/sources/${sourceId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          field_mappings: updates.mappings,
+          transformations: updates.transformations,
+          is_default: updates.isDefault
+        })
+      });
+    },
+
+    /**
+     * Unlink a data source from a template
+     */
+    unlinkSource: async (templateId: string, sourceId: string): Promise<ApiResponse<void>> => {
+      return this.request<void>(`/v1/templates/${templateId}/sources/${sourceId}`, {
+        method: 'DELETE'
+      });
+    }
+  };
+
+  // ============================================
+  // Smart Generation (client.generate.*)
+  // ============================================
+
+  /**
+   * Smart generation methods for source-driven PDF creation
+   */
+  generate = {
+    /**
+     * Generate PDF from a linked data source
+     */
+    fromSource: async (options: GenerateFromSourceOptions): Promise<ApiResponse<GenerateResult>> => {
+      return this.request<GenerateResult>('/v1/generate/from-source', {
+        method: 'POST',
+        body: JSON.stringify({
+          template_id: options.templateId,
+          source_id: options.sourceId,
+          record_id: options.recordId,
+          filter: options.filter,
+          format: options.format ?? 'pdf'
+        })
+      });
+    },
+
+    /**
+     * Start a batch generation job
+     */
+    batch: async (options: BatchGenerateOptions): Promise<ApiResponse<{ jobId: string; status: string; totalRecords: number }>> => {
+      return this.request<{ jobId: string; status: string; totalRecords: number }>('/v1/generate/batch', {
+        method: 'POST',
+        body: JSON.stringify({
+          template_id: options.templateId,
+          source_id: options.sourceId,
+          filter: options.filter,
+          format: options.format ?? 'pdf',
+          output_format: options.outputFormat ?? 'zip'
+        })
+      });
+    },
+
+    /**
+     * Get the status of a batch generation job
+     */
+    getBatchStatus: async (jobId: string): Promise<ApiResponse<BatchStatus>> => {
+      return this.request<BatchStatus>(`/v1/generate/batch/${jobId}`);
+    },
+
+    /**
+     * Download completed batch generation results
+     */
+    downloadBatch: async (jobId: string): Promise<Blob> => {
+      const url = `${this.baseUrl}/v1/generate/batch/${jobId}/download`;
+
+      const headers = new Headers();
+      headers.set('Authorization', `Bearer ${this.apiKey}`);
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Download failed with status ${response.status}`);
+      }
+
+      return response.blob();
+    }
+  };
+
+  // ============================================
+  // AI Assistance (client.ai.*)
+  // ============================================
+
+  /**
+   * AI-powered assistance methods
+   */
+  ai = {
+    /**
+     * Get AI-suggested field mappings between a template and source
+     */
+    suggestMappings: async (templateId: string, sourceId: string): Promise<ApiResponse<MappingSuggestion[]>> => {
+      return this.request<MappingSuggestion[]>('/v1/ai/suggest-mappings', {
+        method: 'POST',
+        body: JSON.stringify({
+          template_id: templateId,
+          source_id: sourceId
+        })
+      });
+    },
+
+    /**
+     * Infer schema from sample data
+     */
+    inferSchema: async (sampleData: object, documentType?: string): Promise<ApiResponse<InferredSchema>> => {
+      return this.request<InferredSchema>('/v1/ai/infer-schema', {
+        method: 'POST',
+        body: JSON.stringify({
+          sample_data: sampleData,
+          document_type: documentType
+        })
+      });
+    },
+
+    /**
+     * Find best matching templates for a data source
+     */
+    matchTemplate: async (sourceId: string, recordId?: string): Promise<ApiResponse<TemplateMatch[]>> => {
+      return this.request<TemplateMatch[]>('/v1/ai/match-template', {
+        method: 'POST',
+        body: JSON.stringify({
+          source_id: sourceId,
+          record_id: recordId
+        })
+      });
+    }
+  };
 }
 
 /**

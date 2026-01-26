@@ -28,6 +28,10 @@ import savedTemplates from "./routes/savedTemplates.js";
 import webhooks from "./routes/webhooks.js";
 import analyze from "./routes/analyze.js";
 import beta from "./routes/beta.js";
+import sources from "./routes/sources.js";
+import mappings from "./routes/mappings.js";
+import generateSmart from "./routes/generate-smart.js";
+import aiAssist from "./routes/ai-assist.js";
 
 const app = new Hono();
 
@@ -145,6 +149,31 @@ app.get("/", (c) => {
       betaApprove: "POST /v1/beta/approve/:id (admin)",
       betaInvites: "GET /v1/beta/invites (admin)",
       betaStats: "GET /v1/beta/stats (admin)",
+      // Data sources
+      sourcesList: "GET /v1/sources",
+      sourcesCreate: "POST /v1/sources",
+      sourcesGet: "GET /v1/sources/:id",
+      sourcesUpdate: "PUT /v1/sources/:id",
+      sourcesDelete: "DELETE /v1/sources/:id",
+      sourcesTest: "POST /v1/sources/:id/test",
+      sourcesSync: "POST /v1/sources/:id/sync",
+      sourcesRecords: "GET /v1/sources/:id/records",
+      // Template-source mappings
+      mappingsList: "GET /v1/mappings",
+      mappingsCreate: "POST /v1/mappings",
+      mappingsGet: "GET /v1/mappings/:id",
+      mappingsUpdate: "PUT /v1/mappings/:id",
+      mappingsDelete: "DELETE /v1/mappings/:id",
+      mappingsPreview: "GET /v1/mappings/:id/preview",
+      // Smart generation
+      generateSmart: "POST /v1/generate/smart",
+      generateSmartBatch: "POST /v1/generate/smart/batch",
+      generateSmartBatchStatus: "GET /v1/generate/smart/batch/:jobId",
+      generateSmartBatchDownload: "GET /v1/generate/smart/batch/:jobId/download",
+      // AI assistance
+      aiSuggestMappings: "POST /v1/ai/suggest-mappings",
+      aiInferSchema: "POST /v1/ai/infer-schema",
+      aiMatchTemplate: "POST /v1/ai/match-template",
     },
   });
 });
@@ -171,6 +200,11 @@ app.route("/v1/templates", templates);
 app.route("/v1/webhooks", webhooks);
 // Schema detection and auto-preview
 app.route("/v1/analyze", analyze);
+// Data sources and intelligent templates
+app.route("/v1/sources", sources);
+app.route("/v1/mappings", mappings);
+app.route("/v1/generate/smart", generateSmart);
+app.route("/v1/ai", aiAssist);
 
 // 404 handler
 app.notFound((c) => {
