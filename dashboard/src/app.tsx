@@ -47,6 +47,18 @@ interface BetaInvite {
   revoked: boolean
 }
 
+interface SavedTemplate {
+  id: string
+  name: string
+  type: string | null
+  description: string | null
+  style: string | null
+  isDefault: boolean
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+
 interface BetaStats {
   pending: number
   approved: number
@@ -156,6 +168,34 @@ const Icons = {
       <path d="M19 12H5M12 19l-7-7 7-7"/>
     </svg>
   ),
+  file: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+      <polyline points="13 2 13 9 20 9"/>
+    </svg>
+  ),
+  star: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  starOutline: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  edit: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  ),
+  trash: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg>
+  ),
 }
 
 // Tier badge colors - matching landing page navy blue palette
@@ -206,6 +246,14 @@ export function App() {
   const [adminLoading, setAdminLoading] = useState(false)
   const [adminView, setAdminView] = useState<'requests' | 'invites'>('requests')
   const [approvedCode, setApprovedCode] = useState<string | null>(null)
+
+  // Template state
+  const [templates, setTemplates] = useState<SavedTemplate[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<SavedTemplate | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null)
+  const [templateSaving, setTemplateSaving] = useState(false)
 
   // Check for activation code in URL
   useEffect(() => {
@@ -519,6 +567,78 @@ export function App() {
       minute: '2-digit',
     })
   }
+
+  // Template functions
+  const fetchTemplates = useCallback(async () => {
+    if (!apiKey) return
+    setTemplatesLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/v1/templates/saved`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTemplates(data.templates)
+      }
+    } catch (err) {
+      console.error('Failed to fetch templates:', err)
+    } finally {
+      setTemplatesLoading(false)
+    }
+  }, [apiKey])
+
+  const handleUpdateTemplate = async (id: string, updates: Partial<SavedTemplate>) => {
+    setTemplateSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_URL}/v1/templates/saved/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(updates)
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to update template')
+      }
+      await fetchTemplates()
+      setEditingTemplate(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update template')
+    } finally {
+      setTemplateSaving(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/v1/templates/saved/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      if (res.ok) {
+        await fetchTemplates()
+        setShowDeleteConfirm(null)
+      }
+    } catch (err) {
+      console.error('Failed to delete template:', err)
+    }
+  }
+
+  const copyTemplateId = async (id: string) => {
+    await navigator.clipboard.writeText(id)
+    setCopiedTemplateId(id)
+    setTimeout(() => setCopiedTemplateId(null), 2000)
+  }
+
+  // Fetch templates when dashboard data loads
+  useEffect(() => {
+    if (data && apiKey) {
+      fetchTemplates()
+    }
+  }, [data, apiKey, fetchTemplates])
 
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'var(--error)'
@@ -1258,6 +1378,79 @@ export function App() {
                 </p>
               </section>
 
+              {/* Templates */}
+              <section class="section">
+                <div class="section-header">
+                  <h2>Saved Templates</h2>
+                  <span class="template-count">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                {templatesLoading ? (
+                  <div class="templates-loading">Loading templates...</div>
+                ) : templates.length === 0 ? (
+                  <div class="templates-empty">
+                    <div class="empty-icon">{Icons.file}</div>
+                    <p class="empty-title">No templates yet</p>
+                    <p class="empty-description">Save templates from the playground to manage them here</p>
+                  </div>
+                ) : (
+                  <div class="templates-list">
+                    {templates.map(template => (
+                      <div key={template.id} class="template-card">
+                        <div class="template-header">
+                          <div class="template-name">
+                            {template.isDefault && (
+                              <span class="default-indicator" title="Default template">
+                                {Icons.star}
+                              </span>
+                            )}
+                            {template.name}
+                          </div>
+                          <div class="template-badges">
+                            {template.type && (
+                              <span class="type-badge">{template.type}</span>
+                            )}
+                            {template.style && (
+                              <span class="style-badge">{template.style}</span>
+                            )}
+                          </div>
+                        </div>
+                        {template.description && (
+                          <p class="template-description">{template.description}</p>
+                        )}
+                        <div class="template-meta">
+                          <span>v{template.version}</span>
+                          <span>Updated {formatDate(template.updatedAt)}</span>
+                        </div>
+                        <div class="template-actions">
+                          <button
+                            class="btn btn-icon"
+                            onClick={() => copyTemplateId(template.id)}
+                            title="Copy template ID"
+                          >
+                            {copiedTemplateId === template.id ? Icons.check : Icons.copy}
+                          </button>
+                          <button
+                            class="btn btn-icon"
+                            onClick={() => setEditingTemplate(template)}
+                            title="Edit template"
+                          >
+                            {Icons.edit}
+                          </button>
+                          <button
+                            class="btn btn-icon btn-icon-danger"
+                            onClick={() => setShowDeleteConfirm(template.id)}
+                            title="Delete template"
+                          >
+                            {Icons.trash}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
               {/* Error display */}
               {error && (
                 <div class="error-banner">
@@ -1294,6 +1487,151 @@ export function App() {
                 disabled={regenerating}
               >
                 {regenerating ? 'Regenerating...' : 'Regenerate Key'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Template Modal */}
+      {editingTemplate && (
+        <div class="modal-overlay" onClick={() => setEditingTemplate(null)}>
+          <div class="modal modal-edit-template" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit Template</h3>
+            <form
+              class="edit-template-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const form = e.target as HTMLFormElement
+                const formData = new FormData(form)
+                handleUpdateTemplate(editingTemplate.id, {
+                  name: formData.get('name') as string,
+                  type: formData.get('type') as string || null,
+                  description: formData.get('description') as string || null,
+                  style: formData.get('style') as string || null,
+                  isDefault: formData.get('isDefault') === 'on',
+                })
+              }}
+            >
+              <div class="form-group">
+                <label htmlFor="template-name">Name</label>
+                <input
+                  id="template-name"
+                  name="name"
+                  type="text"
+                  class="api-input"
+                  defaultValue={editingTemplate.name}
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label htmlFor="template-type">Type</label>
+                <select
+                  id="template-type"
+                  name="type"
+                  class="api-input"
+                  defaultValue={editingTemplate.type || ''}
+                >
+                  <option value="">None</option>
+                  <option value="invoice">Invoice</option>
+                  <option value="quote">Quote</option>
+                  <option value="report">Report</option>
+                  <option value="certificate">Certificate</option>
+                  <option value="letter">Letter</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="contract">Contract</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label htmlFor="template-description">Description</label>
+                <textarea
+                  id="template-description"
+                  name="description"
+                  class="api-input textarea"
+                  rows={3}
+                  defaultValue={editingTemplate.description || ''}
+                  placeholder="Optional description..."
+                />
+              </div>
+
+              <div class="form-group">
+                <label htmlFor="template-style">Style</label>
+                <select
+                  id="template-style"
+                  name="style"
+                  class="api-input"
+                  defaultValue={editingTemplate.style || ''}
+                >
+                  <option value="">None</option>
+                  <option value="stripe-clean">Stripe Clean</option>
+                  <option value="professional">Professional</option>
+                  <option value="minimal">Minimal</option>
+                  <option value="bold">Bold</option>
+                  <option value="classic">Classic</option>
+                  <option value="corporate">Corporate</option>
+                  <option value="modern">Modern</option>
+                  <option value="vibrant">Vibrant</option>
+                </select>
+              </div>
+
+              <div class="form-group form-group-checkbox">
+                <input
+                  id="template-default"
+                  name="isDefault"
+                  type="checkbox"
+                  defaultChecked={editingTemplate.isDefault}
+                />
+                <label htmlFor="template-default">Make default for this type</label>
+              </div>
+
+              {error && (
+                <div class="error-banner">
+                  {Icons.warning}
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  onClick={() => { setEditingTemplate(null); setError(null) }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={templateSaving}
+                >
+                  {templateSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Template Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div class="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div class="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Template?</h3>
+            <p>
+              This will permanently delete this template. This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" onClick={() => setShowDeleteConfirm(null)}>
+                Cancel
+              </button>
+              <button
+                class="btn btn-danger"
+                onClick={() => handleDeleteTemplate(showDeleteConfirm)}
+              >
+                Delete Template
               </button>
             </div>
           </div>

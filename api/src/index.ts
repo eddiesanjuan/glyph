@@ -24,6 +24,7 @@ import dashboard from "./routes/dashboard.js";
 import keys from "./routes/keys.js";
 import airtable from "./routes/airtable.js";
 import templates from "./routes/templates.js";
+import savedTemplates from "./routes/savedTemplates.js";
 import webhooks from "./routes/webhooks.js";
 import analyze from "./routes/analyze.js";
 import beta from "./routes/beta.js";
@@ -53,7 +54,7 @@ app.use(
       // In production, could restrict further
       return origin; // Allow all for now during beta
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
     maxAge: 86400,
@@ -123,6 +124,12 @@ app.get("/", (c) => {
       batchDownload: "GET /v1/templates/batch/:jobId/download",
       views: "GET /v1/templates/views",
       recordCount: "GET /v1/templates/count",
+      // Saved templates (CRUD)
+      savedTemplatesList: "GET /v1/templates/saved",
+      savedTemplatesCreate: "POST /v1/templates/saved",
+      savedTemplatesGet: "GET /v1/templates/saved/:id",
+      savedTemplatesUpdate: "PUT /v1/templates/saved/:id",
+      savedTemplatesDelete: "DELETE /v1/templates/saved/:id",
       // Webhook automation
       webhookCreate: "POST /v1/webhooks",
       webhookList: "GET /v1/webhooks",
@@ -156,6 +163,8 @@ app.route("/v1/dashboard", dashboard);
 app.route("/v1/keys", keys);
 // Airtable integration
 app.route("/v1/airtable", airtable);
+// User-saved templates (CRUD) - mount before /v1/templates to ensure /saved routes work
+app.route("/v1/templates/saved", savedTemplates);
 // AI-powered template generation
 app.route("/v1/templates", templates);
 // Webhook automation
@@ -252,6 +261,13 @@ console.log(`
     GET  /v1/templates/batch/:jobId/download - Download completed ZIP
     GET  /v1/templates/views              - Get table views
     GET  /v1/templates/count              - Get record count
+
+  Saved Templates (CRUD):
+    GET    /v1/templates/saved            - List user's saved templates
+    POST   /v1/templates/saved            - Save a new template
+    GET    /v1/templates/saved/:id        - Get template by ID
+    PUT    /v1/templates/saved/:id        - Update template
+    DELETE /v1/templates/saved/:id        - Delete template
 
   Webhook Automation:
     POST /v1/webhooks                     - Create webhook configuration

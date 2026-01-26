@@ -86,6 +86,110 @@ export interface CreateResult {
   sessionId: string;
 }
 
+// =============================================================================
+// Saved Templates Types
+// =============================================================================
+
+export type TemplateType =
+  | "invoice"
+  | "quote"
+  | "report"
+  | "certificate"
+  | "letter"
+  | "receipt"
+  | "contract"
+  | "custom";
+
+export type TemplateStyle =
+  | "stripe-clean"
+  | "professional"
+  | "minimal"
+  | "bold"
+  | "classic"
+  | "corporate"
+  | "modern"
+  | "vibrant";
+
+export interface SavedTemplate {
+  id: string;
+  name: string;
+  type: TemplateType | null;
+  description: string | null;
+  html?: string;
+  schema?: {
+    fields?: Array<{
+      name: string;
+      type: string;
+      required?: boolean;
+    }>;
+  };
+  style: TemplateStyle | null;
+  isDefault: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListTemplatesResult {
+  success: boolean;
+  templates: SavedTemplate[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SaveTemplateParams {
+  name: string;
+  html: string;
+  type?: TemplateType;
+  description?: string;
+  schema?: {
+    fields?: Array<{
+      name: string;
+      type: string;
+      required?: boolean;
+    }>;
+  };
+  style?: TemplateStyle;
+  isDefault?: boolean;
+}
+
+export interface SaveTemplateResult {
+  success: boolean;
+  template: SavedTemplate;
+}
+
+export interface GetTemplateResult {
+  success: boolean;
+  template: SavedTemplate;
+}
+
+export interface UpdateTemplateParams {
+  name?: string;
+  html?: string;
+  type?: TemplateType;
+  description?: string;
+  schema?: {
+    fields?: Array<{
+      name: string;
+      type: string;
+      required?: boolean;
+    }>;
+  };
+  style?: TemplateStyle;
+  isDefault?: boolean;
+}
+
+export interface UpdateTemplateResult {
+  success: boolean;
+  template: SavedTemplate;
+}
+
+export interface DeleteTemplateResult {
+  success: boolean;
+  deleted: string;
+}
+
 export class GlyphApiError extends Error {
   code: string;
   details?: unknown;
@@ -254,6 +358,70 @@ export class GlyphApiClient {
     });
 
     return result;
+  }
+
+  // ===========================================================================
+  // Saved Templates API
+  // ===========================================================================
+
+  /**
+   * List all saved templates for the current API key
+   */
+  async listSavedTemplates(options?: {
+    type?: TemplateType;
+    limit?: number;
+    offset?: number;
+  }): Promise<ListTemplatesResult> {
+    const params = new URLSearchParams();
+    if (options?.type) params.set("type", options.type);
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.offset) params.set("offset", String(options.offset));
+
+    const queryString = params.toString();
+    const endpoint = `/v1/templates/saved${queryString ? "?" + queryString : ""}`;
+
+    return this.request<ListTemplatesResult>(endpoint, { method: "GET" });
+  }
+
+  /**
+   * Save a new template
+   */
+  async saveTemplate(params: SaveTemplateParams): Promise<SaveTemplateResult> {
+    return this.request<SaveTemplateResult>("/v1/templates/saved", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * Get a saved template by ID (includes full HTML)
+   */
+  async getSavedTemplate(id: string): Promise<GetTemplateResult> {
+    return this.request<GetTemplateResult>(`/v1/templates/saved/${id}`, {
+      method: "GET",
+    });
+  }
+
+  /**
+   * Update a saved template
+   */
+  async updateSavedTemplate(
+    id: string,
+    params: UpdateTemplateParams
+  ): Promise<UpdateTemplateResult> {
+    return this.request<UpdateTemplateResult>(`/v1/templates/saved/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * Delete a saved template
+   */
+  async deleteSavedTemplate(id: string): Promise<DeleteTemplateResult> {
+    return this.request<DeleteTemplateResult>(`/v1/templates/saved/${id}`, {
+      method: "DELETE",
+    });
   }
 
   /**

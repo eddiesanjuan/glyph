@@ -11,6 +11,9 @@ import {
   updateSessionHtml,
   type AnalyzeResult,
   type CreateResult,
+  type TemplateType,
+  type TemplateStyle,
+  type SavedTemplate,
 } from "./api.js";
 
 // Template detection patterns for auto-template feature
@@ -347,6 +350,231 @@ This does NOT generate a PDF - just returns the analysis.`,
         },
       },
       required: ["data"],
+    },
+  },
+
+  // ===========================================================================
+  // Saved Templates Tools
+  // ===========================================================================
+
+  {
+    name: "glyph_templates_list",
+    description: `List all saved templates for the current API key.
+
+Use this to see what templates are available for PDF generation.
+Returns template name, type, style, and ID (use ID with glyph_create for instant PDF generation).
+
+Saved templates allow you to:
+- Reuse templates without AI regeneration (much faster)
+- Maintain consistent branding across documents
+- Create once, generate many times`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: [
+            "invoice",
+            "quote",
+            "report",
+            "certificate",
+            "letter",
+            "receipt",
+            "contract",
+            "custom",
+          ],
+          description: "Filter by template type",
+        },
+        limit: {
+          type: "number",
+          description: "Max results (default 50, max 100)",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+    },
+  },
+  {
+    name: "glyph_template_save",
+    description: `Save a template for reuse.
+
+After creating a template you like, save it with a name so you can reuse it
+without AI regeneration. Much faster for repeated PDF generation.
+
+You can save templates from:
+- HTML you've crafted manually
+- Output from glyph_modify after customizing
+- AI-generated templates you want to preserve
+
+Set isDefault=true to make this the default template for its type.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Template name (e.g., 'Invoice v1', 'Quote Template')",
+        },
+        html: {
+          type: "string",
+          description:
+            "Full HTML template with Mustache placeholders (e.g., {{client.name}})",
+        },
+        type: {
+          type: "string",
+          enum: [
+            "invoice",
+            "quote",
+            "report",
+            "certificate",
+            "letter",
+            "receipt",
+            "contract",
+            "custom",
+          ],
+          description: "Template type for organization",
+        },
+        description: {
+          type: "string",
+          description: "Optional description of the template",
+        },
+        style: {
+          type: "string",
+          enum: [
+            "stripe-clean",
+            "professional",
+            "minimal",
+            "bold",
+            "classic",
+            "corporate",
+            "modern",
+            "vibrant",
+          ],
+          description: "Style preset used",
+        },
+        isDefault: {
+          type: "boolean",
+          description: "Make this the default template for its type",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["name", "html"],
+    },
+  },
+  {
+    name: "glyph_template_get",
+    description: `Get a saved template by ID, including the full HTML.
+
+Use this to:
+- Retrieve the HTML to preview or modify
+- Check the schema and field requirements
+- Inspect template details before generating`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "Template ID (UUID from glyph_templates_list)",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "glyph_template_update",
+    description: `Update a saved template.
+
+Use this to:
+- Update the HTML after modifications
+- Change template metadata (name, description, type)
+- Set/unset as default template
+
+Only include fields you want to update.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "Template ID to update",
+        },
+        name: {
+          type: "string",
+          description: "New template name",
+        },
+        html: {
+          type: "string",
+          description: "Updated HTML template",
+        },
+        type: {
+          type: "string",
+          enum: [
+            "invoice",
+            "quote",
+            "report",
+            "certificate",
+            "letter",
+            "receipt",
+            "contract",
+            "custom",
+          ],
+          description: "Template type",
+        },
+        description: {
+          type: "string",
+          description: "Template description",
+        },
+        style: {
+          type: "string",
+          enum: [
+            "stripe-clean",
+            "professional",
+            "minimal",
+            "bold",
+            "classic",
+            "corporate",
+            "modern",
+            "vibrant",
+          ],
+          description: "Style preset",
+        },
+        isDefault: {
+          type: "boolean",
+          description: "Set as default template for its type",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "glyph_template_delete",
+    description: `Delete a saved template.
+
+This permanently removes the template. Use with caution.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          description: "Template ID to delete",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["id"],
     },
   },
 ];
@@ -955,6 +1183,237 @@ function formatAnalysisForHumans(analysis: AnalyzeResult): string {
 }
 
 // =============================================================================
+// Saved Templates Tool Handlers
+// =============================================================================
+
+export async function handleGlyphTemplatesList(args: {
+  type?: TemplateType;
+  limit?: number;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.listSavedTemplates({
+      type: args.type,
+      limit: args.limit,
+    });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              templates: result.templates.map((t) => ({
+                id: t.id,
+                name: t.name,
+                type: t.type,
+                style: t.style,
+                isDefault: t.isDefault,
+                version: t.version,
+                updatedAt: t.updatedAt,
+              })),
+              total: result.total,
+              message: `Found ${result.total} saved template(s)`,
+              usage:
+                "Use template ID with glyph_template_get for full HTML, or use glyph_preview with your data",
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphTemplateSave(args: {
+  name: string;
+  html: string;
+  type?: TemplateType;
+  description?: string;
+  style?: TemplateStyle;
+  isDefault?: boolean;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.saveTemplate({
+      name: args.name,
+      html: args.html,
+      type: args.type,
+      description: args.description,
+      style: args.style,
+      isDefault: args.isDefault,
+    });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+                type: result.template.type,
+                style: result.template.style,
+                isDefault: result.template.isDefault,
+                version: result.template.version,
+                createdAt: result.template.createdAt,
+              },
+              message: `Template "${args.name}" saved successfully`,
+              nextSteps: [
+                `Use glyph_template_get with id "${result.template.id}" to retrieve the full HTML`,
+                "Use glyph_templates_list to see all your saved templates",
+                "Use glyph_preview with this template's HTML and your data to generate PDFs",
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphTemplateGet(args: {
+  id: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.getSavedTemplate(args.id);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+                type: result.template.type,
+                description: result.template.description,
+                style: result.template.style,
+                isDefault: result.template.isDefault,
+                version: result.template.version,
+                schema: result.template.schema,
+                createdAt: result.template.createdAt,
+                updatedAt: result.template.updatedAt,
+                html: result.template.html,
+              },
+              message: `Retrieved template "${result.template.name}"`,
+              usage:
+                "Use the HTML with glyph_modify to customize, or render with your data using glyph_preview",
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphTemplateUpdate(args: {
+  id: string;
+  name?: string;
+  html?: string;
+  type?: TemplateType;
+  description?: string;
+  style?: TemplateStyle;
+  isDefault?: boolean;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+
+    // Build update params (only include provided fields)
+    const updateParams: Record<string, unknown> = {};
+    if (args.name !== undefined) updateParams.name = args.name;
+    if (args.html !== undefined) updateParams.html = args.html;
+    if (args.type !== undefined) updateParams.type = args.type;
+    if (args.description !== undefined) updateParams.description = args.description;
+    if (args.style !== undefined) updateParams.style = args.style;
+    if (args.isDefault !== undefined) updateParams.isDefault = args.isDefault;
+
+    const result = await client.updateSavedTemplate(
+      args.id,
+      updateParams as Parameters<typeof client.updateSavedTemplate>[1]
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+                type: result.template.type,
+                style: result.template.style,
+                isDefault: result.template.isDefault,
+                version: result.template.version,
+                updatedAt: result.template.updatedAt,
+              },
+              message: `Template "${result.template.name}" updated (version ${result.template.version})`,
+              fieldsUpdated: Object.keys(updateParams),
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphTemplateDelete(args: {
+  id: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.deleteSavedTemplate(args.id);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              deleted: result.deleted,
+              message: `Template ${args.id} deleted successfully`,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -1129,6 +1588,27 @@ export async function handleTool(
     case "glyph_analyze":
       return handleGlyphAnalyze(
         args as Parameters<typeof handleGlyphAnalyze>[0]
+      );
+    // Saved Templates tools
+    case "glyph_templates_list":
+      return handleGlyphTemplatesList(
+        args as Parameters<typeof handleGlyphTemplatesList>[0]
+      );
+    case "glyph_template_save":
+      return handleGlyphTemplateSave(
+        args as Parameters<typeof handleGlyphTemplateSave>[0]
+      );
+    case "glyph_template_get":
+      return handleGlyphTemplateGet(
+        args as Parameters<typeof handleGlyphTemplateGet>[0]
+      );
+    case "glyph_template_update":
+      return handleGlyphTemplateUpdate(
+        args as Parameters<typeof handleGlyphTemplateUpdate>[0]
+      );
+    case "glyph_template_delete":
+      return handleGlyphTemplateDelete(
+        args as Parameters<typeof handleGlyphTemplateDelete>[0]
       );
     default:
       return {

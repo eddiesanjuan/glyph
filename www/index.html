@@ -3436,6 +3436,311 @@
     }
 
     /* ============================================
+       Save Template Modal (API-backed persistence)
+       ============================================ */
+    .save-template-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .save-template-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .save-template-modal {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+      margin: 16px;
+      transform: scale(0.95);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .save-template-modal-overlay.active .save-template-modal {
+      transform: scale(1);
+    }
+
+    .save-template-modal__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .save-template-modal__icon {
+      width: 40px;
+      height: 40px;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .save-template-modal__icon svg {
+      width: 20px;
+      height: 20px;
+      color: var(--color-primary-bright);
+    }
+
+    .save-template-modal__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .save-template-modal__description {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .save-template-modal__form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .save-template-modal__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .save-template-modal__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .save-template-modal__label--required::after {
+      content: ' *';
+      color: var(--color-error);
+    }
+
+    .save-template-modal__input,
+    .save-template-modal__select,
+    .save-template-modal__textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .save-template-modal__input:focus,
+    .save-template-modal__select:focus,
+    .save-template-modal__textarea:focus {
+      outline: none;
+      border-color: var(--color-primary-bright);
+      box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    }
+
+    .save-template-modal__input::placeholder,
+    .save-template-modal__textarea::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .save-template-modal__select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .save-template-modal__textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .save-template-modal__checkbox-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .save-template-modal__checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--color-primary-bright);
+      cursor: pointer;
+    }
+
+    .save-template-modal__checkbox-label {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    .save-template-modal__actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .save-template-modal__btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .save-template-modal__btn--cancel {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+    }
+
+    .save-template-modal__btn--cancel:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .save-template-modal__btn--save {
+      background: var(--color-primary-bright);
+      color: white;
+      border: none;
+    }
+
+    .save-template-modal__btn--save:hover {
+      background: #1d4ed8;
+    }
+
+    .save-template-modal__btn--save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .save-template-modal__btn--save .btn-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .save-template-modal__error {
+      padding: 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: var(--radius-md);
+      color: var(--color-error);
+      font-size: 13px;
+      display: none;
+    }
+
+    .save-template-modal__error.visible {
+      display: block;
+    }
+
+    .save-template-modal__demo-notice {
+      padding: 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .save-template-modal__demo-notice p {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+
+    .save-template-modal__demo-notice a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: var(--color-primary-bright);
+      color: white;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background var(--transition-fast);
+    }
+
+    .save-template-modal__demo-notice a:hover {
+      background: #1d4ed8;
+    }
+
+    /* Save Template Button in Toolbar */
+    .save-template-btn {
+      display: none; /* Hidden by default, shown after first modification */
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .save-template-btn:hover {
+      background: var(--color-surface);
+      border-color: var(--color-primary-bright);
+      color: var(--color-primary-bright);
+    }
+
+    .save-template-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .save-template-btn.visible {
+      display: flex;
+    }
+
+    @media (max-width: 640px) {
+      .save-template-modal {
+        margin: 12px;
+        padding: 20px;
+      }
+
+      .save-template-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .save-template-btn span {
+        display: none;
+      }
+    }
+
+    /* ============================================
        Saved Versions Section
        ============================================ */
     .saved-versions {
@@ -8551,6 +8856,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
               Generate PDF
+            </button>
+            <button class="save-template-btn" id="save-template-btn" title="Save this template to your account">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+              </svg>
+              <span>Save Template</span>
             </button>
           </div>
         </div>
@@ -16797,6 +17108,277 @@
         loadBatchViews();
       }
     };
+
+    // ============================================
+    // Save Template Feature (API-backed persistence)
+    // Allows users with API keys to save customized templates
+    // ============================================
+
+    // Save Template DOM elements
+    let saveTemplateElements = null;
+    function getSaveTemplateElements() {
+      if (!saveTemplateElements) {
+        saveTemplateElements = {
+          btn: document.getElementById('save-template-btn'),
+          modal: document.getElementById('save-template-modal'),
+          form: document.getElementById('save-template-form'),
+          demoNotice: document.getElementById('save-template-demo-notice'),
+          nameInput: document.getElementById('template-name-input'),
+          typeSelect: document.getElementById('template-type-select'),
+          descriptionInput: document.getElementById('template-description-input'),
+          defaultCheckbox: document.getElementById('template-default-checkbox'),
+          errorEl: document.getElementById('save-template-error'),
+          cancelBtn: document.getElementById('save-template-cancel'),
+          confirmBtn: document.getElementById('save-template-confirm')
+        };
+      }
+      return saveTemplateElements;
+    }
+
+    // Check if user can save templates (has real API key, not demo)
+    function canSaveTemplates() {
+      // In the playground, we always use DEMO_API_KEY
+      // Users need to get their own API key to save templates
+      // For now, we'll check if there's a stored user API key
+      try {
+        const userApiKey = localStorage.getItem('glyph_user_api_key');
+        return userApiKey && userApiKey !== DEMO_API_KEY && userApiKey.startsWith('gk_');
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Get the user's API key (or demo key if none)
+    function getUserApiKey() {
+      try {
+        const userApiKey = localStorage.getItem('glyph_user_api_key');
+        if (userApiKey && userApiKey.startsWith('gk_')) {
+          return userApiKey;
+        }
+      } catch (e) {
+        // Ignore storage errors
+      }
+      return DEMO_API_KEY;
+    }
+
+    // Show the Save Template button after successful modification
+    function showSaveTemplateButton() {
+      const els = getSaveTemplateElements();
+      if (els.btn) {
+        els.btn.classList.add('visible');
+      }
+    }
+
+    // Hide the Save Template button
+    function hideSaveTemplateButton() {
+      const els = getSaveTemplateElements();
+      if (els.btn) {
+        els.btn.classList.remove('visible');
+      }
+    }
+
+    // Open the Save Template modal
+    function showSaveTemplateModal() {
+      const els = getSaveTemplateElements();
+      if (!els.modal) return;
+
+      // Check if user can save templates
+      const canSave = canSaveTemplates();
+
+      // Show appropriate content
+      if (els.form) els.form.style.display = canSave ? 'flex' : 'none';
+      if (els.demoNotice) els.demoNotice.style.display = canSave ? 'none' : 'block';
+
+      // Reset form if can save
+      if (canSave && els.form) {
+        els.form.reset();
+        if (els.errorEl) {
+          els.errorEl.textContent = '';
+          els.errorEl.classList.remove('visible');
+        }
+      }
+
+      // Show modal
+      els.modal.classList.add('active');
+
+      // Focus name input if can save
+      if (canSave && els.nameInput) {
+        setTimeout(() => els.nameInput.focus(), 100);
+      }
+    }
+
+    // Close the Save Template modal
+    function closeSaveTemplateModal() {
+      const els = getSaveTemplateElements();
+      if (els.modal) {
+        els.modal.classList.remove('active');
+      }
+    }
+
+    // Show error in the Save Template modal
+    function showSaveTemplateError(message) {
+      const els = getSaveTemplateElements();
+      if (els.errorEl) {
+        els.errorEl.textContent = message;
+        els.errorEl.classList.add('visible');
+      }
+    }
+
+    // Hide error in the Save Template modal
+    function hideSaveTemplateError() {
+      const els = getSaveTemplateElements();
+      if (els.errorEl) {
+        els.errorEl.textContent = '';
+        els.errorEl.classList.remove('visible');
+      }
+    }
+
+    // Set loading state on save button
+    function setSaveTemplateLoading(isLoading) {
+      const els = getSaveTemplateElements();
+      if (!els.confirmBtn) return;
+
+      const btnText = els.confirmBtn.querySelector('.btn-text');
+      const btnSpinner = els.confirmBtn.querySelector('.btn-spinner');
+
+      els.confirmBtn.disabled = isLoading;
+      if (btnText) btnText.style.display = isLoading ? 'none' : 'inline';
+      if (btnSpinner) btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    // Handle Save Template form submission
+    async function handleSaveTemplateSubmit(event) {
+      event.preventDefault();
+
+      const els = getSaveTemplateElements();
+      if (!els.nameInput) return;
+
+      const name = els.nameInput.value.trim();
+      const type = els.typeSelect?.value || undefined;
+      const description = els.descriptionInput?.value.trim() || undefined;
+      const isDefault = els.defaultCheckbox?.checked || false;
+
+      // Validate name
+      if (!name) {
+        showSaveTemplateError('Please enter a template name.');
+        els.nameInput.focus();
+        return;
+      }
+
+      // Get current template HTML
+      if (!currentHtml) {
+        showSaveTemplateError('No template content to save. Apply some changes first.');
+        return;
+      }
+
+      // Get user API key
+      const apiKey = getUserApiKey();
+      if (apiKey === DEMO_API_KEY) {
+        showSaveTemplateError('You need an API key to save templates. Get one from the dashboard.');
+        return;
+      }
+
+      // Set loading state
+      setSaveTemplateLoading(true);
+      hideSaveTemplateError();
+
+      try {
+        const response = await fetch(`${API_URL}/v1/templates/saved`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            name: name,
+            type: type || undefined,
+            description: description || undefined,
+            html: currentHtml,
+            isDefault: isDefault
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || data.message || 'Failed to save template');
+        }
+
+        // Success!
+        closeSaveTemplateModal();
+        showToast(`Template saved! ID: ${data.template.id}`, 'success', 4000);
+
+        // Log for developer reference
+        console.log('[Glyph] Template saved:', {
+          id: data.template.id,
+          name: data.template.name,
+          type: data.template.type,
+          apiUsage: `Use with API: POST /v1/create with templateId: "${data.template.id}"`
+        });
+
+      } catch (error) {
+        console.error('[Glyph] Failed to save template:', error);
+        showSaveTemplateError(error.message || 'Failed to save template. Please try again.');
+      } finally {
+        setSaveTemplateLoading(false);
+      }
+    }
+
+    // Initialize Save Template event listeners
+    function initSaveTemplateFeature() {
+      const els = getSaveTemplateElements();
+
+      // Button click to open modal
+      if (els.btn) {
+        els.btn.addEventListener('click', showSaveTemplateModal);
+      }
+
+      // Cancel button
+      if (els.cancelBtn) {
+        els.cancelBtn.addEventListener('click', closeSaveTemplateModal);
+      }
+
+      // Form submission
+      if (els.form) {
+        els.form.addEventListener('submit', handleSaveTemplateSubmit);
+      }
+
+      // Click outside modal to close
+      if (els.modal) {
+        els.modal.addEventListener('click', (e) => {
+          if (e.target === els.modal) {
+            closeSaveTemplateModal();
+          }
+        });
+      }
+
+      // Escape key to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && els.modal?.classList.contains('active')) {
+          closeSaveTemplateModal();
+        }
+      });
+
+      console.log('[Glyph] Save Template feature initialized');
+    }
+
+    // Hook into modification success to show Save Template button
+    // We'll extend the existing addHistoryEntry function
+    const originalAddHistoryEntry = addHistoryEntry;
+    addHistoryEntry = function(prompt, html) {
+      originalAddHistoryEntry(prompt, html);
+      // Show Save Template button after first successful modification
+      if (historyEntries.length > 0) {
+        showSaveTemplateButton();
+      }
+    };
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSaveTemplateFeature);
+    } else {
+      initSaveTemplateFeature();
+    }
   </script>
 
   <!-- Mouse-Following Glow Effect -->
@@ -16963,6 +17545,75 @@
         <button class="delete-confirm-modal__btn delete-confirm-modal__btn--cancel" id="delete-cancel">Cancel</button>
         <button class="delete-confirm-modal__btn delete-confirm-modal__btn--delete" id="delete-confirm">Delete</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Save Template Modal (API-backed persistence) -->
+  <div class="save-template-modal-overlay" id="save-template-modal">
+    <div class="save-template-modal">
+      <div class="save-template-modal__header">
+        <div class="save-template-modal__icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+        </div>
+        <div class="save-template-modal__title">Save Template</div>
+      </div>
+      <p class="save-template-modal__description">Save your customized template to reuse it in API calls and share across projects.</p>
+
+      <!-- Demo user notice (shown when using demo key) -->
+      <div class="save-template-modal__demo-notice" id="save-template-demo-notice" style="display: none;">
+        <p>Sign in to save templates to your account and use them with the API.</p>
+        <a href="https://dashboard.glyph.you">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          Get Free API Key
+        </a>
+      </div>
+
+      <!-- Form (shown when user has API key) -->
+      <form class="save-template-modal__form" id="save-template-form">
+        <div class="save-template-modal__field">
+          <label class="save-template-modal__label save-template-modal__label--required" for="template-name-input">Template Name</label>
+          <input type="text" class="save-template-modal__input" id="template-name-input" placeholder="e.g., Invoice with Blue Header" maxlength="100" autocomplete="off" required>
+        </div>
+
+        <div class="save-template-modal__field">
+          <label class="save-template-modal__label" for="template-type-select">Template Type</label>
+          <select class="save-template-modal__select" id="template-type-select">
+            <option value="">Select a type (optional)</option>
+            <option value="invoice">Invoice</option>
+            <option value="quote">Quote</option>
+            <option value="report">Report</option>
+            <option value="certificate">Certificate</option>
+            <option value="letter">Letter</option>
+            <option value="receipt">Receipt</option>
+            <option value="contract">Contract</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="save-template-modal__field">
+          <label class="save-template-modal__label" for="template-description-input">Description</label>
+          <textarea class="save-template-modal__textarea" id="template-description-input" placeholder="Briefly describe this template's purpose or customizations..." maxlength="500"></textarea>
+        </div>
+
+        <div class="save-template-modal__checkbox-field">
+          <input type="checkbox" class="save-template-modal__checkbox" id="template-default-checkbox">
+          <label class="save-template-modal__checkbox-label" for="template-default-checkbox">Make this my default template for this type</label>
+        </div>
+
+        <div class="save-template-modal__error" id="save-template-error"></div>
+
+        <div class="save-template-modal__actions">
+          <button type="button" class="save-template-modal__btn save-template-modal__btn--cancel" id="save-template-cancel">Cancel</button>
+          <button type="submit" class="save-template-modal__btn save-template-modal__btn--save" id="save-template-confirm">
+            <span class="btn-text">Save Template</span>
+            <span class="btn-spinner" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

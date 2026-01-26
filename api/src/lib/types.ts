@@ -175,3 +175,89 @@ export interface WebhookResponse {
   emailSentTo?: string;
   emailMessageId?: string;
 }
+
+// =============================================================================
+// Saved Template Types
+// =============================================================================
+
+export interface SavedTemplate {
+  id: string;
+  apiKeyId: string;
+  name: string;
+  type: TemplateType | null;
+  description: string | null;
+  htmlTemplate: string;
+  schema: TemplateSchema | null;
+  style: TemplateStyle | null;
+  isDefault: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TemplateType =
+  | 'invoice'
+  | 'quote'
+  | 'report'
+  | 'certificate'
+  | 'letter'
+  | 'receipt'
+  | 'contract'
+  | 'custom';
+
+export type TemplateStyle =
+  | 'stripe-clean'
+  | 'professional'
+  | 'minimal'
+  | 'bold'
+  | 'classic'
+  | 'corporate'
+  | 'modern'
+  | 'vibrant';
+
+export interface TemplateSchema {
+  fields: TemplateField[];
+  sampleData?: Record<string, unknown>;
+}
+
+export interface TemplateField {
+  name: string;           // e.g., "customer.name", "items[].price"
+  type: 'string' | 'number' | 'currency' | 'date' | 'array' | 'object' | 'boolean';
+  required?: boolean;
+  description?: string;
+  format?: string;        // e.g., "YYYY-MM-DD" for dates
+}
+
+// API request/response types for saved templates
+export interface SaveTemplateRequest {
+  name: string;
+  type?: TemplateType;
+  description?: string;
+  html: string;
+  schema?: TemplateSchema;
+  style?: TemplateStyle;
+  isDefault?: boolean;
+}
+
+export interface UpdateTemplateRequest {
+  name?: string;
+  type?: TemplateType;
+  description?: string;
+  html?: string;
+  schema?: TemplateSchema;
+  style?: TemplateStyle;
+  isDefault?: boolean;
+}
+
+export interface ListTemplatesResponse {
+  success: true;
+  templates: Omit<SavedTemplate, 'htmlTemplate'>[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface GetTemplateResponse {
+  success: true;
+  template: SavedTemplate;
+}

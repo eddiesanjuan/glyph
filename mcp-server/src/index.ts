@@ -42,7 +42,7 @@ import { RESOURCE_TEMPLATES, handleResource, listResources } from "./resources.j
 // Server metadata
 const SERVER_INFO = {
   name: "glyph-mcp",
-  version: "0.1.0",
+  version: "0.2.0",
   description: "AI-native PDF generation with Glyph",
 };
 
@@ -144,6 +144,7 @@ async function main() {
   // Log to stderr (stdout is used for MCP communication)
   console.error(`Glyph MCP Server v${SERVER_INFO.version} started`);
   console.error("Tools: glyph_preview, glyph_modify, glyph_generate, glyph_schema, glyph_templates, glyph_suggest, glyph_create, glyph_analyze");
+  console.error("Saved Templates: glyph_templates_list, glyph_template_save, glyph_template_get, glyph_template_update, glyph_template_delete");
   console.error("Resources: glyph://templates, glyph://session/{id}/preview");
 }
 
