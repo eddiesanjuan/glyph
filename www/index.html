@@ -3162,6 +3162,18 @@
     }
 
     /* ============================================
+       Streaming Preview - "Watch It Build"
+       ============================================ */
+    .streaming-preview-frame {
+      animation: streamingPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes streamingPulse {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 0.95; }
+    }
+
+    /* ============================================
        Save Version Button
        ============================================ */
     .playground__save-btn {
@@ -13061,6 +13073,71 @@
       previewStatus.innerHTML = `<span class="status-dot"></span>${text}`;
     }
 
+    // ============================================
+    // Progressive Preview - "Watch It Build"
+    // Shows document building in real-time during AI streaming
+    // ============================================
+
+    // Progressive preview for streaming - shows document building in real-time
+    function updateProgressivePreview(partialHtml) {
+      if (!previewContainer) return;
+
+      let streamFrame = previewContainer.querySelector('.streaming-preview-frame');
+      const mainFrame = previewContainer.querySelector('#preview-frame');
+
+      // Create streaming frame if it doesn't exist
+      if (!streamFrame) {
+        streamFrame = document.createElement('iframe');
+        streamFrame.className = 'streaming-preview-frame';
+        streamFrame.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
+          opacity: 0.85;
+          pointer-events: none;
+          z-index: 10;
+        `;
+        previewContainer.style.position = 'relative';
+        previewContainer.appendChild(streamFrame);
+
+        // Fade out main frame slightly to show streaming is happening
+        if (mainFrame) mainFrame.style.opacity = '0.3';
+      }
+
+      // Update streaming frame content
+      try {
+        const doc = streamFrame.contentDocument || streamFrame.contentWindow.document;
+        doc.open();
+        doc.write(partialHtml);
+        doc.close();
+      } catch (e) {
+        console.warn('[Glyph] Progressive preview update failed:', e);
+      }
+    }
+
+    // Clean up streaming preview frame
+    function clearProgressivePreview() {
+      if (!previewContainer) return;
+
+      const streamFrame = previewContainer.querySelector('.streaming-preview-frame');
+      if (streamFrame) {
+        // Smooth fade out
+        streamFrame.style.transition = 'opacity 0.3s ease';
+        streamFrame.style.opacity = '0';
+        setTimeout(() => streamFrame.remove(), 300);
+      }
+
+      // Restore main frame opacity
+      const mainFrame = previewContainer.querySelector('#preview-frame');
+      if (mainFrame) {
+        mainFrame.style.transition = 'opacity 0.3s ease';
+        mainFrame.style.opacity = '1';
+      }
+    }
+
     // Show/hide loading with smooth progress bar animation and staged feedback
     let loadingProgressInterval = null;
     let loadingProgress = 0;
@@ -13631,6 +13708,12 @@
               // ACTIVITY TIMEOUT: Reset timeout on every chunk - AI is actively working
               resetActivityTimeout();
 
+              // PROGRESSIVE PREVIEW: Update preview every ~50 chunks for smooth visual
+              // This creates the "Watch It Build" experience where users see the document forming
+              if (deltaCount % 50 === 0) {
+                updateProgressivePreview(streamingHtml);
+              }
+
               // Progress through stages based on content received
               // Typical response is ~500-1000 chunks, so we pace the stages
               if (deltaCount === 20) {
@@ -13665,6 +13748,10 @@
             },
             onComplete: (event) => {
               console.log('[Glyph Stream] Complete:', event.fastPath ? 'fast path' : `${deltaCount} chunks`);
+
+              // Clean up progressive preview before final render
+              clearProgressivePreview();
+
               // Clear timer on complete (handles fast path which skips start event)
               if (elapsedTimerInterval) {
                 clearInterval(elapsedTimerInterval);
@@ -13679,6 +13766,8 @@
             },
             onError: (event) => {
               console.error('[Glyph Stream] Error:', event);
+              // Clean up progressive preview on error too
+              clearProgressivePreview();
             }
           });
 
@@ -13814,6 +13903,8 @@
       } catch (err) {
         // Clear timeout on error
         clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
+        // Clean up progressive preview on error
+        clearProgressivePreview();
         // CRITICAL FIX: Show user-visible error instead of silent simulation
         // Never pretend changes applied when API failed
         console.error('[Glyph] API modification failed:', err);
@@ -13851,6 +13942,8 @@
         // Always clear the timeouts to prevent memory leaks
         clearTimeout(absoluteTimeoutId); clearTimeout(activityTimeoutId);
         clearTimeout(warningTimeoutId);
+        // Ensure progressive preview is always cleaned up
+        clearProgressivePreview();
         currentAbortController = null;  // Clear abort controller
         isProcessingModification = false;
         showLoading(false);
