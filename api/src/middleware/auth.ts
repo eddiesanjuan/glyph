@@ -60,7 +60,7 @@ export async function authMiddleware(c: Context, next: Next) {
 
       const { data: keyRecord, error } = await getSupabase()
         .from("api_keys")
-        .select("id, tier, monthly_limit, is_active, expires_at")
+        .select("id, tier, monthly_limit, is_active")
         .eq("key_hash", keyHash)
         .single();
 
@@ -82,12 +82,13 @@ export async function authMiddleware(c: Context, next: Next) {
         });
       }
 
-      // Check if key has expired
-      if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
-        throw new HTTPException(403, {
-          message: "API key has expired. Please renew your subscription or generate a new key.",
-        });
-      }
+      // Note: expires_at column doesn't exist in database yet
+      // When it's added, uncomment this check:
+      // if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
+      //   throw new HTTPException(403, {
+      //     message: "API key has expired. Please renew your subscription or generate a new key.",
+      //   });
+      // }
 
       // Check monthly usage limits
       const monthStart = new Date();
