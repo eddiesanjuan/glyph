@@ -328,10 +328,17 @@ async function addQrCode(html: string, url?: string, label?: string): Promise<Fa
     `$1\n${qrCodeHtml}`
   );
 
-  const urlNote = url ? ` linking to ${url}` : '';
+  const changes: string[] = [];
+  if (url) {
+    changes.push(`Added QR code linking to ${url}`);
+  } else {
+    changes.push(`Added QR code (defaulted to ${DEFAULT_QR_URL})`);
+    changes.push(`Tip: Specify your URL with "Add QR code for https://your-link.com"`);
+  }
+
   return {
     html: modifiedHtml,
-    changes: [`Added QR code${urlNote} in top-right corner`, 'Added position:relative to body'],
+    changes,
     transformed: true,
   };
 }
