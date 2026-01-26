@@ -143,7 +143,7 @@ async function main() {
 
   // Log to stderr (stdout is used for MCP communication)
   console.error(`Glyph MCP Server v${SERVER_INFO.version} started`);
-  console.error("Tools: glyph_preview, glyph_modify, glyph_generate, glyph_schema, glyph_templates, glyph_suggest");
+  console.error("Tools: glyph_preview, glyph_modify, glyph_generate, glyph_schema, glyph_templates, glyph_suggest, glyph_create, glyph_analyze");
   console.error("Resources: glyph://templates, glyph://session/{id}/preview");
 }
 

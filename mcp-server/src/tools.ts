@@ -9,6 +9,8 @@ import {
   storeSession,
   getSession,
   updateSessionHtml,
+  type AnalyzeResult,
+  type CreateResult,
 } from "./api.js";
 
 // Template detection patterns for auto-template feature
@@ -259,6 +261,92 @@ Suggestions include:
         },
       },
       required: ["sessionId"],
+    },
+  },
+  {
+    name: "glyph_create",
+    description: `Generate a PDF from raw data with natural language styling. No template needed - just send your data and describe what you want.
+
+This is the fastest way to create professional PDFs:
+- Send any JSON data structure
+- Optionally describe how you want it styled
+- Receive a beautiful, print-ready PDF
+
+Examples:
+- Invoice: { customer: {...}, items: [...], total: 1000 } + "professional invoice"
+- Quote: { services: [...], total: 5000, validUntil: "..." } + "Stripe-styled proposal"
+- Report: { metrics: {...}, summary: "..." } + "executive summary report"
+
+The AI automatically:
+- Detects document type (invoice, quote, receipt, report, etc.)
+- Identifies field roles (header, line items, totals)
+- Chooses optimal layout
+- Applies professional styling`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          description: "Your data in any structure. Common patterns: customer/client, items/lineItems, totals, metadata.",
+          additionalProperties: true,
+        },
+        intent: {
+          type: "string",
+          description: "Natural language description of the document. Examples: 'professional invoice', 'modern quote with Stripe styling', 'simple receipt'",
+        },
+        style: {
+          type: "string",
+          enum: ["stripe-clean", "bold", "minimal", "corporate", "quote-modern"],
+          description: "Style preset. quote-modern (default) is clean and professional.",
+          default: "quote-modern",
+        },
+        format: {
+          type: "string",
+          enum: ["pdf", "png", "html"],
+          description: "Output format. Default is pdf.",
+          default: "pdf",
+        },
+        outputPath: {
+          type: "string",
+          description: "Optional file path to save the output. If not provided, returns base64 data URL.",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["data"],
+    },
+  },
+  {
+    name: "glyph_analyze",
+    description: `Analyze a data structure to see how Glyph would interpret it for PDF generation.
+
+Use this to:
+- Understand what document type Glyph detects
+- See which fields are identified and their roles
+- Preview layout decisions before generating
+- Debug why a PDF might not look as expected
+
+This does NOT generate a PDF - just returns the analysis.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          description: "Your data to analyze",
+          additionalProperties: true,
+        },
+        intent: {
+          type: "string",
+          description: "Optional intent to influence analysis",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["data"],
     },
   },
 ];
@@ -679,6 +767,193 @@ export async function handleGlyphSuggest(args: {
   };
 }
 
+export async function handleGlyphCreate(args: {
+  data: Record<string, unknown>;
+  intent?: string;
+  style?: string;
+  format?: "pdf" | "png" | "html";
+  outputPath?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+
+    const result = await client.create({
+      data: args.data,
+      intent: args.intent,
+      style: args.style || "quote-modern",
+      format: args.format || "pdf",
+    });
+
+    // Store session locally for potential follow-up modifications
+    if (result.sessionId) {
+      // Extract HTML from base64 if html format, otherwise store placeholder
+      let html = "";
+      if (result.format === "html" && result.url.startsWith("data:text/html;base64,")) {
+        html = Buffer.from(result.url.split(",")[1], "base64").toString("utf-8");
+      }
+      storeSession(
+        result.sessionId,
+        html,
+        result.analysis.template,
+        args.data
+      );
+    }
+
+    // If outputPath is provided, save the file
+    if (args.outputPath && result.url) {
+      const { writeFile } = await import("fs/promises");
+      const base64Data = result.url.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+      await writeFile(args.outputPath, buffer);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                success: true,
+                savedTo: args.outputPath,
+                format: result.format,
+                size: result.size,
+                analysis: {
+                  documentType: result.analysis.documentType,
+                  confidence: `${Math.round(result.analysis.confidence * 100)}%`,
+                  template: result.analysis.template,
+                  fieldsMapped: result.analysis.fieldMappings.length,
+                  warnings: result.analysis.warnings,
+                },
+                sessionId: result.sessionId,
+                message: `${result.format.toUpperCase()} created and saved to ${args.outputPath} (${formatBytes(result.size)})`,
+                nextSteps: [
+                  `Use glyph_modify with sessionId "${result.sessionId}" to make changes`,
+                  "Use glyph_generate to regenerate after modifications",
+                ],
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              format: result.format,
+              size: result.size,
+              analysis: {
+                documentType: result.analysis.documentType,
+                confidence: `${Math.round(result.analysis.confidence * 100)}%`,
+                template: result.analysis.template,
+                fieldsMapped: result.analysis.fieldMappings.length,
+                missingFields: result.analysis.missingFields,
+                warnings: result.analysis.warnings,
+              },
+              sessionId: result.sessionId,
+              url: result.url.substring(0, 100) + "...[base64 data]",
+              message: `Generated ${result.format.toUpperCase()} (${formatBytes(result.size)})`,
+              nextSteps: [
+                `Use glyph_modify with sessionId "${result.sessionId}" to make changes`,
+                "Use outputPath parameter to save to file",
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphAnalyze(args: {
+  data: Record<string, unknown>;
+  intent?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const analysis = await client.analyze(args.data, args.intent);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              analysis: {
+                documentType: analysis.documentType,
+                confidence: `${Math.round(analysis.confidence * 100)}%`,
+                suggestedTemplate: analysis.suggestedTemplate,
+                fieldMappings: analysis.fieldMappings.map((f) => ({
+                  detected: f.source,
+                  mapsTo: f.target,
+                  confidence: `${Math.round(f.confidence * 100)}%`,
+                  required: f.required || false,
+                })),
+                missingFields: analysis.missingFields,
+                warnings: analysis.warnings,
+              },
+              interpretation: formatAnalysisForHumans(analysis),
+              nextSteps: [
+                "Use glyph_create to generate a PDF with this data",
+                "Adjust your data structure if the analysis doesn't match your intent",
+                `Preview URL: ${analysis.previewUrl}`,
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+function formatAnalysisForHumans(analysis: AnalyzeResult): string {
+  const lines = [
+    `Document Type: ${analysis.documentType} (${Math.round(analysis.confidence * 100)}% confidence)`,
+    `Suggested Template: ${analysis.suggestedTemplate}`,
+    "",
+    "Field Mappings:",
+  ];
+
+  for (const field of analysis.fieldMappings) {
+    const requiredTag = field.required ? " [required]" : "";
+    lines.push(`  - ${field.source} -> ${field.target}${requiredTag}`);
+  }
+
+  if (analysis.missingFields.length > 0) {
+    lines.push("");
+    lines.push("Missing Fields:");
+    for (const missing of analysis.missingFields) {
+      lines.push(`  - ${missing.field}: ${missing.reason}`);
+    }
+  }
+
+  if (analysis.warnings.length > 0) {
+    lines.push("");
+    lines.push("Warnings:");
+    for (const warning of analysis.warnings) {
+      lines.push(`  - ${warning}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -846,6 +1121,14 @@ export async function handleTool(
     case "glyph_suggest":
       return handleGlyphSuggest(
         args as Parameters<typeof handleGlyphSuggest>[0]
+      );
+    case "glyph_create":
+      return handleGlyphCreate(
+        args as Parameters<typeof handleGlyphCreate>[0]
+      );
+    case "glyph_analyze":
+      return handleGlyphAnalyze(
+        args as Parameters<typeof handleGlyphAnalyze>[0]
       );
     default:
       return {

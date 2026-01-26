@@ -10,7 +10,49 @@ This guide will walk you through creating your first AI-powered, customizable PD
 - A Glyph API key ([get one free](https://glyph.you/dashboard))
 - A web page where you want to embed the editor
 
-## Step 1: Add the Script
+## Option 1: Data-First API (Recommended)
+
+The fastest way to generate PDFs - just send your data:
+
+```bash
+curl -X POST https://api.glyph.you/v1/analyze/preview/auto \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "data": {
+      "customer": { "name": "John Doe" },
+      "items": [{ "description": "Widget", "quantity": 1, "price": 99, "total": 99 }],
+      "subtotal": 99,
+      "tax": 7.92,
+      "total": 106.92
+    }
+  }'
+```
+
+Glyph automatically:
+- Detects this is an invoice (from `items`, `total`, `tax` fields)
+- Maps your fields to the template schema
+- Generates a professional layout
+- Returns a session ID for modifications
+
+**No template selection. No field mapping. Just data in, PDF out.**
+
+Then generate the final PDF:
+
+```bash
+curl -X POST https://api.glyph.you/v1/generate \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"sessionId": "YOUR_SESSION_ID", "format": "pdf"}'
+```
+
+Learn more: [Data-First API Reference](/api/create/)
+
+---
+
+## Option 2: Web Component (Interactive Editor)
+
+### Step 1: Add the Script
 
 Add the Glyph SDK to your HTML page:
 
@@ -20,7 +62,7 @@ Add the Glyph SDK to your HTML page:
 
 This loads the `<glyph-editor>` web component and makes it available for use.
 
-## Step 2: Add the Editor Component
+### Step 2: Add the Editor Component
 
 Place the `<glyph-editor>` component where you want the document editor to appear:
 
@@ -32,7 +74,7 @@ Place the `<glyph-editor>` component where you want the document editor to appea
 ></glyph-editor>
 ```
 
-## Step 3: See It in Action
+### Step 3: See It in Action
 
 That's it! Your users can now:
 
@@ -41,7 +83,7 @@ That's it! Your users can now:
 3. **Edit with AI** - Type commands like "Make the header navy blue" or "Add a discount row"
 4. **Download PDF** - Click the Download button to get a print-ready PDF
 
-## Complete Example
+### Complete Example
 
 Here's a complete HTML page you can copy and use:
 
@@ -128,7 +170,9 @@ Here's a complete HTML page you can copy and use:
 
 ## What's Next?
 
-- Learn about [Installation Options](/getting-started/installation/) for npm, CDN, and direct integration
-- Explore the [API Reference](/api/overview/) for building custom integrations
-- Check out available [Templates](/templates/overview/) and their customization options
-- See [Examples](/examples/quoted/) for real-world integration patterns
+- [Data-First API](/api/create/) - Generate PDFs from any data structure
+- [Installation Options](/getting-started/installation/) - npm, CDN, and direct integration
+- [API Reference](/api/overview/) - Building custom integrations
+- [MCP Server](/integrations/mcp-server/) - Use with AI coding assistants
+- [Templates](/templates/overview/) - Available document templates
+- [Examples](/examples/quoted/) - Real-world integration patterns

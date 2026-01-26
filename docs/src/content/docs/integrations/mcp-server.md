@@ -85,13 +85,50 @@ Add to your MCP configuration:
 3. Navigate to the Dashboard
 4. Create a new API key
 
+## Data-First Generation (Recommended)
+
+The fastest way to generate PDFs - just send your data and let Glyph figure out the rest:
+
+```typescript
+glyph_preview({
+  template: "auto",  // Auto-detect document type
+  data: {
+    customer: { name: "John Doe", email: "john@example.com" },
+    items: [
+      { description: "Widget", quantity: 2, price: 99, total: 198 }
+    ],
+    subtotal: 198,
+    tax: 15.84,
+    total: 213.84
+  }
+})
+```
+
+Glyph automatically:
+- **Detects this is an invoice** (from `items`, `total`, `tax` fields)
+- **Maps your fields** (`customer` to `client`, `items` to `lineItems`)
+- **Selects the best template** for the document type
+- **Generates a professional layout** with proper formatting
+
+No template selection. No field mapping. Just data + intent = PDF.
+
+### Supported Document Types
+
+| Type | Detection Signals |
+|------|-------------------|
+| Invoice | `items`, `total`, `tax`, `dueDate`, `invoiceNumber` |
+| Quote | `items`, `total`, `validUntil`, `quoteNumber` |
+| Receipt | `items`, `paid`, `transactionId`, `paymentMethod` |
+| Report | `summary`, `metrics`, `analysis`, `findings` |
+| Certificate | `awarded`, `completion`, `certifiedTo` |
+
 ## Available Tools
 
 The MCP server exposes six tools that your AI assistant can use:
 
 ### glyph_preview
 
-Create a PDF preview session with your data.
+Create a PDF preview session with your data. Use `template: "auto"` for automatic detection.
 
 ```typescript
 glyph_preview({

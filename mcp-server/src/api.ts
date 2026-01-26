@@ -54,6 +54,38 @@ export interface StylePreset {
   description: string;
 }
 
+export interface AnalyzeResult {
+  documentType: string;
+  confidence: number;
+  suggestedTemplate: string;
+  fieldMappings: Array<{
+    source: string;
+    target: string;
+    example?: unknown;
+    confidence: number;
+    required?: boolean;
+  }>;
+  missingFields: Array<{ field: string; reason: string }>;
+  warnings: string[];
+  previewUrl: string;
+}
+
+export interface CreateResult {
+  success: boolean;
+  format: "pdf" | "png" | "html";
+  url: string;
+  size: number;
+  analysis: {
+    documentType: string;
+    confidence: number;
+    template: string;
+    fieldMappings: Array<{ source: string; target: string; mapped: boolean }>;
+    missingFields: Array<{ field: string; reason: string }>;
+    warnings: string[];
+  };
+  sessionId: string;
+}
+
 export class GlyphApiError extends Error {
   code: string;
   details?: unknown;
@@ -207,6 +239,85 @@ export class GlyphApiClient {
     );
 
     return result;
+  }
+
+  /**
+   * Analyze data structure to detect document type and field mappings
+   */
+  async analyze(
+    data: Record<string, unknown>,
+    intent?: string
+  ): Promise<AnalyzeResult> {
+    const result = await this.request<AnalyzeResult>("/v1/analyze", {
+      method: "POST",
+      body: JSON.stringify({ data, intent }),
+    });
+
+    return result;
+  }
+
+  /**
+   * Create a PDF from raw data in one shot (analyze + preview + generate)
+   * Uses auto-detection to determine document type and layout
+   */
+  async create(params: {
+    data: Record<string, unknown>;
+    intent?: string;
+    style?: string;
+    format?: "pdf" | "png" | "html";
+  }): Promise<CreateResult> {
+    // Step 1: Create preview with auto-detection
+    const previewResult = await this.request<{
+      sessionId: string;
+      html: string;
+      analysis: {
+        documentType: string;
+        confidence: number;
+        template: string;
+        fieldMappings: Array<{ source: string; target: string; mapped: boolean }>;
+        missingFields: Array<{ field: string; reason: string }>;
+        warnings: string[];
+      };
+    }>("/v1/preview/auto", {
+      method: "POST",
+      body: JSON.stringify({
+        data: params.data,
+        template: params.style, // Use style as template hint
+      }),
+    });
+
+    // If only HTML is requested, return early
+    if (params.format === "html") {
+      return {
+        success: true,
+        format: "html",
+        url: `data:text/html;base64,${Buffer.from(previewResult.html).toString("base64")}`,
+        size: previewResult.html.length,
+        analysis: previewResult.analysis,
+        sessionId: previewResult.sessionId,
+      };
+    }
+
+    // Step 2: Generate final document (PDF or PNG)
+    const generateResult = await this.request<GenerateResult>("/v1/generate", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        html: previewResult.html,
+        format: params.format || "pdf",
+      }),
+    });
+
+    return {
+      success: true,
+      format: generateResult.format,
+      url: generateResult.url,
+      size: generateResult.size,
+      analysis: previewResult.analysis,
+      sessionId: previewResult.sessionId,
+    };
   }
 }
 

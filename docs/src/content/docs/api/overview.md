@@ -34,9 +34,11 @@ See [Authentication](/api/authentication/) for details.
 
 | Endpoint | Description |
 |----------|-------------|
+| `POST /v1/analyze/preview/auto` | **Data-first**: Auto-detect document type and generate preview |
 | `POST /v1/preview` | Render template with data, get HTML and session ID |
 | `POST /v1/modify` | Apply AI modifications to a session |
 | `POST /v1/generate` | Generate PDF or PNG from session |
+| `POST /v1/analyze` | Analyze data structure without generating preview |
 
 ## Typical Workflow
 
@@ -135,6 +137,7 @@ While you can use the API directly, we provide SDKs for easier integration:
 
 ## Next Steps
 
+- [Data-First API](/api/create/) - Generate PDFs from any data structure (recommended)
 - [Authentication](/api/authentication/) - API key setup and usage
 - [POST /v1/preview](/api/preview/) - Generate document previews
 - [POST /v1/modify](/api/modify/) - AI-powered modifications
