@@ -6,6 +6,8 @@
  * like adding QR codes, watermarks, and color changes.
  */
 
+import QRCode from 'qrcode';
+
 export interface FastTransformResult {
   html: string;
   changes: string[];
@@ -13,32 +15,61 @@ export interface FastTransformResult {
 }
 
 /**
- * Pre-defined SVG QR code (decorative placeholder)
- * In production, this could be replaced with actual QR generation
+ * Default URL for demo QR codes when no URL is specified
  */
-const QR_CODE_SVG = `<div class="glyph-qr-code" style="position:absolute;top:20px;right:20px;width:80px;height:80px;background:white;border:1px solid #e5e5e5;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-  <svg viewBox="0 0 100 100" width="50" height="50">
-    <rect x="10" y="10" width="25" height="25" fill="#1a1a1a"/>
-    <rect x="15" y="15" width="15" height="15" fill="white"/>
-    <rect x="18" y="18" width="9" height="9" fill="#1a1a1a"/>
-    <rect x="65" y="10" width="25" height="25" fill="#1a1a1a"/>
-    <rect x="70" y="15" width="15" height="15" fill="white"/>
-    <rect x="73" y="18" width="9" height="9" fill="#1a1a1a"/>
-    <rect x="10" y="65" width="25" height="25" fill="#1a1a1a"/>
-    <rect x="15" y="70" width="15" height="15" fill="white"/>
-    <rect x="18" y="73" width="9" height="9" fill="#1a1a1a"/>
-    <rect x="40" y="40" width="20" height="20" fill="#1a1a1a"/>
-    <rect x="65" y="65" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="77" y="65" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="65" y="77" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="77" y="77" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="40" y="10" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="10" y="40" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="52" y="40" width="8" height="8" fill="#1a1a1a"/>
-    <rect x="40" y="52" width="8" height="8" fill="#1a1a1a"/>
-  </svg>
-  <span style="font-size:7px;color:#666;margin-top:4px;">Scan to pay</span>
+const DEFAULT_QR_URL = 'https://glyph.you';
+
+/**
+ * Generate QR code SVG for a given URL
+ */
+async function generateQrCodeSvg(url: string): Promise<string> {
+  try {
+    const svg = await QRCode.toString(url, {
+      type: 'svg',
+      width: 50,
+      margin: 0,
+      color: {
+        dark: '#1a1a1a',
+        light: '#ffffff',
+      },
+    });
+    return svg;
+  } catch (error) {
+    console.error('QR code generation failed:', error);
+    // Return a simple placeholder on error
+    return '<svg viewBox="0 0 50 50" width="50" height="50"><rect width="50" height="50" fill="#f0f0f0"/><text x="25" y="25" text-anchor="middle" font-size="6" fill="#999">QR</text></svg>';
+  }
+}
+
+/**
+ * Create QR code HTML wrapper with label
+ */
+function createQrCodeHtml(qrSvg: string, label: string = 'Scan to pay'): string {
+  return `<div class="glyph-qr-code" style="position:absolute;top:20px;right:20px;width:80px;background:white;border:1px solid #e5e5e5;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+  ${qrSvg}
+  <span style="font-size:7px;color:#666;margin-top:4px;">${label}</span>
 </div>`;
+}
+
+/**
+ * Extract URL from prompt for QR code generation
+ * Supports: "Add QR code for https://..." or "Add QR code linking to https://..."
+ */
+function extractQrUrl(prompt: string): string | null {
+  // Match URLs in the prompt
+  const urlMatch = prompt.match(/(?:for|to|linking\s+to|with\s+url|url[:\s]+)\s*(https?:\/\/[^\s"'<>]+)/i);
+  if (urlMatch) {
+    return urlMatch[1];
+  }
+
+  // Also try to find any URL in the prompt
+  const anyUrlMatch = prompt.match(/(https?:\/\/[^\s"'<>]+)/i);
+  if (anyUrlMatch) {
+    return anyUrlMatch[1];
+  }
+
+  return null;
+}
 
 /**
  * Color name to hex mapping
@@ -160,7 +191,7 @@ export function canFastTransform(prompt: string): boolean {
 /**
  * Perform fast transformation without AI
  */
-export function fastTransform(html: string, prompt: string): FastTransformResult {
+export async function fastTransform(html: string, prompt: string): Promise<FastTransformResult> {
   const lower = prompt.toLowerCase();
 
   // CRITICAL: Compound requests should not be fast-transformed
@@ -171,7 +202,9 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
 
   // === QR CODE ===
   if (/add\s*(a\s+)?qr\s*code/i.test(lower)) {
-    return addQrCode(html);
+    // Extract URL from prompt if provided (e.g., "Add QR code for https://example.com")
+    const qrUrl = extractQrUrl(prompt);
+    return addQrCode(html, qrUrl || undefined);
   }
 
   // === WATERMARK ===
@@ -249,9 +282,9 @@ export function fastTransform(html: string, prompt: string): FastTransformResult
 }
 
 /**
- * Add QR code to document
+ * Add QR code to document with optional custom URL
  */
-function addQrCode(html: string): FastTransformResult {
+async function addQrCode(html: string, url?: string, label?: string): Promise<FastTransformResult> {
   // Check if QR code already exists
   if (html.includes('glyph-qr-code')) {
     return {
@@ -260,6 +293,14 @@ function addQrCode(html: string): FastTransformResult {
       transformed: true,
     };
   }
+
+  // Use provided URL or default
+  const qrUrl = url || DEFAULT_QR_URL;
+  const qrLabel = label || 'Scan to pay';
+
+  // Generate real QR code SVG
+  const qrSvg = await generateQrCodeSvg(qrUrl);
+  const qrCodeHtml = createQrCodeHtml(qrSvg, qrLabel);
 
   // Ensure body has position: relative
   let modifiedHtml = html;
@@ -284,12 +325,13 @@ function addQrCode(html: string): FastTransformResult {
   // Insert QR code right after <body...>
   modifiedHtml = modifiedHtml.replace(
     /(<body[^>]*>)/i,
-    `$1\n${QR_CODE_SVG}`
+    `$1\n${qrCodeHtml}`
   );
 
+  const urlNote = url ? ` linking to ${url}` : '';
   return {
     html: modifiedHtml,
-    changes: ['Added QR code in top-right corner', 'Added position:relative to body'],
+    changes: [`Added QR code${urlNote} in top-right corner`, 'Added position:relative to body'],
     transformed: true,
   };
 }

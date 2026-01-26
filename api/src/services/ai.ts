@@ -1349,7 +1349,7 @@ export async function modifyTemplate(
   // Note: Fast transforms work regardless of region selection since they don't depend on region context
   if (canFastTransform(userPrompt)) {
     const startTime = Date.now();
-    const fastResult = fastTransform(currentHtml, userPrompt);
+    const fastResult = await fastTransform(currentHtml, userPrompt);
 
     if (fastResult.transformed) {
       console.log(`[FAST] Transformed in ${Date.now() - startTime}ms: "${userPrompt.substring(0, 50)}..."`);

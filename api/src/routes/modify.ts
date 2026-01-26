@@ -913,7 +913,7 @@ async function handleStreamingModify(c: Context) {
 
       // FAST PATH CHECK: Handle instantly without streaming
       if (canFastTransform(prompt)) {
-        const fastResult = fastTransform(templateToModify, prompt);
+        const fastResult = await fastTransform(templateToModify, prompt);
         if (fastResult.transformed) {
           console.log(`[Streaming FAST] Transformed: "${prompt.substring(0, 50)}..."`);
 
