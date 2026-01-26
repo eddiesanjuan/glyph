@@ -378,13 +378,16 @@ beta.post("/activate", async (c) => {
     const { key, hash, prefix } = generateApiKey();
 
     // Create API key in database
+    // Note: tier must be one of: 'free', 'pro', 'scale', 'enterprise'
+    // Beta users get 'pro' tier with 500/month limit
     const { data: apiKeyRecord, error: keyError } = await getSupabase()
       .from("api_keys")
       .insert({
         key_hash: hash,
         key_prefix: prefix,
         name: `Beta Access - ${invite.email}`,
-        tier: "beta",
+        owner_email: invite.email,
+        tier: "pro", // Beta users get pro tier
         monthly_limit: 500, // Beta tier limit
         is_active: true,
       })
