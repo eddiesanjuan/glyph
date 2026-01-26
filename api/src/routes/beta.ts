@@ -494,7 +494,6 @@ beta.post("/reissue", async (c) => {
     const { key, hash, prefix } = generateApiKey();
 
     // Create new API key in database
-    console.log("Creating API key with hash:", hash, "prefix:", prefix);
     const { data: apiKeyRecord, error: keyError } = await getSupabase()
       .from("api_keys")
       .insert({
@@ -511,22 +510,12 @@ beta.post("/reissue", async (c) => {
 
     if (keyError) {
       console.error("API key creation error:", keyError);
-      throw new HTTPException(500, { message: "Failed to create API key: " + keyError.message });
+      throw new HTTPException(500, { message: "Failed to create API key" });
     }
 
     if (!apiKeyRecord) {
-      console.error("API key creation returned no record");
-      throw new HTTPException(500, { message: "Failed to create API key: no record returned" });
+      throw new HTTPException(500, { message: "Failed to create API key" });
     }
-
-    // Verify the key was stored correctly
-    const { data: verifyKey, error: verifyError } = await getSupabase()
-      .from("api_keys")
-      .select("id, key_hash, is_active")
-      .eq("id", apiKeyRecord.id)
-      .single();
-
-    console.log("Verification:", verifyKey ? `Found key ${verifyKey.id} with hash ${verifyKey.key_hash?.slice(0, 16)}...` : "NOT FOUND", verifyError?.message || "");
 
     // Update invite with new API key ID
     await getSupabase()
@@ -543,12 +532,6 @@ beta.post("/reissue", async (c) => {
       tier: "beta",
       monthlyLimit: 500,
       message: "New API key issued. Your previous key has been deactivated.",
-      // Debug info (remove after fixing)
-      _debug: {
-        storedHash: hash.slice(0, 16) + "...",
-        keyId: apiKeyRecord.id,
-        verifySuccess: !!verifyKey,
-      },
     });
   } catch (err) {
     if (err instanceof HTTPException) throw err;
@@ -668,114 +651,6 @@ beta.post("/revoke/:inviteId", async (c) => {
     console.error("Revoke invite error:", err);
     throw new HTTPException(500, { message: "Failed to revoke invite" });
   }
-});
-
-/**
- * POST /v1/beta/debug-key
- * Debug endpoint - Test key lookup directly (TEMPORARY)
- */
-beta.post("/debug-key", async (c) => {
-  const body = await c.req.json();
-  const { apiKey } = body;
-
-  if (!apiKey) {
-    return c.json({ error: "apiKey is required" });
-  }
-
-  if (!supabase) {
-    return c.json({ error: "Supabase not configured" });
-  }
-
-  const { createHash } = await import("crypto");
-  const keyHash = createHash("sha256").update(apiKey).digest("hex");
-
-  console.log(`[Debug] Testing key lookup for hash: ${keyHash}`);
-
-  // Try to find by hash - EXACT SAME QUERY AS AUTH MIDDLEWARE
-  const { data: authStyleLookup, error: authStyleError } = await getSupabase()
-    .from("api_keys")
-    .select("id, tier, monthly_limit, is_active, expires_at")
-    .eq("key_hash", keyHash)
-    .single();
-
-  // Try to find by hash - FULL FIELDS
-  const { data: byHash, error: hashError } = await getSupabase()
-    .from("api_keys")
-    .select("id, key_hash, key_prefix, tier, is_active, owner_email, name, created_at")
-    .eq("key_hash", keyHash)
-    .single();
-
-  // Also try to find by prefix
-  const prefix = apiKey.slice(0, 11);
-  const { data: byPrefix, error: prefixError } = await getSupabase()
-    .from("api_keys")
-    .select("id, key_hash, key_prefix, tier, is_active, owner_email, name, created_at")
-    .eq("key_prefix", prefix)
-    .single();
-
-  // List all keys for debugging
-  const { data: allKeys, error: listError } = await getSupabase()
-    .from("api_keys")
-    .select("id, key_hash, key_prefix, is_active, owner_email")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  // Test if we can use the same supabase instance that auth uses
-  const supabaseInstance = getSupabase();
-  const supabaseInfo = {
-    instanceExists: !!supabaseInstance,
-    // @ts-ignore - accessing internal for debug
-    url: supabaseInstance?.supabaseUrl || "unknown",
-  };
-
-  return c.json({
-    supabaseInfo,
-    input: {
-      apiKey: apiKey.slice(0, 8) + "...",
-      computedHash: keyHash,
-      prefix: prefix,
-    },
-    // This mimics exactly what auth middleware does
-    authStyleLookup: {
-      found: !!authStyleLookup,
-      data: authStyleLookup,
-      error: authStyleError?.message,
-      errorDetails: authStyleError ? JSON.stringify(authStyleError) : null,
-    },
-    lookupByHash: {
-      found: !!byHash,
-      data: byHash ? {
-        id: byHash.id,
-        hashMatch: byHash.key_hash === keyHash,
-        storedHash: byHash.key_hash?.slice(0, 16) + "...",
-        prefix: byHash.key_prefix,
-        tier: byHash.tier,
-        isActive: byHash.is_active,
-        email: byHash.owner_email,
-      } : null,
-      error: hashError?.message,
-    },
-    lookupByPrefix: {
-      found: !!byPrefix,
-      data: byPrefix ? {
-        id: byPrefix.id,
-        hashMatch: byPrefix.key_hash === keyHash,
-        storedHash: byPrefix.key_hash?.slice(0, 16) + "...",
-        prefix: byPrefix.key_prefix,
-        tier: byPrefix.tier,
-        isActive: byPrefix.is_active,
-      } : null,
-      error: prefixError?.message,
-    },
-    recentKeys: allKeys?.map(k => ({
-      id: k.id,
-      prefix: k.key_prefix,
-      hashStart: k.key_hash?.slice(0, 12) + "...",
-      isActive: k.is_active,
-      email: k.owner_email,
-    })),
-    listError: listError?.message,
-  });
 });
 
 /**
