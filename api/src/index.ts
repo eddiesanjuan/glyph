@@ -19,6 +19,7 @@ import {
 import preview from "./routes/preview.js";
 import modify from "./routes/modify.js";
 import generate from "./routes/generate.js";
+import create from "./routes/create.js";
 import dashboard from "./routes/dashboard.js";
 import keys from "./routes/keys.js";
 import airtable from "./routes/airtable.js";
@@ -80,7 +81,7 @@ app.use("/v1/*", rateLimitMiddleware);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
-    version: "0.13.0",
+    version: "0.13.1",
     timestamp: new Date().toISOString(),
   });
 });
@@ -96,6 +97,9 @@ app.get("/", (c) => {
       preview: "POST /v1/preview",
       modify: "POST /v1/modify",
       generate: "POST /v1/generate",
+      // One-shot PDF creation (the star!)
+      create: "POST /v1/create",
+      createAnalyze: "POST /v1/create/analyze",
       dashboard: "GET /v1/dashboard",
       regenerateKey: "POST /v1/keys/regenerate",
       // Schema detection (new!)
@@ -144,6 +148,9 @@ app.route("/v1/modify", modify);
 // Apply monthly limit check before generate (actual PDF creation)
 app.use("/v1/generate", monthlyLimitMiddleware);
 app.route("/v1/generate", generate);
+// One-shot PDF creation (includes PDF generation, so apply monthly limit)
+app.use("/v1/create", monthlyLimitMiddleware);
+app.route("/v1/create", create);
 // Dashboard and key management
 app.route("/v1/dashboard", dashboard);
 app.route("/v1/keys", keys);
@@ -202,7 +209,7 @@ serve({
 
 console.log(`
   ╔═══════════════════════════════════════╗
-  ║         Glyph API v0.9.0              ║
+  ║         Glyph API v0.13.0             ║
   ║   Document Generation & AI Editing    ║
   ║      + Self-Checking Validator        ║
   ╚═══════════════════════════════════════╝
@@ -217,7 +224,11 @@ console.log(`
     GET  /v1/dashboard        - API key usage metrics
     POST /v1/keys/regenerate  - Regenerate API key
 
-  Schema Detection (NEW!):
+  One-Shot PDF Creation (THE STAR!):
+    POST /v1/create           - Data in, beautiful PDF out
+    POST /v1/create/analyze   - Analysis-only (no PDF generation)
+
+  Schema Detection:
     POST /v1/analyze              - Analyze data structure and detect document type
     POST /v1/analyze/preview/auto - Auto-detect schema and create preview
     GET  /v1/analyze/mappings     - Get field mapping reference
