@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/contract-simple.json",
+  "title": "ContractData",
+  "description": "Data schema for the contract-simple template",
+  "type": "object",
+  "required": ["contract", "parties", "sections", "signatures"],
+  "properties": {
+    "contract": {
+      "type": "object",
+      "description": "Contract metadata",
+      "required": ["title", "number", "effectiveDate", "term", "jurisdiction"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Contract title",
+          "examples": ["Service Agreement", "Consulting Contract"]
+        },
+        "number": {
+          "type": "string",
+          "description": "Unique contract identifier",
+          "examples": ["CTR-2024-001"]
+        },
+        "effectiveDate": {
+          "type": "string",
+          "description": "Date the contract takes effect",
+          "examples": ["January 1, 2024"]
+        },
+        "term": {
+          "type": "string",
+          "description": "Duration of the contract",
+          "examples": ["12 months", "January 1 - December 31, 2024"]
+        },
+        "jurisdiction": {
+          "type": "string",
+          "description": "Governing law jurisdiction",
+          "examples": ["State of California", "State of New York"]
+        }
+      }
+    },
+    "parties": {
+      "type": "object",
+      "description": "Contracting parties",
+      "required": ["party1", "party2"],
+      "properties": {
+        "party1": {
+          "type": "object",
+          "required": ["name", "address"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Party A name"
+            },
+            "address": {
+              "type": "string",
+              "description": "Party A address (supports multi-line with \\n)"
+            }
+          }
+        },
+        "party2": {
+          "type": "object",
+          "required": ["name", "address"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Party B name"
+            },
+            "address": {
+              "type": "string",
+              "description": "Party B address (supports multi-line with \\n)"
+            }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "description": "Contract sections/clauses",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["number", "title", "content"],
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "Section number"
+          },
+          "title": {
+            "type": "string",
+            "description": "Section heading"
+          },
+          "content": {
+            "type": "string",
+            "description": "Section body text"
+          }
+        }
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "properties": {
+        "showLines": {
+          "type": "boolean",
+          "description": "Whether to display signature lines",
+          "default": true
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "contract": {
+        "title": "Service Agreement",
+        "number": "CTR-2024-0042",
+        "effectiveDate": "March 1, 2024",
+        "term": "12 months",
+        "jurisdiction": "State of California"
+      },
+      "parties": {
+        "party1": {
+          "name": "Acme Solutions Inc.",
+          "address": "100 Innovation Drive\nSan Francisco, CA 94105"
+        },
+        "party2": {
+          "name": "Northwind Traders LLC",
+          "address": "250 Commerce Street\nPortland, OR 97201"
+        }
+      },
+      "sections": [
+        {
+          "number": "1",
+          "title": "Scope of Services",
+          "content": "The Service Provider agrees to deliver software development consulting services as outlined in Exhibit A, including system architecture review, code audit, and implementation guidance for the Client's e-commerce platform."
+        },
+        {
+          "number": "2",
+          "title": "Compensation",
+          "content": "The Client agrees to pay the Service Provider a monthly retainer of $15,000 USD, due on the first business day of each month. Additional work beyond the scope defined in Exhibit A will be billed at $200 per hour."
+        },
+        {
+          "number": "3",
+          "title": "Confidentiality",
+          "content": "Both parties agree to maintain the confidentiality of all proprietary information shared during the term of this agreement. This obligation shall survive termination of the contract for a period of two (2) years."
+        },
+        {
+          "number": "4",
+          "title": "Termination",
+          "content": "Either party may terminate this agreement with thirty (30) days written notice. In the event of termination, the Client shall pay for all services rendered through the termination date."
+        }
+      ],
+      "signatures": {
+        "showLines": true
+      }
+    }
+  ]
+}

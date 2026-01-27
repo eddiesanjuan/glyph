@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{letter.subject}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --accent-color: #1e3a5f;
+      --border-color: #d0d0d0;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .letter-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 1in 1.25in;
+      background: white;
+    }
+
+    /* Sender */
+    [data-glyph-region="sender"] {
+      margin-bottom: 2rem;
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 1rem;
+    }
+
+    .sender-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .sender-title {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .sender-company {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    .sender-address {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      white-space: pre-line;
+      margin-top: 0.25rem;
+    }
+
+    /* Date */
+    [data-glyph-region="date"] {
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* Recipient */
+    [data-glyph-region="recipient"] {
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .recipient-name {
+      font-weight: 600;
+    }
+
+    .recipient-title,
+    .recipient-company {
+      color: var(--text-primary);
+    }
+
+    .recipient-address {
+      color: var(--text-secondary);
+      white-space: pre-line;
+    }
+
+    /* Subject */
+    [data-glyph-region="subject"] {
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .subject-label {
+      font-weight: 700;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-color);
+    }
+
+    .subject-text {
+      font-weight: 600;
+      margin-top: 0.15rem;
+    }
+
+    /* Body */
+    [data-glyph-region="body"] {
+      margin-bottom: 2rem;
+    }
+
+    .salutation {
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .body-paragraph {
+      font-size: 0.95rem;
+      margin-bottom: 0.85rem;
+      text-align: justify;
+    }
+
+    /* Closing */
+    [data-glyph-region="closing"] {
+      margin-top: 2rem;
+    }
+
+    .closing-text {
+      font-size: 0.95rem;
+      margin-bottom: 3rem;
+    }
+
+    .signature-name {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .signature-title {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .signature-company {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    @media print {
+      .letter-document { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letter-document">
+    <div data-glyph-region="sender">
+      <div class="sender-name">{{letter.senderName}}</div>
+      <div class="sender-title">{{letter.senderTitle}}</div>
+      <div class="sender-company">{{letter.senderCompany}}</div>
+      <div class="sender-address">{{letter.senderAddress}}</div>
+    </div>
+
+    <div data-glyph-region="date">
+      {{letter.date}}
+    </div>
+
+    <div data-glyph-region="recipient">
+      <div class="recipient-name">{{letter.recipientName}}</div>
+      <div class="recipient-title">{{letter.recipientTitle}}</div>
+      <div class="recipient-company">{{letter.recipientCompany}}</div>
+      <div class="recipient-address">{{letter.recipientAddress}}</div>
+    </div>
+
+    <div data-glyph-region="subject">
+      <div class="subject-label">Re:</div>
+      <div class="subject-text">{{letter.subject}}</div>
+    </div>
+
+    <div data-glyph-region="body">
+      <div class="salutation">{{letter.salutation}}</div>
+      {{#letter.body}}
+      <p class="body-paragraph">{{.}}</p>
+      {{/letter.body}}
+    </div>
+
+    <div data-glyph-region="closing">
+      <div class="closing-text">{{letter.closing}}</div>
+      <div class="signature-name">{{letter.senderName}}</div>
+      <div class="signature-title">{{letter.senderTitle}}</div>
+      <div class="signature-company">{{letter.senderCompany}}</div>
+    </div>
+  </div>
+</body>
+</html>

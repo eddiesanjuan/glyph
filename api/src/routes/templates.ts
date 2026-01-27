@@ -16,7 +16,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { resolve, join } from "path";
+import { resolve, join, dirname } from "path";
+import { fileURLToPath } from "url";
 import Mustache from "mustache";
 import { createHash } from "crypto";
 import {
@@ -105,7 +106,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate";
   sampleData: Record<string, unknown>;
 }
 
@@ -197,6 +198,76 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
         author: "Dr. Emily Rodriguez",
         date: "January 15, 2024",
         organization: "Meridian Research Group",
+      },
+    },
+  },
+  {
+    id: "contract-simple",
+    name: "Simple Contract",
+    description: "Clean service agreement with numbered clauses, party details, and signature lines.",
+    category: "contract",
+    sampleData: {
+      contract: {
+        title: "Service Agreement",
+        number: "CTR-2024-0042",
+        effectiveDate: "March 1, 2024",
+        term: "12 months",
+        jurisdiction: "State of California",
+      },
+      parties: {
+        party1: { name: "Acme Solutions Inc.", address: "100 Innovation Drive\nSan Francisco, CA 94105" },
+        party2: { name: "Northwind Traders LLC", address: "250 Commerce Street\nPortland, OR 97201" },
+      },
+      sections: [
+        { number: "1", title: "Scope of Services", content: "The Service Provider agrees to deliver software development consulting services as outlined in Exhibit A." },
+        { number: "2", title: "Compensation", content: "The Client agrees to pay a monthly retainer of $15,000 USD, due on the first business day of each month." },
+        { number: "3", title: "Confidentiality", content: "Both parties agree to maintain the confidentiality of all proprietary information shared during the term of this agreement." },
+        { number: "4", title: "Termination", content: "Either party may terminate this agreement with thirty (30) days written notice." },
+      ],
+      signatures: { showLines: true },
+    },
+  },
+  {
+    id: "certificate-modern",
+    name: "Modern Certificate",
+    description: "Elegant certificate of achievement with centered layout and decorative border.",
+    category: "certificate",
+    sampleData: {
+      certificate: {
+        title: "Certificate of Achievement",
+        recipientName: "Alexandra Chen",
+        description: "In recognition of exceptional performance and dedication in the Advanced Software Engineering Program.",
+        date: "March 15, 2024",
+        issuer: "Dr. James Walker",
+        issuerTitle: "Program Director",
+        organization: "Meridian Institute of Technology",
+      },
+    },
+  },
+  {
+    id: "letter-business",
+    name: "Business Letter",
+    description: "Professional business letter with sender/recipient blocks, subject line, and formal layout.",
+    category: "letter",
+    sampleData: {
+      letter: {
+        date: "January 15, 2024",
+        senderName: "Michael Torres",
+        senderTitle: "Vice President, Business Development",
+        senderCompany: "Cascade Partners LLC",
+        senderAddress: "800 Fifth Avenue, Suite 3200\nSeattle, WA 98104",
+        recipientName: "Sarah Chen",
+        recipientTitle: "Chief Technology Officer",
+        recipientCompany: "Horizon Dynamics Inc.",
+        recipientAddress: "1200 Market Street\nSan Francisco, CA 94103",
+        subject: "Strategic Partnership Proposal - Q1 2024",
+        salutation: "Dear Ms. Chen,",
+        body: [
+          "I am writing to express our strong interest in establishing a strategic partnership between Cascade Partners and Horizon Dynamics.",
+          "Cascade Partners brings over fifteen years of expertise in cloud infrastructure optimization. Combined with your innovative approach to AI-driven analytics, we see a significant opportunity.",
+          "Please let me know if you are available for a meeting during the week of February 5th.",
+        ],
+        closing: "Sincerely,",
       },
     },
   },
@@ -949,7 +1020,8 @@ templates.get("/:id", async (c) => {
   }
 
   // Read schema.json from templates directory
-  const templatesDir = resolve(import.meta.dir, "..", "..", "..", "templates");
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const templatesDir = resolve(currentDir, "..", "..", "..", "templates");
   const schemaPath = join(templatesDir, id, "schema.json");
 
   try {

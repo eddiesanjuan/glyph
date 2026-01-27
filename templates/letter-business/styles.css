@@ -1,0 +1,12 @@
+/* letter-business template styles */
+/* Embedded in template.html; this file is for reference and overrides */
+
+.letter-document {
+  max-width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  padding: 1in 1.25in;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  color: #1a1a1a;
+  line-height: 1.6;
+}

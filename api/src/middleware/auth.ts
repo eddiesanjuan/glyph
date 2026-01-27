@@ -29,6 +29,17 @@ export async function authMiddleware(c: Context, next: Next) {
     return next();
   }
 
+  // Skip auth for public template catalog endpoints (GET only)
+  // Agents and developers need to discover templates without an API key
+  if (c.req.method === "GET" && (
+    c.req.path === "/v1/templates" ||
+    c.req.path === "/v1/templates/styles" ||
+    c.req.path.match(/^\/v1\/templates\/[^/]+$/) ||
+    c.req.path.match(/^\/v1\/templates\/[^/]+\/preview$/)
+  )) {
+    return next();
+  }
+
   const authHeader = c.req.header("Authorization");
 
   if (!authHeader) {

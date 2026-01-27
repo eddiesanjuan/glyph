@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{contract.title}} - {{contract.number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --border-color: #d0d0d0;
+      --accent-color: #2c3e50;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .contract-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in 1in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      text-align: center;
+      padding-bottom: 2rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    [data-glyph-region="header"] h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .contract-meta {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .contract-meta span {
+      margin: 0 0.75rem;
+    }
+
+    /* Parties */
+    [data-glyph-region="parties"] {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .party {
+      flex: 1;
+    }
+
+    .party-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .party-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .party-address {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      white-space: pre-line;
+    }
+
+    /* Sections */
+    [data-glyph-region="sections"] {
+      margin-bottom: 2rem;
+    }
+
+    .section {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-heading {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-number {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin-right: 0.5rem;
+    }
+
+    .section-content {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      text-align: justify;
+    }
+
+    /* Jurisdiction */
+    [data-glyph-region="jurisdiction"] {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: #f7f8fa;
+      border-left: 3px solid var(--accent-color);
+    }
+
+    /* Signatures */
+    [data-glyph-region="signatures"] {
+      display: flex;
+      justify-content: space-between;
+      gap: 3rem;
+      margin-top: 3rem;
+      padding-top: 1rem;
+    }
+
+    .signature-block {
+      flex: 1;
+    }
+
+    .signature-line {
+      border-top: 1px solid var(--text-primary);
+      margin-bottom: 0.4rem;
+      margin-top: 3rem;
+    }
+
+    .signature-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .date-line {
+      border-top: 1px solid var(--border-color);
+      margin-top: 1.5rem;
+      margin-bottom: 0.4rem;
+      width: 60%;
+    }
+
+    @media print {
+      .contract-document { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="contract-document">
+    <div data-glyph-region="header">
+      <h1>{{contract.title}}</h1>
+      <div class="contract-meta">
+        <span>Contract No. {{contract.number}}</span>
+        <span>Effective Date: {{contract.effectiveDate}}</span>
+        <span>Term: {{contract.term}}</span>
+      </div>
+    </div>
+
+    <div data-glyph-region="parties">
+      <div class="party">
+        <div class="party-label">Party A</div>
+        <div class="party-name">{{parties.party1.name}}</div>
+        <div class="party-address">{{parties.party1.address}}</div>
+      </div>
+      <div class="party">
+        <div class="party-label">Party B</div>
+        <div class="party-name">{{parties.party2.name}}</div>
+        <div class="party-address">{{parties.party2.address}}</div>
+      </div>
+    </div>
+
+    <div data-glyph-region="sections">
+      {{#sections}}
+      <div class="section">
+        <div class="section-heading">
+          <span class="section-number">{{number}}.</span>{{title}}
+        </div>
+        <div class="section-content">{{content}}</div>
+      </div>
+      {{/sections}}
+    </div>
+
+    <div data-glyph-region="jurisdiction">
+      This agreement shall be governed by and construed in accordance with the laws of <strong>{{contract.jurisdiction}}</strong>.
+    </div>
+
+    {{#signatures.showLines}}
+    <div data-glyph-region="signatures">
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">{{parties.party1.name}}</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">{{parties.party2.name}}</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+    </div>
+    {{/signatures.showLines}}
+  </div>
+</body>
+</html>

@@ -140,6 +140,7 @@ app.route("/v1/webhooks", webhooksPublic);
 // These endpoints don't require API key authentication
 app.route("/v1/beta", beta);
 
+
 // Authentication first (to get tier info for rate limiting)
 app.use("/v1/*", authMiddleware);
 

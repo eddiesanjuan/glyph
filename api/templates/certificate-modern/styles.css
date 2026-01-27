@@ -1,0 +1,10 @@
+/* certificate-modern template styles */
+/* Embedded in template.html; this file is for reference and overrides */
+
+.certificate-document {
+  width: 10in;
+  height: 7.5in;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a1a;
+}

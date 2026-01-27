@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/letter-business.json",
+  "title": "BusinessLetterData",
+  "description": "Data schema for the letter-business template",
+  "type": "object",
+  "required": ["letter"],
+  "properties": {
+    "letter": {
+      "type": "object",
+      "description": "Letter content",
+      "required": ["date", "senderName", "senderTitle", "senderCompany", "senderAddress", "recipientName", "recipientTitle", "recipientCompany", "recipientAddress", "subject", "salutation", "body", "closing"],
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Letter date",
+          "examples": ["January 15, 2024"]
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Sender full name"
+        },
+        "senderTitle": {
+          "type": "string",
+          "description": "Sender job title"
+        },
+        "senderCompany": {
+          "type": "string",
+          "description": "Sender company name"
+        },
+        "senderAddress": {
+          "type": "string",
+          "description": "Sender address (supports multi-line with \\n)"
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Recipient full name"
+        },
+        "recipientTitle": {
+          "type": "string",
+          "description": "Recipient job title"
+        },
+        "recipientCompany": {
+          "type": "string",
+          "description": "Recipient company name"
+        },
+        "recipientAddress": {
+          "type": "string",
+          "description": "Recipient address (supports multi-line with \\n)"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Letter subject line"
+        },
+        "salutation": {
+          "type": "string",
+          "description": "Opening greeting",
+          "examples": ["Dear Ms. Chen,", "Dear Hiring Manager,"]
+        },
+        "body": {
+          "type": "array",
+          "description": "Letter body paragraphs",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "closing": {
+          "type": "string",
+          "description": "Closing phrase",
+          "examples": ["Sincerely,", "Best regards,"]
+        },
+        "signature": {
+          "type": "string",
+          "description": "Optional signature image URL"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "letter": {
+        "date": "January 15, 2024",
+        "senderName": "Michael Torres",
+        "senderTitle": "Vice President, Business Development",
+        "senderCompany": "Cascade Partners LLC",
+        "senderAddress": "800 Fifth Avenue, Suite 3200\nSeattle, WA 98104",
+        "recipientName": "Sarah Chen",
+        "recipientTitle": "Chief Technology Officer",
+        "recipientCompany": "Horizon Dynamics Inc.",
+        "recipientAddress": "1200 Market Street\nSan Francisco, CA 94103",
+        "subject": "Strategic Partnership Proposal - Q1 2024",
+        "salutation": "Dear Ms. Chen,",
+        "body": [
+          "I am writing to express our strong interest in establishing a strategic partnership between Cascade Partners and Horizon Dynamics. Following our conversation at the Pacific Tech Summit last month, I believe our organizations share a complementary vision for the future of enterprise software.",
+          "Cascade Partners brings over fifteen years of expertise in cloud infrastructure optimization, serving more than 200 Fortune 500 clients. Combined with Horizon Dynamics' innovative approach to AI-driven analytics, we see a significant opportunity to deliver unmatched value to the market.",
+          "I would welcome the opportunity to discuss this proposal in greater detail. Our team has prepared a comprehensive partnership framework that outlines mutual benefits, revenue sharing models, and a proposed timeline for integration.",
+          "Please let me know if you are available for a meeting during the week of February 5th. I am happy to travel to San Francisco or arrange a video conference at your convenience."
+        ],
+        "closing": "Sincerely,"
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/certificate-modern.json",
+  "title": "CertificateData",
+  "description": "Data schema for the certificate-modern template",
+  "type": "object",
+  "required": ["certificate"],
+  "properties": {
+    "certificate": {
+      "type": "object",
+      "description": "Certificate content",
+      "required": ["title", "recipientName", "description", "date", "issuer", "issuerTitle", "organization"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Certificate title",
+          "examples": ["Certificate of Achievement", "Certificate of Completion"]
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Full name of the recipient",
+          "examples": ["Alexandra Chen"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what the certificate is for",
+          "examples": ["In recognition of outstanding contributions to the open source community"]
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of issuance",
+          "examples": ["March 15, 2024"]
+        },
+        "issuer": {
+          "type": "string",
+          "description": "Name of the person issuing the certificate",
+          "examples": ["Dr. James Walker"]
+        },
+        "issuerTitle": {
+          "type": "string",
+          "description": "Title of the issuer",
+          "examples": ["Program Director", "CEO"]
+        },
+        "organization": {
+          "type": "string",
+          "description": "Issuing organization name",
+          "examples": ["Meridian Institute of Technology"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "certificate": {
+        "title": "Certificate of Achievement",
+        "recipientName": "Alexandra Chen",
+        "description": "In recognition of exceptional performance and dedication in the Advanced Software Engineering Program, demonstrating mastery of distributed systems, cloud architecture, and technical leadership.",
+        "date": "March 15, 2024",
+        "issuer": "Dr. James Walker",
+        "issuerTitle": "Program Director",
+        "organization": "Meridian Institute of Technology"
+      }
+    }
+  ]
+}
