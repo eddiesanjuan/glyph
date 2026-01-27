@@ -4952,8 +4952,14 @@ print(result['html'])  # Updated HTML`;
             signal: currentAbortController.signal
           });
 
+          // Track rate limit usage
+          if (window.__glyphRateLimit) window.__glyphRateLimit.track();
+
           // SILENT FAILURE FIX: Properly handle non-ok responses
           if (!response.ok) {
+            if (response.status === 429 && window.__glyphRateLimit) {
+              window.__glyphRateLimit.onRateLimited();
+            }
             const errorMsg = await extractErrorMessage(response);
             throw new Error(errorMsg);
           }
@@ -5139,7 +5145,13 @@ print(result['html'])  # Updated HTML`;
           signal: currentAbortController.signal
         });
 
+        // Track rate limit usage (fallback path)
+        if (window.__glyphRateLimit) window.__glyphRateLimit.track();
+
         if (!response.ok) {
+          if (response.status === 429 && window.__glyphRateLimit) {
+            window.__glyphRateLimit.onRateLimited();
+          }
           const errorMsg = await extractErrorMessage(response);
           throw new Error(errorMsg);
         }
@@ -8601,4 +8613,133 @@ print(result['html'])  # Updated HTML`;
     });
     input.addEventListener('input', updateCounter);
   });
+
+  // ========================================
+  // Rate Limit Transparency
+  // ========================================
+  (function initRateLimitIndicator() {
+    var requests = []; // timestamps of recent requests
+    var WINDOW_MS = 60000; // 1 minute window
+    var MAX_REQUESTS = 10;
+    var indicator = document.getElementById('rate-limit-indicator');
+    var textEl = document.getElementById('rate-limit-text');
+    if (!indicator || !textEl) return;
+
+    function pruneOldRequests() {
+      var now = Date.now();
+      while (requests.length > 0 && now - requests[0] > WINDOW_MS) {
+        requests.shift();
+      }
+    }
+
+    function updateIndicator() {
+      pruneOldRequests();
+      var count = requests.length;
+      if (count === 0) {
+        indicator.style.display = 'none';
+        return;
+      }
+      indicator.style.display = '';
+      textEl.textContent = count + '/' + MAX_REQUESTS + ' requests this minute';
+      indicator.classList.remove('playground__rate-limit--warning', 'playground__rate-limit--error');
+      if (count >= MAX_REQUESTS) {
+        indicator.classList.add('playground__rate-limit--error');
+        textEl.textContent = count + '/' + MAX_REQUESTS + ' requests - slow down';
+      } else if (count >= 8) {
+        indicator.classList.add('playground__rate-limit--warning');
+        textEl.textContent = count + '/' + MAX_REQUESTS + ' requests - slow down';
+      }
+    }
+
+    function showRateLimited() {
+      if (!indicator || !textEl) return;
+      indicator.style.display = '';
+      indicator.classList.remove('playground__rate-limit--warning');
+      indicator.classList.add('playground__rate-limit--error');
+      textEl.innerHTML = 'Rate limited &mdash; resets shortly. <a href="#pricing" class="playground__rate-limit-link">Get a free API key for more.</a>';
+    }
+
+    // Expose to global scope so fetch handlers can call it
+    window.__glyphRateLimit = {
+      track: function() {
+        requests.push(Date.now());
+        updateIndicator();
+      },
+      onRateLimited: showRateLimited,
+      update: updateIndicator
+    };
+
+    // Periodically prune display
+    setInterval(updateIndicator, 10000);
+  })();
+
+  // ========================================
+  // Ctrl+S / Cmd+S PDF Download Shortcut
+  // ========================================
+  (function initSaveShortcut() {
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        // Only intercept when playground is visible/in viewport
+        var playground = document.getElementById('playground');
+        if (!playground) return;
+        var rect = playground.getBoundingClientRect();
+        var inView = rect.top < window.innerHeight && rect.bottom > 0;
+        if (!inView) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Show toast and trigger PDF download
+        if (typeof showToast === 'function') {
+          showToast('Generating PDF...', 'info', 3000);
+        }
+
+        var generateBtn = document.getElementById('generate-btn');
+        if (generateBtn && !generateBtn.disabled) {
+          generateBtn.click();
+        } else {
+          if (typeof showToast === 'function') {
+            showToast('No document ready to download yet.', 'warning', 3000);
+          }
+        }
+      }
+    });
+  })();
+
+  // ========================================
+  // ARIA Labels for Preview Regions
+  // ========================================
+  (function initAriaLabelsForRegions() {
+    // Observe the preview iframe for region elements and add aria-labels
+    function labelRegions() {
+      var iframe = document.querySelector('#preview-container iframe');
+      if (!iframe) return;
+      try {
+        var doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (!doc) return;
+        var regions = doc.querySelectorAll('[data-glyph-region]');
+        regions.forEach(function(region) {
+          var name = region.getAttribute('data-glyph-region');
+          if (name && !region.getAttribute('aria-label')) {
+            region.setAttribute('aria-label', 'Editable PDF region: ' + name);
+            region.setAttribute('role', 'button');
+          }
+        });
+      } catch (e) {
+        // Cross-origin or not ready
+      }
+    }
+
+    // Run after preview loads and on mutations
+    var observer = new MutationObserver(function() {
+      setTimeout(labelRegions, 500);
+    });
+    var previewContainer = document.getElementById('preview-container');
+    if (previewContainer) {
+      observer.observe(previewContainer, { childList: true, subtree: true });
+    }
+    // Also run on initial load
+    setTimeout(labelRegions, 2000);
+  })();
+
 })();

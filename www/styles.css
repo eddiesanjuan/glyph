@@ -9483,3 +9483,29 @@
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* Rate Limit Indicator */
+.playground__rate-limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #888);
+  border-radius: 6px;
+  margin-top: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+.playground__rate-limit--warning {
+  color: #b8860b;
+  background: rgba(184, 134, 11, 0.08);
+}
+.playground__rate-limit--error {
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.08);
+}
+.playground__rate-limit-link {
+  color: var(--color-primary, #6366f1);
+  text-decoration: underline;
+  font-weight: 500;
+}

@@ -827,6 +827,9 @@
                 <span class="playground__hint-instant">Quick actions above are instant.</span>
                 Custom prompts use AI and may take 60-90s.
               </p>
+              <div class="playground__rate-limit" id="rate-limit-indicator" style="display:none;" aria-live="polite">
+                <span class="playground__rate-limit-text" id="rate-limit-text"></span>
+              </div>
               <div class="playground__button-row">
                 <button class="playground__apply-btn" id="apply-btn">
                   Apply Changes
@@ -877,10 +880,10 @@
                 <span class="status-dot"></span>
                 Ready
               </span>
-              <span class="playground__response-time" id="response-time-badge" style="display:none;"></span>
+              <span class="playground__response-time" id="response-time-badge" style="display:none;" role="status"></span>
             </div>
             <div class="playground__preview" id="preview-container">
-              <div class="playground__loading" id="preview-loading">
+              <div class="playground__loading" id="preview-loading" aria-live="polite" role="status">
                 <div class="loading-spinner"></div>
                 <div class="playground__loading-progress">
                   <div class="playground__loading-progress-bar" id="loading-progress-bar"></div>
@@ -2635,7 +2638,7 @@
   </div>
 
   <!-- Toast Notification - HIDDEN BY DEFAULT (style attribute prevents FOUC) -->
-  <div class="glyph-toast" id="glyph-toast" style="display:none !important;" aria-hidden="true">
+  <div class="glyph-toast" id="glyph-toast" style="display:none !important;" aria-hidden="true" aria-live="polite">
     <svg class="glyph-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
     </svg>
@@ -2660,7 +2663,7 @@
 
   <!-- API Error Toast - HIDDEN BY DEFAULT -->
   <!-- Uses 'inert' instead of 'aria-hidden' to prevent focus-related accessibility warnings -->
-  <div class="api-error-toast" id="api-error-toast" style="display:none;" inert role="alertdialog" aria-labelledby="api-error-title" aria-describedby="api-error-message">
+  <div class="api-error-toast" id="api-error-toast" style="display:none;" inert role="alertdialog" aria-live="assertive" aria-labelledby="api-error-title" aria-describedby="api-error-message">
     <div class="api-error-toast__header">
       <svg class="api-error-toast__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
