@@ -172,14 +172,14 @@ create.post("/", async (c) => {
         };
         outputBuffer = await generatePDF(fullHtml, pdfOptions);
         contentType = "application/pdf";
-        filename = `${analysis.documentType}-${Date.now()}.pdf`;
+        filename = `glyph-${analysis.documentType}-${Date.now()}.pdf`;
       } else {
         const pngOptions: PNGOptions = {
           scale: options?.scale,
         };
         outputBuffer = await generatePNG(fullHtml, pngOptions);
         contentType = "image/png";
-        filename = `${analysis.documentType}-${Date.now()}.png`;
+        filename = `glyph-${analysis.documentType}-${Date.now()}.png`;
       }
       console.log(`[Create] ${format.toUpperCase()} generated: ${outputBuffer.length} bytes`);
     } catch (err) {

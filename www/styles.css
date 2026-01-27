@@ -2636,6 +2636,11 @@
       color: rgb(34, 197, 94) !important;
     }
 
+    .playground__suggestion:focus-visible {
+      outline: 2px solid rgba(99, 102, 241, 0.7);
+      outline-offset: 2px;
+    }
+
     /* Hero buttons also get the applied state */
     .playground__suggestion--hero.playground__suggestion--applied::before {
       content: '\2713';
@@ -2887,7 +2892,7 @@
       z-index: 10;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s;
+      transition: opacity 200ms ease-in-out;
     }
 
     .playground__loading.visible {
@@ -3112,7 +3117,7 @@
     }
 
     .playground__apply-btn:focus-visible {
-      outline: 2px solid var(--color-primary-bright);
+      outline: 2px solid rgba(99, 102, 241, 0.7);
       outline-offset: 2px;
     }
 
@@ -4073,6 +4078,11 @@
     .copy-code-modal__close:hover {
       background: var(--color-surface);
       color: var(--color-text);
+    }
+
+    .copy-code-modal__close:focus-visible {
+      outline: 2px solid rgba(99, 102, 241, 0.7);
+      outline-offset: 2px;
     }
 
     .copy-code-modal__close svg {
@@ -7340,6 +7350,11 @@
       color: var(--color-text);
     }
 
+    .airtable-modal__close:focus-visible {
+      outline: 2px solid rgba(99, 102, 241, 0.7);
+      outline-offset: 2px;
+    }
+
     .airtable-modal__close svg {
       width: 18px;
       height: 18px;
@@ -8938,6 +8953,11 @@
 
     .command-palette__input::placeholder {
       color: var(--color-text-subtle);
+    }
+
+    .command-palette__input:focus-visible {
+      outline: 2px solid rgba(99, 102, 241, 0.7);
+      outline-offset: 2px;
     }
 
     .command-palette__hint {

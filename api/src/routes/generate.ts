@@ -47,16 +47,17 @@ generate.post("/", async (c) => {
     let buffer: Buffer;
     let contentType: string;
     let filename: string;
+    const sessionId = body.sessionId || Date.now().toString();
 
     const tRender = Date.now();
     if (format === "pdf") {
       buffer = await generatePdf(html, options);
       contentType = "application/pdf";
-      filename = `document-${Date.now()}.pdf`;
+      filename = `glyph-document-${sessionId}.pdf`;
     } else {
       buffer = await generatePng(html, options);
       contentType = "image/png";
-      filename = `document-${Date.now()}.png`;
+      filename = `glyph-document-${sessionId}.png`;
     }
     const renderDuration = Date.now() - tRender;
     const totalDuration = Date.now() - tStart;

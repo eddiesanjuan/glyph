@@ -65,11 +65,25 @@ app.use(
       return origin; // Allow all for now during beta
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
     credentials: true,
     maxAge: 86400,
   })
 );
+
+// Request ID tracking middleware (for tracing and debugging)
+app.use('*', async (c, next) => {
+  // Use incoming X-Request-ID if provided, otherwise generate new UUID
+  const requestId = c.req.header('X-Request-ID') || crypto.randomUUID();
+
+  // Store in context for use in error logging and downstream handlers
+  c.set('requestId', requestId);
+
+  await next();
+
+  // Set response header for client-side tracing
+  c.res.headers.set('X-Request-ID', requestId);
+});
 
 // Performance timing middleware (logs slow requests, adds Server-Timing header)
 app.use('*', async (c, next) => {
@@ -257,13 +271,15 @@ app.notFound((c) => {
 
 // Error handler
 app.onError((err, c) => {
-  console.error("Unhandled error:", err);
+  const requestId = c.get('requestId') || 'unknown';
+  console.error(`[${requestId}] Unhandled error:`, err);
 
   if (err instanceof HTTPException) {
     return c.json(
       {
         error: err.message,
         code: "HTTP_ERROR",
+        requestId,
       },
       err.status
     );
@@ -273,6 +289,7 @@ app.onError((err, c) => {
     {
       error: "Internal server error",
       code: "INTERNAL_ERROR",
+      requestId,
     },
     500
   );

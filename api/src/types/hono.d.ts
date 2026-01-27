@@ -11,5 +11,6 @@ declare module "hono" {
     tier: string;
     monthlyLimit: number;
     currentUsage: number;
+    requestId: string;
   }
 }
