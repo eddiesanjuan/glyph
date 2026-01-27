@@ -6,10 +6,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { compress } from "hono/compress";
-import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import { HTTPException } from "hono/http-exception";
 import { serve } from "@hono/node-server";
+import { logger } from "./services/logger.js";
 
 import { authMiddleware } from "./middleware/auth.js";
 import {
@@ -41,7 +41,6 @@ import notificationWebhooks from "./routes/notification-webhooks.js";
 const app = new Hono();
 
 // Global middleware
-app.use("*", logger());
 app.use("*", prettyJSON());
 app.use("*", compress());
 app.use(
@@ -85,15 +84,45 @@ app.use('*', async (c, next) => {
   c.res.headers.set('X-Request-ID', requestId);
 });
 
+// Structured request logging middleware
+app.use('*', async (c, next) => {
+  const start = Date.now();
+  const requestId = c.get('requestId') || 'unknown';
+  const method = c.req.method;
+  const path = new URL(c.req.url).pathname;
+
+  await next();
+
+  const duration = Date.now() - start;
+  const status = c.res.status;
+
+  logger.info('Request completed', {
+    requestId,
+    method,
+    path,
+    status,
+    duration,
+  });
+});
+
 // Performance timing middleware (logs slow requests, adds Server-Timing header)
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
   const duration = Date.now() - start;
   const path = new URL(c.req.url).pathname;
+  const requestId = c.get('requestId') || 'unknown';
+
   if (duration > 100) {
-    console.log(`[perf] ${c.req.method} ${path} ${duration}ms ${c.res.status}`);
+    logger.warn('Slow request detected', {
+      requestId,
+      method: c.req.method,
+      path,
+      duration,
+      status: c.res.status,
+    });
   }
+
   // Add Server-Timing header for browser DevTools
   const existing = c.res.headers.get('Server-Timing');
   const timing = existing ? `${existing}, total;dur=${duration}` : `total;dur=${duration}`;
@@ -272,9 +301,15 @@ app.notFound((c) => {
 // Error handler
 app.onError((err, c) => {
   const requestId = c.get('requestId') || 'unknown';
-  console.error(`[${requestId}] Unhandled error:`, err);
 
   if (err instanceof HTTPException) {
+    logger.warn('HTTP exception', {
+      requestId,
+      status: err.status,
+      message: err.message,
+      path: c.req.path,
+    });
+
     return c.json(
       {
         error: err.message,
@@ -284,6 +319,13 @@ app.onError((err, c) => {
       err.status
     );
   }
+
+  logger.error('Unhandled error', {
+    requestId,
+    error: err.message,
+    stack: err.stack,
+    path: c.req.path,
+  });
 
   return c.json(
     {
@@ -305,6 +347,12 @@ const port = Number(process.env.PORT) || 3000;
 serve({
   fetch: app.fetch,
   port,
+});
+
+logger.info('Glyph API started', {
+  version: '0.13.0',
+  port,
+  environment: process.env.NODE_ENV || 'development',
 });
 
 console.log(`
