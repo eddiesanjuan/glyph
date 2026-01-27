@@ -56,8 +56,8 @@ describe('fastTransform', () => {
   });
 
   describe('QR code transformation', () => {
-    it('should add QR code to document', () => {
-      const result = fastTransform(baseHtml, 'Add a QR code');
+    it('should add QR code to document', async () => {
+      const result = await fastTransform(baseHtml, 'Add a QR code');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('glyph-qr-code');
@@ -65,9 +65,9 @@ describe('fastTransform', () => {
       expect(result.changes.length).toBeGreaterThan(0);
     });
 
-    it('should not duplicate QR code', () => {
+    it('should not duplicate QR code', async () => {
       const htmlWithQr = baseHtml.replace('<body>', '<body><div class="glyph-qr-code"></div>');
-      const result = fastTransform(htmlWithQr, 'Add a QR code');
+      const result = await fastTransform(htmlWithQr, 'Add a QR code');
 
       expect(result.transformed).toBe(true);
       expect(result.changes).toContain('QR code already present');
@@ -75,8 +75,8 @@ describe('fastTransform', () => {
   });
 
   describe('Watermark transformation', () => {
-    it('should add DRAFT watermark', () => {
-      const result = fastTransform(baseHtml, 'Add a draft watermark');
+    it('should add DRAFT watermark', async () => {
+      const result = await fastTransform(baseHtml, 'Add a draft watermark');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('glyph-watermark');
@@ -84,37 +84,37 @@ describe('fastTransform', () => {
       expect(result.html).toContain('position:relative');
     });
 
-    it('should add PAID watermark', () => {
-      const result = fastTransform(baseHtml, 'Add paid watermark');
+    it('should add PAID watermark', async () => {
+      const result = await fastTransform(baseHtml, 'Add paid watermark');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('PAID');
     });
 
-    it('should add CONFIDENTIAL watermark', () => {
-      const result = fastTransform(baseHtml, 'Add confidential watermark');
+    it('should add CONFIDENTIAL watermark', async () => {
+      const result = await fastTransform(baseHtml, 'Add confidential watermark');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('CONFIDENTIAL');
     });
 
-    it('should handle flexible watermark prompts with words between add and watermark', () => {
-      const result = fastTransform(baseHtml, 'Add a diagonal watermark that says DRAFT across the page');
+    it('should handle flexible watermark prompts with words between add and watermark', async () => {
+      const result = await fastTransform(baseHtml, 'Add a diagonal watermark that says DRAFT across the page');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('glyph-watermark');
       expect(result.html).toContain('DRAFT');
     });
 
-    it('should default to DRAFT when no text specified', () => {
-      const result = fastTransform(baseHtml, 'Add watermark');
+    it('should default to DRAFT when no text specified', async () => {
+      const result = await fastTransform(baseHtml, 'Add watermark');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('DRAFT');
     });
 
-    it('should add APPROVED watermark', () => {
-      const result = fastTransform(baseHtml, 'Add approved watermark');
+    it('should add APPROVED watermark', async () => {
+      const result = await fastTransform(baseHtml, 'Add approved watermark');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('APPROVED');
@@ -122,22 +122,22 @@ describe('fastTransform', () => {
   });
 
   describe('Color transformation', () => {
-    it('should change header background color', () => {
-      const result = fastTransform(baseHtml, 'Make the header blue');
+    it('should change header background color', async () => {
+      const result = await fastTransform(baseHtml, 'Make the header blue');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('#3b82f6'); // blue hex
       expect(result.changes.some(c => c.toLowerCase().includes('blue'))).toBe(true);
     });
 
-    it('should handle header without existing background', () => {
+    it('should handle header without existing background', async () => {
       const htmlNoBackground = `<!DOCTYPE html>
 <html>
 <head><style>header { padding: 1rem; }</style></head>
 <body><header><h1>Quote</h1></header></body>
 </html>`;
 
-      const result = fastTransform(htmlNoBackground, 'Make the header purple');
+      const result = await fastTransform(htmlNoBackground, 'Make the header purple');
 
       expect(result.transformed).toBe(true);
       expect(result.html).toContain('#a855f7'); // purple hex
@@ -145,9 +145,9 @@ describe('fastTransform', () => {
   });
 
   describe('Performance', () => {
-    it('should transform in under 10ms', () => {
+    it('should transform in under 10ms', async () => {
       const start = performance.now();
-      fastTransform(baseHtml, 'Add a QR code');
+      await fastTransform(baseHtml, 'Add a QR code');
       const duration = performance.now() - start;
 
       expect(duration).toBeLessThan(10);

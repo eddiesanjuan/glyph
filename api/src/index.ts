@@ -32,6 +32,7 @@ import sources from "./routes/sources.js";
 import mappings from "./routes/mappings.js";
 import generateSmart from "./routes/generate-smart.js";
 import aiAssist from "./routes/ai-assist.js";
+import subscriptions from "./routes/subscriptions.js";
 
 const app = new Hono();
 
@@ -174,6 +175,11 @@ app.get("/", (c) => {
       aiSuggestMappings: "POST /v1/ai/suggest-mappings",
       aiInferSchema: "POST /v1/ai/infer-schema",
       aiMatchTemplate: "POST /v1/ai/match-template",
+      // Event subscriptions (Zapier/Make)
+      subscriptionCreate: "POST /v1/subscriptions",
+      subscriptionList: "GET /v1/subscriptions",
+      subscriptionGet: "GET /v1/subscriptions/:id",
+      subscriptionDelete: "DELETE /v1/subscriptions/:id",
     },
   });
 });
@@ -205,6 +211,8 @@ app.route("/v1/sources", sources);
 app.route("/v1/mappings", mappings);
 app.route("/v1/generate/smart", generateSmart);
 app.route("/v1/ai", aiAssist);
+// Event subscriptions (Zapier/Make integration)
+app.route("/v1/subscriptions", subscriptions);
 
 // 404 handler
 app.notFound((c) => {
@@ -311,6 +319,13 @@ console.log(`
     POST /v1/webhooks/airtable/:id        - Receive Airtable trigger (public)
     GET  /v1/webhooks/pdfs/:id            - Download generated PDF
     GET  /v1/webhooks/test/:id            - Test webhook with sample data
+
+  Event Subscriptions (Zapier/Make):
+    POST   /v1/subscriptions              - Subscribe to events
+    GET    /v1/subscriptions              - List subscriptions
+    GET    /v1/subscriptions/:id          - Get subscription details
+    DELETE /v1/subscriptions/:id          - Delete subscription
+    Events: pdf.generated, template.modified
 `);
 
 // Also export for Bun compatibility

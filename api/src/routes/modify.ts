@@ -31,6 +31,7 @@ import { getDevSession, updateDevSession, isDevSessionId, findTemplateForRendere
 import { validateModification as selfCheckValidation } from "../services/validator.js";
 import { canFastTransform, fastTransform } from "../services/fastTransform.js";
 import type { Context } from "hono";
+import { triggerEventSubscriptions } from "./subscriptions.js";
 
 const modify = new Hono();
 
@@ -479,6 +480,14 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           console.error("Session update error:", updateError);
         }
       }
+
+      // Trigger event subscriptions (fire and forget)
+      triggerEventSubscriptions("template.modified", {
+        sessionId,
+        prompt,
+        region: region || null,
+        changes: result.changes,
+      });
 
       // Track usage (only for database sessions)
       if (!isDevSession && apiKeyId && supabase) {

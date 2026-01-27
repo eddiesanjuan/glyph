@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { generatePdf, generatePng } from "../services/pdf.js";
 import type { GenerateResponse, ApiError } from "../lib/types.js";
+import { triggerEventSubscriptions } from "./subscriptions.js";
 
 const generate = new Hono();
 
@@ -57,6 +58,13 @@ generate.post("/", async (c) => {
 
     // TODO: Upload to Supabase Storage instead of returning raw buffer
     // For now, return the file directly
+
+    // Trigger event subscriptions (fire and forget)
+    triggerEventSubscriptions("pdf.generated", {
+      format,
+      size: buffer.length,
+      filename,
+    });
 
     // Check Accept header to decide response format
     const accept = c.req.header("Accept");
