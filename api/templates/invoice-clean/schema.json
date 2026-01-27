@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/invoice-clean.json",
+  "title": "InvoiceData",
+  "description": "Data schema for the invoice-clean template",
+  "type": "object",
+  "required": ["invoice", "billTo", "lineItems", "totals", "branding"],
+  "properties": {
+    "invoice": {
+      "type": "object",
+      "description": "Invoice metadata",
+      "required": ["number", "date", "dueDate"],
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "Unique invoice identifier"
+        },
+        "date": {
+          "type": "string",
+          "description": "Invoice issue date"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Payment due date"
+        },
+        "paymentTerms": {
+          "type": "string",
+          "description": "Payment terms and instructions"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes"
+        }
+      }
+    },
+    "billTo": {
+      "type": "object",
+      "description": "Billing recipient",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Recipient name" },
+        "company": { "type": "string", "description": "Company name" },
+        "address": { "type": "string", "description": "Billing address" },
+        "email": { "type": "string", "format": "email", "description": "Email address" }
+      }
+    },
+    "lineItems": {
+      "type": "array",
+      "description": "Invoice line items",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "quantity", "rate", "amount"],
+        "properties": {
+          "description": { "type": "string" },
+          "details": { "type": "string" },
+          "quantity": { "type": ["number", "string"] },
+          "rate": { "type": ["number", "string"] },
+          "amount": { "type": ["number", "string"] }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["subtotal", "total"],
+      "properties": {
+        "subtotal": { "type": ["number", "string"] },
+        "tax": { "type": ["number", "string"] },
+        "taxRate": { "type": "number" },
+        "total": { "type": ["number", "string"] }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "required": ["companyName"],
+      "properties": {
+        "logoUrl": { "type": "string", "format": "uri" },
+        "logoInitial": { "type": "string", "description": "Single letter fallback when no logo" },
+        "companyName": { "type": "string" },
+        "companyAddress": { "type": "string" }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "properties": {
+        "accentColor": { "type": "string", "default": "#2563eb" }
+      }
+    }
+  },
+  "examples": [
+    {
+      "invoice": {
+        "number": "INV-2024-0042",
+        "date": "January 20, 2024",
+        "dueDate": "February 19, 2024",
+        "paymentTerms": "Net 30. Please include invoice number on all payments.\nBank transfer or check accepted.",
+        "notes": "Thank you for your business."
+      },
+      "billTo": {
+        "name": "Sarah Chen",
+        "company": "Northwind Traders",
+        "address": "200 Commerce Blvd\nSuite 1400\nChicago, IL 60601",
+        "email": "sarah@northwind.com"
+      },
+      "lineItems": [
+        {
+          "description": "Brand Identity Package",
+          "details": "Logo, color palette, typography system",
+          "quantity": 1,
+          "rate": "4,500.00",
+          "amount": "4,500.00"
+        },
+        {
+          "description": "Marketing Collateral",
+          "details": "Business cards, letterhead, envelope design",
+          "quantity": 1,
+          "rate": "1,200.00",
+          "amount": "1,200.00"
+        },
+        {
+          "description": "Consultation Hours",
+          "quantity": 8,
+          "rate": "175.00",
+          "amount": "1,400.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "7,100.00",
+        "tax": "639.00",
+        "taxRate": 9,
+        "total": "7,739.00"
+      },
+      "branding": {
+        "logoInitial": "S",
+        "companyName": "Studio Forma",
+        "companyAddress": "88 Design District\nAustin, TX 78701"
+      },
+      "styles": {
+        "accentColor": "#2563eb"
+      }
+    }
+  ]
+}

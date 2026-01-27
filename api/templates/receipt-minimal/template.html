@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt #{{receipt.number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #18181b;
+      --text-secondary: #71717a;
+      --border-color: #e4e4e7;
+      --bg-light: #fafafa;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .receipt-document {
+      max-width: 4in;
+      margin: 0 auto;
+      padding: 1.5rem;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      text-align: center;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px dashed var(--border-color);
+      margin-bottom: 1.25rem;
+    }
+
+    .merchant-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .merchant-address {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: pre-line;
+    }
+
+    .receipt-meta {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .receipt-meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.125rem 0;
+    }
+
+    /* Items */
+    [data-glyph-region="items"] {
+      margin-bottom: 1.25rem;
+    }
+
+    .items-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding-bottom: 0.375rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 0.375rem;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      font-size: 0.85rem;
+    }
+
+    .item-left {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .item-qty {
+      color: var(--text-secondary);
+      min-width: 2rem;
+    }
+
+    .item-name {
+      color: var(--text-primary);
+    }
+
+    .item-price {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Totals */
+    [data-glyph-region="totals"] {
+      border-top: 1px dashed var(--border-color);
+      padding-top: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      font-size: 0.85rem;
+    }
+
+    .total-row-label {
+      color: var(--text-secondary);
+    }
+
+    .total-row-value {
+      font-weight: 500;
+    }
+
+    .total-row-grand {
+      border-top: 2px solid var(--text-primary);
+      margin-top: 0.375rem;
+      padding-top: 0.5rem;
+    }
+
+    .total-row-grand .total-row-label,
+    .total-row-grand .total-row-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Footer */
+    [data-glyph-region="footer"] {
+      border-top: 1px dashed var(--border-color);
+      padding-top: 0.75rem;
+      text-align: center;
+    }
+
+    .payment-info {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .payment-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.125rem 0;
+    }
+
+    .thank-you {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 0.75rem;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .receipt-document { padding: 0; max-width: none; }
+    }
+
+    @page {
+      size: 4in auto;
+      margin: 0.25in;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-document">
+    <header data-glyph-region="header">
+      <div class="merchant-name">{{merchant.name}}</div>
+      {{#merchant.address}}
+      <div class="merchant-address">{{merchant.address}}</div>
+      {{/merchant.address}}
+      <div class="receipt-meta">
+        <div class="receipt-meta-row">
+          <span>Receipt</span>
+          <span>#{{receipt.number}}</span>
+        </div>
+        <div class="receipt-meta-row">
+          <span>Date</span>
+          <span>{{receipt.date}}</span>
+        </div>
+        {{#receipt.time}}
+        <div class="receipt-meta-row">
+          <span>Time</span>
+          <span>{{receipt.time}}</span>
+        </div>
+        {{/receipt.time}}
+      </div>
+    </header>
+
+    <section data-glyph-region="items">
+      <div class="items-header">
+        <span>Item</span>
+        <span>Amount</span>
+      </div>
+      {{#items}}
+      <div class="item-row">
+        <div class="item-left">
+          <span class="item-qty">{{quantity}}x</span>
+          <span class="item-name">{{name}}</span>
+        </div>
+        <span class="item-price">${{price}}</span>
+      </div>
+      {{/items}}
+    </section>
+
+    <section data-glyph-region="totals">
+      <div class="total-row">
+        <span class="total-row-label">Subtotal</span>
+        <span class="total-row-value">${{totals.subtotal}}</span>
+      </div>
+      {{#totals.tax}}
+      <div class="total-row">
+        <span class="total-row-label">Tax</span>
+        <span class="total-row-value">${{totals.tax}}</span>
+      </div>
+      {{/totals.tax}}
+      <div class="total-row total-row-grand">
+        <span class="total-row-label">Total</span>
+        <span class="total-row-value">${{totals.total}}</span>
+      </div>
+    </section>
+
+    <footer data-glyph-region="footer">
+      <div class="payment-info">
+        <div class="payment-info-row">
+          <span>Payment</span>
+          <span>{{payment.method}}</span>
+        </div>
+        {{#payment.transactionId}}
+        <div class="payment-info-row">
+          <span>Transaction</span>
+          <span>{{payment.transactionId}}</span>
+        </div>
+        {{/payment.transactionId}}
+      </div>
+      <div class="thank-you">Thank you!</div>
+    </footer>
+  </div>
+</body>
+</html>

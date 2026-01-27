@@ -1,0 +1,15 @@
+/**
+ * report-cover default styles
+ *
+ * Customizable via the Glyph API:
+ * - styles.accentColor: Primary accent color (default: #1e293b)
+ */
+
+:root {
+  --accent-color: #1e293b;
+  --font-family: 'Georgia', 'Times New Roman', serif;
+  --font-size-base: 14px;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}

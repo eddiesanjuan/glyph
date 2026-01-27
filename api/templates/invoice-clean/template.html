@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice #{{invoice.number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #f9fafb;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .invoice-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-placeholder {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .company-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .company-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      white-space: pre-line;
+    }
+
+    .invoice-badge {
+      text-align: right;
+    }
+
+    .invoice-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-color);
+      letter-spacing: -0.02em;
+    }
+
+    .invoice-number {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Bill To */
+    [data-glyph-region="bill-to"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-light);
+      border-radius: 8px;
+    }
+
+    .info-block-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-block-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-block-detail {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    .dates-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .date-item-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .date-item-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 0.125rem;
+    }
+
+    /* Line Items */
+    [data-glyph-region="line-items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    [data-glyph-region="line-items"] thead {
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    [data-glyph-region="line-items"] th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+
+    [data-glyph-region="line-items"] th:nth-child(2),
+    [data-glyph-region="line-items"] th:nth-child(3),
+    [data-glyph-region="line-items"] th:nth-child(4) {
+      text-align: right;
+    }
+
+    [data-glyph-region="line-items"] td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    [data-glyph-region="line-items"] td:nth-child(2),
+    [data-glyph-region="line-items"] td:nth-child(3),
+    [data-glyph-region="line-items"] td:nth-child(4) {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .item-name {
+      font-weight: 500;
+    }
+
+    .item-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
+    }
+
+    /* Totals */
+    [data-glyph-region="totals"] {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 2rem;
+    }
+
+    .totals-box {
+      width: 280px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .totals-row-label {
+      color: var(--text-secondary);
+    }
+
+    .totals-row-value {
+      font-weight: 500;
+    }
+
+    .totals-row-grand {
+      border-top: 2px solid var(--accent-color);
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+    }
+
+    .totals-row-grand .totals-row-label,
+    .totals-row-grand .totals-row-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Footer */
+    [data-glyph-region="footer"] {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .payment-terms-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .payment-terms-text {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .notes-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .notes-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .invoice-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-document">
+    <header data-glyph-region="header">
+      <div class="header-brand">
+        {{#branding.logoUrl}}
+        <img src="{{branding.logoUrl}}" style="max-height:48px;max-width:160px;object-fit:contain;" alt="Logo" />
+        {{/branding.logoUrl}}
+        {{^branding.logoUrl}}
+        <div class="logo-placeholder">{{branding.logoInitial}}</div>
+        {{/branding.logoUrl}}
+        <div>
+          <div class="company-name">{{branding.companyName}}</div>
+          {{#branding.companyAddress}}
+          <div class="company-details">{{branding.companyAddress}}</div>
+          {{/branding.companyAddress}}
+        </div>
+      </div>
+      <div class="invoice-badge">
+        <div class="invoice-title">Invoice</div>
+        <div class="invoice-number">#{{invoice.number}}</div>
+      </div>
+    </header>
+
+    <section data-glyph-region="bill-to">
+      <div>
+        <div class="info-block-label">Bill To</div>
+        <div class="info-block-name">{{billTo.name}}</div>
+        {{#billTo.company}}
+        <div class="info-block-detail">{{billTo.company}}</div>
+        {{/billTo.company}}
+        {{#billTo.address}}
+        <div class="info-block-detail">{{billTo.address}}</div>
+        {{/billTo.address}}
+        {{#billTo.email}}
+        <div class="info-block-detail">{{billTo.email}}</div>
+        {{/billTo.email}}
+      </div>
+      <div>
+        <div class="dates-grid">
+          <div>
+            <div class="date-item-label">Invoice Date</div>
+            <div class="date-item-value">{{invoice.date}}</div>
+          </div>
+          <div>
+            <div class="date-item-label">Due Date</div>
+            <div class="date-item-value">{{invoice.dueDate}}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <table data-glyph-region="line-items">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Rate</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#lineItems}}
+        <tr>
+          <td>
+            <div class="item-name">{{description}}</div>
+            {{#details}}
+            <div class="item-desc">{{details}}</div>
+            {{/details}}
+          </td>
+          <td>{{quantity}}</td>
+          <td>${{rate}}</td>
+          <td>${{amount}}</td>
+        </tr>
+        {{/lineItems}}
+      </tbody>
+    </table>
+
+    <section data-glyph-region="totals">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="totals-row-label">Subtotal</span>
+          <span class="totals-row-value">${{totals.subtotal}}</span>
+        </div>
+        {{#totals.tax}}
+        <div class="totals-row">
+          <span class="totals-row-label">Tax ({{totals.taxRate}}%)</span>
+          <span class="totals-row-value">${{totals.tax}}</span>
+        </div>
+        {{/totals.tax}}
+        <div class="totals-row totals-row-grand">
+          <span class="totals-row-label">Total Due</span>
+          <span class="totals-row-value">${{totals.total}}</span>
+        </div>
+      </div>
+    </section>
+
+    <footer data-glyph-region="footer">
+      {{#invoice.paymentTerms}}
+      <div class="payment-terms-label">Payment Terms</div>
+      <p class="payment-terms-text">{{invoice.paymentTerms}}</p>
+      {{/invoice.paymentTerms}}
+      {{#invoice.notes}}
+      <div class="notes-label">Notes</div>
+      <p class="notes-text">{{invoice.notes}}</p>
+      {{/invoice.notes}}
+    </footer>
+  </div>
+</body>
+</html>

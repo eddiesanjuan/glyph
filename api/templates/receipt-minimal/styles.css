@@ -1,0 +1,16 @@
+/**
+ * receipt-minimal default styles
+ *
+ * Customizable via the Glyph API:
+ * - styles.accentColor: Primary color (default: #18181b)
+ */
+
+:root {
+  --accent-color: #18181b;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 14px;
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --border-color: #e4e4e7;
+  --bg-light: #fafafa;
+}
