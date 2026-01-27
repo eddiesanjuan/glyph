@@ -27,7 +27,7 @@
     "glyph"
   ],
   "author": "Glyph",
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "dependencies": {
     "chalk": "^5.3.0",
     "commander": "^12.1.0",

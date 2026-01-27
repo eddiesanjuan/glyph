@@ -241,4 +241,4 @@ Full API documentation: [docs.glyph.you](https://docs.glyph.you)
 
 ## License
 
-MIT
+Business Source License 1.1 (BSL-1.1) - See [LICENSE](../LICENSE) for details.

@@ -58,7 +58,7 @@
     "name": "Eddie San Juan",
     "email": "eddie@glyphpdf.com"
   },
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eddiesanjuan/glyph.git",

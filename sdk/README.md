@@ -277,4 +277,4 @@ const autocomplete = new FieldAutocomplete(inputElement, {
 
 ## License
 
-MIT
+Business Source License 1.1 (BSL-1.1) - See [LICENSE](../LICENSE) for details.

@@ -51,4 +51,6 @@ Visit [docs.glyph.you](https://docs.glyph.you)
 
 ## License
 
-MIT
+Business Source License 1.1 (BSL-1.1) - See [LICENSE](LICENSE) for details.
+
+Source available. Non-production use permitted. Converts to Apache 2.0 on 2030-01-27.

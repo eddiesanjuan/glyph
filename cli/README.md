@@ -209,4 +209,4 @@ glyph generate --api-url http://localhost:3000 --data data.json
 
 ## License
 
-MIT
+Business Source License 1.1 (BSL-1.1) - See [LICENSE](../LICENSE) for details.
