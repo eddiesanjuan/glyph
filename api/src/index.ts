@@ -5,6 +5,7 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { compress } from "hono/compress";
 import { logger } from "hono/logger";
 import { prettyJSON } from "hono/pretty-json";
 import { HTTPException } from "hono/http-exception";
@@ -39,6 +40,7 @@ const app = new Hono();
 // Global middleware
 app.use("*", logger());
 app.use("*", prettyJSON());
+app.use("*", compress());
 app.use(
   "*",
   cors({
