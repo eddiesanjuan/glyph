@@ -3126,6 +3126,7 @@
 
       // Show success toast with Get Code button (first win uses showModificationSuccessToast which handles first-win state)
       showModificationSuccessToast(0, true);
+      updateResponseTimeBadge(0, true);
 
       // Pulse the save button to encourage saving (if no versions saved yet)
       promptSaveAfterFirstWin();
@@ -3470,6 +3471,17 @@ print(result['html'])  # Updated HTML`;
     // ============================================
     let modificationSuccessToastElement = null;
     let modificationSuccessToastTimeout = null;
+
+    // Response timing badge in preview label bar
+    function updateResponseTimeBadge(elapsed, isInstant = false) {
+      const badge = document.getElementById('response-time-badge');
+      if (!badge) return;
+      const seconds = parseFloat(elapsed);
+      const isFast = isInstant || seconds < 0.5;
+      badge.textContent = isInstant ? 'Instant' : `${elapsed}s`;
+      badge.className = 'playground__response-time' + (isFast ? ' playground__response-time--fast' : '');
+      badge.style.display = '';
+    }
 
     function showModificationSuccessToast(elapsed, isInstant = false) {
       // Check if this is the user's first win BEFORE we update localStorage
@@ -4475,6 +4487,7 @@ print(result['html'])  # Updated HTML`;
         } else {
           // Show success toast with Get Code button for instant actions too
           showModificationSuccessToast(0, true); // 0 elapsed, isInstant=true
+          updateResponseTimeBadge(0, true);
           flashPreviewArea(); // Mobile visual feedback
         }
 
@@ -4727,6 +4740,7 @@ print(result['html'])  # Updated HTML`;
 
           // Cycle 6: Show celebratory success toast
           showModificationSuccessToast(elapsed);
+          updateResponseTimeBadge(elapsed);
 
           setStatus(`Done in ${elapsed}s`);
           console.log(`[Glyph] Modification completed in ${elapsed}s (${data.fastPath ? 'fast path' : deltaCount + ' stream chunks'})`);
@@ -4809,6 +4823,7 @@ print(result['html'])  # Updated HTML`;
 
         // Cycle 6: Show celebratory success toast
         showModificationSuccessToast(elapsed);
+        updateResponseTimeBadge(elapsed);
 
         setStatus(`Done in ${elapsed}s`);
         console.log(`[Glyph] Modification completed in ${elapsed}s`);
