@@ -1,0 +1,87 @@
+---
+title: receipt-minimal
+description: Minimal receipt template for transactions
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `receipt-minimal` template produces a compact, minimal receipt suitable for retail, food service, and point-of-sale transactions. It features a clean monochrome design with clear item listing and payment details.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="receipt-minimal"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `merchant.name` | string | Merchant or business name |
+| `receipt.number` | string | Receipt number |
+| `receipt.date` | string | Transaction date |
+| `items[].name` | string | Item name |
+| `items[].quantity` | number/string | Quantity |
+| `items[].price` | number/string | Item price |
+| `totals.subtotal` | number/string | Subtotal before tax |
+| `totals.total` | number/string | Final total |
+| `payment.method` | string | Payment method used |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `merchant.address` | string | Merchant address |
+| `receipt.time` | string | Transaction time |
+| `totals.tax` | number/string | Tax amount |
+| `payment.transactionId` | string | Transaction identifier |
+| `styles.accentColor` | string | Accent color (default: `#18181b`) |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "receipt-minimal",
+    "data": {
+      "merchant": {
+        "name": "The Daily Grind",
+        "address": "742 Evergreen Ave\nPortland, OR 97205"
+      },
+      "receipt": {
+        "number": "R-8847",
+        "date": "Jan 20, 2024",
+        "time": "9:32 AM"
+      },
+      "items": [
+        { "name": "Oat Milk Latte (L)", "quantity": 2, "price": "5.50" },
+        { "name": "Almond Croissant", "quantity": 1, "price": "4.25" },
+        { "name": "Drip Coffee (M)", "quantity": 1, "price": "3.00" }
+      ],
+      "totals": {
+        "subtotal": "18.25",
+        "tax": "1.64",
+        "total": "19.89"
+      },
+      "payment": {
+        "method": "Visa ending in 4242",
+        "transactionId": "txn_3Np8kL2eZvKY"
+      },
+      "styles": {
+        "accentColor": "#18181b"
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+This template works well for thermal-printer-style receipts. Use AI modifications like "Make this look like a thermal receipt" to further customize the look.
+</Aside>

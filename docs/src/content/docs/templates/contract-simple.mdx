@@ -1,0 +1,102 @@
+---
+title: contract-simple
+description: Simple contract and agreement template
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `contract-simple` template produces a clean, formal contract layout with numbered sections, party information, and signature lines. Suitable for service agreements, consulting contracts, and general business agreements.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="contract-simple"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `contract.title` | string | Contract title (e.g. "Service Agreement") |
+| `contract.number` | string | Unique contract identifier |
+| `contract.effectiveDate` | string | Date the contract takes effect |
+| `contract.term` | string | Duration of the contract |
+| `contract.jurisdiction` | string | Governing law jurisdiction |
+| `parties.party1.name` | string | Party A name |
+| `parties.party1.address` | string | Party A address |
+| `parties.party2.name` | string | Party B name |
+| `parties.party2.address` | string | Party B address |
+| `sections[].number` | string | Section number |
+| `sections[].title` | string | Section heading |
+| `sections[].content` | string | Section body text |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `signatures.showLines` | boolean | Whether to display signature lines (default: `true`) |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "contract-simple",
+    "data": {
+      "contract": {
+        "title": "Service Agreement",
+        "number": "CTR-2024-0042",
+        "effectiveDate": "March 1, 2024",
+        "term": "12 months",
+        "jurisdiction": "State of California"
+      },
+      "parties": {
+        "party1": {
+          "name": "Acme Solutions Inc.",
+          "address": "100 Innovation Drive\nSan Francisco, CA 94105"
+        },
+        "party2": {
+          "name": "Northwind Traders LLC",
+          "address": "250 Commerce Street\nPortland, OR 97201"
+        }
+      },
+      "sections": [
+        {
+          "number": "1",
+          "title": "Scope of Services",
+          "content": "The Service Provider agrees to deliver software development consulting services as outlined in Exhibit A."
+        },
+        {
+          "number": "2",
+          "title": "Compensation",
+          "content": "The Client agrees to pay the Service Provider a monthly retainer of $15,000 USD, due on the first business day of each month."
+        },
+        {
+          "number": "3",
+          "title": "Confidentiality",
+          "content": "Both parties agree to maintain the confidentiality of all proprietary information shared during the term of this agreement."
+        },
+        {
+          "number": "4",
+          "title": "Termination",
+          "content": "Either party may terminate this agreement with thirty (30) days written notice."
+        }
+      ],
+      "signatures": {
+        "showLines": true
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+Add as many sections as needed via the `sections` array. Each section is rendered with its number and title as a heading followed by the content text.
+</Aside>

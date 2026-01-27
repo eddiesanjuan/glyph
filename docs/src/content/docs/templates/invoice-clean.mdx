@@ -1,0 +1,119 @@
+---
+title: invoice-clean
+description: Clean, professional invoice template
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `invoice-clean` template provides a clean, professional invoice layout with a bold accent bar, structured line items, and clear payment information. Ideal for freelancers, agencies, and service businesses.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="invoice-clean"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `invoice.number` | string | Unique invoice identifier |
+| `invoice.date` | string | Invoice issue date |
+| `invoice.dueDate` | string | Payment due date |
+| `billTo.name` | string | Recipient name |
+| `lineItems[].description` | string | Item description |
+| `lineItems[].quantity` | number/string | Quantity |
+| `lineItems[].rate` | number/string | Unit rate |
+| `lineItems[].amount` | number/string | Line total |
+| `totals.subtotal` | number/string | Subtotal before tax |
+| `totals.total` | number/string | Final total |
+| `branding.companyName` | string | Your company name |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `invoice.paymentTerms` | string | Payment terms and instructions |
+| `invoice.notes` | string | Additional notes |
+| `billTo.company` | string | Client company name |
+| `billTo.address` | string | Billing address |
+| `billTo.email` | string | Client email |
+| `lineItems[].details` | string | Extended item description |
+| `totals.tax` | number/string | Tax amount |
+| `totals.taxRate` | number | Tax percentage |
+| `branding.logoUrl` | string | Logo image URL |
+| `branding.logoInitial` | string | Single letter fallback when no logo |
+| `branding.companyAddress` | string | Your company address |
+| `styles.accentColor` | string | Accent color (default: `#2563eb`) |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "invoice-clean",
+    "data": {
+      "invoice": {
+        "number": "INV-2024-0042",
+        "date": "January 20, 2024",
+        "dueDate": "February 19, 2024",
+        "paymentTerms": "Net 30. Please include invoice number on all payments.",
+        "notes": "Thank you for your business."
+      },
+      "billTo": {
+        "name": "Sarah Chen",
+        "company": "Northwind Traders",
+        "address": "200 Commerce Blvd\nSuite 1400\nChicago, IL 60601",
+        "email": "sarah@northwind.com"
+      },
+      "lineItems": [
+        {
+          "description": "Brand Identity Package",
+          "details": "Logo, color palette, typography system",
+          "quantity": 1,
+          "rate": "4,500.00",
+          "amount": "4,500.00"
+        },
+        {
+          "description": "Marketing Collateral",
+          "details": "Business cards, letterhead, envelope design",
+          "quantity": 1,
+          "rate": "1,200.00",
+          "amount": "1,200.00"
+        },
+        {
+          "description": "Consultation Hours",
+          "quantity": 8,
+          "rate": "175.00",
+          "amount": "1,400.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "7,100.00",
+        "tax": "639.00",
+        "taxRate": 9,
+        "total": "7,739.00"
+      },
+      "branding": {
+        "logoInitial": "S",
+        "companyName": "Studio Forma",
+        "companyAddress": "88 Design District\nAustin, TX 78701"
+      },
+      "styles": {
+        "accentColor": "#2563eb"
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+Use formatted strings like `"4,500.00"` for currency fields to get properly formatted output in the PDF.
+</Aside>

@@ -1,0 +1,58 @@
+---
+title: certificate-modern
+description: Modern certificate of achievement template
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `certificate-modern` template creates an elegant certificate with a modern design. Ideal for awards, course completions, and recognition documents. Features a centered layout with decorative elements and issuer details.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="certificate-modern"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `certificate.title` | string | Certificate title (e.g. "Certificate of Achievement") |
+| `certificate.recipientName` | string | Full name of the recipient |
+| `certificate.description` | string | What the certificate is for |
+| `certificate.date` | string | Date of issuance |
+| `certificate.issuer` | string | Name of the person issuing the certificate |
+| `certificate.issuerTitle` | string | Title of the issuer |
+| `certificate.organization` | string | Issuing organization name |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "certificate-modern",
+    "data": {
+      "certificate": {
+        "title": "Certificate of Achievement",
+        "recipientName": "Alexandra Chen",
+        "description": "In recognition of exceptional performance and dedication in the Advanced Software Engineering Program, demonstrating mastery of distributed systems, cloud architecture, and technical leadership.",
+        "date": "March 15, 2024",
+        "issuer": "Dr. James Walker",
+        "issuerTitle": "Program Director",
+        "organization": "Meridian Institute of Technology"
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+Use AI modifications like "Add a gold border" or "Make this more formal and ornate" to customize the certificate style for different occasions.
+</Aside>

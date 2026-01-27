@@ -1,0 +1,69 @@
+---
+title: report-cover
+description: Professional report cover page template
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `report-cover` template generates a professional cover page for reports, whitepapers, and research documents. It features a bold typographic layout with optional abstract, classification level, and version number.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="report-cover"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `report.title` | string | Report title |
+| `report.author` | string | Author name |
+| `report.date` | string | Publication date |
+| `report.organization` | string | Organization or department name |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `report.subtitle` | string | Report subtitle or tagline |
+| `report.version` | string | Document version |
+| `report.classification` | string | Classification level (e.g. "Internal", "Confidential") |
+| `report.abstract` | string | Summary or abstract text |
+| `styles.accentColor` | string | Accent color (default: `#1e293b`) |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "report-cover",
+    "data": {
+      "report": {
+        "title": "Q4 2024 Market Analysis",
+        "subtitle": "Trends, Opportunities, and Strategic Recommendations",
+        "author": "Dr. Emily Rodriguez",
+        "date": "January 15, 2024",
+        "organization": "Meridian Research Group",
+        "version": "2.1",
+        "classification": "Internal",
+        "abstract": "This report examines key market trends observed during Q4 2024, with particular focus on the enterprise SaaS segment. Our analysis covers pricing dynamics, competitive movements, and emerging opportunities in adjacent markets."
+      },
+      "styles": {
+        "accentColor": "#1e293b"
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+This template is designed as a single cover page. Pair it with other document generation tools or use AI modifications like "Add a table of contents section" to extend it.
+</Aside>

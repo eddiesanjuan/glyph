@@ -1,0 +1,81 @@
+---
+title: letter-business
+description: Formal business letter template
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The `letter-business` template produces a properly formatted business letter with sender and recipient address blocks, subject line, body paragraphs, and closing. Follows standard business letter conventions.
+
+## Usage
+
+```html
+<glyph-editor
+  api-key="gk_your_key"
+  template="letter-business"
+  data='...'
+></glyph-editor>
+```
+
+## Data Schema
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `letter.date` | string | Letter date |
+| `letter.senderName` | string | Sender full name |
+| `letter.senderTitle` | string | Sender job title |
+| `letter.senderCompany` | string | Sender company name |
+| `letter.senderAddress` | string | Sender address (supports `\n` for line breaks) |
+| `letter.recipientName` | string | Recipient full name |
+| `letter.recipientTitle` | string | Recipient job title |
+| `letter.recipientCompany` | string | Recipient company name |
+| `letter.recipientAddress` | string | Recipient address (supports `\n` for line breaks) |
+| `letter.subject` | string | Letter subject line |
+| `letter.salutation` | string | Opening greeting (e.g. "Dear Ms. Chen,") |
+| `letter.body` | string[] | Array of body paragraphs |
+| `letter.closing` | string | Closing phrase (e.g. "Sincerely,") |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `letter.signature` | string | Signature image URL |
+
+## Complete Example
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "letter-business",
+    "data": {
+      "letter": {
+        "date": "January 15, 2024",
+        "senderName": "Michael Torres",
+        "senderTitle": "Vice President, Business Development",
+        "senderCompany": "Cascade Partners LLC",
+        "senderAddress": "800 Fifth Avenue, Suite 3200\nSeattle, WA 98104",
+        "recipientName": "Sarah Chen",
+        "recipientTitle": "Chief Technology Officer",
+        "recipientCompany": "Horizon Dynamics Inc.",
+        "recipientAddress": "1200 Market Street\nSan Francisco, CA 94103",
+        "subject": "Strategic Partnership Proposal - Q1 2024",
+        "salutation": "Dear Ms. Chen,",
+        "body": [
+          "I am writing to express our strong interest in establishing a strategic partnership between Cascade Partners and Horizon Dynamics.",
+          "Cascade Partners brings over fifteen years of expertise in cloud infrastructure optimization, serving more than 200 Fortune 500 clients.",
+          "I would welcome the opportunity to discuss this proposal in greater detail.",
+          "Please let me know if you are available for a meeting during the week of February 5th."
+        ],
+        "closing": "Sincerely,"
+      }
+    }
+  }'
+```
+
+<Aside type="tip">
+The `body` field is an array of strings where each string becomes a separate paragraph. This preserves proper paragraph spacing in the generated PDF.
+</Aside>

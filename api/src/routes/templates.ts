@@ -282,9 +282,27 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
  * List all available built-in templates with metadata and sample data.
  */
 templates.get("/", (c) => {
+  const category = c.req.query("category");
+  const search = c.req.query("search");
+
+  let filtered = TEMPLATE_CATALOG;
+
+  if (category) {
+    filtered = filtered.filter((t) => t.category === category);
+  }
+
+  if (search) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q)
+    );
+  }
+
   const body = JSON.stringify({
-    templates: TEMPLATE_CATALOG,
-    count: TEMPLATE_CATALOG.length,
+    templates: filtered,
+    count: filtered.length,
   });
   const etag = generateETag(body);
 
@@ -1000,6 +1018,169 @@ templates.get("/count", async (c) => {
     return c.json(error, 500);
   }
 });
+
+// =============================================================================
+// Validate Request Schema
+// =============================================================================
+
+const validateBodySchema = z.object({
+  data: z.record(z.unknown()),
+});
+
+/**
+ * POST /:id/validate
+ * Validate user-provided data against a template's JSON schema.
+ * Checks for missing required fields and basic type mismatches.
+ */
+templates.post(
+  "/:id/validate",
+  zValidator("json", validateBodySchema, (result, c) => {
+    if (!result.success) {
+      const error: ApiError = {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: result.error.issues,
+      };
+      return c.json(error, 400);
+    }
+    return;
+  }),
+  async (c) => {
+    const id = c.req.param("id");
+
+    // Find template in catalog
+    const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === id);
+    if (!catalogEntry) {
+      const error: ApiError = {
+        error: `Template '${id}' not found`,
+        code: "TEMPLATE_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    // Read schema.json
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const templatesDir = resolve(currentDir, "..", "..", "..", "templates");
+    const schemaPath = join(templatesDir, id, "schema.json");
+
+    try {
+      const { readFile, access } = await import("fs/promises");
+
+      try {
+        await access(schemaPath);
+      } catch {
+        const error: ApiError = {
+          error: `Schema file not found for template '${id}'`,
+          code: "SCHEMA_NOT_FOUND",
+        };
+        return c.json(error, 404);
+      }
+
+      const raw = await readFile(schemaPath, "utf-8");
+      const schema = JSON.parse(raw);
+      const { data } = c.req.valid("json");
+
+      const errors: Array<{ field: string; message: string }> = [];
+      const warnings: Array<{ field: string; message: string }> = [];
+
+      // Recursively validate properties against data
+      function validateProperties(
+        properties: Record<string, any>,
+        requiredFields: string[],
+        dataObj: Record<string, unknown>,
+        prefix: string
+      ) {
+        for (const [key, prop] of Object.entries(properties)) {
+          const fieldPath = prefix ? `${prefix}.${key}` : key;
+          const value = dataObj?.[key];
+          const isRequired = requiredFields.includes(key);
+
+          if (value === undefined || value === null) {
+            if (isRequired) {
+              errors.push({ field: fieldPath, message: "Required field is missing" });
+            } else {
+              warnings.push({ field: fieldPath, message: "Optional field not provided" });
+            }
+            continue;
+          }
+
+          // Basic type checking
+          const propDef = prop as Record<string, any>;
+          const expectedType = propDef.type;
+
+          if (expectedType) {
+            let typeMatch = true;
+
+            switch (expectedType) {
+              case "string":
+                typeMatch = typeof value === "string";
+                break;
+              case "number":
+              case "integer":
+                typeMatch = typeof value === "number";
+                break;
+              case "boolean":
+                typeMatch = typeof value === "boolean";
+                break;
+              case "array":
+                typeMatch = Array.isArray(value);
+                break;
+              case "object":
+                typeMatch = typeof value === "object" && !Array.isArray(value);
+                break;
+            }
+
+            if (!typeMatch) {
+              errors.push({
+                field: fieldPath,
+                message: `Expected type '${expectedType}', got '${Array.isArray(value) ? "array" : typeof value}'`,
+              });
+              continue;
+            }
+          }
+
+          // Recurse into nested objects
+          if (
+            propDef.type === "object" &&
+            propDef.properties &&
+            typeof value === "object" &&
+            !Array.isArray(value)
+          ) {
+            validateProperties(
+              propDef.properties,
+              propDef.required || [],
+              value as Record<string, unknown>,
+              fieldPath
+            );
+          }
+        }
+      }
+
+      if (schema.properties) {
+        validateProperties(
+          schema.properties,
+          schema.required || [],
+          data,
+          ""
+        );
+      }
+
+      return c.json({
+        valid: errors.length === 0,
+        templateId: id,
+        errors,
+        warnings,
+      });
+    } catch (err) {
+      console.error(`Validation error for '${id}':`, err);
+      const error: ApiError = {
+        error: err instanceof Error ? err.message : "Validation failed",
+        code: "VALIDATION_ERROR",
+      };
+      return c.json(error, 500);
+    }
+  }
+);
 
 /**
  * GET /:id
