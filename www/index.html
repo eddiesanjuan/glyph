@@ -5009,6 +5009,19 @@
       color: var(--color-text);
     }
 
+    .session-warning-toast__btn--signup {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-warning-toast__btn--signup:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
     /* API Error Toast - User-visible errors */
     .api-error-toast {
       position: fixed;
@@ -10783,7 +10796,7 @@
         hasShown5MinWarning = true;
         showSessionWarning(
           'Session expires in 5 minutes!',
-          'Your changes will be lost. Download PDF immediately!',
+          'Download your PDF or sign up to continue working.',
           true
         );
       }
@@ -17636,6 +17649,7 @@
     </div>
     <div class="session-warning-toast__actions">
       <button class="session-warning-toast__btn session-warning-toast__btn--primary" id="session-warning-download">Download PDF</button>
+      <a href="https://dashboard.glyph.you" class="session-warning-toast__btn session-warning-toast__btn--signup" id="session-warning-signup">Sign Up</a>
       <button class="session-warning-toast__btn session-warning-toast__btn--secondary" id="session-warning-dismiss">Dismiss</button>
     </div>
   </div>

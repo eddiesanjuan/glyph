@@ -13,6 +13,10 @@ export default defineConfig({
 				dark: './src/assets/glyph-logo-dark.svg',
 				replacesTitle: true,
 			},
+			components: {
+				// Override SiteTitle to link to docs homepage instead of main landing page
+				SiteTitle: './src/components/SiteTitle.astro',
+			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/glyph-so/glyph' },
 				{ icon: 'x.com', label: 'X', href: 'https://x.com/glyph_so' },
@@ -41,6 +45,7 @@ export default defineConfig({
 					label: 'API Reference',
 					items: [
 						{ label: 'Overview', slug: 'api/overview' },
+						{ label: 'Data-First API (Recommended)', slug: 'api/create' },
 						{ label: 'POST /v1/preview', slug: 'api/preview' },
 						{ label: 'POST /v1/modify', slug: 'api/modify' },
 						{ label: 'POST /v1/generate', slug: 'api/generate' },
