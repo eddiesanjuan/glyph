@@ -1,4 +1,15 @@
     // ============================================
+    // Utilities
+    // ============================================
+    function debounce(fn, delay) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
+    // ============================================
     // Configuration
     // ============================================
     const API_URL = (() => {
@@ -1754,9 +1765,9 @@
     }
 
     // Autocomplete event listeners
-    promptInput.addEventListener('input', () => {
+    promptInput.addEventListener('input', debounce(() => {
       showAutocomplete();
-    });
+    }, 300));
 
     promptInput.addEventListener('focus', () => {
       showAutocomplete();

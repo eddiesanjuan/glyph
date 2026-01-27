@@ -2119,6 +2119,11 @@
       box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
     }
 
+    .playground__template-type:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
     .playground__tabs {
       display: flex;
       gap: 4px;
@@ -2388,6 +2393,11 @@
     .autocomplete-item:hover,
     .autocomplete-item.selected {
       background: linear-gradient(90deg, rgba(30, 58, 95, 0.15) 0%, rgba(30, 58, 95, 0.08) 100%);
+    }
+
+    .autocomplete-item:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
     }
 
     /* Type-specific styling */
@@ -9067,6 +9077,11 @@
       background: var(--color-primary-subtle);
     }
 
+    .command-palette__item:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
     .command-palette__item-icon {
       width: 18px;
       height: 18px;
@@ -9454,4 +9469,17 @@
   .comparison__table td {
     padding: 12px 14px;
   }
+}
+
+/* Focus-visible styles for keyboard navigation */
+.playground__undo-btn:focus-visible,
+.playground__diff-btn:focus-visible,
+.playground__save-btn:focus-visible,
+.playground__share-btn:focus-visible,
+.playground__zoom-toggle:focus-visible,
+.history-toggle-btn:focus-visible,
+.save-template-btn:focus-visible,
+.playground__voice-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
