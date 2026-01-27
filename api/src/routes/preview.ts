@@ -14,46 +14,11 @@ import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
 const preview = new Hono();
 
 // Request validation schema
+// Data is intentionally flexible: different template types (quote, invoice, receipt, report)
+// have different data shapes. The template engine handles field mapping.
 const previewRequestSchema = z.object({
   template: z.string().min(1).default("quote-modern"),
-  data: z.object({
-    client: z.object({
-      name: z.string().min(1),
-      email: z.string().email().optional(),
-      address: z.string().optional(),
-      company: z.string().optional(),
-    }),
-    lineItems: z.array(
-      z.object({
-        description: z.string(),
-        quantity: z.number().positive(),
-        unitPrice: z.number().nonnegative(),
-        total: z.number().nonnegative(),
-      })
-    ),
-    totals: z.object({
-      subtotal: z.number().nonnegative(),
-      tax: z.number().nonnegative().optional(),
-      discount: z.number().nonnegative().optional(),
-      total: z.number().nonnegative(),
-    }),
-    meta: z
-      .object({
-        quoteNumber: z.string().optional(),
-        date: z.string().optional(),
-        validUntil: z.string().optional(),
-        notes: z.string().optional(),
-        terms: z.string().optional(),
-      })
-      .optional(),
-    branding: z
-      .object({
-        logoUrl: z.string().url().optional().or(z.literal("")),
-        companyName: z.string().optional(),
-        companyAddress: z.string().optional(),
-      })
-      .optional(),
-  }),
+  data: z.record(z.unknown()),
 });
 
 preview.post(
@@ -78,7 +43,7 @@ preview.post(
 
       // Render template using Mustache engine
       const tRender = Date.now();
-      const result = await templateEngine.render(template, data as QuoteData);
+      const result = await templateEngine.render(template, data as unknown as QuoteData);
       const renderDuration = Date.now() - tRender;
 
       // Build response
