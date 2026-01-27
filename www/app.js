@@ -1868,74 +1868,67 @@
       branding: {
         companyName: 'Acme Corporation',
         companyAddress: '123 Business Ave, Suite 100\nSan Francisco, CA 94102',
-        logoUrl: ''
+        logoUrl: '',
+        logoInitial: 'A'
       },
-      meta: {
-        invoiceNumber: 'INV-2026-0087',
+      invoice: {
+        number: 'INV-2026-0087',
         date: 'January 27, 2026',
         dueDate: 'February 26, 2026',
         notes: 'Thank you for your prompt payment.',
-        terms: 'Payment due within 30 days. Late fees of 1.5% per month apply.'
+        paymentTerms: 'Payment due within 30 days. Late fees of 1.5% per month apply.'
       },
-      client: {
+      billTo: {
         name: 'Sarah Chen',
         company: 'Brightpath Analytics',
         email: 'sarah@brightpath.io',
-        address: '789 Data Drive\nAustin, TX 73301'
+        address: '789 Data Drive, Austin, TX 73301'
       },
       lineItems: [
-        { description: 'Data Pipeline Setup', details: 'ETL pipeline configuration and testing', quantity: 1, unitPrice: 4500.00, total: 4500.00 },
-        { description: 'Dashboard Development', details: 'Custom analytics dashboards (3 views)', quantity: 3, unitPrice: 2000.00, total: 6000.00 },
-        { description: 'API Integration', details: 'Third-party API connectors', quantity: 2, unitPrice: 1500.00, total: 3000.00 }
+        { description: 'Data Pipeline Setup', details: 'ETL pipeline configuration and testing', quantity: 1, rate: '4,500.00', amount: '4,500.00' },
+        { description: 'Dashboard Development', details: 'Custom analytics dashboards (3 views)', quantity: 3, rate: '2,000.00', amount: '6,000.00' },
+        { description: 'API Integration', details: 'Third-party API connectors', quantity: 2, rate: '1,500.00', amount: '3,000.00' }
       ],
       totals: {
-        subtotal: 13500.00,
-        tax: 1080.00,
-        discount: 0,
-        total: 14580.00
+        subtotal: '13,500.00',
+        tax: '1,080.00',
+        total: '14,580.00'
       },
       styles: { accentColor: '#2563eb' }
     };
 
     const sampleReceiptData = {
-      branding: {
-        companyName: 'Acme Corporation',
-        companyAddress: '123 Business Ave\nSan Francisco, CA 94102',
-        logoUrl: ''
+      merchant: {
+        name: 'The Daily Grind',
+        address: '456 Market St, San Francisco, CA 94102'
       },
-      meta: {
-        receiptNumber: 'REC-2026-0193',
+      receipt: {
+        number: 'REC-2026-0193',
         date: 'January 27, 2026',
-        paymentMethod: 'Credit Card ending in 4242'
+        time: '10:32 AM'
       },
-      client: {
-        name: 'Alex Rivera',
-        company: 'Rivera Design Studio',
-        email: 'alex@riveradesign.co'
-      },
-      lineItems: [
-        { description: 'Monthly Subscription - Pro Plan', quantity: 1, unitPrice: 49.00, total: 49.00 },
-        { description: 'Additional Storage (50GB)', quantity: 1, unitPrice: 10.00, total: 10.00 }
+      items: [
+        { name: 'Monthly Subscription - Pro Plan', quantity: 1, price: '49.00' },
+        { name: 'Additional Storage (50GB)', quantity: 1, price: '10.00' }
       ],
       totals: {
-        subtotal: 59.00,
-        tax: 4.72,
-        total: 63.72
+        subtotal: '59.00',
+        tax: '4.72',
+        total: '63.72'
+      },
+      payment: {
+        method: 'Credit Card ending in 4242'
       },
       styles: { accentColor: '#059669' }
     };
 
     const sampleReportData = {
-      branding: {
-        companyName: 'Acme Corporation',
-        companyAddress: '123 Business Ave\nSan Francisco, CA 94102',
-        logoUrl: ''
-      },
-      meta: {
-        reportTitle: 'Q4 2025 Performance Review',
-        date: 'January 27, 2026',
+      report: {
+        title: 'Q4 2025 Performance Review',
+        subtitle: 'Trends, Opportunities, and Strategic Recommendations',
         author: 'Strategy Team',
-        department: 'Operations'
+        date: 'January 27, 2026',
+        organization: 'Acme Corporation'
       },
       styles: { accentColor: '#7c3aed' }
     };

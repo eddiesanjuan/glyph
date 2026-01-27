@@ -32,9 +32,12 @@ export class TemplateEngine {
   async render(templateName: string, data: QuoteData): Promise<TemplateResult> {
     const templateHtml = await this.loadTemplate(templateName);
 
-    // Prepare data for Mustache rendering
-    // Mustache needs flat access or proper nested objects
-    const renderData = this.prepareData(data);
+    // Quote templates use prepareData for currency formatting;
+    // non-quote templates pass data directly to Mustache
+    const isQuoteTemplate = templateName.startsWith("quote-");
+    const renderData = isQuoteTemplate
+      ? this.prepareData(data)
+      : (data as unknown as Record<string, unknown>);
 
     // Render Mustache template
     const html = Mustache.render(templateHtml, renderData);
