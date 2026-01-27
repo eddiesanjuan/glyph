@@ -2686,12 +2686,33 @@
     }
 
     // Initialize shortcuts bar visibility
+    // Bar starts hidden and only shows when prompt input is focused
     function initShortcutsBar() {
-      const dismissed = safeGetItem(SHORTCUTS_DISMISSED_KEY);
-      if (dismissed === 'true') {
+      // Always start hidden
+      if (shortcutsBar) {
         shortcutsBar.classList.add('hidden');
       }
       initShortcutLabels();
+
+      // Show shortcuts bar when prompt input is focused (desktop only)
+      const promptInput = document.getElementById('prompt-input');
+      if (promptInput && shortcutsBar) {
+        promptInput.addEventListener('focus', () => {
+          const dismissed = safeGetItem(SHORTCUTS_DISMISSED_KEY);
+          // Only show on desktop (CSS hides on mobile via media query)
+          if (dismissed !== 'true' && window.innerWidth >= 768) {
+            shortcutsBar.classList.remove('hidden');
+          }
+        });
+        promptInput.addEventListener('blur', () => {
+          // Delay hide to allow clicking dismiss button
+          setTimeout(() => {
+            if (shortcutsBar) {
+              shortcutsBar.classList.add('hidden');
+            }
+          }, 200);
+        });
+      }
     }
 
     // Dismiss shortcuts bar
@@ -6310,14 +6331,21 @@ print(result['html'])  # Updated HTML`;
     // ============================================
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const href = this.getAttribute('href');
+        if (!href || href === '#') return;
+        // Try to find target element by selector or by ID
+        const targetId = href.replace('#', '');
+        const target = document.getElementById(targetId) || document.querySelector(href);
         if (target) {
+          e.preventDefault();
           target.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
           });
+          // Update URL hash without jumping
+          history.pushState(null, '', href);
         }
+        // If target not found, let the browser handle it normally
       });
     });
 

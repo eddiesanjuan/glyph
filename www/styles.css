@@ -1621,12 +1621,12 @@
          Using 280px width to leave margin for shadows and ensure visibility */
       .playground__preview-frame-wrapper {
         width: 280px;
-        height: 362px;  /* 280 * 1.294 ratio */
+        height: 350px;  /* matches scaled content height */
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
         flex-shrink: 0;
-        overflow: visible;
+        overflow: hidden;
         visibility: visible !important;
         opacity: 1 !important;
       }
@@ -1634,7 +1634,7 @@
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.329);  /* 280/850 = 0.329 */
+        transform: scale(0.318);  /* 270/850 = 0.318 - leaves margin to prevent right-edge clipping */
         transform-origin: top left;
         border: none;
         pointer-events: auto;
@@ -7170,17 +7170,18 @@
       /* Document preview sized for mobile readability */
       .playground__preview-frame-wrapper {
         width: 280px;
-        height: 362px;
+        height: 350px;
         position: relative;
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        overflow: hidden;
       }
 
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.329);
+        transform: scale(0.318);  /* 270/850 = 0.318 - prevents right-edge clipping */
         transform-origin: top left;
         border: none;
       }
@@ -7282,10 +7283,11 @@
       .playground__preview-frame-wrapper {
         width: 100%;
         max-width: 280px;
-        height: 362px;
+        height: 350px;
         margin: 0 auto;
         background: white;
         box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        overflow: hidden;
         visibility: visible !important;
         opacity: 1 !important;
       }
@@ -7293,7 +7295,7 @@
       .playground__preview-frame-wrapper iframe {
         width: 850px;
         height: 1100px;
-        transform: scale(0.329);
+        transform: scale(0.318);  /* 270/850 = 0.318 - prevents right-edge clipping */
         transform-origin: top left;
         border: none;
         visibility: visible !important;

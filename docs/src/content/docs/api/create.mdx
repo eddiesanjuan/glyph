@@ -3,8 +3,6 @@ title: POST /v1/analyze/preview/auto - Data-First PDF Generation
 description: Generate professional PDFs from raw data with automatic type detection
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 <span class="endpoint-badge post">POST</span> `/v1/analyze/preview/auto`
 
 Generate professional PDFs from raw data with natural language intent. No templates required - Glyph automatically detects your document type and creates a beautiful layout.
@@ -89,9 +87,9 @@ No template selection. No field mapping. Just data in, PDF out.
 | `analysis.template` | string | Template used for rendering |
 | `analysis.fieldMappings` | array | How your fields were mapped |
 
-<Aside type="tip">
+:::tip
 Use the `sessionId` with `/v1/modify` to make AI-powered changes, then `/v1/generate` to create the final PDF.
-</Aside>
+:::
 
 ## How It Works
 
