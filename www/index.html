@@ -8734,6 +8734,226 @@
         display: none;
       }
     }
+
+    /* ============================================
+       Command Palette (Cmd+K)
+       ============================================ */
+    .command-palette-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 15vh;
+      z-index: 1002;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+    }
+
+    .command-palette-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .command-palette {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 560px;
+      max-height: 420px;
+      overflow: hidden;
+      transform: scale(0.96) translateY(-10px);
+      transition: transform 0.15s ease;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .command-palette-overlay.visible .command-palette {
+      transform: scale(1) translateY(0);
+    }
+
+    .command-palette__search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .command-palette__search-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+
+    .command-palette__input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      font-family: var(--font-sans);
+      color: var(--color-text);
+    }
+
+    .command-palette__input::placeholder {
+      color: var(--color-text-subtle);
+    }
+
+    .command-palette__hint {
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      padding: 2px 8px;
+      background: var(--color-bg-elevated);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+
+    .command-palette__results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .command-palette__empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 14px;
+    }
+
+    .command-palette__category {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .command-palette__item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .command-palette__item:hover,
+    .command-palette__item--selected {
+      background: var(--color-bg-elevated);
+    }
+
+    .command-palette__item--selected {
+      background: var(--color-primary-subtle);
+    }
+
+    .command-palette__item-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+
+    .command-palette__item-name {
+      flex: 1;
+      font-size: 14px;
+      color: var(--color-text);
+    }
+
+    .command-palette__item-shortcut {
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      font-family: var(--font-mono);
+    }
+
+    .command-palette__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-top: 1px solid var(--color-border-subtle);
+      background: var(--color-bg-elevated);
+      font-size: 12px;
+      color: var(--color-text-subtle);
+    }
+
+    .command-palette__footer-keys {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .command-palette__footer-key {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .command-palette__footer-key kbd {
+      padding: 2px 6px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    /* Mobile: smaller padding, full width with margins */
+    @media (max-width: 640px) {
+      .command-palette-overlay {
+        padding: 10vh 16px 0;
+      }
+
+      .command-palette {
+        max-height: 60vh;
+      }
+
+      .command-palette__footer {
+        display: none;
+      }
+    }
+
+    /* Keyboard hint button in header */
+    .nav__keyboard-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: var(--font-mono);
+    }
+
+    .nav__keyboard-hint:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    .nav__keyboard-hint svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .nav__keyboard-hint {
+        display: none;
+      }
+    }
   </style>
   <!-- Canvas Confetti for first modification celebration -->
 </head>
@@ -8823,6 +9043,12 @@
         <li><a href="#airtable" class="nav__link">Airtable</a></li>
         <li><a href="https://docs.glyph.you" class="nav__link">Docs</a></li>
       </ul>
+      <button class="nav__keyboard-hint" id="cmd-k-hint" title="Open command palette">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+        </svg>
+        <span id="cmd-k-label"></span>
+      </button>
       <a href="https://dashboard.glyph.you" class="nav__cta">
         Get API Key
         <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10805,6 +11031,29 @@
       <div class="modal__actions">
         <button class="modal__btn modal__btn--secondary" id="pdf-success-close">Continue Editing</button>
         <a href="https://dashboard.glyph.you" class="modal__btn modal__btn--primary">Get Free API Key</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette Modal -->
+  <div class="command-palette-overlay" id="command-palette-overlay">
+    <div class="command-palette" role="dialog" aria-label="Command palette">
+      <div class="command-palette__search">
+        <svg class="command-palette__search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" class="command-palette__input" id="command-palette-input" placeholder="Type a command..." autocomplete="off" spellcheck="false">
+        <span class="command-palette__hint">esc</span>
+      </div>
+      <div class="command-palette__results" id="command-palette-results">
+        <!-- Results populated by JavaScript -->
+      </div>
+      <div class="command-palette__footer">
+        <div class="command-palette__footer-keys">
+          <span class="command-palette__footer-key"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+          <span class="command-palette__footer-key"><kbd>↵</kbd> select</span>
+          <span class="command-palette__footer-key"><kbd>esc</kbd> close</span>
+        </div>
       </div>
     </div>
   </div>
@@ -13149,6 +13398,274 @@
 
     // Initialize shortcuts bar
     initShortcutsBar();
+
+    // ============================================
+    // Command Palette (Cmd+K)
+    // ============================================
+    const commandPaletteOverlay = document.getElementById('command-palette-overlay');
+    const commandPaletteInput = document.getElementById('command-palette-input');
+    const commandPaletteResults = document.getElementById('command-palette-results');
+    const cmdKHint = document.getElementById('cmd-k-hint');
+    const cmdKLabel = document.getElementById('cmd-k-label');
+
+    // Set the Cmd+K label based on platform
+    if (cmdKLabel) {
+      cmdKLabel.textContent = isMac ? '\u2318K' : 'Ctrl+K';
+    }
+
+    let selectedCommandIndex = 0;
+    let filteredPaletteCommands = [];
+
+    // Command palette definitions
+    const paletteCommands = [
+      // Quick Actions
+      { name: 'Add Watermark', action: () => applyInstantCommand('Add a diagonal watermark that says DRAFT across the page'), category: 'Quick Actions', icon: 'watermark' },
+      { name: 'Add QR Code', action: () => applyInstantCommand('Add a QR code in the corner for quick mobile payment'), category: 'Quick Actions', icon: 'qr' },
+      { name: 'Add Payment Terms', action: () => applyInstantCommand('Add payment terms: Net 30 with 2% early payment discount if paid within 10 days'), category: 'Quick Actions', icon: 'terms' },
+      { name: 'Add Date', action: () => applyInstantCommand("Add today's date in the top right corner"), category: 'Quick Actions', icon: 'date' },
+      { name: 'Add Border', action: () => applyInstantCommand('Add a professional border around the document'), category: 'Quick Actions', icon: 'border' },
+      { name: 'Add Thank You Note', action: () => applyInstantCommand('Add a thank you note at the bottom'), category: 'Quick Actions', icon: 'note' },
+      { name: 'Add Signature', action: () => applyInstantCommand('Add a signature'), category: 'Quick Actions', icon: 'signature' },
+      // Templates
+      { name: 'Switch to Modern Template', action: () => switchToTemplate('quote-modern'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Professional Template', action: () => switchToTemplate('quote-professional'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Bold Template', action: () => switchToTemplate('quote-bold'), category: 'Templates', icon: 'template' },
+      // Edit
+      { name: 'Undo', action: () => performUndo(), category: 'Edit', shortcut: isMac ? '\u2318Z' : 'Ctrl+Z', icon: 'undo' },
+      { name: 'Redo', action: () => performRedo(), category: 'Edit', shortcut: isMac ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z', icon: 'redo' },
+      // Export
+      { name: 'Download PDF', action: () => triggerPdfDownload(), category: 'Export', icon: 'download' },
+      // Developer
+      { name: 'Get API Code', action: () => openCopyCodeModal(), category: 'Developer', icon: 'code' },
+      // View
+      { name: 'View History', action: () => toggleHistoryPanel(), category: 'View', icon: 'history' },
+      // Navigation
+      { name: 'Go to Dashboard', action: () => window.open('https://dashboard.glyph.you', '_blank'), category: 'Navigation', icon: 'external' },
+      { name: 'Go to Docs', action: () => window.open('https://docs.glyph.you', '_blank'), category: 'Navigation', icon: 'external' },
+    ];
+
+    // Helper to apply instant commands through the playground
+    function applyInstantCommand(prompt) {
+      const promptInput = document.getElementById('prompt-input');
+      if (promptInput) {
+        promptInput.value = prompt;
+        applyModifications(prompt);
+      }
+    }
+
+    // Helper to switch templates
+    function switchToTemplate(templateId) {
+      const tab = document.querySelector(`.playground__tab[data-template="${templateId}"]`);
+      if (tab && !tab.classList.contains('playground__tab--active')) {
+        tab.click();
+      }
+    }
+
+    // Helper to trigger PDF download
+    function triggerPdfDownload() {
+      const generateBtn = document.getElementById('generate-btn');
+      if (generateBtn && !generateBtn.disabled) {
+        generateBtn.click();
+      }
+    }
+
+    // Get icon SVG for command type
+    function getCommandIcon(iconType) {
+      const icons = {
+        watermark: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>',
+        qr: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>',
+        terms: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',
+        date: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
+        border: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/>',
+        note: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>',
+        signature: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>',
+        template: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>',
+        undo: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>',
+        redo: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"/>',
+        download: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>',
+        code: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>',
+        history: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        external: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>',
+      };
+      return icons[iconType] || icons.note;
+    }
+
+    // Filter commands based on search query
+    function filterPaletteCommands(query) {
+      if (!query) {
+        return [...paletteCommands];
+      }
+      const lowerQuery = query.toLowerCase();
+      return paletteCommands.filter(cmd =>
+        cmd.name.toLowerCase().includes(lowerQuery) ||
+        cmd.category.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    // Render command palette results
+    function renderCommandResults() {
+      if (!commandPaletteResults) return;
+
+      if (filteredPaletteCommands.length === 0) {
+        commandPaletteResults.innerHTML = '<div class="command-palette__empty">No matching commands</div>';
+        return;
+      }
+
+      // Group by category
+      const grouped = {};
+      filteredPaletteCommands.forEach(cmd => {
+        if (!grouped[cmd.category]) {
+          grouped[cmd.category] = [];
+        }
+        grouped[cmd.category].push(cmd);
+      });
+
+      let html = '';
+      Object.entries(grouped).forEach(([category, cmds]) => {
+        html += `<div class="command-palette__category">${category}</div>`;
+        cmds.forEach((cmd, idx) => {
+          const globalIdx = filteredPaletteCommands.indexOf(cmd);
+          const isSelected = globalIdx === selectedCommandIndex;
+          html += `
+            <div class="command-palette__item${isSelected ? ' command-palette__item--selected' : ''}" data-index="${globalIdx}">
+              <svg class="command-palette__item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${getCommandIcon(cmd.icon)}
+              </svg>
+              <span class="command-palette__item-name">${cmd.name}</span>
+              ${cmd.shortcut ? `<span class="command-palette__item-shortcut">${cmd.shortcut}</span>` : ''}
+            </div>
+          `;
+        });
+      });
+
+      commandPaletteResults.innerHTML = html;
+
+      // Add click handlers
+      commandPaletteResults.querySelectorAll('.command-palette__item').forEach(item => {
+        item.addEventListener('click', () => {
+          const index = parseInt(item.dataset.index, 10);
+          executeCommand(index);
+        });
+        item.addEventListener('mouseenter', () => {
+          selectedCommandIndex = parseInt(item.dataset.index, 10);
+          updateSelectedItem();
+        });
+      });
+    }
+
+    // Update visual selection
+    function updateSelectedItem() {
+      const items = commandPaletteResults.querySelectorAll('.command-palette__item');
+      items.forEach((item, idx) => {
+        const itemIndex = parseInt(item.dataset.index, 10);
+        item.classList.toggle('command-palette__item--selected', itemIndex === selectedCommandIndex);
+      });
+
+      // Scroll selected item into view
+      const selectedItem = commandPaletteResults.querySelector('.command-palette__item--selected');
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    // Execute the selected command
+    function executeCommand(index) {
+      const cmd = filteredPaletteCommands[index];
+      if (cmd) {
+        closeCommandPalette();
+        // Small delay to let the modal close before executing
+        setTimeout(() => cmd.action(), 50);
+      }
+    }
+
+    // Open command palette
+    function openCommandPalette() {
+      if (!commandPaletteOverlay) return;
+
+      commandPaletteOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+
+      // Reset state
+      selectedCommandIndex = 0;
+      filteredPaletteCommands = filterPaletteCommands('');
+      if (commandPaletteInput) {
+        commandPaletteInput.value = '';
+        commandPaletteInput.focus();
+      }
+      renderCommandResults();
+    }
+
+    // Close command palette
+    function closeCommandPalette() {
+      if (!commandPaletteOverlay) return;
+
+      commandPaletteOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    // Command palette input handler
+    if (commandPaletteInput) {
+      commandPaletteInput.addEventListener('input', (e) => {
+        const query = e.target.value;
+        filteredPaletteCommands = filterPaletteCommands(query);
+        selectedCommandIndex = 0;
+        renderCommandResults();
+      });
+
+      commandPaletteInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedCommandIndex = Math.min(selectedCommandIndex + 1, filteredPaletteCommands.length - 1);
+          updateSelectedItem();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedCommandIndex = Math.max(selectedCommandIndex - 1, 0);
+          updateSelectedItem();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          executeCommand(selectedCommandIndex);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeCommandPalette();
+        }
+      });
+    }
+
+    // Close on backdrop click
+    if (commandPaletteOverlay) {
+      commandPaletteOverlay.addEventListener('click', (e) => {
+        if (e.target === commandPaletteOverlay) {
+          closeCommandPalette();
+        }
+      });
+    }
+
+    // Cmd+K hint button
+    if (cmdKHint) {
+      cmdKHint.addEventListener('click', openCommandPalette);
+    }
+
+    // Add Cmd+K to existing keyboard shortcut handler
+    document.addEventListener('keydown', (e) => {
+      const isModKey = isMac ? e.metaKey : e.ctrlKey;
+
+      // Cmd/Ctrl + K - Open command palette
+      if (isModKey && e.key === 'k') {
+        e.preventDefault();
+        if (commandPaletteOverlay?.classList.contains('visible')) {
+          closeCommandPalette();
+        } else {
+          openCommandPalette();
+        }
+      }
+
+      // Escape - Close command palette if open
+      if (e.key === 'Escape' && commandPaletteOverlay?.classList.contains('visible')) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeCommandPalette();
+      }
+    });
 
     // ============================================
     // Version History Panel (Auto-tracking Timeline)
