@@ -210,6 +210,8 @@ const sessionModifySchema = z.object({
   // Note: html field is accepted but ignored - server always uses template_html
   // to ensure Mustache placeholders are preserved for AI modification
   html: z.string().optional(),
+  // When true, runs the modification but does not persist changes to the session
+  dryRun: z.boolean().optional().default(false),
 });
 
 // Direct HTML modification schema (legacy/simple mode)
@@ -245,7 +247,7 @@ modify.post("/", async (c) => {
         return c.json(error, 400);
       }
 
-      const { sessionId, prompt, region } = parsed.data;
+      const { sessionId, prompt, region, dryRun } = parsed.data;
       const apiKeyId = c.get("apiKeyId") as string | undefined;
       const isDevSession = isDevSessionId(sessionId);
       const t0 = Date.now();
@@ -399,33 +401,35 @@ modify.post("/", async (c) => {
           renderedHtml = cachedResult.html;
         }
 
-        // Update session
-        const modifications = [
-          ...(session.modifications || []),
-          {
-            prompt,
-            region: region || null,
-            timestamp: new Date().toISOString(),
-            changes: cachedResult.changes,
-          },
-        ];
+        // Update session (skip if dryRun)
+        if (!dryRun) {
+          const modifications = [
+            ...(session.modifications || []),
+            {
+              prompt,
+              region: region || null,
+              timestamp: new Date().toISOString(),
+              changes: cachedResult.changes,
+            },
+          ];
 
-        if (isDevSession) {
-          updateDevSession(sessionId, {
-            current_html: renderedHtml,
-            template_html: cachedResult.html,
-            modifications,
-          });
-          addTemplateToHistory(sessionId, cachedResult.html, renderedHtml);
-        } else if (supabase) {
-          await getSupabase()
-            .from("sessions")
-            .update({
+          if (isDevSession) {
+            updateDevSession(sessionId, {
               current_html: renderedHtml,
               template_html: cachedResult.html,
               modifications,
-            })
-            .eq("id", sessionId);
+            });
+            addTemplateToHistory(sessionId, cachedResult.html, renderedHtml);
+          } else if (supabase) {
+            await getSupabase()
+              .from("sessions")
+              .update({
+                current_html: renderedHtml,
+                template_html: cachedResult.html,
+                modifications,
+              })
+              .eq("id", sessionId);
+          }
         }
 
         c.header('Server-Timing', Object.entries(timings).map(([k, v]) => `${k};dur=${v}`).join(', '));
@@ -434,6 +438,7 @@ modify.post("/", async (c) => {
           html: renderedHtml,
           changes: cachedResult.changes,
           tokensUsed: cachedResult.tokensUsed,
+          ...(dryRun ? { dryRun: true } : {}),
           usage: {
             promptTokens: cachedResult.inputTokens,
             completionTokens: cachedResult.outputTokens,
@@ -604,64 +609,66 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         },
       ];
 
-      // Update session in appropriate storage
+      // Update session in appropriate storage (skip if dryRun)
       // Store BOTH the modified template AND the rendered HTML
-      if (isDevSession) {
-        // Update in-memory dev session
-        updateDevSession(sessionId, {
-          current_html: renderedHtml,
-          template_html: modifiedTemplateHtml,
-          modifications,
-        });
-
-        // UNDO SUPPORT: Add this template state to history
-        // This allows finding the template when client undos to this state
-        addTemplateToHistory(sessionId, modifiedTemplateHtml, renderedHtml);
-      } else if (supabase) {
-        const { error: updateError } = await getSupabase()
-          .from("sessions")
-          .update({
+      if (!dryRun) {
+        if (isDevSession) {
+          // Update in-memory dev session
+          updateDevSession(sessionId, {
             current_html: renderedHtml,
             template_html: modifiedTemplateHtml,
             modifications,
-          })
-          .eq("id", sessionId);
-
-        if (updateError) {
-          console.error("Session update error:", updateError);
-        }
-      }
-
-      // Trigger event subscriptions (fire and forget)
-      triggerEventSubscriptions("template.modified", {
-        sessionId,
-        prompt,
-        region: region || null,
-        changes: result.changes,
-      });
-
-      // Fire notification webhooks (fire and forget)
-      fireNotificationWebhooks("modify.completed", {
-        session_id: sessionId,
-        prompt,
-        selfCheckPassed: true,
-      });
-
-      // Track usage (only for database sessions)
-      if (!isDevSession && apiKeyId && supabase) {
-        getSupabase()
-          .from("usage")
-          .insert({
-            api_key_id: apiKeyId,
-            endpoint: "modify",
-            template: session.template,
-            tokens_used: result.tokensUsed,
-          })
-          .then(({ error }) => {
-            if (error) {
-              console.error("Usage tracking error:", error);
-            }
           });
+
+          // UNDO SUPPORT: Add this template state to history
+          // This allows finding the template when client undos to this state
+          addTemplateToHistory(sessionId, modifiedTemplateHtml, renderedHtml);
+        } else if (supabase) {
+          const { error: updateError } = await getSupabase()
+            .from("sessions")
+            .update({
+              current_html: renderedHtml,
+              template_html: modifiedTemplateHtml,
+              modifications,
+            })
+            .eq("id", sessionId);
+
+          if (updateError) {
+            console.error("Session update error:", updateError);
+          }
+        }
+
+        // Trigger event subscriptions (fire and forget)
+        triggerEventSubscriptions("template.modified", {
+          sessionId,
+          prompt,
+          region: region || null,
+          changes: result.changes,
+        });
+
+        // Fire notification webhooks (fire and forget)
+        fireNotificationWebhooks("modify.completed", {
+          session_id: sessionId,
+          prompt,
+          selfCheckPassed: true,
+        });
+
+        // Track usage (only for database sessions)
+        if (!isDevSession && apiKeyId && supabase) {
+          getSupabase()
+            .from("usage")
+            .insert({
+              api_key_id: apiKeyId,
+              endpoint: "modify",
+              template: session.template,
+              tokens_used: result.tokensUsed,
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error("Usage tracking error:", error);
+              }
+            });
+        }
       }
 
       // SELF-CHECK: Run background validation after returning response
@@ -685,6 +692,7 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         html: renderedHtml,
         changes: result.changes,
         tokensUsed: result.tokensUsed,
+        ...(dryRun ? { dryRun: true } : {}),
         usage: {
           promptTokens: result.inputTokens,
           completionTokens: result.outputTokens,
@@ -855,7 +863,7 @@ async function runBackgroundValidation(
         // If we have auto-fixed HTML, store it for potential use
         if (result.fixedHtml) {
           console.info(`  [SelfCheck] Auto-fixed HTML available for session: ${sessionId}`);
-          // TODO: Store the fixed HTML in session or notify user via WebSocket
+          // TODO(P3): Store the fixed HTML in session or notify user via WebSocket
           // This could be implemented with:
           // 1. Session storage: updateDevSession(sessionId, { suggested_fix_html: result.fixedHtml })
           // 2. WebSocket notification to connected clients

@@ -1,0 +1,16 @@
+{
+  "name": "Glyph - AI-Powered PDF SDK",
+  "short_name": "Glyph",
+  "description": "Natural language PDF customization. 2 lines of code.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

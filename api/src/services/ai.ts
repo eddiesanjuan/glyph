@@ -1452,6 +1452,7 @@ INSTRUCTIONS:
     }
   }
 
+  // Anthropic SDK types don't include cache_read_input_tokens yet
   const cacheRead = (message.usage as any).cache_read_input_tokens || 0;
 
   return {

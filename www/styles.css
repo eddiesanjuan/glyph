@@ -1093,6 +1093,146 @@
       border-radius: 100px;
     }
 
+    /* Quick Start Section */
+    .quickstart {
+      padding: 80px 0 40px;
+    }
+
+    .quickstart__inner {
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .quickstart__header {
+      margin-bottom: 32px;
+    }
+
+    .quickstart__badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-primary-bright);
+      background: var(--color-primary-subtle);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+
+    .quickstart__title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-text);
+      margin: 0 0 8px;
+      line-height: 1.2;
+    }
+
+    .quickstart__subtitle {
+      font-size: 16px;
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .quickstart__code-window {
+      background: #0D1117;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .quickstart__code-toolbar {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--color-border-subtle);
+      gap: 12px;
+    }
+
+    .quickstart__code-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .quickstart__code-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .quickstart__code-filename {
+      flex: 1;
+      font-size: 12px;
+      color: var(--color-text-subtle);
+      font-family: var(--font-mono);
+    }
+
+    .quickstart__copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: transparent;
+      color: var(--color-text-subtle);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: var(--font-sans);
+    }
+
+    .quickstart__copy-btn:hover {
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .quickstart__copy-btn.copied {
+      color: #34D399;
+      border-color: #34D399;
+    }
+
+    pre.quickstart__code {
+      margin: 0;
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-x: auto;
+      background: transparent;
+    }
+
+    pre.quickstart__code code {
+      color: var(--color-text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .quickstart {
+        padding: 60px 0 30px;
+      }
+
+      .quickstart__title {
+        font-size: 22px;
+      }
+
+      pre.quickstart__code {
+        font-size: 12px;
+        padding: 16px;
+        line-height: 1.7;
+      }
+
+      .quickstart__code-toolbar {
+        padding: 10px 12px;
+      }
+    }
+
     /* Toast notification for copy */
     .copy-toast {
       position: fixed;
@@ -1530,26 +1670,38 @@
         min-height: 1100px;
       }
 
-      /* Loading stages compact */
-      .playground__loading-stages {
-        margin-top: 12px;
-        gap: 6px;
+      /* Stepper compact on mobile */
+      .stepper {
+        padding: 0 12px;
       }
 
-      .loading-stage {
-        font-size: 10px;
-        gap: 6px;
+      .stepper__step {
+        gap: 8px;
+        padding: 4px 0;
       }
 
-      .loading-stage__icon {
+      .stepper__indicator {
+        width: 20px;
+        height: 20px;
+      }
+
+      .stepper__connector {
+        height: 8px;
+        margin-left: 9px;
+      }
+
+      .stepper__label {
+        font-size: 11px;
+      }
+
+      .stepper__check {
         width: 12px;
         height: 12px;
       }
 
-      /* Loading tip compact */
-      .playground__loading-tip {
-        margin-top: 10px;
-        font-size: 11px;
+      .stepper__spinner {
+        width: 12px;
+        height: 12px;
       }
 
       /* Hide rate notice on very small screens */
@@ -2113,7 +2265,7 @@
       border-color: var(--color-primary);
     }
 
-    .playground__template-type:focus {
+    .playground__template-type:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
@@ -2206,7 +2358,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .playground__input:focus {
+    .playground__input:focus-visible {
       outline: none;
       border-color: var(--color-primary-bright);
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
@@ -2915,144 +3067,116 @@
       pointer-events: auto;
     }
 
-    .playground__loading .loading-spinner {
-      width: 24px;
-      height: 24px;
-      border-width: 2px;
-      margin-bottom: 20px;
-    }
-
-    .playground__loading-progress {
-      width: 200px;
-      height: 4px;
-      background: var(--color-border-subtle);
-      border-radius: 2px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .playground__loading-progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark, #5746af));
-      border-radius: 2px;
-      transition: width 0.3s ease-out;
-      position: relative;
-    }
-
-    .playground__loading-progress-bar::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.4),
-        transparent
-      );
-      animation: shimmer 1.5s ease-in-out infinite;
-    }
-
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-
-    .playground__loading-text {
-      margin-top: 16px;
-      font-size: 13px;
-      color: #888;
-      font-weight: 500;
-    }
-
-    .playground__loading-stages {
-      margin-top: 20px;
+    /* Step-based progress stepper */
+    .stepper {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      max-width: 240px;
+      align-items: flex-start;
+      gap: 0;
+      padding: 0 20px;
     }
 
-    .loading-stage {
+    .stepper__step {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      color: #aaa;
-      opacity: 0.5;
-      transition: opacity 0.3s, color 0.3s;
+      gap: 12px;
+      padding: 6px 0;
+      opacity: 0.35;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateY(4px);
     }
 
-    .loading-stage.active {
+    .stepper__step.active {
       opacity: 1;
-      color: #666;
+      transform: translateY(0);
     }
 
-    .loading-stage.completed {
-      opacity: 1;
-      color: #22C55E;
+    .stepper__step.completed {
+      opacity: 0.7;
+      transform: translateY(0);
     }
 
-    .loading-stage__icon {
-      width: 16px;
-      height: 16px;
+    .stepper__connector {
+      width: 2px;
+      height: 12px;
+      background: #ddd;
+      margin-left: 11px;
+      transition: background 0.4s ease;
+    }
+
+    .stepper__step.completed + .stepper__connector,
+    .stepper__connector.done {
+      background: #22C55E;
+    }
+
+    .stepper__indicator {
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      border: 2px solid currentColor;
+      border: 2px solid #ccc;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: all 0.3s;
+      position: relative;
+      transition: border-color 0.4s ease, background 0.4s ease;
     }
 
-    .loading-stage.active .loading-stage__icon {
+    .stepper__step.active .stepper__indicator {
       border-color: var(--color-primary);
-      animation: pulse-stage 1s ease-in-out infinite;
     }
 
-    .loading-stage.completed .loading-stage__icon {
-      background: #22C55E;
+    .stepper__step.completed .stepper__indicator {
       border-color: #22C55E;
+      background: #22C55E;
     }
 
-    .loading-stage.completed .loading-stage__icon::after {
-      content: '';
-      width: 6px;
-      height: 6px;
-      background: white;
+    .stepper__check {
+      width: 14px;
+      height: 14px;
+      color: white;
+      display: none;
+    }
+
+    .stepper__step.completed .stepper__check {
+      display: block;
+    }
+
+    .stepper__spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: var(--color-primary);
       border-radius: 50%;
+      display: none;
+      animation: stepper-spin 0.8s linear infinite;
     }
 
-    @keyframes pulse-stage {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+    .stepper__step.active .stepper__spinner {
+      display: block;
     }
 
-    .loading-stage__text {
+    .stepper__step.completed .stepper__spinner {
+      display: none;
+    }
+
+    @keyframes stepper-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .stepper__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
       white-space: nowrap;
     }
 
-    /* Loading tip that rotates during long waits */
-    .playground__loading-tip {
-      margin-top: 16px;
-      font-size: 12px;
-      color: #888;
-      font-style: italic;
-      min-height: 18px;
-      opacity: 0;
-      transition: opacity 0.5s ease-in-out;
+    .stepper__step.active .stepper__label {
+      color: #333;
     }
 
-    .playground__loading-tip.visible {
-      opacity: 1;
-    }
-
-    .playground__loading-tip::before {
-      content: '\2728';
-      margin-right: 6px;
+    .stepper__step.completed .stepper__label {
+      color: #22C55E;
     }
 
     /* Cancel button - appears after 5 seconds during long operations */
@@ -3694,7 +3818,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .save-version-modal__input:focus {
+    .save-version-modal__input:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -3856,9 +3980,9 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .save-template-modal__input:focus,
-    .save-template-modal__select:focus,
-    .save-template-modal__textarea:focus {
+    .save-template-modal__input:focus-visible,
+    .save-template-modal__select:focus-visible,
+    .save-template-modal__textarea:focus-visible {
       outline: none;
       border-color: var(--color-primary-bright);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -7560,7 +7684,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .airtable-input:focus {
+    .airtable-input:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -7641,7 +7765,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .airtable-select:focus {
+    .airtable-select:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -7713,7 +7837,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .airtable-textarea:focus {
+    .airtable-textarea:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -7907,7 +8031,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .airtable-refine-input:focus {
+    .airtable-refine-input:focus-visible {
       outline: none;
       border-color: var(--color-primary);
       box-shadow: 0 0 0 3px var(--color-primary-subtle);
@@ -8105,8 +8229,8 @@
       color: var(--color-text);
     }
 
-    .airtable-batch-select:focus,
-    .airtable-batch-input:focus {
+    .airtable-batch-select:focus-visible,
+    .airtable-batch-input:focus-visible {
       outline: none;
       border-color: var(--color-primary);
     }

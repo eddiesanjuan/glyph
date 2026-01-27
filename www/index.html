@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
   <meta name="theme-color" content="#0B1120">
   <meta name="color-scheme" content="dark">
+  <link rel="manifest" href="/manifest.json">
   <title>Glyph - Natural Language PDF Customization | MCP, CLI, SDK</title>
   <meta name="description" content="Natural language PDF customization. Works with Claude Code, Cursor, Windsurf via MCP. CLI and SDK available. Vibe code your documents.">
 
@@ -610,6 +611,39 @@
     </div>
   </section>
 
+  <!-- Quick Start Code Snippet -->
+  <section class="quickstart" id="quickstart">
+    <div class="container">
+      <div class="quickstart__inner">
+        <div class="quickstart__header">
+          <span class="quickstart__badge">2 Lines of Code</span>
+          <h2 class="quickstart__title">Add PDF customization to any app</h2>
+          <p class="quickstart__subtitle">One script tag. One component. That's it.</p>
+        </div>
+        <div class="quickstart__code-window">
+          <div class="quickstart__code-toolbar">
+            <div class="quickstart__code-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="quickstart__code-filename">index.html</span>
+            <button class="quickstart__copy-btn" onclick="copyQuickStart(this)">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre class="quickstart__code"><code><span class="code-tag">&lt;script</span> <span class="code-attr">src</span>=<span class="code-string">"https://sdk.glyph.you/glyph.min.js"</span><span class="code-tag">&gt;&lt;/script&gt;</span>
+<span class="code-tag">&lt;glyph-editor</span>
+  <span class="code-attr">api-key</span>=<span class="code-string">"YOUR_KEY"</span>
+  <span class="code-attr">template</span>=<span class="code-string">"quote-modern"</span>
+<span class="code-tag">&gt;&lt;/glyph-editor&gt;</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Social Proof Section -->
   <section class="social-proof">
     <div class="container">
@@ -884,30 +918,31 @@
             </div>
             <div class="playground__preview" id="preview-container">
               <div class="playground__loading" id="preview-loading" aria-live="polite" role="status">
-                <div class="loading-spinner"></div>
-                <div class="playground__loading-progress">
-                  <div class="playground__loading-progress-bar" id="loading-progress-bar"></div>
+                <div class="stepper" id="stepper">
+                  <div class="stepper__step" data-step="analyze">
+                    <div class="stepper__indicator">
+                      <svg class="stepper__check" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5L6.5 11.5L12.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <div class="stepper__spinner"></div>
+                    </div>
+                    <span class="stepper__label">Analyzing document</span>
+                  </div>
+                  <div class="stepper__connector"></div>
+                  <div class="stepper__step" data-step="generate">
+                    <div class="stepper__indicator">
+                      <svg class="stepper__check" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5L6.5 11.5L12.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <div class="stepper__spinner"></div>
+                    </div>
+                    <span class="stepper__label">Applying changes</span>
+                  </div>
+                  <div class="stepper__connector"></div>
+                  <div class="stepper__step" data-step="render">
+                    <div class="stepper__indicator">
+                      <svg class="stepper__check" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5L6.5 11.5L12.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <div class="stepper__spinner"></div>
+                    </div>
+                    <span class="stepper__label">Rendering preview</span>
+                  </div>
                 </div>
-                <div class="playground__loading-text" id="loading-text">Applying changes...</div>
-                <div class="playground__loading-stages" id="loading-stages">
-                  <div class="loading-stage" data-stage="analyze">
-                    <span class="loading-stage__icon"></span>
-                    <span class="loading-stage__text">Analyzing document structure</span>
-                  </div>
-                  <div class="loading-stage" data-stage="generate">
-                    <span class="loading-stage__icon"></span>
-                    <span class="loading-stage__text">Generating modifications</span>
-                  </div>
-                  <div class="loading-stage" data-stage="apply">
-                    <span class="loading-stage__icon"></span>
-                    <span class="loading-stage__text">Applying changes</span>
-                  </div>
-                  <div class="loading-stage" data-stage="validate">
-                    <span class="loading-stage__icon"></span>
-                    <span class="loading-stage__text">Validating output</span>
-                  </div>
-                </div>
-                <div class="playground__loading-tip" id="loading-tip"></div>
                 <button class="playground__loading-cancel" id="loading-cancel-btn">
                   Cancel
                 </button>

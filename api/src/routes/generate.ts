@@ -91,8 +91,8 @@ generate.post("/", async (c) => {
     console.log(`[perf:generate] render=${renderDuration}ms total=${totalDuration}ms format=${format} size=${buffer.length} cacheHit=${cacheHit}`);
     c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}, cache;desc="${cacheHit ? 'HIT' : 'MISS'}"`);
 
-    // TODO: Upload to Supabase Storage instead of returning raw buffer
-    // For now, return the file directly
+    // TODO(P2): Upload to Supabase Storage instead of returning raw buffer
+    // Currently returns inline buffer which works but limits file size to ~10MB
 
     // Trigger event subscriptions (fire and forget)
     triggerEventSubscriptions("pdf.generated", {
