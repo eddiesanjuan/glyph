@@ -26,6 +26,7 @@ const generateSchema = z.object({
 
 generate.post("/", async (c) => {
   try {
+    const tStart = Date.now();
     const body = await c.req.json();
 
     // Validate request
@@ -46,6 +47,7 @@ generate.post("/", async (c) => {
     let contentType: string;
     let filename: string;
 
+    const tRender = Date.now();
     if (format === "pdf") {
       buffer = await generatePdf(html, options);
       contentType = "application/pdf";
@@ -55,6 +57,10 @@ generate.post("/", async (c) => {
       contentType = "image/png";
       filename = `document-${Date.now()}.png`;
     }
+    const renderDuration = Date.now() - tRender;
+    const totalDuration = Date.now() - tStart;
+    console.log(`[perf:generate] render=${renderDuration}ms total=${totalDuration}ms format=${format} size=${buffer.length}`);
+    c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}`);
 
     // TODO: Upload to Supabase Storage instead of returning raw buffer
     // For now, return the file directly

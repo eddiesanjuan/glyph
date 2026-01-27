@@ -92,6 +92,7 @@ const COLOR_MAP: Record<string, string> = {
   grey: '#6b7280',
   lightgray: '#f3f4f6',
   lightgrey: '#f3f4f6',
+  beige: '#f5f5dc',
 };
 
 /**
@@ -185,6 +186,33 @@ export function canFastTransform(prompt: string): boolean {
   // Table border additions
   if (/add\s+(a\s+)?(table\s*)?border/i.test(lower)) return true;
 
+  // Font size changes - "make title bigger", "increase header size", "smaller text"
+  if (/(make|increase|decrease)\s*(the\s+)?(title|header|text|font)\s*(size\s+)?(bigger|larger|smaller|bigger|larger)/i.test(lower)) return true;
+  if (/(bigger|larger|smaller)\s*(title|header|text|font)/i.test(lower)) return true;
+  if (/(increase|decrease)\s*(the\s+)?(font\s*)?size/i.test(lower)) return true;
+
+  // Text alignment - "center the title", "right-align the total", "left-align text"
+  if (/(center|left-align|right-align|left\s+align|right\s+align)\s*(the\s+)?(title|header|text|total|heading|body)/i.test(lower)) return true;
+  if (/(align)\s*(the\s+)?(title|header|text|total|heading|body)\s*(to\s+the\s+)?(left|right|center)/i.test(lower)) return true;
+
+  // Spacing/padding - "add more padding", "increase spacing", "more margin"
+  if (/(add|increase|more)\s*(more\s+)?(padding|spacing|margin)/i.test(lower)) return true;
+  if (/(reduce|decrease|less)\s*(padding|spacing|margin)/i.test(lower)) return true;
+
+  // Text styling - "make bold", "add italic", "underline the title"
+  if (/(make|add)\s*(the\s+)?(title|header|text|heading)?\s*(bold|italic|underline)/i.test(lower)) return true;
+  if (/(bold|italic|underline)\s*(the\s+)?(title|header|text|heading)/i.test(lower)) return true;
+
+  // Background color - "add light gray background", "white background"
+  if (/(add|set)\s+(a\s+)?(light\s*gray|light\s*grey|white|beige)\s*background/i.test(lower)) return true;
+
+  // Border removal - "remove borders", "no border", "remove table borders"
+  if (/(remove|no|hide)\s*(all\s+)?(table\s*)?(border|borders)/i.test(lower)) return true;
+
+  // Font family - "use sans-serif", "use monospace font", "change font to arial"
+  if (/(use|change\s*(to|the)?\s*(font\s*(to)?)?)\s*(sans-serif|monospace|serif|arial|helvetica|georgia|courier|times)/i.test(lower)) return true;
+  if (/(change|set)\s*(the\s+)?font\s*(family\s+)?(to\s+)?(sans-serif|monospace|serif|arial|helvetica|georgia|courier|times)/i.test(lower)) return true;
+
   return false;
 }
 
@@ -275,6 +303,48 @@ export async function fastTransform(html: string, prompt: string): Promise<FastT
   // === TABLE BORDER ===
   if (/add\s+(a\s+)?(table\s*)?border/i.test(lower)) {
     return addTableBorder(html);
+  }
+
+  // === FONT SIZE CHANGES ===
+  if (/(make|increase|decrease)\s*(the\s+)?(title|header|text|font)\s*(size\s+)?(bigger|larger|smaller)/i.test(lower)
+    || /(bigger|larger|smaller)\s*(title|header|text|font)/i.test(lower)
+    || /(increase|decrease)\s*(the\s+)?(font\s*)?size/i.test(lower)) {
+    return changeFontSize(html, lower);
+  }
+
+  // === TEXT ALIGNMENT ===
+  if (/(center|left-align|right-align|left\s+align|right\s+align)\s*(the\s+)?(title|header|text|total|heading|body)/i.test(lower)
+    || /(align)\s*(the\s+)?(title|header|text|total|heading|body)\s*(to\s+the\s+)?(left|right|center)/i.test(lower)) {
+    return changeTextAlignment(html, lower);
+  }
+
+  // === SPACING/PADDING ===
+  if (/(add|increase|more)\s*(more\s+)?(padding|spacing|margin)/i.test(lower)
+    || /(reduce|decrease|less)\s*(padding|spacing|margin)/i.test(lower)) {
+    return changeSpacing(html, lower);
+  }
+
+  // === TEXT STYLING (bold/italic/underline) ===
+  if (/(make|add)\s*(the\s+)?(title|header|text|heading)?\s*(bold|italic|underline)/i.test(lower)
+    || /(bold|italic|underline)\s*(the\s+)?(title|header|text|heading)/i.test(lower)) {
+    return changeTextStyle(html, lower);
+  }
+
+  // === SIMPLE BACKGROUND COLOR ===
+  if (/(add|set)\s+(a\s+)?(light\s*gray|light\s*grey|white|beige)\s*background/i.test(lower)) {
+    const colorMatch = lower.match(/(light\s*gray|light\s*grey|white|beige)/i);
+    const color = colorMatch ? colorMatch[1].replace(/\s+/g, '') : 'white';
+    return changeBackgroundColor(html, color);
+  }
+
+  // === BORDER REMOVAL ===
+  if (/(remove|no|hide)\s*(all\s+)?(table\s*)?(border|borders)/i.test(lower)) {
+    return removeBorders(html);
+  }
+
+  // === FONT FAMILY ===
+  if (/(use|change|set)\s*/i.test(lower) && /(sans-serif|monospace|serif|arial|helvetica|georgia|courier|times)/i.test(lower)) {
+    return changeFontFamily(html, lower);
   }
 
   // Not a fast-transformable request
@@ -1161,6 +1231,180 @@ table thead {
   return {
     html: modifiedHtml,
     changes: ['Added borders to tables'],
+    transformed: true,
+  };
+}
+
+/**
+ * Helper: inject CSS rule into existing <style> tag or create one
+ */
+function injectCSS(html: string, css: string): string {
+  if (/<style[^>]*>/i.test(html)) {
+    return html.replace(/(<style[^>]*>)/i, `$1\n${css}`);
+  }
+  if (/<\/head>/i.test(html)) {
+    return html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
+  }
+  return `<style>\n${css}\n</style>\n` + html;
+}
+
+/**
+ * Change font size based on prompt
+ */
+function changeFontSize(html: string, lower: string): FastTransformResult {
+  const isBigger = /(bigger|larger|increase)/i.test(lower);
+  const target = lower.match(/(title|header|heading)/i) ? 'header' : 'body';
+
+  const selector = target === 'header'
+    ? 'header, [data-glyph-region="header"], h1, h2'
+    : 'body';
+  const sizeValue = target === 'header'
+    ? (isBigger ? '120%' : '85%')
+    : (isBigger ? '110%' : '90%');
+
+  const css = `/* Glyph font size adjustment */\n${selector} { font-size: ${sizeValue}; }`;
+  const direction = isBigger ? 'Increased' : 'Decreased';
+
+  return {
+    html: injectCSS(html, css),
+    changes: [`${direction} ${target} font size`],
+    transformed: true,
+  };
+}
+
+/**
+ * Change text alignment based on prompt
+ */
+function changeTextAlignment(html: string, lower: string): FastTransformResult {
+  let alignment = 'center';
+  if (/left/i.test(lower)) alignment = 'left';
+  if (/right/i.test(lower)) alignment = 'right';
+
+  // Determine target element
+  let selector = 'body';
+  let targetName = 'text';
+  if (/title|header|heading/i.test(lower)) {
+    selector = 'header, [data-glyph-region="header"], h1, h2';
+    targetName = 'header';
+  } else if (/total/i.test(lower)) {
+    selector = '[data-glyph-region="totals"], .totals, .total';
+    targetName = 'totals';
+  }
+
+  const css = `/* Glyph text alignment */\n${selector} { text-align: ${alignment}; }`;
+
+  return {
+    html: injectCSS(html, css),
+    changes: [`Set ${targetName} text alignment to ${alignment}`],
+    transformed: true,
+  };
+}
+
+/**
+ * Change spacing/padding/margin based on prompt
+ */
+function changeSpacing(html: string, lower: string): FastTransformResult {
+  const isIncrease = /(add|increase|more)/i.test(lower);
+  const property = /margin/i.test(lower) ? 'margin' : 'padding';
+  const value = isIncrease ? '24px' : '8px';
+  const direction = isIncrease ? 'Increased' : 'Decreased';
+
+  const css = `/* Glyph spacing adjustment */\nbody { ${property}: ${value}; }`;
+
+  return {
+    html: injectCSS(html, css),
+    changes: [`${direction} document ${property}`],
+    transformed: true,
+  };
+}
+
+/**
+ * Apply text styling (bold, italic, underline)
+ */
+function changeTextStyle(html: string, lower: string): FastTransformResult {
+  let cssProperty = '';
+  let styleName = '';
+
+  if (/bold/i.test(lower)) {
+    cssProperty = 'font-weight: bold';
+    styleName = 'bold';
+  } else if (/italic/i.test(lower)) {
+    cssProperty = 'font-style: italic';
+    styleName = 'italic';
+  } else if (/underline/i.test(lower)) {
+    cssProperty = 'text-decoration: underline';
+    styleName = 'underline';
+  }
+
+  if (!cssProperty) {
+    return { html, changes: [], transformed: false };
+  }
+
+  // Determine target
+  let selector = 'body';
+  let targetName = 'text';
+  if (/title|header|heading/i.test(lower)) {
+    selector = 'header, [data-glyph-region="header"], h1, h2';
+    targetName = 'header';
+  }
+
+  const css = `/* Glyph text style */\n${selector} { ${cssProperty}; }`;
+
+  return {
+    html: injectCSS(html, css),
+    changes: [`Applied ${styleName} to ${targetName}`],
+    transformed: true,
+  };
+}
+
+/**
+ * Remove borders from tables
+ */
+function removeBorders(html: string): FastTransformResult {
+  const css = `/* Glyph border removal */
+table, table th, table td,
+.glyph-bordered-table, .glyph-bordered-table th, .glyph-bordered-table td {
+  border: none !important;
+}`;
+
+  return {
+    html: injectCSS(html, css),
+    changes: ['Removed borders from tables'],
+    transformed: true,
+  };
+}
+
+/**
+ * Font family mapping
+ */
+const FONT_MAP: Record<string, string> = {
+  'sans-serif': 'system-ui, -apple-system, sans-serif',
+  'monospace': '"Courier New", Courier, monospace',
+  'serif': 'Georgia, "Times New Roman", serif',
+  'arial': 'Arial, Helvetica, sans-serif',
+  'helvetica': 'Helvetica, Arial, sans-serif',
+  'georgia': 'Georgia, serif',
+  'courier': '"Courier New", Courier, monospace',
+  'times': '"Times New Roman", Times, serif',
+};
+
+/**
+ * Change font family based on prompt
+ */
+function changeFontFamily(html: string, lower: string): FastTransformResult {
+  const fontMatch = lower.match(/(sans-serif|monospace|serif|arial|helvetica|georgia|courier|times)/i);
+  if (!fontMatch) {
+    return { html, changes: [], transformed: false };
+  }
+
+  const fontKey = fontMatch[1].toLowerCase();
+  const fontStack = FONT_MAP[fontKey] || fontKey;
+
+  const css = `/* Glyph font family */\nbody { font-family: ${fontStack}; }`;
+
+  return {
+    html: injectCSS(html, css),
+    changes: [`Changed font family to ${fontKey}`],
     transformed: true,
   };
 }

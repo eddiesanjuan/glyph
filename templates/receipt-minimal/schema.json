@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/receipt-minimal.json",
+  "title": "ReceiptData",
+  "description": "Data schema for the receipt-minimal template",
+  "type": "object",
+  "required": ["merchant", "receipt", "items", "totals", "payment"],
+  "properties": {
+    "merchant": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Merchant or business name" },
+        "address": { "type": "string", "description": "Merchant address" }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "required": ["number", "date"],
+      "properties": {
+        "number": { "type": "string", "description": "Receipt number" },
+        "date": { "type": "string", "description": "Transaction date" },
+        "time": { "type": "string", "description": "Transaction time" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "quantity", "price"],
+        "properties": {
+          "name": { "type": "string" },
+          "quantity": { "type": ["number", "string"] },
+          "price": { "type": ["number", "string"] }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["subtotal", "total"],
+      "properties": {
+        "subtotal": { "type": ["number", "string"] },
+        "tax": { "type": ["number", "string"] },
+        "total": { "type": ["number", "string"] }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "required": ["method"],
+      "properties": {
+        "method": { "type": "string", "description": "Payment method used" },
+        "transactionId": { "type": "string", "description": "Transaction identifier" }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "properties": {
+        "accentColor": { "type": "string", "default": "#18181b" }
+      }
+    }
+  },
+  "examples": [
+    {
+      "merchant": {
+        "name": "The Daily Grind",
+        "address": "742 Evergreen Ave\nPortland, OR 97205"
+      },
+      "receipt": {
+        "number": "R-8847",
+        "date": "Jan 20, 2024",
+        "time": "9:32 AM"
+      },
+      "items": [
+        { "name": "Oat Milk Latte (L)", "quantity": 2, "price": "5.50" },
+        { "name": "Almond Croissant", "quantity": 1, "price": "4.25" },
+        { "name": "Drip Coffee (M)", "quantity": 1, "price": "3.00" }
+      ],
+      "totals": {
+        "subtotal": "18.25",
+        "tax": "1.64",
+        "total": "19.89"
+      },
+      "payment": {
+        "method": "Visa ending in 4242",
+        "transactionId": "txn_3Np8kL2eZvKY"
+      },
+      "styles": {
+        "accentColor": "#18181b"
+      }
+    }
+  ]
+}

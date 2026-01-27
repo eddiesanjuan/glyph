@@ -189,6 +189,8 @@ modify.post("/", async (c) => {
       const { sessionId, prompt, region } = parsed.data;
       const apiKeyId = c.get("apiKeyId") as string | undefined;
       const isDevSession = isDevSessionId(sessionId);
+      const t0 = Date.now();
+      const timings: Record<string, number> = {};
 
       // Get session from database (if Supabase) or dev storage
       let session: {
@@ -269,7 +271,9 @@ modify.post("/", async (c) => {
 
       // PRE-FLIGHT CHECK: Detect impossible requests early (2-5 seconds vs 60 second timeout)
       // This catches requests like "make this 3D and animated" before wasting time
+      const tFeasibility = Date.now();
       const feasibilityCheck = await validateRequestFeasibility(prompt);
+      timings.feasibility = Date.now() - tFeasibility;
       if (!feasibilityCheck.feasible) {
         console.log(`[Modify] Request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms): "${prompt.substring(0, 50)}..."`);
         const error: ApiError = {
@@ -319,7 +323,9 @@ modify.post("/", async (c) => {
 
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
       // With automatic retry if HTML appears truncated or malformed
+      const tAi = Date.now();
       let result = await modifyTemplate(templateToModify, prompt, region);
+      timings.ai = Date.now() - tAi;
       let modifiedTemplateHtml = result.html;
 
       // Check if HTML appears truncated and needs repair
@@ -382,7 +388,9 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
 
       // CRITICAL: Check for content loss / document corruption / unprofessional content BEFORE returning
       // This catches cases where AI deleted most content, replaced with explanatory text, or added gimmicky elements
+      const tSelfcheck = Date.now();
       const guardrailResult = validateGuardrails(templateToModify, modifiedTemplateHtml);
+      timings.selfcheck = Date.now() - tSelfcheck;
       if (!guardrailResult.valid) {
         const contentLossViolation = guardrailResult.violations.find(v =>
           v.includes('content loss') || v.includes('improperly cleared')
@@ -515,6 +523,11 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         prompt,
         sessionId
       );
+
+      // Performance logging and Server-Timing header
+      timings.total = Date.now() - t0;
+      c.header('Server-Timing', Object.entries(timings).map(([k, v]) => `${k};dur=${v}`).join(', '));
+      console.log(`[perf:modify] ${Object.entries(timings).map(([k, v]) => `${k}=${v}ms`).join(' ')}`);
 
       // Return the RENDERED HTML (with actual data) to the frontend
       // Note: Validation is now done asynchronously in background

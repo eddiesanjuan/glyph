@@ -66,6 +66,21 @@ app.use(
   })
 );
 
+// Performance timing middleware (logs slow requests, adds Server-Timing header)
+app.use('*', async (c, next) => {
+  const start = Date.now();
+  await next();
+  const duration = Date.now() - start;
+  const path = new URL(c.req.url).pathname;
+  if (duration > 100) {
+    console.log(`[perf] ${c.req.method} ${path} ${duration}ms ${c.res.status}`);
+  }
+  // Add Server-Timing header for browser DevTools
+  const existing = c.res.headers.get('Server-Timing');
+  const timing = existing ? `${existing}, total;dur=${duration}` : `total;dur=${duration}`;
+  c.res.headers.set('Server-Timing', timing);
+});
+
 // Public webhook routes BEFORE auth middleware
 // Import public webhook handlers from the webhooks route file
 import webhooksPublic from "./routes/webhooks-public.js";

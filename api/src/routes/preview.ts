@@ -72,11 +72,14 @@ preview.post(
   }),
   async (c) => {
     try {
+      const tStart = Date.now();
       const { template, data } = c.req.valid("json");
       const apiKeyId = c.get("apiKeyId") as string | undefined;
 
       // Render template using Mustache engine
+      const tRender = Date.now();
       const result = await templateEngine.render(template, data as QuoteData);
+      const renderDuration = Date.now() - tRender;
 
       // Build response
       const response: PreviewResponse & { sessionId?: string } = {
@@ -147,6 +150,10 @@ preview.post(
         );
         response.sessionId = devSessionId;
       }
+
+      const totalDuration = Date.now() - tStart;
+      console.log(`[perf:preview] render=${renderDuration}ms total=${totalDuration}ms template=${template}`);
+      c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}`);
 
       return c.json(response);
     } catch (err) {
