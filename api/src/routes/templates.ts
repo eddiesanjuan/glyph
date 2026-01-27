@@ -1025,10 +1025,11 @@ templates.get("/:id", async (c) => {
   const schemaPath = join(templatesDir, id, "schema.json");
 
   try {
-    const schemaFile = Bun.file(schemaPath);
-    const schemaExists = await schemaFile.exists();
+    const { readFile, access } = await import("fs/promises");
 
-    if (!schemaExists) {
+    try {
+      await access(schemaPath);
+    } catch {
       const error: ApiError = {
         error: "Template not found",
         code: "TEMPLATE_NOT_FOUND",
@@ -1036,7 +1037,8 @@ templates.get("/:id", async (c) => {
       return c.json(error, 404);
     }
 
-    const schema = await schemaFile.json();
+    const raw = await readFile(schemaPath, "utf-8");
+    const schema = JSON.parse(raw);
     const sampleData = Array.isArray(schema.examples) && schema.examples.length > 0
       ? schema.examples[0]
       : catalogEntry.sampleData;
