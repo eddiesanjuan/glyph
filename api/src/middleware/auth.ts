@@ -13,6 +13,16 @@ const DEV_API_KEYS = new Set(
   [process.env.GLYPH_API_KEY, process.env.GLYPH_TEST_API_KEY].filter(Boolean)
 );
 
+// In-memory cache for monthly usage counts
+// Reduces Supabase queries from every request to once per 5 minutes per key
+interface UsageCacheEntry {
+  count: number;
+  timestamp: number;
+}
+
+const usageCache = new Map<string, UsageCacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function authMiddleware(c: Context, next: Next) {
   // Skip auth for health check
   if (c.req.path === "/health") {
@@ -56,7 +66,6 @@ export async function authMiddleware(c: Context, next: Next) {
     try {
       // Hash the key to look up
       const keyHash = createHash("sha256").update(token).digest("hex");
-      console.log(`[Auth] Looking up key with hash: ${keyHash.slice(0, 16)}...`);
 
       const { data: keyRecord, error } = await getSupabase()
         .from("api_keys")
@@ -64,12 +73,7 @@ export async function authMiddleware(c: Context, next: Next) {
         .eq("key_hash", keyHash)
         .single();
 
-      console.log(`[Auth] Result:`, keyRecord ? `Found key ${keyRecord.id}` : "NOT FOUND", error?.message || "", error?.code || "");
-      console.log(`[Auth] Full error:`, JSON.stringify(error));
-      console.log(`[Auth] Key record:`, JSON.stringify(keyRecord));
-
       if (error || !keyRecord) {
-        console.log(`[Auth] REJECTING: error=${!!error}, keyRecord=${!!keyRecord}`);
         throw new HTTPException(401, {
           message: "Invalid API key",
         });
@@ -90,16 +94,36 @@ export async function authMiddleware(c: Context, next: Next) {
       //   });
       // }
 
-      // Check monthly usage limits
+      // Check monthly usage limits with caching
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
 
-      const { count } = await getSupabase()
-        .from("usage")
-        .select("*", { count: "exact", head: true })
-        .eq("api_key_id", keyRecord.id)
-        .gte("created_at", monthStart.toISOString());
+      // Check cache first
+      const cacheKey = keyRecord.id;
+      const cached = usageCache.get(cacheKey);
+      const now = Date.now();
+
+      let count: number | null;
+
+      if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+        // Cache hit - use cached value
+        count = cached.count;
+      } else {
+        // Cache miss or expired - query Supabase
+        const result = await getSupabase()
+          .from("usage")
+          .select("*", { count: "exact", head: true })
+          .eq("api_key_id", keyRecord.id)
+          .gte("created_at", monthStart.toISOString());
+
+        count = result.count;
+
+        // Update cache
+        if (count !== null) {
+          usageCache.set(cacheKey, { count, timestamp: now });
+        }
+      }
 
       if (count !== null && count >= keyRecord.monthly_limit) {
         throw new HTTPException(429, {

@@ -350,6 +350,7 @@ templates.post(
  * automatically from the user's description (invoice, receipt, report, etc.)
  */
 templates.get("/styles", (c) => {
+  c.header("Cache-Control", "public, max-age=3600");
   return c.json({
     styles: [
       {

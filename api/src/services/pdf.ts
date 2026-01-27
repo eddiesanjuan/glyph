@@ -11,7 +11,7 @@ let browser: Browser | null = null;
 
 // Page pool for better performance
 const pagePool: Page[] = [];
-const MAX_POOL_SIZE = 3;
+const MAX_POOL_SIZE = 8;
 
 /**
  * Get or create browser instance
@@ -86,12 +86,12 @@ export async function generatePDF(
   try {
     // Set content
     await page.setContent(html, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
 
     // Wait for fonts to load
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(200);
 
     // Generate PDF
     const pdf = await page.pdf({
@@ -129,12 +129,12 @@ export async function generatePNG(html: string, options: PNGOptions = {}): Promi
     }
 
     await page.setContent(html, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
 
     // Wait for fonts to load
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(200);
 
     const screenshot = await page.screenshot({
       fullPage: true,

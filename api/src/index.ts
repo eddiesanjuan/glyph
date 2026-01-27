@@ -85,6 +85,7 @@ app.use("/v1/*", rateLimitMiddleware);
 
 // Health check (no auth required)
 app.get("/health", (c) => {
+  c.header("Cache-Control", "public, max-age=60");
   return c.json({
     status: "ok",
     version: "0.13.1",
