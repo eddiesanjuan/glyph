@@ -972,7 +972,7 @@
       } else {
         nav.classList.remove('scrolled');
       }
-    });
+    }, { passive: true });
 
     // ============================================
     // Hero Demo Animation

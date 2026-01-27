@@ -4,7 +4,7 @@
  */
 
 import Mustache from "mustache";
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, promises as fsPromises } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { QuoteData } from "../lib/types.js";
@@ -130,7 +130,7 @@ export class TemplateEngine {
       throw new Error(`Template not found: ${name}`);
     }
 
-    const template = readFileSync(templatePath, "utf-8");
+    const template = await fsPromises.readFile(templatePath, "utf-8");
     this.templateCache.set(name, template);
 
     return template;
@@ -166,13 +166,13 @@ export class TemplateEngine {
    * Pre-load all available templates into the cache.
    * Call at startup to avoid first-request latency.
    */
-  warmCache(): void {
+  async warmCache(): Promise<void> {
     const templates = this.getAvailableTemplates();
     for (const name of templates) {
       if (!this.templateCache.has(name)) {
         const templatePath = join(TEMPLATES_DIR, name, "template.html");
         try {
-          const template = readFileSync(templatePath, "utf-8");
+          const template = await fsPromises.readFile(templatePath, "utf-8");
           this.templateCache.set(name, template);
         } catch (error) {
           console.warn(`Failed to warm cache for template "${name}":`, error);
@@ -194,7 +194,7 @@ export class TemplateEngine {
 export const templateEngine = new TemplateEngine();
 
 // Legacy export for backwards compatibility
-export function renderTemplate(data: QuoteData, templateId?: string): string {
+export async function renderTemplate(data: QuoteData, templateId?: string): Promise<string> {
   const templateName = templateId || "quote-modern";
 
   // Synchronous version for legacy compatibility
@@ -203,7 +203,7 @@ export function renderTemplate(data: QuoteData, templateId?: string): string {
 
   let template: string;
   if (existsSync(templatePath)) {
-    template = readFileSync(templatePath, "utf-8");
+    template = await fsPromises.readFile(templatePath, "utf-8");
   } else {
     // Fallback to default inline template if file not found
     template = getDefaultTemplate();

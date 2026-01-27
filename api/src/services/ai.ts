@@ -12,6 +12,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { canFastTransform, fastTransform } from "./fastTransform.js";
+import { logger } from "./logger.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -65,7 +66,7 @@ export async function validateRequestFeasibility(prompt: string): Promise<Feasib
 
   for (const { pattern, reason, suggestion } of impossiblePatterns) {
     if (pattern.test(prompt)) {
-      console.log(`[Feasibility] Quick reject (${Date.now() - startTime}ms): ${reason}`);
+      logger.debug(`[Feasibility] Quick reject`, { durationMs: Date.now() - startTime, reason });
       return {
         feasible: false,
         reason: `PDFs cannot have ${reason}.`,
@@ -102,7 +103,7 @@ export async function validateRequestFeasibility(prompt: string): Promise<Feasib
 
   // Use Haiku for a quick feasibility check
   try {
-    console.log(`[Feasibility] AI check for: "${prompt.substring(0, 50)}..."`);
+    logger.debug(`[Feasibility] AI check`, { prompt: prompt.substring(0, 50) });
 
     const message = await anthropic.messages.create({
       model: "claude-3-5-haiku-20241022",
@@ -125,7 +126,7 @@ NOT_FEASIBLE: [brief reason] | SUGGESTION: [alternative approach]`, cache_contro
     const response = message.content[0].type === "text" ? message.content[0].text.trim() : "";
     const checkTimeMs = Date.now() - startTime;
 
-    console.log(`[Feasibility] AI response (${checkTimeMs}ms): ${response.substring(0, 100)}`);
+    logger.debug(`[Feasibility] AI response`, { checkTimeMs, response: response.substring(0, 100) });
 
     if (response.startsWith("FEASIBLE")) {
       return { feasible: true, checkTimeMs };
@@ -1357,7 +1358,7 @@ export async function modifyTemplate(
     const fastResult = await fastTransform(currentHtml, userPrompt);
 
     if (fastResult.transformed) {
-      console.log(`[FAST] Transformed in ${Date.now() - startTime}ms: "${userPrompt.substring(0, 50)}..."`);
+      logger.info(`[FAST] Transformed`, { durationMs: Date.now() - startTime, prompt: userPrompt.substring(0, 50) });
       return {
         html: fastResult.html,
         changes: fastResult.changes,
@@ -1383,7 +1384,7 @@ export async function modifyTemplate(
 
   // Log for debugging
   if (detectedIntent) {
-    console.log(`[AI] Detected intent: ${detectedIntent}`);
+    logger.debug(`[AI] Detected intent`, { intent: detectedIntent });
   }
 
   // Use Haiku for speed on simple modifications, Sonnet for complex ones
@@ -1392,7 +1393,7 @@ export async function modifyTemplate(
   const systemPrompt = useHaiku ? FAST_MODIFY_PROMPT : DOCUMENT_ARCHITECT_PROMPT;
   const maxTokens = useHaiku ? 8192 : 16384;
 
-  console.log(`[AI] Using ${model} for: "${userPrompt.substring(0, 50)}..."`);
+  logger.info(`[AI] Using model`, { model, prompt: userPrompt.substring(0, 50) });
   const startTime = Date.now();
 
   const message = await anthropic.messages.create({
@@ -1420,7 +1421,7 @@ INSTRUCTIONS:
     ],
   });
 
-  console.log(`[AI] Response in ${Date.now() - startTime}ms`);
+  logger.info(`[AI] Response received`, { durationMs: Date.now() - startTime });
 
   const responseText =
     message.content[0].type === "text" ? message.content[0].text : "";
@@ -1538,7 +1539,7 @@ export async function* modifyTemplateStream(
 
   // Log for debugging
   if (detectedIntent) {
-    console.log(`[AI Stream] Detected intent: ${detectedIntent}`);
+    logger.debug(`[AI Stream] Detected intent`, { intent: detectedIntent });
   }
 
   // Use Haiku for speed on simple modifications, Sonnet for complex ones
@@ -1547,7 +1548,7 @@ export async function* modifyTemplateStream(
   const systemPrompt = useHaiku ? FAST_MODIFY_PROMPT : DOCUMENT_ARCHITECT_PROMPT;
   const maxTokens = useHaiku ? 8192 : 16384;
 
-  console.log(`[AI Stream] Using ${model} for: "${userPrompt.substring(0, 50)}..."`);
+  logger.info(`[AI Stream] Using model`, { model, prompt: userPrompt.substring(0, 50) });
   const startTime = Date.now();
 
   // Use streaming API
@@ -1586,7 +1587,7 @@ INSTRUCTIONS:
   // Signal completion
   yield { text: "", done: true };
 
-  console.log(`[AI Stream] Completed in ${Date.now() - startTime}ms`);
+  logger.info(`[AI Stream] Completed`, { durationMs: Date.now() - startTime });
 }
 
 /**

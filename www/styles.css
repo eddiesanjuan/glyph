@@ -9633,3 +9633,54 @@
   text-decoration: underline;
   font-weight: 500;
 }
+
+/* ============================================
+   Extracted inline styles
+   ============================================ */
+
+/* Demo table: right-align numeric columns */
+.demo-table-header span:nth-child(n+2),
+.demo-table-row span:nth-child(n+2) {
+  text-align: right;
+}
+
+/* Code line variants for feature card */
+.code-line--comment {
+  margin-top: 12px;
+  color: var(--color-text-subtle);
+}
+.code-line--addition {
+  color: var(--color-success);
+}
+.code-line--addition + .code-line--addition {
+  margin-top: 0;
+}
+.code-line--comment + .code-line--addition {
+  margin-top: 8px;
+}
+
+/* Airtable info card spacing variant */
+.airtable-info-card--spaced {
+  margin-top: 24px;
+}
+
+/* Airtable token instructions list */
+.airtable-token-steps {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.8;
+}
+
+/* PDF success modal icon */
+.modal__icon--success {
+  background: rgba(34, 197, 94, 0.15);
+}
+.modal__icon--success svg {
+  color: #22C55E;
+}
+
+/* Modal description compact variant */
+.modal__description--compact {
+  margin-top: -12px;
+  font-size: 13px;
+}

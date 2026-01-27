@@ -19,6 +19,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { logger } from "./logger.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -449,7 +450,7 @@ Check for TECHNICAL visual issues only (overlaps, broken structure, missing cont
             // Filter out "request not fulfilled" type issues - these are false positives
             // where the AI incorrectly reports that a user's request wasn't applied
             if (isRequestFulfillmentIssue(validatedIssue)) {
-              console.log(`[Validator] Filtered out request-fulfillment issue: "${validatedIssue.description}"`);
+              logger.debug(`[Validator] Filtered out request-fulfillment issue`, { description: validatedIssue.description });
               continue;
             }
             issues.push(validatedIssue);
@@ -985,7 +986,7 @@ export async function validateModification(
   // Log validation summary
   const criticalCount = allIssues.filter(i => i.severity === 'critical').length;
   const warningCount = allIssues.filter(i => i.severity === 'warning').length;
-  console.log(`[Validator] Completed in ${validationTime}ms: ${criticalCount} critical, ${warningCount} warnings`);
+  logger.info(`[Validator] Completed`, { validationTimeMs: validationTime, criticalCount, warningCount });
 
   return {
     passed: criticalCount === 0,

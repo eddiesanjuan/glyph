@@ -33,6 +33,7 @@ import { validateModification as selfCheckValidation } from "../services/validat
 import { canFastTransform, fastTransform } from "../services/fastTransform.js";
 import type { Context } from "hono";
 import { triggerEventSubscriptions } from "./subscriptions.js";
+import { logger } from "../services/logger.js";
 import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
 
 // --- AI Response Cache (LRU, 100 entries, 10-minute TTL) ---
@@ -336,7 +337,7 @@ modify.post("/", async (c) => {
       const feasibilityCheck = await validateRequestFeasibility(prompt);
       timings.feasibility = Date.now() - tFeasibility;
       if (!feasibilityCheck.feasible) {
-        console.log(`[Modify] Request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms): "${prompt.substring(0, 50)}..."`);
+        logger.info(`[Modify] Request rejected as infeasible`, { checkTimeMs: feasibilityCheck.checkTimeMs, prompt: prompt.substring(0, 50) });
         const error: ApiError = {
           error: feasibilityCheck.reason || "This modification is not possible for PDF documents.",
           code: "REQUEST_NOT_FEASIBLE",
@@ -391,7 +392,7 @@ modify.post("/", async (c) => {
         const tTotal = Date.now() - t0;
         timings.cache = 0;
         timings.total = tTotal;
-        console.log(`[perf:modify] CACHE HIT key=${cacheKey.substring(0, 12)}... saved AI call`);
+        logger.info(`[perf:modify] CACHE HIT`, { cacheKey: cacheKey.substring(0, 12) });
 
         // Re-render cached template with session data
         let renderedHtml: string;
@@ -469,7 +470,7 @@ modify.post("/", async (c) => {
         // First try to repair the HTML
         const repairResult = repairHtml(result.html);
         if (repairResult.repairsApplied.length > 0) {
-          console.log(`[Modify] Applied HTML repairs: ${repairResult.repairsApplied.join(', ')}`);
+          logger.info(`[Modify] Applied HTML repairs`, { repairs: repairResult.repairsApplied });
           modifiedTemplateHtml = repairResult.html;
         }
 
@@ -486,14 +487,14 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           try {
             const retryResult = await modifyTemplate(templateToModify, retryPrompt, region);
             if (!isHtmlTruncated(retryResult.html)) {
-              console.log("[Modify] Retry successful - got complete HTML");
+              logger.info("[Modify] Retry successful - got complete HTML");
               result = retryResult;
               modifiedTemplateHtml = retryResult.html;
             } else {
               // Apply repair to retry result as fallback
               const retryRepair = repairHtml(retryResult.html);
               modifiedTemplateHtml = retryRepair.html;
-              console.log("[Modify] Retry also truncated, using repaired version");
+              logger.info("[Modify] Retry also truncated, using repaired version");
             }
           } catch (retryError) {
             console.error("[Modify] Retry failed:", retryError);
@@ -504,7 +505,7 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         // Even non-truncated HTML might benefit from light repairs
         const repairResult = repairHtml(result.html);
         if (repairResult.repairsApplied.length > 0) {
-          console.log(`[Modify] Applied minor HTML repairs: ${repairResult.repairsApplied.join(', ')}`);
+          logger.info(`[Modify] Applied minor HTML repairs`, { repairs: repairResult.repairsApplied });
           modifiedTemplateHtml = repairResult.html;
         }
       }
@@ -583,7 +584,7 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           model: result.model || "unknown",
           createdAt: Date.now(),
         });
-        console.log(`[cache:modify] Stored key=${cacheKey.substring(0, 12)}... size=${AI_CACHE.size}`);
+        logger.debug(`[cache:modify] Stored`, { cacheKey: cacheKey.substring(0, 12), cacheSize: AI_CACHE.size });
       }
 
       // FIX: Re-render the modified template with the original data
@@ -684,7 +685,7 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
       // Performance logging and Server-Timing header
       timings.total = Date.now() - t0;
       c.header('Server-Timing', Object.entries(timings).map(([k, v]) => `${k};dur=${v}`).join(', '));
-      console.log(`[perf:modify] ${Object.entries(timings).map(([k, v]) => `${k}=${v}ms`).join(' ')}`);
+      logger.info(`[perf:modify]`, timings);
 
       // Return the RENDERED HTML (with actual data) to the frontend
       // Note: Validation is now done asynchronously in background
@@ -732,7 +733,7 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
       // PRE-FLIGHT CHECK: Detect impossible requests early
       const feasibilityCheck = await validateRequestFeasibility(instruction);
       if (!feasibilityCheck.feasible) {
-        console.log(`[Modify] Direct mode request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms)`);
+        logger.info(`[Modify] Direct mode request rejected as infeasible`, { checkTimeMs: feasibilityCheck.checkTimeMs });
         const error: ApiError = {
           error: feasibilityCheck.reason || "This modification is not possible for PDF documents.",
           code: "REQUEST_NOT_FEASIBLE",
@@ -833,7 +834,7 @@ async function runBackgroundValidation(
   // Use setImmediate to ensure this runs after response is sent
   setImmediate(async () => {
     try {
-      console.log(`[SelfCheck] Starting validation for session: ${sessionId}`);
+      logger.info(`[SelfCheck] Starting validation`, { sessionId });
 
       const result = await selfCheckValidation(beforeHtml, afterHtml, prompt, {
         enableAiAnalysis: true,
@@ -842,7 +843,7 @@ async function runBackgroundValidation(
 
       // Log the validation result
       if (result.passed) {
-        console.log(`[SelfCheck] PASSED (${result.validationTime}ms) - session: ${sessionId}`);
+        logger.info(`[SelfCheck] PASSED`, { validationTimeMs: result.validationTime, sessionId });
       } else {
         const criticalCount = result.issues.filter(i => i.severity === 'critical').length;
         const warningCount = result.issues.filter(i => i.severity === 'warning').length;
@@ -1067,7 +1068,7 @@ async function handleStreamingModify(c: Context) {
       // PRE-FLIGHT CHECK: Detect impossible requests early
       const feasibilityCheck = await validateRequestFeasibility(prompt);
       if (!feasibilityCheck.feasible) {
-        console.log(`[Streaming] Request rejected as infeasible (${feasibilityCheck.checkTimeMs}ms): "${prompt.substring(0, 50)}..."`);
+        logger.info(`[Streaming] Request rejected as infeasible`, { checkTimeMs: feasibilityCheck.checkTimeMs, prompt: prompt.substring(0, 50) });
         await stream.writeSSE({
           event: "error",
           data: JSON.stringify({
@@ -1106,7 +1107,7 @@ async function handleStreamingModify(c: Context) {
       if (canFastTransform(prompt)) {
         const fastResult = await fastTransform(templateToModify, prompt);
         if (fastResult.transformed) {
-          console.log(`[Streaming FAST] Transformed: "${prompt.substring(0, 50)}..."`);
+          logger.info(`[Streaming FAST] Transformed`, { prompt: prompt.substring(0, 50) });
 
           // Render with data
           let renderedHtml: string;
@@ -1208,13 +1209,13 @@ async function handleStreamingModify(c: Context) {
         console.warn("[Streaming] HTML appears truncated, attempting repair...");
         const repairResult = repairHtml(modifiedTemplateHtml);
         if (repairResult.repairsApplied.length > 0) {
-          console.log(`[Streaming] Applied HTML repairs: ${repairResult.repairsApplied.join(", ")}`);
+          logger.info(`[Streaming] Applied HTML repairs`, { repairs: repairResult.repairsApplied });
           modifiedTemplateHtml = repairResult.html;
         }
       } else {
         const repairResult = repairHtml(modifiedTemplateHtml);
         if (repairResult.repairsApplied.length > 0) {
-          console.log(`[Streaming] Applied minor HTML repairs: ${repairResult.repairsApplied.join(", ")}`);
+          logger.info(`[Streaming] Applied minor HTML repairs`, { repairs: repairResult.repairsApplied });
           modifiedTemplateHtml = repairResult.html;
         }
       }

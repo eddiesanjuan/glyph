@@ -8,6 +8,8 @@
  * 3. HTML sanitization - removes dangerous elements as fallback
  */
 
+import { logger } from "./logger.js";
+
 export interface GuardrailResult {
   valid: boolean;
   violations: string[];
@@ -438,7 +440,7 @@ export function validateModification(
         violations.push(`Missing critical data placeholder: ${placeholder}`);
       } else {
         // Log but don't block - user may have intentionally removed this field
-        console.log(`[Guardrails] Non-critical placeholder removed: ${placeholder} - allowing modification`);
+        logger.debug(`[Guardrails] Non-critical placeholder removed`, { placeholder });
       }
     }
   });
