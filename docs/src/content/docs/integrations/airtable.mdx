@@ -3,7 +3,7 @@ title: Airtable Integration
 description: Generate PDFs directly from your Airtable data with no code required
 ---
 
-import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside, Steps, Tabs, TabItem, Code } from '@astrojs/starlight/components';
 
 Connect your Airtable bases to Glyph and generate professional PDFs from your data in minutes. No coding required.
 
@@ -22,78 +22,95 @@ With Glyph + Airtable, you can automatically generate:
 Perfect for teams already using Airtable as their database. Turn any table into professional PDF documents.
 </Aside>
 
-## Prerequisites
-
-Before you begin, you'll need:
-
-1. An **Airtable account** with at least one base
-2. An **Airtable Personal Access Token** (PAT)
-3. A **Glyph API key** (get one at [dashboard.glyph.you](https://dashboard.glyph.you))
-
-## Getting Your Airtable Token
+## Quick Start
 
 <Steps>
 
-1. Go to [airtable.com/create/tokens](https://airtable.com/create/tokens)
+1. **Get your Airtable Personal Access Token**
 
-2. Click **Create new token**
+   Go to [airtable.com/create/tokens](https://airtable.com/create/tokens), click **Create new token**, name it "Glyph Integration", and add these scopes:
+   - `data.records:read` -- Read records from tables
+   - `schema.bases:read` -- Read base and table schemas
 
-3. Give it a name like "Glyph Integration"
+   Under **Access**, select the bases you want to connect. Click **Create token** and copy the value (starts with `pat`).
 
-4. Add these scopes:
-   - `data.records:read` - Read records from tables
-   - `schema.bases:read` - Read base and table schemas
+2. **Connect your base**
 
-5. Under **Access**, select the specific bases you want to connect, or choose "All current and future bases"
+   ```bash
+   curl -X POST https://api.glyph.you/v1/airtable/connect \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{"apiKey": "patXXXXXXXXXXXXXX"}'
+   ```
 
-6. Click **Create token** and copy it immediately (starts with `pat`)
+   This returns a list of accessible bases with their IDs.
+
+3. **Pick a table and inspect its schema**
+
+   ```bash
+   # List tables in your base
+   curl https://api.glyph.you/v1/airtable/bases/appXXXXXX/tables \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "X-Airtable-Key: patXXXXXXXXXXXXXX"
+
+   # Get field schema for a specific table
+   curl https://api.glyph.you/v1/airtable/bases/appXXXXXX/tables/tblXXXXXX/schema \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "X-Airtable-Key: patXXXXXXXXXXXXXX"
+   ```
+
+4. **Fetch a record and generate a PDF**
+
+   ```bash
+   # Get a single record
+   curl https://api.glyph.you/v1/airtable/bases/appXXXXXX/tables/tblXXXXXX/records/recXXXXXX \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "X-Airtable-Key: patXXXXXXXXXXXXXX"
+
+   # Create a preview session with that data
+   curl -X POST https://api.glyph.you/v1/preview \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{"template": "quote-modern", "data": { ... }}'
+
+   # Generate the PDF
+   curl -X POST https://api.glyph.you/v1/generate \
+     -H "Authorization: Bearer gk_your_glyph_api_key" \
+     -H "Content-Type: application/json" \
+     -d '{"sessionId": "SESSION_ID", "format": "pdf"}' \
+     --output invoice.pdf
+   ```
 
 </Steps>
 
 <Aside type="caution">
-Keep your token secure. Never share it publicly or commit it to version control.
+Keep your Airtable token secure. Never share it publicly or commit it to version control.
 </Aside>
 
-## Connecting via the Landing Page
+---
 
-The easiest way to get started is through the Glyph landing page:
+## API Endpoints Reference
 
-<Steps>
+All Airtable endpoints require two credentials:
 
-1. Visit [glyph.you](https://glyph.you)
+1. **Glyph API Key** -- `Authorization: Bearer gk_your_api_key`
+2. **Airtable Token** -- either in the request body (`POST /connect`) or via the `X-Airtable-Key` header (all other endpoints)
 
-2. Click **Connect Airtable** in the navigation or hero section
+### POST /v1/airtable/connect
 
-3. Paste your Personal Access Token
+Validate an Airtable token and list all accessible bases.
 
-4. Select your **Base** from the dropdown
+**Request body:**
 
-5. Select the **Table** containing your data
-
-6. Choose a **Template Style** that fits your document type
-
-7. Preview your generated PDF with sample data
-
-8. Download or refine with AI modifications
-
-</Steps>
-
-## Connecting via API
-
-For programmatic access, use the Airtable API endpoints directly.
-
-### Step 1: Validate Your Token
-
-Test your Airtable token and get a list of accessible bases:
-
-```bash
-curl -X POST https://api.glyph.you/v1/airtable/connect \
-  -H "Authorization: Bearer gk_your_glyph_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{"apiKey": "pat_your_airtable_token"}'
+```json
+{
+  "apiKey": "patXXXXXXXXXXXXXX"
+}
 ```
 
-**Response:**
+The `apiKey` field must start with `pat` (Personal Access Token) or `key` (legacy API key).
+
+**Response (200):**
 
 ```json
 {
@@ -103,28 +120,28 @@ curl -X POST https://api.glyph.you/v1/airtable/connect \
       "id": "appXXXXXXXXXXXXXX",
       "name": "Sales Pipeline",
       "permissionLevel": "create"
-    },
-    {
-      "id": "appYYYYYYYYYYYYYY",
-      "name": "Invoices",
-      "permissionLevel": "create"
     }
   ],
-  "message": "Connected successfully. Found 2 accessible base(s)."
+  "message": "Connected successfully. Found 1 accessible base(s)."
 }
 ```
 
-### Step 2: List Tables in a Base
+**Errors:**
 
-Get all tables and their field counts:
+| Code | Status | Meaning |
+|------|--------|---------|
+| `VALIDATION_ERROR` | 400 | Missing or empty `apiKey` |
+| `INVALID_KEY_FORMAT` | 400 | Key does not start with `pat` or `key` |
+| `AIRTABLE_AUTH_ERROR` | 401 | Token is invalid, expired, or revoked |
+| `CONNECT_ERROR` | 500 | Unexpected server error |
 
-```bash
-curl https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables \
-  -H "Authorization: Bearer gk_your_glyph_api_key" \
-  -H "X-Airtable-Key: pat_your_airtable_token"
-```
+---
 
-**Response:**
+### GET /v1/airtable/bases/:baseId/tables
+
+List all tables in a base with field and view counts.
+
+**Response (200):**
 
 ```json
 {
@@ -137,30 +154,25 @@ curl https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables \
       "primaryFieldId": "fldXXXXXXXXXXXXXX",
       "fieldCount": 12,
       "viewCount": 3
-    },
-    {
-      "id": "tblYYYYYYYYYYYYYY",
-      "name": "Clients",
-      "description": null,
-      "primaryFieldId": "fldYYYYYYYYYYYYYY",
-      "fieldCount": 8,
-      "viewCount": 2
     }
   ]
 }
 ```
 
-### Step 3: Get Table Schema
+**Errors:**
 
-Retrieve detailed field information for template mapping:
+| Code | Status | Meaning |
+|------|--------|---------|
+| `MISSING_AIRTABLE_KEY` | 400 | `X-Airtable-Key` header not provided |
+| `AIRTABLE_ERROR` | 400 | Invalid API key or base ID |
 
-```bash
-curl https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables/tblXXXXXXXXXXXXXX/schema \
-  -H "Authorization: Bearer gk_your_glyph_api_key" \
-  -H "X-Airtable-Key: pat_your_airtable_token"
-```
+---
 
-**Response:**
+### GET /v1/airtable/bases/:baseId/tables/:tableId/schema
+
+Get detailed field schema for a specific table. The `tableId` parameter accepts either a table ID (`tblXXX`) or the table name (case-sensitive).
+
+**Response (200):**
 
 ```json
 {
@@ -180,66 +192,66 @@ curl https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables/tblXXXXXXX
     },
     {
       "id": "fldYYYYYYYYYYYYYY",
-      "name": "Client Name",
-      "type": "singleLineText",
-      "description": null
-    },
-    {
-      "id": "fldZZZZZZZZZZZZZZ",
       "name": "Amount",
       "type": "currency",
-      "options": {
-        "precision": 2,
-        "symbol": "$"
-      }
-    },
-    {
-      "id": "fldAAAAAAAAAAAAA",
-      "name": "Due Date",
-      "type": "date",
-      "description": null
+      "options": { "precision": 2, "symbol": "$" }
     }
   ],
   "views": [
-    {
-      "id": "viwXXXXXXXXXXXXXX",
-      "name": "All Invoices",
-      "type": "grid"
-    }
+    { "id": "viwXXXXXXXXXXXXXX", "name": "All Invoices", "type": "grid" }
   ],
   "aiSchema": {
     "tableName": "Invoices",
     "tableDescription": "Customer invoices",
-    "fields": [...]
+    "fields": [
+      {
+        "name": "Invoice Number",
+        "type": "autoNumber",
+        "glyphType": "number",
+        "description": "Invoice Number field",
+        "mustachePath": "fields.Invoice Number",
+        "isArray": false,
+        "hasConditional": true
+      }
+    ]
   }
 }
 ```
 
-### Step 4: Fetch Records
+The `aiSchema` object is designed for AI agents and template engines. It provides:
+- `glyphType` -- the normalized type Glyph uses for rendering
+- `mustachePath` -- the Mustache template path to reference this field
+- `isArray` -- whether the field holds multiple values
+- `hasConditional` -- always `true` since any Airtable field can be empty
 
-Get sample records for preview or all records for batch generation:
+**Errors:**
 
-```bash
-curl "https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables/tblXXXXXXXXXXXXXX/records?maxRecords=5" \
-  -H "Authorization: Bearer gk_your_glyph_api_key" \
-  -H "X-Airtable-Key: pat_your_airtable_token"
-```
+| Code | Status | Meaning |
+|------|--------|---------|
+| `MISSING_AIRTABLE_KEY` | 400 | Header not provided |
+| `TABLE_NOT_FOUND` | 404 | Table ID/name does not exist in the base |
 
-**Query Parameters:**
+---
+
+### GET /v1/airtable/bases/:baseId/tables/:tableId/records
+
+Fetch records from a table. Returns both formatted (template-ready) and raw records.
+
+**Query parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `maxRecords` | number | 5 | Maximum records to return (1-100) |
-| `view` | string | - | Filter by Airtable view name |
+| `maxRecords` | number | 5 | Number of records to return (1--100) |
+| `view` | string | -- | Filter by Airtable view name |
 
-**Response:**
+**Response (200):**
 
 ```json
 {
   "baseId": "appXXXXXXXXXXXXXX",
   "tableId": "tblXXXXXXXXXXXXXX",
   "tableName": "Invoices",
-  "recordCount": 5,
+  "recordCount": 2,
   "records": [
     {
       "_id": "recXXXXXXXXXXXXXX",
@@ -247,195 +259,371 @@ curl "https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables/tblXXXXXX
       "fields": {
         "Invoice Number": "1001",
         "Client Name": "Acme Corp",
-        "Amount": "$2,500.00",
-        "Due Date": "2/15/2024"
+        "Amount": "2,500.00",
+        "Due Date": "2/15/2024",
+        "Paid": true
       }
     }
   ],
-  "rawRecords": [...]
+  "rawRecords": [
+    {
+      "id": "recXXXXXXXXXXXXXX",
+      "createdTime": "2024-01-15T10:30:00.000Z",
+      "fields": {
+        "Invoice Number": 1001,
+        "Client Name": "Acme Corp",
+        "Amount": 2500,
+        "Due Date": "2024-02-15",
+        "Paid": true
+      }
+    }
+  ]
 }
 ```
 
-### Step 5: Get a Single Record
+`records` contains formatted values (localized numbers, dates, currency symbols). `rawRecords` contains the original Airtable values.
 
-Fetch a specific record by ID:
+**Errors:**
 
-```bash
-curl https://api.glyph.you/v1/airtable/bases/appXXXXXXXXXXXXXX/tables/tblXXXXXXXXXXXXXX/records/recXXXXXXXXXXXXXX \
-  -H "Authorization: Bearer gk_your_glyph_api_key" \
-  -H "X-Airtable-Key: pat_your_airtable_token"
+| Code | Status | Meaning |
+|------|--------|---------|
+| `MISSING_AIRTABLE_KEY` | 400 | Header not provided |
+| `TABLE_NOT_FOUND` | 404 | Table does not exist |
+| `RECORDS_ERROR` | 400 | Failed to fetch records (bad view name, permissions, etc.) |
+
+---
+
+### GET /v1/airtable/bases/:baseId/tables/:tableId/records/:recordId
+
+Fetch a single record by its Airtable record ID.
+
+**Response (200):**
+
+```json
+{
+  "baseId": "appXXXXXXXXXXXXXX",
+  "tableId": "tblXXXXXXXXXXXXXX",
+  "tableName": "Invoices",
+  "record": {
+    "_id": "recXXXXXXXXXXXXXX",
+    "_createdTime": "2024-01-15T10:30:00.000Z",
+    "fields": {
+      "Invoice Number": "1001",
+      "Client Name": "Acme Corp",
+      "Amount": "2,500.00"
+    }
+  },
+  "rawRecord": {
+    "id": "recXXXXXXXXXXXXXX",
+    "createdTime": "2024-01-15T10:30:00.000Z",
+    "fields": {
+      "Invoice Number": 1001,
+      "Client Name": "Acme Corp",
+      "Amount": 2500
+    }
+  }
+}
 ```
+
+**Errors:**
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `MISSING_AIRTABLE_KEY` | 400 | Header not provided |
+| `TABLE_NOT_FOUND` | 404 | Table does not exist |
+| `RECORD_ERROR` | 400 | Record not found or inaccessible |
+
+---
 
 ## Field Type Mapping
 
-Glyph automatically converts Airtable field types for optimal PDF rendering:
+Glyph normalizes Airtable field types for optimal PDF rendering. The full mapping:
 
-| Airtable Type | Glyph Type | Notes |
-|---------------|------------|-------|
-| `singleLineText`, `multilineText` | text | Plain text |
-| `richText` | html | Preserves formatting |
-| `email` | email | Clickable in PDF |
-| `url` | url | Clickable in PDF |
-| `number`, `autoNumber`, `count` | number | Formatted with locale |
-| `currency` | currency | Includes symbol, 2 decimals |
-| `percent` | percent | Displayed as percentage |
-| `date` | date | Formatted as locale date |
-| `dateTime` | datetime | Formatted as locale datetime |
-| `checkbox` | boolean | True/false for conditionals |
-| `singleSelect` | select | Single value |
-| `multipleSelects` | multiselect | Array of values |
-| `attachment` | attachment | First image URL available |
+| Airtable Type | Glyph Type | Formatting Applied |
+|---------------|------------|-------------------|
+| `singleLineText`, `multilineText`, `barcode`, `aiText` | text | None (pass-through) |
+| `richText` | html | Preserved as markdown |
+| `email` | email | Pass-through |
+| `url` | url | Pass-through |
+| `phoneNumber` | phone | Pass-through |
+| `number`, `autoNumber`, `count`, `rating` | number | Locale-formatted, max 2 decimals |
+| `currency` | currency | Locale-formatted, 2 decimal places, currency symbol |
+| `percent` | percent | Locale-formatted |
+| `date` | date | `toLocaleDateString("en-US")` |
+| `dateTime`, `createdTime`, `lastModifiedTime` | datetime | `toLocaleString("en-US")` |
+| `duration` | duration | Pass-through |
+| `checkbox` | boolean | Converted to `true`/`false` |
+| `singleSelect` | select | Single string value |
+| `multipleSelects` | multiselect | Array of strings |
+| `attachment` | attachment | Array of objects; use `fields.FieldName.0.url` for first image |
 | `multipleRecordLinks` | links | Array of record IDs |
+| `collaborator`, `createdBy`, `lastModifiedBy` | user | Pass-through |
+| `multipleCollaborators` | users | Array |
+| `formula` | computed | Pass-through |
+| `rollup` | computed | Pass-through |
+| `lookup` | lookup | Pass-through |
+| `button` | button | Pass-through |
 
-## Example Use Cases
+<Aside type="note">
+All Airtable fields can be empty. Always use conditional checks (e.g., Mustache `{{#fields.Amount}}...{{/fields.Amount}}`) when rendering.
+</Aside>
 
-### Invoice Generation
+---
 
-Connect your invoices table to generate professional PDFs:
+## MCP Server Integration
 
-```javascript
-// 1. Fetch invoice record from Airtable
-const invoiceResponse = await fetch(
-  `https://api.glyph.you/v1/airtable/bases/${baseId}/tables/${tableId}/records/${recordId}`,
-  {
-    headers: {
-      'Authorization': 'Bearer gk_your_api_key',
-      'X-Airtable-Key': 'pat_your_airtable_token'
-    }
+AI agents using the Glyph MCP server can work with Airtable data through three dedicated tools.
+
+### glyph_create_source
+
+Register an Airtable table as a data source for PDF generation.
+
+```json
+{
+  "type": "airtable",
+  "name": "Invoices Table",
+  "config": {
+    "apiKey": "patXXXXXXXXXXXXXX",
+    "baseId": "appXXXXXXXXXXXXXX",
+    "tableName": "Invoices"
   }
-);
-const { record } = await invoiceResponse.json();
-
-// 2. Create PDF preview with Glyph
-const previewResponse = await fetch('https://api.glyph.you/v1/preview', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer gk_your_api_key',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    template: 'quote-modern',
-    data: {
-      client: {
-        name: record.fields['Client Name'],
-        email: record.fields['Email'],
-        company: record.fields['Company']
-      },
-      lineItems: record.fields['Line Items'] || [],
-      totals: {
-        subtotal: record.fields['Subtotal'],
-        tax: record.fields['Tax'],
-        total: record.fields['Total']
-      },
-      meta: {
-        quoteNumber: record.fields['Invoice Number'],
-        date: record.fields['Date'],
-        validUntil: record.fields['Due Date']
-      }
-    }
-  })
-});
-
-const { sessionId } = await previewResponse.json();
-
-// 3. Generate the PDF
-const pdfResponse = await fetch('https://api.glyph.you/v1/generate', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer gk_your_api_key',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    sessionId,
-    format: 'pdf'
-  })
-});
-
-const pdfBlob = await pdfResponse.blob();
-```
-
-### Batch PDF Generation
-
-Generate multiple PDFs from a table view:
-
-```javascript
-// Fetch all records from a specific view
-const recordsResponse = await fetch(
-  `https://api.glyph.you/v1/airtable/bases/${baseId}/tables/${tableId}/records?maxRecords=100&view=Ready%20to%20Send`,
-  {
-    headers: {
-      'Authorization': 'Bearer gk_your_api_key',
-      'X-Airtable-Key': 'pat_your_airtable_token'
-    }
-  }
-);
-const { records } = await recordsResponse.json();
-
-// Generate PDF for each record
-for (const record of records) {
-  // ... create preview and generate PDF for each
 }
 ```
 
-## API Reference
+Returns a `sourceId` you use in subsequent calls.
 
-### Endpoints
+### glyph_suggest_mappings
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/v1/airtable/connect` | Validate token, list bases |
-| `GET` | `/v1/airtable/bases/:baseId/tables` | List tables in a base |
-| `GET` | `/v1/airtable/bases/:baseId/tables/:tableId/schema` | Get table field schema |
-| `GET` | `/v1/airtable/bases/:baseId/tables/:tableId/records` | List records |
-| `GET` | `/v1/airtable/bases/:baseId/tables/:tableId/records/:recordId` | Get single record |
+Get AI-powered mapping suggestions between a template's placeholders (e.g., `{{client.name}}`) and the source's field names (e.g., "Customer Name"). Returns a list of suggested mappings with confidence scores.
 
-### Authentication
+```json
+{
+  "templateId": "tpl_XXXXX",
+  "sourceId": "src_XXXXX"
+}
+```
 
-All Airtable endpoints require:
+### glyph_generate_from_source
 
-1. **Glyph API Key** in the `Authorization` header: `Bearer gk_your_api_key`
-2. **Airtable Token** either:
-   - In the request body for `POST /connect`: `{"apiKey": "pat_..."}`
-   - In the `X-Airtable-Key` header for all other endpoints
+Generate one or more PDFs using a saved template and a connected data source. Supports single-record generation via `recordId` or batch generation with filters.
 
-### Error Codes
+```json
+{
+  "templateId": "tpl_XXXXX",
+  "sourceId": "src_XXXXX",
+  "recordId": "recXXXXXXXXXXXXXX"
+}
+```
 
-| Code | Description |
-|------|-------------|
-| `VALIDATION_ERROR` | Missing or invalid request parameters |
-| `INVALID_KEY_FORMAT` | Airtable key doesn't start with `pat` or `key` |
-| `AIRTABLE_AUTH_ERROR` | Invalid Airtable token |
-| `MISSING_AIRTABLE_KEY` | `X-Airtable-Key` header not provided |
-| `TABLE_NOT_FOUND` | Table doesn't exist in the specified base |
-| `RECORDS_ERROR` | Failed to fetch records |
+### Typical Agent Workflow
+
+1. `glyph_create_source` -- connect the Airtable table
+2. `glyph_suggest_mappings` -- let AI map fields to template placeholders
+3. `glyph_link_template` -- save the mapping
+4. `glyph_generate_from_source` -- generate PDFs on demand
+
+---
+
+## Automation and Scripting
+
+### Airtable Scripting Extension
+
+Use this inside an Airtable Scripting block to generate a PDF for the current record:
+
+```javascript
+// Airtable Scripting Extension
+const GLYPH_API_KEY = "gk_your_api_key";
+const AIRTABLE_TOKEN = "patXXXXXXXXXXXXXX";
+const BASE_ID = "appXXXXXXXXXXXXXX";
+const TABLE_ID = "tblXXXXXXXXXXXXXX";
+const API = "https://api.glyph.you";
+
+// 1. Get the current record
+const table = base.getTable("Invoices");
+const record = await input.recordAsync("Pick a record", table);
+
+// 2. Fetch formatted data via Glyph
+const dataResp = await fetch(
+  `${API}/v1/airtable/bases/${BASE_ID}/tables/${TABLE_ID}/records/${record.id}`,
+  {
+    headers: {
+      "Authorization": `Bearer ${GLYPH_API_KEY}`,
+      "X-Airtable-Key": AIRTABLE_TOKEN,
+    },
+  }
+);
+const { record: formattedRecord } = await dataResp.json();
+
+// 3. Create preview
+const previewResp = await fetch(`${API}/v1/preview`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${GLYPH_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    template: "quote-modern",
+    data: {
+      client: {
+        name: formattedRecord.fields["Client Name"],
+        email: formattedRecord.fields["Email"],
+      },
+      meta: {
+        quoteNumber: formattedRecord.fields["Invoice Number"],
+        date: formattedRecord.fields["Date"],
+      },
+    },
+  }),
+});
+const { sessionId } = await previewResp.json();
+
+// 4. Generate PDF
+const pdfResp = await fetch(`${API}/v1/generate`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${GLYPH_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ sessionId, format: "pdf" }),
+});
+
+output.markdown(`PDF generated! Session: ${sessionId}`);
+```
+
+### Airtable Automations (Webhook)
+
+Trigger PDF generation when a record enters a view:
+
+1. In Airtable, create an Automation with trigger **"When record enters view"**
+2. Add a **"Run a script"** action
+3. Use the script above, replacing `input.recordAsync()` with the trigger's record ID
+4. Optionally add a **"Send email"** action to deliver the PDF
+
+---
+
+## Example: Invoice from Airtable (curl)
+
+A complete end-to-end example using only curl:
+
+```bash
+# Variables
+GLYPH_KEY="gk_your_api_key"
+AT_KEY="patXXXXXXXXXXXXXX"
+BASE="appXXXXXXXXXXXXXX"
+TABLE="tblXXXXXXXXXXXXXX"
+RECORD="recXXXXXXXXXXXXXX"
+API="https://api.glyph.you"
+
+# Step 1: Fetch the record
+RECORD_DATA=$(curl -s "$API/v1/airtable/bases/$BASE/tables/$TABLE/records/$RECORD" \
+  -H "Authorization: Bearer $GLYPH_KEY" \
+  -H "X-Airtable-Key: $AT_KEY")
+
+echo "$RECORD_DATA" | jq '.record.fields'
+
+# Step 2: Create a preview session
+# Map Airtable fields to your template's expected data shape
+SESSION_ID=$(curl -s -X POST "$API/v1/preview" \
+  -H "Authorization: Bearer $GLYPH_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "quote-modern",
+    "data": {
+      "client": {
+        "name": "Acme Corp",
+        "email": "billing@acme.com"
+      },
+      "lineItems": [
+        {"description": "Consulting", "quantity": 10, "rate": 250}
+      ],
+      "totals": {
+        "subtotal": "$2,500.00",
+        "tax": "$200.00",
+        "total": "$2,700.00"
+      },
+      "meta": {
+        "quoteNumber": "INV-1001",
+        "date": "1/27/2026",
+        "validUntil": "2/27/2026"
+      }
+    }
+  }' | jq -r '.sessionId')
+
+echo "Session: $SESSION_ID"
+
+# Step 3: (Optional) Modify with AI
+curl -s -X POST "$API/v1/modify" \
+  -H "Authorization: Bearer $GLYPH_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"sessionId\": \"$SESSION_ID\",
+    \"prompt\": \"Add a professional header with company logo placeholder\"
+  }" | jq '.selfCheckPassed'
+
+# Step 4: Generate PDF
+curl -s -X POST "$API/v1/generate" \
+  -H "Authorization: Bearer $GLYPH_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"sessionId\": \"$SESSION_ID\", \"format\": \"pdf\"}" \
+  --output invoice.pdf
+
+echo "Saved to invoice.pdf"
+```
+
+---
+
+## Connecting via the Landing Page
+
+The easiest way to get started without writing code:
+
+<Steps>
+
+1. Visit [glyph.you](https://glyph.you)
+2. Click **Connect Airtable** in the navigation or hero section
+3. Paste your Personal Access Token
+4. Select your **Base** from the dropdown
+5. Select the **Table** containing your data
+6. Choose a **Template Style** that fits your document type
+7. Preview your generated PDF with sample data
+8. Download or refine with AI modifications
+
+</Steps>
+
+---
 
 ## Troubleshooting
 
 ### "Invalid Airtable API key format"
 
-Make sure your token starts with `pat` (Personal Access Token) or `key` (legacy API key). You can create a new token at [airtable.com/create/tokens](https://airtable.com/create/tokens).
+Your token must start with `pat` (Personal Access Token) or `key` (legacy API key). Create a new token at [airtable.com/create/tokens](https://airtable.com/create/tokens).
 
 ### "Failed to connect to Airtable"
 
 Check that:
 - Your token has the required scopes (`data.records:read`, `schema.bases:read`)
-- The token has access to the base you're trying to connect
-- The token hasn't expired or been revoked
+- The token has access to the base you are trying to connect
+- The token has not expired or been revoked
 
 ### "Table not found"
 
-Verify the table ID or name is correct. Table IDs start with `tbl`. You can also use the table name (case-sensitive).
+The `tableId` parameter accepts both table IDs (starting with `tbl`) and table names (case-sensitive). Verify the exact value using the list tables endpoint.
 
-### Empty Records
+### Empty or Missing Fields
 
-If you're getting empty records:
-- Check that the view you're filtering by exists
-- Verify the fields have data
-- Ensure your token has read access to the table
+- Records come back with `null` for any field that has no value
+- Verify the view name if using the `view` query parameter
+- Check that your token has read access to the table
+
+### "Airtable API key required"
+
+All endpoints except `POST /connect` require the `X-Airtable-Key` header. Make sure you are sending it as a separate header, not in the request body.
+
+---
 
 ## Next Steps
 
-- [POST /v1/preview](/api/preview/) - Generate document previews
-- [POST /v1/modify](/api/modify/) - AI-powered modifications
-- [POST /v1/generate](/api/generate/) - PDF generation
-- [Templates Overview](/templates/overview/) - Available templates
+- [POST /v1/preview](/api/preview/) -- Generate document previews
+- [POST /v1/modify](/api/modify/) -- AI-powered modifications
+- [POST /v1/generate](/api/generate/) -- PDF generation
+- [Templates Overview](/templates/overview/) -- Available templates
+- [MCP Server](/integrations/mcp-server/) -- AI agent integration
