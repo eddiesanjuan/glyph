@@ -7,6 +7,7 @@
  * 2. Direct: Pass html directly for one-off modifications
  */
 
+import { createHash } from "crypto";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
@@ -33,6 +34,63 @@ import { canFastTransform, fastTransform } from "../services/fastTransform.js";
 import type { Context } from "hono";
 import { triggerEventSubscriptions } from "./subscriptions.js";
 import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
+
+// --- AI Response Cache (LRU, 100 entries, 10-minute TTL) ---
+
+interface CacheEntry {
+  html: string;           // Modified template HTML (pre-render)
+  changes: string[];
+  tokensUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+  createdAt: number;
+}
+
+const AI_CACHE = new Map<string, CacheEntry>();
+const AI_CACHE_MAX = 100;
+const AI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+let cacheHits = 0;
+let cacheMisses = 0;
+
+function aiCacheKey(templateHtml: string, prompt: string, regionId: string | undefined): string {
+  const raw = templateHtml + "\x00" + prompt + "\x00" + (regionId || "");
+  return createHash("sha256").update(raw).digest("hex");
+}
+
+function aiCacheGet(key: string): CacheEntry | null {
+  const entry = AI_CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.createdAt > AI_CACHE_TTL_MS) {
+    AI_CACHE.delete(key);
+    return null;
+  }
+  // Move to end (most recently used)
+  AI_CACHE.delete(key);
+  AI_CACHE.set(key, entry);
+  cacheHits++;
+  return entry;
+}
+
+function aiCacheSet(key: string, entry: CacheEntry): void {
+  // Evict oldest if at capacity
+  if (AI_CACHE.size >= AI_CACHE_MAX) {
+    const oldest = AI_CACHE.keys().next().value;
+    if (oldest !== undefined) AI_CACHE.delete(oldest);
+  }
+  AI_CACHE.set(key, entry);
+}
+
+// Periodic cleanup of expired entries (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of AI_CACHE) {
+    if (now - entry.createdAt > AI_CACHE_TTL_MS) {
+      AI_CACHE.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
 
 const modify = new Hono();
 
@@ -322,6 +380,76 @@ modify.post("/", async (c) => {
         }
       }
 
+      // Check AI response cache before calling Claude
+      const cacheKey = aiCacheKey(templateToModify, prompt, region);
+      const cachedResult = aiCacheGet(cacheKey);
+
+      if (cachedResult) {
+        // CACHE HIT - skip AI call entirely
+        const tTotal = Date.now() - t0;
+        timings.cache = 0;
+        timings.total = tTotal;
+        console.log(`[perf:modify] CACHE HIT key=${cacheKey.substring(0, 12)}... saved AI call`);
+
+        // Re-render cached template with session data
+        let renderedHtml: string;
+        try {
+          renderedHtml = templateEngine.renderRaw(cachedResult.html, session.data);
+        } catch {
+          renderedHtml = cachedResult.html;
+        }
+
+        // Update session
+        const modifications = [
+          ...(session.modifications || []),
+          {
+            prompt,
+            region: region || null,
+            timestamp: new Date().toISOString(),
+            changes: cachedResult.changes,
+          },
+        ];
+
+        if (isDevSession) {
+          updateDevSession(sessionId, {
+            current_html: renderedHtml,
+            template_html: cachedResult.html,
+            modifications,
+          });
+          addTemplateToHistory(sessionId, cachedResult.html, renderedHtml);
+        } else if (supabase) {
+          await getSupabase()
+            .from("sessions")
+            .update({
+              current_html: renderedHtml,
+              template_html: cachedResult.html,
+              modifications,
+            })
+            .eq("id", sessionId);
+        }
+
+        c.header('Server-Timing', Object.entries(timings).map(([k, v]) => `${k};dur=${v}`).join(', '));
+
+        return c.json({
+          html: renderedHtml,
+          changes: cachedResult.changes,
+          tokensUsed: cachedResult.tokensUsed,
+          usage: {
+            promptTokens: cachedResult.inputTokens,
+            completionTokens: cachedResult.outputTokens,
+            totalTokens: cachedResult.inputTokens + cachedResult.outputTokens,
+            processingTimeMs: tTotal,
+            cached: true,
+            cacheStats: { hits: cacheHits, misses: cacheMisses, size: AI_CACHE.size },
+            model: cachedResult.model,
+            fastTransform: false,
+          },
+        });
+      }
+
+      // CACHE MISS
+      cacheMisses++;
+
       // Call Claude to modify the TEMPLATE (with Mustache vars preserved)
       // With automatic retry if HTML appears truncated or malformed
       const tAi = Date.now();
@@ -439,6 +567,20 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         console.warn(`[Security] Guardrail violations detected: ${guardrailResult.violations.join(', ')}`);
       }
 
+      // Store successful AI result in cache (only if guardrails passed and not fast-transform)
+      if (!result.fastTransform) {
+        aiCacheSet(cacheKey, {
+          html: modifiedTemplateHtml,
+          changes: result.changes,
+          tokensUsed: result.tokensUsed,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
+          model: result.model || "unknown",
+          createdAt: Date.now(),
+        });
+        console.log(`[cache:modify] Stored key=${cacheKey.substring(0, 12)}... size=${AI_CACHE.size}`);
+      }
+
       // FIX: Re-render the modified template with the original data
       // This produces the final HTML with actual values for display
       let renderedHtml: string;
@@ -548,7 +690,8 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
           completionTokens: result.outputTokens,
           totalTokens: result.inputTokens + result.outputTokens,
           processingTimeMs: timings.total,
-          cached: result.cached,
+          cached: false,
+          cacheStats: { hits: cacheHits, misses: cacheMisses, size: AI_CACHE.size },
           model: result.model,
           fastTransform: result.fastTransform,
         },

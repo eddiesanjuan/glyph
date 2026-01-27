@@ -4,6 +4,7 @@
  */
 
 import { chromium, Browser, Page } from 'playwright';
+import { createHash } from 'crypto';
 import type { GenerateRequest, GenerateResponse } from "../lib/types.js";
 
 // Browser instance (reused across requests)
@@ -56,6 +57,44 @@ function returnPage(page: Page): void {
   }
 }
 
+// --- PDF Output Cache ---
+const PDF_CACHE_MAX = 50;
+const PDF_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+interface CacheEntry {
+  buffer: Buffer;
+  createdAt: number;
+}
+
+const pdfCache = new Map<string, CacheEntry>();
+
+function computeCacheKey(html: string, options: PDFOptions = {}): string {
+  const raw = JSON.stringify({ html, format: options.format, landscape: options.landscape, margin: options.margin, scale: options.scale });
+  return createHash('sha256').update(raw).digest('hex');
+}
+
+function evictExpired(): void {
+  const now = Date.now();
+  for (const [key, entry] of pdfCache) {
+    if (now - entry.createdAt > PDF_CACHE_TTL_MS) {
+      pdfCache.delete(key);
+    }
+  }
+}
+
+function evictOldestIfFull(): void {
+  if (pdfCache.size < PDF_CACHE_MAX) return;
+  // Delete the oldest entry (first inserted — Map preserves insertion order)
+  const oldestKey = pdfCache.keys().next().value;
+  if (oldestKey !== undefined) {
+    pdfCache.delete(oldestKey);
+  }
+}
+
+export function getPdfCacheStats() {
+  return { size: pdfCache.size, maxSize: PDF_CACHE_MAX, ttlMs: PDF_CACHE_TTL_MS };
+}
+
 export interface PDFOptions {
   format?: 'letter' | 'a4';
   landscape?: boolean;
@@ -75,12 +114,33 @@ export interface PNGOptions {
 }
 
 /**
- * Generate PDF from HTML content
+ * Generate PDF from HTML content (with caching).
+ * Returns a Buffer for backward compatibility.
+ * Use generatePDFCached() to also get cache hit info.
  */
 export async function generatePDF(
   html: string,
   options: PDFOptions = {}
 ): Promise<Buffer> {
+  const result = await generatePDFCached(html, options);
+  return result.buffer;
+}
+
+/**
+ * Generate PDF with cache metadata returned alongside the buffer.
+ */
+export async function generatePDFCached(
+  html: string,
+  options: PDFOptions = {}
+): Promise<{ buffer: Buffer; cacheHit: boolean }> {
+  // Check cache first
+  evictExpired();
+  const key = computeCacheKey(html, options);
+  const cached = pdfCache.get(key);
+  if (cached && Date.now() - cached.createdAt < PDF_CACHE_TTL_MS) {
+    return { buffer: cached.buffer, cacheHit: true };
+  }
+
   const page = await getPage();
 
   try {
@@ -107,7 +167,13 @@ export async function generatePDF(
       scale: options.scale || 1,
     });
 
-    return Buffer.from(pdf);
+    const buffer = Buffer.from(pdf);
+
+    // Store in cache
+    evictOldestIfFull();
+    pdfCache.set(key, { buffer, createdAt: Date.now() });
+
+    return { buffer, cacheHit: false };
   } finally {
     returnPage(page);
   }
@@ -149,6 +215,7 @@ export async function generatePNG(html: string, options: PNGOptions = {}): Promi
 
 // Keep old function names for backwards compatibility
 export const generatePdf = generatePDF;
+export const generatePdfCached = generatePDFCached;
 export const generatePng = generatePNG;
 
 /**

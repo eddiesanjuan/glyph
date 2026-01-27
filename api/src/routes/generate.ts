@@ -5,8 +5,8 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { generatePdf, generatePng } from "../services/pdf.js";
-import type { GenerateResponse, ApiError } from "../lib/types.js";
+import { generatePdfCached, generatePng } from "../services/pdf.js";
+import type { ApiError } from "../lib/types.js";
 import { triggerEventSubscriptions } from "./subscriptions.js";
 import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
 
@@ -49,9 +49,12 @@ generate.post("/", async (c) => {
     let filename: string;
     const sessionId = body.sessionId || Date.now().toString();
 
+    let cacheHit = false;
     const tRender = Date.now();
     if (format === "pdf") {
-      buffer = await generatePdf(html, options);
+      const result = await generatePdfCached(html, options);
+      buffer = result.buffer;
+      cacheHit = result.cacheHit;
       contentType = "application/pdf";
       filename = `glyph-document-${sessionId}.pdf`;
     } else {
@@ -61,8 +64,8 @@ generate.post("/", async (c) => {
     }
     const renderDuration = Date.now() - tRender;
     const totalDuration = Date.now() - tStart;
-    console.log(`[perf:generate] render=${renderDuration}ms total=${totalDuration}ms format=${format} size=${buffer.length}`);
-    c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}`);
+    console.log(`[perf:generate] render=${renderDuration}ms total=${totalDuration}ms format=${format} size=${buffer.length} cacheHit=${cacheHit}`);
+    c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}, cache;desc="${cacheHit ? 'HIT' : 'MISS'}"`);
 
     // TODO: Upload to Supabase Storage instead of returning raw buffer
     // For now, return the file directly
@@ -88,16 +91,18 @@ generate.post("/", async (c) => {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
-      const response: GenerateResponse = {
+      const response = {
         url: `data:${contentType};base64,${buffer.toString("base64")}`,
         format,
         size: buffer.length,
         expiresAt: expiresAt.toISOString(),
+        cacheHit,
         usage: {
           renderTimeMs: renderDuration,
           totalTimeMs: totalDuration,
           format,
           sizeBytes: buffer.length,
+          cacheHit,
         },
       };
 

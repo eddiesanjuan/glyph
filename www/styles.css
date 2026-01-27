@@ -3451,10 +3451,15 @@
       justify-content: center;
     }
 
-    .playground__save-btn:hover {
+    .playground__save-btn:hover:not(:disabled) {
       background: var(--color-primary-subtle);
       color: var(--color-warning);
       border-color: var(--color-warning);
+    }
+
+    .playground__save-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .playground__save-btn svg {
@@ -3531,6 +3536,53 @@
     .playground__share-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+    }
+
+    /* ============================================
+       Disabled Button Tooltips
+       ============================================ */
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]:disabled::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      background: var(--color-bg-elevated, #1a1a2e);
+      color: var(--color-text-secondary, #a0a0b8);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      white-space: nowrap;
+      border-radius: 6px;
+      border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+    }
+
+    [data-tooltip]:disabled::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--color-border, rgba(255, 255, 255, 0.08));
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+    }
+
+    [data-tooltip]:disabled:hover::after,
+    [data-tooltip]:disabled:hover::before {
+      opacity: 1;
     }
 
     /* Shared Customization Banner */
@@ -9224,4 +9276,47 @@
       .nav__keyboard-hint {
         display: none;
       }
+    }
+
+    /* ─── Input Hints & Character Counters ─── */
+
+    .input-hint {
+      display: block;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #8b8fa3;
+      margin-top: 4px;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.2s ease, max-height 0.2s ease;
+      pointer-events: none;
+    }
+
+    .input-hint--visible {
+      opacity: 1;
+      max-height: 40px;
+    }
+
+    .char-counter {
+      display: block;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #8b8fa3;
+      text-align: right;
+      margin-top: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .char-counter--visible {
+      opacity: 1;
+    }
+
+    .char-counter--warning {
+      color: #f0a030;
+    }
+
+    .char-counter--limit {
+      color: #ef4444;
     }

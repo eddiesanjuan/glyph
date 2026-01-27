@@ -733,6 +733,7 @@
                   aria-autocomplete="list"
                   aria-controls="playground-autocomplete"
                 ></textarea>
+                <span class="input-hint" id="prompt-input-hint">Describe what you want to change, e.g. "Add a watermark" or "Make the header blue"</span>
                 <button
                   class="playground__voice-btn"
                   id="voice-input-btn"
@@ -770,20 +771,20 @@
                 <button class="playground__apply-btn" id="apply-btn">
                   Apply Changes
                 </button>
-                <button class="playground__undo-btn" id="undo-btn" disabled title="Undo last change">
+                <button class="playground__undo-btn" id="undo-btn" disabled title="Undo last change" data-tooltip="Make a change first">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v0a5 5 0 01-5 5H8m-5-10l4-4m-4 4l4 4"/>
                   </svg>
                 </button>
-                <button class="playground__diff-btn" id="diff-toggle-btn" disabled title="Show changes from last modification">
+                <button class="playground__diff-btn" id="diff-toggle-btn" disabled title="Show changes from last modification" data-tooltip="Make a change to see differences">
                   <span class="playground__diff-btn-icon">&ne;</span>
                 </button>
-                <button class="playground__save-btn" id="save-version-btn" title="Save named version">
+                <button class="playground__save-btn" id="save-version-btn" disabled title="Save named version" data-tooltip="Make a change to save a version">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                   </svg>
                 </button>
-                <button class="playground__share-btn" id="share-btn" title="Share this customization">
+                <button class="playground__share-btn" id="share-btn" disabled title="Share this customization" data-tooltip="Make a change to share">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                   </svg>
@@ -1733,6 +1734,7 @@
               placeholder="pat..."
               autocomplete="off"
             />
+            <span class="input-hint" id="airtable-key-hint">Starts with "pat." &mdash; find yours at airtable.com/account</span>
             <div class="airtable-input-hint">
               <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -2084,6 +2086,7 @@
                   <div class="airtable-batch-select-row">
                     <label for="batch-filename">Filename:</label>
                     <input type="text" id="batch-filename" class="airtable-batch-input" placeholder="invoice-{{fields.Invoice Number}}.pdf" />
+                    <span class="input-hint" id="batch-filename-hint">Use {{fields.Name}} placeholders for dynamic filenames</span>
                   </div>
 
                   <div class="airtable-batch-count">
@@ -2274,6 +2277,7 @@
       </div>
       <p class="save-version-modal__description">Give this version a name so you can restore it later.</p>
       <input type="text" class="save-version-modal__input" id="version-name-input" placeholder="e.g., After client feedback, Final v2" maxlength="50" autocomplete="off">
+      <span class="char-counter" id="version-name-counter" data-max="50">0 / 50</span>
       <div class="save-version-modal__actions">
         <button class="save-version-modal__btn save-version-modal__btn--cancel" id="save-version-cancel">Cancel</button>
         <button class="save-version-modal__btn save-version-modal__btn--save" id="save-version-confirm">Save Version</button>
@@ -2348,6 +2352,7 @@
         <div class="save-template-modal__field">
           <label class="save-template-modal__label save-template-modal__label--required" for="template-name-input">Template Name</label>
           <input type="text" class="save-template-modal__input" id="template-name-input" placeholder="e.g., Invoice with Blue Header" maxlength="100" autocomplete="off" required>
+          <span class="char-counter" id="template-name-counter" data-max="100">0 / 100</span>
         </div>
 
         <div class="save-template-modal__field">
@@ -2368,6 +2373,7 @@
         <div class="save-template-modal__field">
           <label class="save-template-modal__label" for="template-description-input">Description</label>
           <textarea class="save-template-modal__textarea" id="template-description-input" placeholder="Briefly describe this template's purpose or customizations..." maxlength="500"></textarea>
+          <span class="char-counter" id="template-description-counter" data-max="500">0 / 500</span>
         </div>
 
         <div class="save-template-modal__checkbox-field">

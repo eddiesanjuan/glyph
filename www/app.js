@@ -2461,6 +2461,24 @@
           ? `Undo last change (${undoHistory.length} available)`
           : 'No changes to undo';
       }
+      updateShareAndSaveButtonState();
+    }
+
+    // Update share and save buttons based on whether changes exist
+    function updateShareAndSaveButtonState() {
+      const hasChanges = undoHistory.length > 0;
+      const shareBtn = document.getElementById('share-btn');
+      const saveBtn = document.getElementById('save-version-btn');
+      if (shareBtn) {
+        shareBtn.disabled = !hasChanges;
+        shareBtn.title = hasChanges ? 'Share this customization' : 'Share this customization';
+        shareBtn.dataset.tooltip = hasChanges ? '' : 'Make a change to share';
+      }
+      if (saveBtn) {
+        saveBtn.disabled = !hasChanges;
+        saveBtn.title = hasChanges ? 'Save named version' : 'Save named version';
+        saveBtn.dataset.tooltip = hasChanges ? '' : 'Make a change to save a version';
+      }
     }
 
     // Clear undo history (e.g., when switching templates)
@@ -8506,3 +8524,61 @@ print(result['html'])  # Updated HTML`;
       startAnimation();
     }
   })();
+
+// ─── Input Hints & Character Counters ───
+(function initInputHints() {
+  // Focus hints: show on focus, hide on blur
+  const hintPairs = [
+    { input: 'prompt-input', hint: 'prompt-input-hint' },
+    { input: 'airtable-key', hint: 'airtable-key-hint' },
+    { input: 'batch-filename', hint: 'batch-filename-hint' },
+  ];
+
+  hintPairs.forEach(function(pair) {
+    var input = document.getElementById(pair.input);
+    var hint = document.getElementById(pair.hint);
+    if (!input || !hint) return;
+
+    input.addEventListener('focus', function() {
+      hint.classList.add('input-hint--visible');
+    });
+    input.addEventListener('blur', function() {
+      hint.classList.remove('input-hint--visible');
+    });
+  });
+
+  // Character counters: update on input, show on focus, hide on blur
+  var counterPairs = [
+    { input: 'template-name-input', counter: 'template-name-counter' },
+    { input: 'template-description-input', counter: 'template-description-counter' },
+    { input: 'version-name-input', counter: 'version-name-counter' },
+  ];
+
+  counterPairs.forEach(function(pair) {
+    var input = document.getElementById(pair.input);
+    var counter = document.getElementById(pair.counter);
+    if (!input || !counter) return;
+
+    var max = parseInt(counter.getAttribute('data-max'), 10) || 100;
+
+    function updateCounter() {
+      var len = input.value.length;
+      counter.textContent = len + ' / ' + max;
+      counter.classList.remove('char-counter--warning', 'char-counter--limit');
+      if (len >= max) {
+        counter.classList.add('char-counter--limit');
+      } else if (len >= max * 0.85) {
+        counter.classList.add('char-counter--warning');
+      }
+    }
+
+    input.addEventListener('focus', function() {
+      counter.classList.add('char-counter--visible');
+      updateCounter();
+    });
+    input.addEventListener('blur', function() {
+      counter.classList.remove('char-counter--visible');
+    });
+    input.addEventListener('input', updateCounter);
+  });
+})();
