@@ -137,6 +137,7 @@ app.get("/", (c) => {
       airtableSchema: "GET /v1/airtable/bases/:baseId/tables/:tableId/schema",
       airtableRecords: "GET /v1/airtable/bases/:baseId/tables/:tableId/records",
       // Template generation
+      templatesList: "GET /v1/templates",
       templateGenerate: "POST /v1/templates/generate",
       templateRefine: "POST /v1/templates/refine",
       templatePreview: "POST /v1/templates/preview",
@@ -315,6 +316,7 @@ console.log(`
     GET  /v1/airtable/bases/:baseId/tables/:tableId/records  - Get sample records
 
   Template Generation:
+    GET  /v1/templates           - List available built-in templates
     POST /v1/templates/generate  - Generate from description + schema
     POST /v1/templates/refine    - Modify with natural language
     POST /v1/templates/preview   - Render with data

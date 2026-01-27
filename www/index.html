@@ -57,6 +57,7 @@
   <link rel="dns-prefetch" href="https://docs.glyph.you">
 
   <!-- Fonts - Inter for body, Archivo Semi-Expanded ExtraLight for logo -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@110,200&family=Inter:wght@400;500;600;700&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@110,200&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Favicon - G lettermark -->
@@ -71,8 +72,9 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="styles.css">
-  <!-- Canvas Confetti for first modification celebration -->
+  <link rel="preload" href="styles.css" as="style">
+  <link rel="preload" href="app.js" as="script">
+  <link rel="stylesheet" href="styles.css" fetchpriority="high">
 </head>
 <body>
   <!-- Page Loading Skeleton - P2 FOUC Prevention -->
@@ -662,7 +664,15 @@
 
       <div class="playground__editor">
         <div class="playground__toolbar">
-          <div class="playground__tabs">
+          <div class="playground__template-switcher">
+            <select class="playground__template-type" id="template-type-select-playground" aria-label="Document type">
+              <option value="quote" selected>Quote</option>
+              <option value="invoice">Invoice</option>
+              <option value="receipt">Receipt</option>
+              <option value="report">Report Cover</option>
+            </select>
+          </div>
+          <div class="playground__tabs" id="playground-style-tabs">
             <button class="playground__tab playground__tab--active" data-template="quote-modern">Modern</button>
             <button class="playground__tab" data-template="quote-professional">Professional</button>
             <button class="playground__tab" data-template="quote-bold">Bold</button>

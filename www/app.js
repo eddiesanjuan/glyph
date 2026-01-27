@@ -1810,6 +1810,123 @@
       }
     };
 
+    // Sample data for different template types
+    const sampleInvoiceData = {
+      branding: {
+        companyName: 'Acme Corporation',
+        companyAddress: '123 Business Ave, Suite 100\nSan Francisco, CA 94102',
+        logoUrl: ''
+      },
+      meta: {
+        invoiceNumber: 'INV-2026-0087',
+        date: 'January 27, 2026',
+        dueDate: 'February 26, 2026',
+        notes: 'Thank you for your prompt payment.',
+        terms: 'Payment due within 30 days. Late fees of 1.5% per month apply.'
+      },
+      client: {
+        name: 'Sarah Chen',
+        company: 'Brightpath Analytics',
+        email: 'sarah@brightpath.io',
+        address: '789 Data Drive\nAustin, TX 73301'
+      },
+      lineItems: [
+        { description: 'Data Pipeline Setup', details: 'ETL pipeline configuration and testing', quantity: 1, unitPrice: 4500.00, total: 4500.00 },
+        { description: 'Dashboard Development', details: 'Custom analytics dashboards (3 views)', quantity: 3, unitPrice: 2000.00, total: 6000.00 },
+        { description: 'API Integration', details: 'Third-party API connectors', quantity: 2, unitPrice: 1500.00, total: 3000.00 }
+      ],
+      totals: {
+        subtotal: 13500.00,
+        tax: 1080.00,
+        discount: 0,
+        total: 14580.00
+      },
+      styles: { accentColor: '#2563eb' }
+    };
+
+    const sampleReceiptData = {
+      branding: {
+        companyName: 'Acme Corporation',
+        companyAddress: '123 Business Ave\nSan Francisco, CA 94102',
+        logoUrl: ''
+      },
+      meta: {
+        receiptNumber: 'REC-2026-0193',
+        date: 'January 27, 2026',
+        paymentMethod: 'Credit Card ending in 4242'
+      },
+      client: {
+        name: 'Alex Rivera',
+        company: 'Rivera Design Studio',
+        email: 'alex@riveradesign.co'
+      },
+      lineItems: [
+        { description: 'Monthly Subscription - Pro Plan', quantity: 1, unitPrice: 49.00, total: 49.00 },
+        { description: 'Additional Storage (50GB)', quantity: 1, unitPrice: 10.00, total: 10.00 }
+      ],
+      totals: {
+        subtotal: 59.00,
+        tax: 4.72,
+        total: 63.72
+      },
+      styles: { accentColor: '#059669' }
+    };
+
+    const sampleReportData = {
+      branding: {
+        companyName: 'Acme Corporation',
+        companyAddress: '123 Business Ave\nSan Francisco, CA 94102',
+        logoUrl: ''
+      },
+      meta: {
+        reportTitle: 'Q4 2025 Performance Review',
+        date: 'January 27, 2026',
+        author: 'Strategy Team',
+        department: 'Operations'
+      },
+      styles: { accentColor: '#7c3aed' }
+    };
+
+    // Map template types to their style variants and sample data
+    const TEMPLATE_TYPE_CONFIG = {
+      quote: {
+        variants: [
+          { id: 'quote-modern', label: 'Modern' },
+          { id: 'quote-professional', label: 'Professional' },
+          { id: 'quote-bold', label: 'Bold' }
+        ],
+        data: sampleQuoteData
+      },
+      invoice: {
+        variants: [
+          { id: 'invoice-clean', label: 'Clean' }
+        ],
+        data: sampleInvoiceData
+      },
+      receipt: {
+        variants: [
+          { id: 'receipt-minimal', label: 'Minimal' }
+        ],
+        data: sampleReceiptData
+      },
+      report: {
+        variants: [
+          { id: 'report-cover', label: 'Cover' }
+        ],
+        data: sampleReportData
+      }
+    };
+
+    // Get the current sample data based on template type
+    function getCurrentSampleData() {
+      for (const [type, config] of Object.entries(TEMPLATE_TYPE_CONFIG)) {
+        if (config.variants.some(v => v.id === currentTemplate)) {
+          return config.data;
+        }
+      }
+      return sampleQuoteData;
+    }
+
     // Initialize preview with HTML
     // Track if we're in demo mode (Issue #2)
     let isInDemoMode = false;
@@ -1921,7 +2038,7 @@
           },
           body: JSON.stringify({
             template: currentTemplate,
-            data: sampleQuoteData
+            data: getCurrentSampleData()
           })
         });
 
@@ -2499,9 +2616,12 @@
       { name: 'Add Thank You Note', action: () => applyInstantCommand('Add a thank you note at the bottom'), category: 'Quick Actions', icon: 'note' },
       { name: 'Add Signature', action: () => applyInstantCommand('Add a signature'), category: 'Quick Actions', icon: 'signature' },
       // Templates
-      { name: 'Switch to Modern Template', action: () => switchToTemplate('quote-modern'), category: 'Templates', icon: 'template' },
-      { name: 'Switch to Professional Template', action: () => switchToTemplate('quote-professional'), category: 'Templates', icon: 'template' },
-      { name: 'Switch to Bold Template', action: () => switchToTemplate('quote-bold'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Modern Quote', action: () => switchToTemplate('quote-modern'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Professional Quote', action: () => switchToTemplate('quote-professional'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Bold Quote', action: () => switchToTemplate('quote-bold'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Invoice', action: () => switchToTemplateType('invoice'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Receipt', action: () => switchToTemplateType('receipt'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Report Cover', action: () => switchToTemplateType('report'), category: 'Templates', icon: 'template' },
       // Edit
       { name: 'Undo', action: () => performUndo(), category: 'Edit', shortcut: isMac ? '\u2318Z' : 'Ctrl+Z', icon: 'undo' },
       { name: 'Redo', action: () => performRedo(), category: 'Edit', shortcut: isMac ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z', icon: 'redo' },
@@ -2527,9 +2647,35 @@
 
     // Helper to switch templates
     function switchToTemplate(templateId) {
+      // First check if we need to switch the type dropdown
+      for (const [type, config] of Object.entries(TEMPLATE_TYPE_CONFIG)) {
+        if (config.variants.some(v => v.id === templateId)) {
+          const typeSelect = document.getElementById('template-type-select-playground');
+          if (typeSelect && typeSelect.value !== type) {
+            typeSelect.value = type;
+            typeSelect.dispatchEvent(new Event('change'));
+            // After type switch, find and click the correct variant tab
+            setTimeout(() => {
+              const tab = document.querySelector(`.playground__tab[data-template="${templateId}"]`);
+              if (tab && !tab.classList.contains('playground__tab--active')) tab.click();
+            }, 500);
+            return;
+          }
+          break;
+        }
+      }
       const tab = document.querySelector(`.playground__tab[data-template="${templateId}"]`);
       if (tab && !tab.classList.contains('playground__tab--active')) {
         tab.click();
+      }
+    }
+
+    // Helper to switch template type via dropdown
+    function switchToTemplateType(type) {
+      const typeSelect = document.getElementById('template-type-select-playground');
+      if (typeSelect && typeSelect.value !== type) {
+        typeSelect.value = type;
+        typeSelect.dispatchEvent(new Event('change'));
       }
     }
 
@@ -5818,6 +5964,63 @@ print(result['html'])  # Updated HTML`;
         }
       });
     });
+
+    // Template type dropdown switcher
+    const templateTypeSelect = document.getElementById('template-type-select-playground');
+    const styleTabsContainer = document.getElementById('playground-style-tabs');
+
+    if (templateTypeSelect) {
+      templateTypeSelect.addEventListener('change', async () => {
+        const selectedType = templateTypeSelect.value;
+        const config = TEMPLATE_TYPE_CONFIG[selectedType];
+        if (!config) return;
+
+        // Rebuild the style tabs for this template type
+        styleTabsContainer.innerHTML = '';
+        config.variants.forEach((variant, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'playground__tab' + (i === 0 ? ' playground__tab--active' : '');
+          btn.dataset.template = variant.id;
+          btn.textContent = variant.label;
+          styleTabsContainer.appendChild(btn);
+        });
+
+        // Rebind tab click listeners
+        bindStyleTabs();
+
+        // Switch to first variant of the new type
+        const frameWrapper = document.querySelector('.playground__preview-frame-wrapper');
+        if (frameWrapper) frameWrapper.classList.add('template-switching');
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        currentTemplate = config.variants[0].id;
+        sessionId = null;
+        clearUndoHistory();
+        await initializePreview();
+
+        if (frameWrapper) frameWrapper.classList.remove('template-switching');
+      });
+    }
+
+    // Extracted tab binding so it can be reused after rebuilding tabs
+    function bindStyleTabs() {
+      const tabs = styleTabsContainer.querySelectorAll('.playground__tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', async () => {
+          if (tab.classList.contains('playground__tab--active')) return;
+          const frameWrapper = document.querySelector('.playground__preview-frame-wrapper');
+          tabs.forEach(t => t.classList.remove('playground__tab--active'));
+          tab.classList.add('playground__tab--active');
+          if (frameWrapper) frameWrapper.classList.add('template-switching');
+          await new Promise(resolve => setTimeout(resolve, 200));
+          currentTemplate = tab.dataset.template;
+          sessionId = null;
+          clearUndoHistory();
+          await initializePreview();
+          if (frameWrapper) frameWrapper.classList.remove('template-switching');
+        });
+      });
+    }
 
     // Quick suggestions - click to immediately apply
     suggestions.forEach(suggestion => {

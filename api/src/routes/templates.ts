@@ -80,8 +80,125 @@ const previewSchema = z.object({
 });
 
 // =============================================================================
+// Built-in Template Catalog
+// =============================================================================
+
+interface TemplateCatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  category: "quote" | "invoice" | "receipt" | "report" | "letter";
+  sampleData: Record<string, unknown>;
+}
+
+const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
+  {
+    id: "quote-modern",
+    name: "Modern Quote",
+    description: "Clean, minimal quote with sans-serif fonts and subtle borders.",
+    category: "quote",
+    sampleData: {
+      meta: { quoteNumber: "Q-2024-001", date: "January 15, 2024", validUntil: "February 15, 2024" },
+      client: { name: "John Smith", company: "Acme Corporation" },
+      lineItems: [
+        { description: "Website Design", quantity: 1, unitPrice: "3,500.00", total: "3,500.00" },
+      ],
+      totals: { subtotal: "3,500.00", total: "3,500.00" },
+      branding: { companyName: "Design Studio Pro" },
+    },
+  },
+  {
+    id: "quote-bold",
+    name: "Bold Quote",
+    description: "High-impact modern design with strong visual hierarchy.",
+    category: "quote",
+    sampleData: {
+      meta: { quoteNumber: "Q-2024-042", date: "January 18, 2024", validUntil: "February 18, 2024" },
+      client: { name: "Sarah Chen", company: "Horizon Ventures" },
+      lineItems: [
+        { description: "Brand Strategy Workshop", quantity: 1, unitPrice: "5,000.00", total: "5,000.00" },
+      ],
+      totals: { subtotal: "5,000.00", total: "5,000.00" },
+      branding: { companyName: "BOLD STUDIO" },
+    },
+  },
+  {
+    id: "quote-professional",
+    name: "Professional Quote",
+    description: "Traditional business style with formal serif typography.",
+    category: "quote",
+    sampleData: {
+      meta: { quoteNumber: "Q-2024-001", date: "January 15, 2024", validUntil: "February 15, 2024" },
+      client: { name: "John Smith", company: "Acme Corporation" },
+      lineItems: [
+        { description: "Consulting Services", quantity: 20, unitPrice: "250.00", total: "5,000.00" },
+      ],
+      totals: { subtotal: "5,000.00", total: "5,000.00" },
+      branding: { companyName: "Professional Services Inc." },
+    },
+  },
+  {
+    id: "invoice-clean",
+    name: "Clean Invoice",
+    description: "Clear, structured invoice with line items, totals, and payment terms.",
+    category: "invoice",
+    sampleData: {
+      invoice: { number: "INV-2024-0042", date: "January 20, 2024", dueDate: "February 19, 2024" },
+      billTo: { name: "Sarah Chen", company: "Northwind Traders" },
+      lineItems: [
+        { description: "Brand Identity Package", quantity: 1, rate: "4,500.00", amount: "4,500.00" },
+      ],
+      totals: { subtotal: "4,500.00", total: "4,500.00" },
+      branding: { companyName: "Studio Forma" },
+    },
+  },
+  {
+    id: "receipt-minimal",
+    name: "Minimal Receipt",
+    description: "Compact receipt layout for point-of-sale or digital transactions.",
+    category: "receipt",
+    sampleData: {
+      merchant: { name: "The Daily Grind" },
+      receipt: { number: "R-8847", date: "Jan 20, 2024", time: "9:32 AM" },
+      items: [
+        { name: "Oat Milk Latte (L)", quantity: 2, price: "5.50" },
+      ],
+      totals: { subtotal: "11.00", tax: "0.99", total: "11.99" },
+      payment: { method: "Visa ending in 4242" },
+    },
+  },
+  {
+    id: "report-cover",
+    name: "Report Cover Page",
+    description: "Professional cover page for reports with title, author, and abstract.",
+    category: "report",
+    sampleData: {
+      report: {
+        title: "Q4 2024 Market Analysis",
+        subtitle: "Trends, Opportunities, and Strategic Recommendations",
+        author: "Dr. Emily Rodriguez",
+        date: "January 15, 2024",
+        organization: "Meridian Research Group",
+      },
+    },
+  },
+];
+
+// =============================================================================
 // Routes
 // =============================================================================
+
+/**
+ * GET /
+ * List all available built-in templates with metadata and sample data.
+ */
+templates.get("/", (c) => {
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.json({
+    templates: TEMPLATE_CATALOG,
+    count: TEMPLATE_CATALOG.length,
+  });
+});
 
 /**
  * POST /generate

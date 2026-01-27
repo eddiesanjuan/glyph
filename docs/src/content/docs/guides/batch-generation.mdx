@@ -1,0 +1,227 @@
+---
+title: Batch PDF Generation
+description: Generate multiple PDFs in a single API call using the batch endpoint
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The batch endpoint lets you generate up to 10 PDFs in one request. Each item gets its own data, optional AI modifications, and output format. Individual failures do not abort the batch.
+
+## Endpoint
+
+**POST** `https://api.glyph.you/v1/batch/generate`
+
+## Request Format
+
+```json
+{
+  "items": [
+    {
+      "data": { ... },
+      "template": "auto",
+      "modifications": ["Add a watermark saying DRAFT"],
+      "format": "pdf",
+      "style": "stripe-clean",
+      "options": {
+        "pageSize": "letter",
+        "orientation": "portrait"
+      }
+    }
+  ]
+}
+```
+
+### Item Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `data` | object | Yes | Document data (must not be empty) |
+| `template` | string | No | Template ID. Defaults to `"auto"` (Glyph picks based on data) |
+| `modifications` | string[] | No | AI modification prompts applied sequentially |
+| `format` | `"pdf"` or `"png"` | No | Output format. Defaults to `"pdf"` |
+| `style` | string | No | Visual style: `"stripe-clean"`, `"bold"`, `"minimal"`, `"corporate"` |
+| `options.pageSize` | string | No | `"letter"`, `"A4"`, or `"legal"` |
+| `options.orientation` | string | No | `"portrait"` or `"landscape"` |
+| `options.scale` | number | No | Scale factor, 0.1 to 3 |
+
+<Aside type="note">
+Maximum 10 items per batch request. Each modification prompt can be up to 1,000 characters.
+</Aside>
+
+## Response Format
+
+```json
+{
+  "results": [
+    {
+      "index": 0,
+      "status": "success",
+      "url": "data:application/pdf;base64,JVBERi0...",
+      "filename": "invoice-0-1706000000000.pdf",
+      "size": 45230,
+      "format": "pdf",
+      "processingTimeMs": 2340
+    },
+    {
+      "index": 1,
+      "status": "error",
+      "error": "Data object cannot be empty",
+      "errorCode": "ITEM_GENERATION_FAILED",
+      "processingTimeMs": 12
+    }
+  ],
+  "totalTimeMs": 4820,
+  "successCount": 1,
+  "failCount": 1
+}
+```
+
+Each result includes:
+
+| Field | Description |
+|-------|-------------|
+| `index` | Position in the input array |
+| `status` | `"success"` or `"error"` |
+| `url` | Base64 data URL of the generated file (success only) |
+| `filename` | Suggested filename |
+| `size` | File size in bytes |
+| `processingTimeMs` | Time spent on this item |
+| `error` / `errorCode` | Error details (failure only) |
+
+## Examples
+
+### cURL
+
+```bash
+curl -X POST https://api.glyph.you/v1/batch/generate \
+  -H "Authorization: Bearer gk_demo_playground_2024" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "data": {
+          "client": { "name": "Acme Corp", "email": "billing@acme.com" },
+          "lineItems": [
+            { "description": "Consulting", "quantity": 10, "unitPrice": 150, "total": 1500 }
+          ],
+          "totals": { "subtotal": 1500, "total": 1500 }
+        },
+        "style": "stripe-clean",
+        "modifications": ["Add a watermark saying DRAFT"]
+      },
+      {
+        "data": {
+          "client": { "name": "Globex Inc", "email": "ap@globex.com" },
+          "lineItems": [
+            { "description": "Annual License", "quantity": 1, "unitPrice": 12000, "total": 12000 }
+          ],
+          "totals": { "subtotal": 12000, "tax": 960, "total": 12960 }
+        },
+        "style": "corporate"
+      }
+    ]
+  }'
+```
+
+### JavaScript
+
+```javascript
+const API_KEY = 'gk_demo_playground_2024';
+
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: invoices.map(invoice => ({
+      data: invoice,
+      style: 'stripe-clean',
+      format: 'pdf',
+    })),
+  }),
+});
+
+const { results, successCount, failCount } = await response.json();
+
+// Download successful PDFs
+for (const result of results) {
+  if (result.status === 'success') {
+    const binary = atob(result.url.split(',')[1]);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = result.filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } else {
+    console.error(`Item ${result.index} failed: ${result.error}`);
+  }
+}
+
+console.log(`Generated ${successCount} PDFs, ${failCount} failed`);
+```
+
+### Node.js (save to disk)
+
+```javascript
+import { writeFileSync } from 'fs';
+
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: invoices.map(inv => ({ data: inv, format: 'pdf' })),
+  }),
+});
+
+const { results } = await response.json();
+
+for (const result of results) {
+  if (result.status === 'success') {
+    const buffer = Buffer.from(result.url.split(',')[1], 'base64');
+    writeFileSync(`output/${result.filename}`, buffer);
+  }
+}
+```
+
+## Handling Errors
+
+Individual items can fail without affecting the rest of the batch. Always check each result's `status` field:
+
+```javascript
+const failed = results.filter(r => r.status === 'error');
+if (failed.length > 0) {
+  console.error('Failed items:', failed.map(f => ({
+    index: f.index,
+    error: f.error,
+  })));
+}
+```
+
+Common error codes:
+
+| Code | Cause |
+|------|-------|
+| `VALIDATION_ERROR` | Invalid request body or item schema |
+| `ITEM_GENERATION_FAILED` | PDF rendering failed for a specific item |
+| `BATCH_ERROR` | Entire batch failed (server error) |
+
+## Tips
+
+- Items are processed sequentially on the server. A 10-item batch will take roughly 10x a single generation.
+- If you need more than 10 items, split into multiple batch requests.
+- Use the `modifications` array sparingly -- each modification adds an AI round-trip.
+- Set `template: "auto"` to let Glyph pick the best layout based on your data structure.
+
+## Next Steps
+
+- [POST /v1/generate](/api/generate/) -- single PDF generation reference
+- [Data-First API](/api/create/) -- recommended approach for programmatic use
+- [Error Codes](/api/error-codes/) -- full error reference

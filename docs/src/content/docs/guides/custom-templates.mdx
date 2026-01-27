@@ -1,0 +1,221 @@
+---
+title: Building Custom Templates
+description: How to create, structure, and register custom Glyph templates with regions, Mustache placeholders, and data schemas
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This guide covers template creation from scratch. For a quick reference of the built-in templates, see [Templates Overview](/templates/overview/).
+
+## Template Files
+
+Every Glyph template lives in a directory with three files:
+
+```text
+templates/my-invoice/
+  template.html    # HTML with Mustache placeholders
+  styles.css       # Template-specific styles (optional, can be inlined)
+  schema.json      # JSON Schema describing expected data
+```
+
+## Step 1: Write the HTML
+
+Use standard HTML. Mark interactive sections with `data-glyph-region` attributes so users (and the AI) can target them:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 0.75in; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #111; padding-bottom: 1rem; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #e5e5e5; }
+    th { font-weight: 600; }
+    .totals { margin-top: 2rem; text-align: right; }
+    .totals .total { font-size: 1.25rem; font-weight: 700; }
+    @page { size: letter; margin: 0; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+
+  <div class="header" data-glyph-region="header">
+    <div>
+      <h1>{{branding.companyName}}</h1>
+      <p>Invoice #{{meta.invoiceNumber}}</p>
+    </div>
+    {{#branding.logoUrl}}
+    <img src="{{branding.logoUrl}}" alt="Logo" style="max-height:60px">
+    {{/branding.logoUrl}}
+  </div>
+
+  <section data-glyph-region="client-info">
+    <h2>Bill To</h2>
+    <p><strong>{{client.name}}</strong></p>
+    {{#client.company}}<p>{{client.company}}</p>{{/client.company}}
+    {{#client.email}}<p>{{client.email}}</p>{{/client.email}}
+  </section>
+
+  <table data-glyph-region="line-items">
+    <thead>
+      <tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      {{#lineItems}}
+      <tr>
+        <td>{{description}}</td>
+        <td>{{quantity}}</td>
+        <td>${{unitPrice}}</td>
+        <td>${{total}}</td>
+      </tr>
+      {{/lineItems}}
+    </tbody>
+  </table>
+
+  <div class="totals" data-glyph-region="totals">
+    <p>Subtotal: ${{totals.subtotal}}</p>
+    {{#totals.tax}}<p>Tax: ${{totals.tax}}</p>{{/totals.tax}}
+    <p class="total">Total: ${{totals.total}}</p>
+  </div>
+
+</body>
+</html>
+```
+
+### Mustache Syntax
+
+| Syntax | Purpose |
+|--------|---------|
+| `{{variable}}` | Output escaped value |
+| `{{{raw}}}` | Output unescaped HTML |
+| `{{#section}}...{{/section}}` | Conditional block or array loop |
+| `{{^section}}...{{/section}}` | Inverted block (renders when value is falsy or array is empty) |
+
+### Region Guidelines
+
+- Each `data-glyph-region` value must be unique within the template.
+- Regions define what users can click to modify. Keep them semantic: `header`, `line-items`, `footer`, `terms`.
+- Regions can be nested, but the AI targets the most specific match.
+
+## Step 2: Define the Schema
+
+`schema.json` validates data passed to the template and documents expected fields:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InvoiceData",
+  "type": "object",
+  "required": ["client", "lineItems", "totals"],
+  "properties": {
+    "client": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      }
+    },
+    "lineItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "quantity", "unitPrice", "total"],
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "number" },
+          "unitPrice": { "type": "number" },
+          "total": { "type": "number" }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "required": ["subtotal", "total"],
+      "properties": {
+        "subtotal": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "logoUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "dueDate": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+## Step 3: Register the Template
+
+### Self-hosted API
+
+Place the template directory inside your `templates/` folder and restart the API:
+
+```text
+templates/
+  quote-modern/
+  my-invoice/        <-- your new template
+    template.html
+    schema.json
+    styles.css
+```
+
+Then reference it in the SDK or API calls:
+
+```html
+<glyph-editor template="my-invoice" ...></glyph-editor>
+```
+
+```bash
+curl -X POST https://api.glyph.you/v1/preview \
+  -H "Authorization: Bearer gk_demo_playground_2024" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "my-invoice",
+    "data": { "client": { "name": "Test" }, "lineItems": [...], "totals": { "subtotal": 100, "total": 100 } }
+  }'
+```
+
+### Glyph Cloud
+
+Upload via the [dashboard](https://dashboard.glyph.you) under **Templates > Upload Template**.
+
+## Step 4: Test
+
+1. **Preview** -- Call `/v1/preview` with sample data and verify the rendered HTML.
+2. **Modify** -- Try AI modifications on each region: "make the header blue", "add a watermark".
+3. **Generate** -- Call `/v1/generate` and check the PDF output for page breaks, color accuracy, and font rendering.
+4. **Edge cases** -- Test with missing optional fields, very long text, large numbers, and empty arrays.
+
+<Aside type="tip">
+Start by copying an existing template (`cp -r templates/quote-modern templates/my-template`) and editing from there. It is faster than starting from scratch.
+</Aside>
+
+## Print CSS Tips
+
+- Use `@page { size: letter; margin: 0.5in; }` to control page dimensions.
+- Add `print-color-adjust: exact;` and `-webkit-print-color-adjust: exact;` to preserve background colors in PDF output.
+- Avoid `position: fixed` -- it does not work in paged media.
+- Use `page-break-inside: avoid;` on rows you do not want split across pages.
+
+## Next Steps
+
+- [Templates Overview](/templates/overview/) -- see built-in templates
+- [Custom Templates Reference](/templates/custom/) -- additional details and examples
+- [POST /v1/preview](/api/preview/) -- API reference for rendering templates

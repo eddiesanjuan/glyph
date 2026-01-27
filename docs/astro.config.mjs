@@ -75,10 +75,18 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Guides',
+					items: [
+						{ label: 'Custom Templates', slug: 'guides/custom-templates' },
+						{ label: 'Batch PDF Generation', slug: 'guides/batch-generation' },
+					],
+				},
+				{
 					label: 'Examples',
 					items: [
 						{ label: 'Quoted Integration', slug: 'examples/quoted' },
 						{ label: 'React', slug: 'examples/react' },
+						{ label: 'React (Full Guide)', slug: 'examples/react-integration' },
 						{ label: 'Vue', slug: 'examples/vue' },
 						{ label: 'Vanilla JS', slug: 'examples/vanilla' },
 					],
