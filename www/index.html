@@ -1461,6 +1461,19 @@
         min-height: 50px;
         max-height: 60px;
         font-size: 12px;
+        padding-right: 44px;
+      }
+
+      /* Voice button mobile - touch-friendly size */
+      .playground__voice-btn {
+        width: 36px;
+        height: 36px;
+        right: 6px;
+      }
+
+      .playground__voice-status {
+        font-size: 10px;
+        padding: 3px 6px;
       }
 
       /* Suggestions row - horizontal scroll */
@@ -2225,6 +2238,85 @@
       position: relative;
       flex: 0 0 auto;
       display: flex;
+    }
+
+    /* Voice Input Button */
+    .playground__voice-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--color-text-subtle);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+
+    .playground__voice-btn:hover {
+      background: var(--color-surface-elevated);
+      color: var(--color-text);
+    }
+
+    .playground__voice-btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+    }
+
+    .playground__voice-btn.listening {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      animation: voice-pulse 1.5s ease-in-out infinite;
+    }
+
+    .playground__voice-btn.unsupported {
+      display: none;
+    }
+
+    .playground__voice-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .playground__voice-status {
+      display: none;
+      position: absolute;
+      right: 100%;
+      margin-right: 8px;
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 500;
+      color: #ef4444;
+      background: var(--color-surface-elevated);
+      padding: 4px 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .playground__voice-btn.listening .playground__voice-status {
+      display: block;
+    }
+
+    @keyframes voice-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+      }
+    }
+
+    /* Adjust input padding to make room for voice button */
+    .playground__input {
+      padding-right: 44px;
     }
 
     /* Field Autocomplete Dropdown - Magical UI */
@@ -9285,6 +9377,21 @@
                   aria-autocomplete="list"
                   aria-controls="playground-autocomplete"
                 ></textarea>
+                <button
+                  class="playground__voice-btn"
+                  id="voice-input-btn"
+                  type="button"
+                  title="Speak your changes"
+                  aria-label="Voice input"
+                >
+                  <svg class="playground__voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                  <span class="playground__voice-status">Listening...</span>
+                </button>
               </div>
               <div class="playground__suggestions">
                 <!-- Hero actions: Most impressive instant effects, try these first -->
@@ -11681,6 +11788,118 @@
       zoomToggle.addEventListener('click', () => {
         previewContainer.classList.toggle('zoomed-in');
       });
+    }
+
+    // ============================================
+    // Voice Input - Web Speech API
+    // ============================================
+    const voiceBtn = document.getElementById('voice-input-btn');
+    let speechRecognition = null;
+    let isListening = false;
+
+    // Initialize speech recognition if supported
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        // Hide button if not supported
+        if (voiceBtn) {
+          voiceBtn.classList.add('unsupported');
+          voiceBtn.title = 'Voice input not supported in this browser';
+        }
+        console.log('[Glyph] Speech recognition not supported in this browser');
+        return null;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListening = true;
+        voiceBtn.classList.add('listening');
+        console.log('[Glyph] Voice input started');
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        voiceBtn.classList.remove('listening');
+        console.log('[Glyph] Voice input ended');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const confidence = event.results[0][0].confidence;
+        console.log('[Glyph] Voice transcript:', transcript, '(confidence:', (confidence * 100).toFixed(1) + '%)');
+
+        // Populate the prompt input
+        if (promptInput) {
+          promptInput.value = transcript;
+          promptInput.focus();
+          // Trigger input event for any listeners
+          promptInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.log('[Glyph] Voice input error:', event.error);
+        isListening = false;
+        voiceBtn.classList.remove('listening');
+
+        // Show user-friendly error messages
+        let errorMsg = 'Voice input error';
+        switch (event.error) {
+          case 'no-speech':
+            errorMsg = 'No speech detected. Try again.';
+            break;
+          case 'audio-capture':
+            errorMsg = 'Microphone not available';
+            break;
+          case 'not-allowed':
+            errorMsg = 'Microphone access denied';
+            break;
+          case 'network':
+            errorMsg = 'Network error. Check your connection.';
+            break;
+        }
+
+        // Brief toast notification
+        showToast(errorMsg, 'error');
+      };
+
+      return recognition;
+    }
+
+    // Toggle voice input
+    function toggleVoiceInput() {
+      if (!speechRecognition) {
+        speechRecognition = initSpeechRecognition();
+        if (!speechRecognition) return;
+      }
+
+      if (isListening) {
+        speechRecognition.stop();
+      } else {
+        try {
+          speechRecognition.start();
+        } catch (e) {
+          // Recognition may already be running
+          console.log('[Glyph] Could not start voice input:', e.message);
+        }
+      }
+    }
+
+    // Initialize voice button
+    if (voiceBtn) {
+      // Check support on load
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceBtn.classList.add('unsupported');
+      }
+
+      voiceBtn.addEventListener('click', toggleVoiceInput);
     }
 
     // Processing flag to prevent concurrent modification requests
