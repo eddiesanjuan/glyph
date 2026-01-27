@@ -156,6 +156,11 @@ export interface ModifyResult {
   html: string;
   changes: string[];
   tokensUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+  cached: boolean;
+  fastTransform: boolean;
 }
 
 /**
@@ -1356,7 +1361,12 @@ export async function modifyTemplate(
       return {
         html: fastResult.html,
         changes: fastResult.changes,
-        tokensUsed: 0,  // No AI tokens used
+        tokensUsed: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        model: "none",
+        cached: false,
+        fastTransform: true,
       };
     }
     // Fall through to AI if fast transform couldn't handle it
@@ -1442,10 +1452,17 @@ INSTRUCTIONS:
     }
   }
 
+  const cacheRead = (message.usage as any).cache_read_input_tokens || 0;
+
   return {
     html,
     changes: changes.length > 0 ? changes : ["Template modified as requested"],
     tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
+    inputTokens: message.usage.input_tokens,
+    outputTokens: message.usage.output_tokens,
+    model,
+    cached: cacheRead > 0,
+    fastTransform: false,
   };
 }
 

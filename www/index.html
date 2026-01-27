@@ -2504,9 +2504,17 @@
       </button>
     </div>
     <div class="api-error-toast__message" id="api-error-message">Unable to apply changes. Please try again.</div>
+    <div class="api-error-toast__retry-status" id="api-error-retry-status" style="display:none;"></div>
     <div class="api-error-toast__actions">
       <button class="api-error-toast__btn api-error-toast__btn--retry" id="api-error-retry">Retry</button>
       <button class="api-error-toast__btn api-error-toast__btn--dismiss" id="api-error-dismiss">Dismiss</button>
+    </div>
+    <div class="api-error-toast__fallback" id="api-error-fallback" style="display:none;">
+      <span class="api-error-toast__fallback-label">Try these instant actions instead:</span>
+      <div class="api-error-toast__fallback-actions">
+        <button class="api-error-toast__fallback-btn" data-prompt="Add a diagonal DRAFT watermark">Add Watermark</button>
+        <button class="api-error-toast__fallback-btn" data-prompt="Add a QR code for instant payment">Add QR Code</button>
+      </div>
     </div>
   </div>
 </body>

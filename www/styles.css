@@ -5542,6 +5542,47 @@
       color: var(--color-text);
     }
 
+    .api-error-toast__retry-status {
+      font-size: 12px;
+      color: var(--color-primary, #6366f1);
+      padding: 4px 0;
+      font-weight: 500;
+    }
+
+    .api-error-toast__fallback {
+      border-top: 1px solid var(--color-border, rgba(255,255,255,0.1));
+      margin-top: 8px;
+      padding-top: 8px;
+    }
+
+    .api-error-toast__fallback-label {
+      font-size: 12px;
+      color: var(--color-text-muted, #94a3b8);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .api-error-toast__fallback-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .api-error-toast__fallback-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border, rgba(255,255,255,0.15));
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text, #e2e8f0);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .api-error-toast__fallback-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--color-primary, #6366f1);
+    }
+
     @media (max-width: 480px) {
       .session-timer {
         padding: 4px 8px;

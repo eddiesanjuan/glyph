@@ -625,6 +625,10 @@
     let apiErrorToastTimeout = null;
     let consecutiveFailures = 0; // Track consecutive failures for guidance
     let lastErrorWasSessionError = false; // Track if session needs refresh on retry
+    let autoRetryCount = 0; // Track auto-retry attempts (max 2)
+    let isAutoRetrying = false; // Prevent manual retry during auto-retry
+    const MAX_AUTO_RETRIES = 2;
+    const RETRY_DELAYS = [1000, 2000]; // Exponential backoff: 1s, 2s
 
     // Get API error toast elements
     function getApiErrorElements() {
@@ -638,10 +642,99 @@
       };
     }
 
+    // Classify error for retry/fallback decisions
+    function classifyError(errorMessage) {
+      const lowerMsg = errorMessage.toLowerCase();
+      if (lowerMsg.includes('network') || lowerMsg.includes('fetch') || lowerMsg.includes('failed to fetch')) return 'network';
+      if (lowerMsg.includes('timeout') || lowerMsg.includes('took too long')) return 'timeout';
+      if (lowerMsg.includes('session') || lowerMsg.includes('expired') || lowerMsg.includes('dev_session_not_found')) return 'session';
+      if (lowerMsg.includes('rate') || lowerMsg.includes('429')) return 'rate_limit';
+      if (lowerMsg.includes('500') || lowerMsg.includes('502') || lowerMsg.includes('503')) return 'server';
+      if (lowerMsg.includes('cannot delete') || lowerMsg.includes('would remove content') || lowerMsg.includes('destructive')) return 'guardrail_destructive';
+      if (lowerMsg.includes('cannot modify protected') || lowerMsg.includes('protected field') || lowerMsg.includes('protected region')) return 'guardrail_protected';
+      if (lowerMsg.includes('guardrail') || lowerMsg.includes('blocked') || lowerMsg.includes('refused') || lowerMsg.includes('cannot')) return 'guardrail';
+      if (lowerMsg.includes('not possible') || lowerMsg.includes('not feasible') || lowerMsg.includes('pdfs are static') || lowerMsg.includes('static document')) return 'impossible';
+      return 'unknown';
+    }
+
+    // Determine if error type is retryable (auto-retry eligible)
+    function isRetryableError(errorType) {
+      return ['network', 'timeout', 'server', 'session', 'unknown'].includes(errorType);
+    }
+
     // Show API error toast with actionable message
-    function showApiError(errorMessage, prompt) {
+    function showApiError(errorMessage, prompt, skipAutoRetry) {
       const els = getApiErrorElements();
       if (!els.toast) return;
+
+      const errorType = classifyError(errorMessage);
+
+      // Auto-retry for retryable errors (not guardrails/impossible)
+      if (!skipAutoRetry && isRetryableError(errorType) && autoRetryCount < MAX_AUTO_RETRIES && !isAutoRetrying) {
+        autoRetryCount++;
+        isAutoRetrying = true;
+        lastFailedPrompt = prompt;
+        if (errorType === 'session') lastErrorWasSessionError = true;
+
+        const retryDelay = RETRY_DELAYS[autoRetryCount - 1];
+        const retryStatusEl = document.getElementById('api-error-retry-status');
+
+        // Show the toast briefly with retry status
+        els.message.textContent = errorType === 'timeout'
+          ? 'This modification is taking longer than usual.'
+          : errorType === 'network'
+          ? 'Connection issue detected.'
+          : 'Something went wrong.';
+        if (els.title) els.title.textContent = 'Retrying...';
+        if (retryStatusEl) {
+          retryStatusEl.style.display = 'block';
+          retryStatusEl.textContent = 'Retrying... (' + autoRetryCount + '/' + MAX_AUTO_RETRIES + ')';
+        }
+        if (els.retryBtn) els.retryBtn.disabled = true;
+
+        // Show fallback area hidden during auto-retry
+        const fallbackEl = document.getElementById('api-error-fallback');
+        if (fallbackEl) fallbackEl.style.display = 'none';
+
+        // Show toast
+        els.toast.style.display = 'flex';
+        els.toast.removeAttribute('inert');
+        els.toast.classList.add('visible');
+
+        // Clear existing auto-hide
+        if (apiErrorToastTimeout) clearTimeout(apiErrorToastTimeout);
+
+        console.log('[Glyph] Auto-retrying (' + autoRetryCount + '/' + MAX_AUTO_RETRIES + ') in ' + retryDelay + 'ms');
+
+        setTimeout(async () => {
+          hideApiError();
+          isAutoRetrying = false;
+          if (els.retryBtn) els.retryBtn.disabled = false;
+          if (lastFailedPrompt) {
+            // Handle session refresh if needed
+            if (lastErrorWasSessionError) {
+              lastErrorWasSessionError = false;
+              try {
+                setStatus('Refreshing session...');
+                await initializePreview();
+                await new Promise(resolve => setTimeout(resolve, 500));
+              } catch (err) {
+                console.error('[Glyph] Session refresh failed during auto-retry:', err);
+                autoRetryCount = MAX_AUTO_RETRIES; // Stop retrying
+                showApiError('Session refresh failed. Please reload the page.', prompt, true);
+                return;
+              }
+            }
+            applyModifications(lastFailedPrompt);
+          }
+        }, retryDelay);
+        return;
+      }
+
+      // If we get here, auto-retries exhausted or non-retryable error
+      // Reset auto-retry state
+      autoRetryCount = 0;
+      isAutoRetrying = false;
 
       // Track consecutive failures
       consecutiveFailures++;
@@ -660,48 +753,63 @@
 
       // Set error message - make it user-friendly with progressive guidance
       let userMessage = '';
-      const lowerMsg = errorMessage.toLowerCase();
 
-      if (lowerMsg.includes('network') || lowerMsg.includes('fetch') || lowerMsg.includes('failed to fetch')) {
-        userMessage = 'Connection issue. Check your internet and click Retry.';
-      } else if (lowerMsg.includes('timeout') || lowerMsg.includes('took too long')) {
-        if (consecutiveFailures >= 2) {
-          userMessage = 'Complex requests need more processing time. Try specific instructions like "Make the header blue" or "Add a border to the table". Your document is unchanged.';
-        } else {
-          userMessage = 'This request was too complex to complete in time. Try a more specific instruction - the AI works best with clear, focused changes. Your document is safe.';
-        }
-      } else if (lowerMsg.includes('session') || lowerMsg.includes('expired') || lowerMsg.includes('dev_session_not_found')) {
-        userMessage = 'Session expired. Click Retry to start fresh.';
-        lastErrorWasSessionError = true; // Mark for auto-refresh on retry
-      } else if (lowerMsg.includes('rate') || lowerMsg.includes('429')) {
-        userMessage = 'Too many requests. Wait 10 seconds, then click Retry.';
-      } else if (lowerMsg.includes('500') || lowerMsg.includes('502') || lowerMsg.includes('503')) {
-        userMessage = 'Server is busy. Click Retry in a moment.';
-      } else if (lowerMsg.includes('cannot delete') || lowerMsg.includes('would remove content') || lowerMsg.includes('destructive')) {
-        // Guardrail: Content deletion blocked
-        userMessage = 'This request would remove content. Try styling changes like colors, fonts, or layout instead.';
-      } else if (lowerMsg.includes('cannot modify protected') || lowerMsg.includes('protected field') || lowerMsg.includes('protected region')) {
-        // Guardrail: Protected fields
-        userMessage = 'Some fields are protected. Try adding new elements or changing existing styles.';
-      } else if (lowerMsg.includes('guardrail') || lowerMsg.includes('blocked') || lowerMsg.includes('refused') || lowerMsg.includes('cannot')) {
-        // Generic guardrail message - show the actual reason
-        userMessage = errorMessage + ' Try a different approach.';
-      } else if (lowerMsg.includes('not possible') || lowerMsg.includes('not feasible') || lowerMsg.includes('pdfs are static') || lowerMsg.includes('static document')) {
-        // Impossible request detected early - show the actual helpful message from API
-        userMessage = errorMessage;
-      } else {
-        if (consecutiveFailures >= 2) {
-          userMessage = 'Try a simpler request. Example: "Change the font to Arial" or "Make text larger".';
-        } else {
-          userMessage = 'Something went wrong. Click Retry or try a different prompt.';
-        }
+      switch (errorType) {
+        case 'network':
+          userMessage = 'Connection issue. Check your network and retry.';
+          break;
+        case 'timeout':
+          userMessage = consecutiveFailures >= 2
+            ? 'Complex requests need more processing time. Try specific instructions like "Make the header blue" or "Add a border to the table".'
+            : 'This modification is taking longer than usual. Try a simpler change, or retry.';
+          break;
+        case 'session':
+          userMessage = 'Your session has expired. Refreshing...';
+          lastErrorWasSessionError = true;
+          // Auto-refresh session in background
+          initializePreview().catch(() => {});
+          break;
+        case 'rate_limit':
+          userMessage = 'Too many requests. Please wait a moment and try again.';
+          break;
+        case 'server':
+          userMessage = 'Server is busy. Click Retry in a moment.';
+          break;
+        case 'guardrail_destructive':
+          userMessage = 'This request would remove content. Try styling changes like colors, fonts, or layout instead.';
+          break;
+        case 'guardrail_protected':
+          userMessage = 'Some fields are protected. Try adding new elements or changing existing styles.';
+          break;
+        case 'guardrail':
+          userMessage = errorMessage + ' Try a different approach.';
+          break;
+        case 'impossible':
+          userMessage = errorMessage;
+          break;
+        default:
+          userMessage = consecutiveFailures >= 2
+            ? 'The AI couldn\'t process this request. Try rephrasing your description.'
+            : 'Something went wrong. Click Retry or try a different prompt.';
       }
 
       els.message.textContent = userMessage;
 
+      // Clear retry status
+      const retryStatusEl = document.getElementById('api-error-retry-status');
+      if (retryStatusEl) retryStatusEl.style.display = 'none';
+
       // Update retry button text based on failure count
       if (els.retryBtn) {
         els.retryBtn.textContent = consecutiveFailures >= 2 ? 'Try Again' : 'Retry';
+        els.retryBtn.disabled = false;
+      }
+
+      // Show fallback instant action suggestions for non-retryable or exhausted errors
+      const fallbackEl = document.getElementById('api-error-fallback');
+      if (fallbackEl) {
+        const showFallback = !isRetryableError(errorType) || consecutiveFailures >= 2;
+        fallbackEl.style.display = showFallback ? 'block' : 'none';
       }
 
       // STALE TOAST FIX: Clear inline display:none before showing
@@ -714,10 +822,10 @@
         clearTimeout(apiErrorToastTimeout);
       }
 
-      // Auto-hide after 10 seconds
-      apiErrorToastTimeout = setTimeout(hideApiError, 10000);
+      // Auto-hide after 15 seconds (longer since user needs to read suggestions)
+      apiErrorToastTimeout = setTimeout(hideApiError, 15000);
 
-      console.error('[Glyph] API Error shown to user:', errorMessage);
+      console.error('[Glyph] API Error shown to user:', errorMessage, '(type: ' + errorType + ', retries exhausted: ' + (autoRetryCount >= MAX_AUTO_RETRIES) + ')');
     }
 
     // Hide API error toast
@@ -739,8 +847,9 @@
       }
     }
 
-    // Retry failed modification
+    // Retry failed modification (manual retry resets auto-retry counter)
     async function retryFailedModification() {
+      autoRetryCount = 0; // Reset so auto-retry can kick in again on next failure
       hideApiError();
       if (lastFailedPrompt) {
         // If session was expired/lost, reinitialize preview first to get fresh session
@@ -778,6 +887,20 @@
       if (els.closeBtn) {
         els.closeBtn.addEventListener('click', hideApiError);
       }
+
+      // Fallback instant action buttons
+      const fallbackBtns = document.querySelectorAll('.api-error-toast__fallback-btn');
+      fallbackBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prompt = btn.getAttribute('data-prompt');
+          if (prompt) {
+            hideApiError();
+            consecutiveFailures = 0;
+            autoRetryCount = 0;
+            applyModifications(prompt);
+          }
+        });
+      });
     }
 
     // Initialize on DOMContentLoaded
@@ -4593,6 +4716,7 @@ print(result['html'])  # Updated HTML`;
 
           // Cycle 6: Reset failure counter on success
           consecutiveFailures = 0;
+          autoRetryCount = 0;
           lastErrorWasSessionError = false;
 
           // Show success CTA after first modification
@@ -4674,6 +4798,7 @@ print(result['html'])  # Updated HTML`;
 
         // Cycle 6: Reset failure counter on success
         consecutiveFailures = 0;
+        autoRetryCount = 0;
         lastErrorWasSessionError = false;
 
         // Show success CTA after first modification

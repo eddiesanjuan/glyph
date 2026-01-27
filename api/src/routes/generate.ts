@@ -85,6 +85,12 @@ generate.post("/", async (c) => {
         format,
         size: buffer.length,
         expiresAt: expiresAt.toISOString(),
+        usage: {
+          renderTimeMs: renderDuration,
+          totalTimeMs: totalDuration,
+          format,
+          sizeBytes: buffer.length,
+        },
       };
 
       return c.json(response);

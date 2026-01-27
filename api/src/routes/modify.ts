@@ -535,6 +535,15 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         html: renderedHtml,
         changes: result.changes,
         tokensUsed: result.tokensUsed,
+        usage: {
+          promptTokens: result.inputTokens,
+          completionTokens: result.outputTokens,
+          totalTokens: result.inputTokens + result.outputTokens,
+          processingTimeMs: timings.total,
+          cached: result.cached,
+          model: result.model,
+          fastTransform: result.fastTransform,
+        },
       });
     } else {
       // Direct HTML modification (legacy mode)
@@ -934,6 +943,7 @@ async function handleStreamingModify(c: Context) {
       }
 
       // FAST PATH CHECK: Handle instantly without streaming
+      const streamStartTime = Date.now();
       if (canFastTransform(prompt)) {
         const fastResult = await fastTransform(templateToModify, prompt);
         if (fastResult.transformed) {
@@ -984,6 +994,15 @@ async function handleStreamingModify(c: Context) {
               changes: fastResult.changes,
               tokensUsed: 0,
               fastPath: true,
+              usage: {
+                promptTokens: 0,
+                completionTokens: 0,
+                totalTokens: 0,
+                processingTimeMs: Date.now() - streamStartTime,
+                cached: false,
+                model: "none",
+                fastTransform: true,
+              },
             }),
           });
           return;
@@ -1147,6 +1166,15 @@ async function handleStreamingModify(c: Context) {
           changes: result.changes,
           tokensUsed: result.tokensUsed,
           selfCheckPassed: true,
+          usage: {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            processingTimeMs: Date.now() - streamStartTime,
+            cached: false,
+            model,
+            fastTransform: false,
+          },
         }),
       });
 

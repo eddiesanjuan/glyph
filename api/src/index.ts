@@ -34,6 +34,7 @@ import mappings from "./routes/mappings.js";
 import generateSmart from "./routes/generate-smart.js";
 import aiAssist from "./routes/ai-assist.js";
 import subscriptions from "./routes/subscriptions.js";
+import batch from "./routes/batch.js";
 
 const app = new Hono();
 
@@ -184,6 +185,8 @@ app.get("/", (c) => {
       mappingsUpdate: "PUT /v1/mappings/:id",
       mappingsDelete: "DELETE /v1/mappings/:id",
       mappingsPreview: "GET /v1/mappings/:id/preview",
+      // Batch generation
+      batchGenerate: "POST /v1/batch/generate",
       // Smart generation
       generateSmart: "POST /v1/generate/smart",
       generateSmartBatch: "POST /v1/generate/smart/batch",
@@ -211,6 +214,9 @@ app.route("/v1/generate", generate);
 // One-shot PDF creation (includes PDF generation, so apply monthly limit)
 app.use("/v1/create", monthlyLimitMiddleware);
 app.route("/v1/create", create);
+// Batch PDF generation (includes PDF generation, so apply monthly limit)
+app.use("/v1/batch/*", monthlyLimitMiddleware);
+app.route("/v1/batch", batch);
 // Dashboard and key management
 app.route("/v1/dashboard", dashboard);
 app.route("/v1/keys", keys);

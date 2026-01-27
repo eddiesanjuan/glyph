@@ -74,6 +74,12 @@ export interface GenerateResponse {
   format: "pdf" | "png";
   size: number;
   expiresAt: string;
+  usage?: {
+    renderTimeMs: number;
+    totalTimeMs: number;
+    format: string;
+    sizeBytes: number;
+  };
 }
 
 export interface ApiError {
