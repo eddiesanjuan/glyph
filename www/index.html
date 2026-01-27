@@ -8922,6 +8922,123 @@
       }
     }
 
+    /* ============================================
+       Keyboard Shortcuts Help Overlay
+       ============================================ */
+    .shortcuts-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      opacity: 1;
+      transition: opacity 0.15s ease;
+    }
+
+    .shortcuts-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .shortcuts-modal {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      max-width: 400px;
+      width: 90%;
+      padding: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      transform: scale(1);
+      transition: transform 0.15s ease;
+    }
+
+    .shortcuts-overlay.hidden .shortcuts-modal {
+      transform: scale(0.96);
+    }
+
+    .shortcuts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .shortcuts-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .shortcuts-close {
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: color var(--transition-fast);
+    }
+
+    .shortcuts-close:hover {
+      color: var(--color-text);
+    }
+
+    .shortcuts-section {
+      margin-bottom: 16px;
+    }
+
+    .shortcuts-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .shortcuts-section h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-subtle);
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .shortcut-row kbd {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text);
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .shortcut-row span {
+      margin-left: auto;
+      color: var(--color-text-muted);
+    }
+
+    /* Mobile: full width with margins */
+    @media (max-width: 640px) {
+      .shortcuts-modal {
+        max-width: none;
+        margin: 0 16px;
+      }
+    }
+
     /* Keyboard hint button in header */
     .nav__keyboard-hint {
       display: flex;
@@ -11058,6 +11175,34 @@
     </div>
   </div>
 
+  <!-- Keyboard Shortcuts Help -->
+  <div id="shortcuts-overlay" class="shortcuts-overlay hidden">
+    <div class="shortcuts-modal">
+      <div class="shortcuts-header">
+        <h3>Keyboard Shortcuts</h3>
+        <button class="shortcuts-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="shortcuts-content">
+        <div class="shortcuts-section">
+          <h4>General</h4>
+          <div class="shortcut-row"><kbd>?</kbd> <span>Show this help</span></div>
+          <div class="shortcut-row"><kbd class="mod-key"></kbd><kbd>K</kbd> <span>Command palette</span></div>
+          <div class="shortcut-row"><kbd>Esc</kbd> <span>Close dialogs</span></div>
+        </div>
+        <div class="shortcuts-section">
+          <h4>Playground</h4>
+          <div class="shortcut-row"><kbd class="mod-key"></kbd><kbd>Enter</kbd> <span>Apply modification</span></div>
+          <div class="shortcut-row"><kbd class="mod-key"></kbd><kbd>Z</kbd> <span>Undo last change</span></div>
+          <div class="shortcut-row"><kbd class="mod-key"></kbd><kbd>Shift</kbd><kbd>Z</kbd> <span>Redo change</span></div>
+        </div>
+        <div class="shortcuts-section">
+          <h4>Voice</h4>
+          <div class="shortcut-row"><kbd>V</kbd> <span>Start voice input</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script>
     // ============================================
@@ -11081,6 +11226,17 @@
       return 'https://api.glyph.you';
     })();
     const DEMO_API_KEY = 'gk_demo_playground_2024'; // Demo key for playground
+
+    // Warm up API on page load (reduces Railway cold start latency)
+    // Non-blocking, fire-and-forget
+    (async () => {
+      try {
+        await fetch(`${API_URL}/health`, { method: 'GET' });
+        console.log('[Glyph] API warmed up');
+      } catch (e) {
+        // Silently ignore - warm-up is optional
+      }
+    })();
 
     // ============================================
     // Storage Availability Detection (Private Mode)
@@ -13664,6 +13820,61 @@
         e.preventDefault();
         e.stopPropagation();
         closeCommandPalette();
+      }
+    });
+
+    // ============================================
+    // Keyboard Shortcuts Help Overlay
+    // ============================================
+    const shortcutsOverlay = document.getElementById('shortcuts-overlay');
+    const shortcutsClose = shortcutsOverlay?.querySelector('.shortcuts-close');
+
+    // Set the modifier key labels based on platform
+    document.querySelectorAll('.shortcuts-overlay .mod-key').forEach(el => {
+      el.textContent = isMac ? '\u2318' : 'Ctrl';
+    });
+
+    function showShortcuts() {
+      shortcutsOverlay?.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideShortcuts() {
+      shortcutsOverlay?.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // ? key opens shortcuts help
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger in inputs or textareas
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Don't trigger if command palette is open
+      if (commandPaletteOverlay?.classList.contains('visible')) return;
+
+      if (e.key === '?') {
+        e.preventDefault();
+        if (!shortcutsOverlay?.classList.contains('hidden')) {
+          hideShortcuts();
+        } else {
+          showShortcuts();
+        }
+      }
+
+      // Escape closes shortcuts
+      if (e.key === 'Escape' && !shortcutsOverlay?.classList.contains('hidden')) {
+        e.preventDefault();
+        hideShortcuts();
+      }
+    });
+
+    // Close button handler
+    shortcutsClose?.addEventListener('click', hideShortcuts);
+
+    // Click outside modal to close
+    shortcutsOverlay?.addEventListener('click', (e) => {
+      if (e.target === shortcutsOverlay) {
+        hideShortcuts();
       }
     });
 
