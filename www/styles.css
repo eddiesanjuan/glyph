@@ -3448,6 +3448,63 @@
     }
 
     /* ============================================
+       Share Button
+       ============================================ */
+    .playground__share-btn {
+      flex-shrink: 0;
+      width: 44px;
+      padding: 12px;
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .playground__share-btn:hover {
+      background: var(--color-primary-subtle);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .playground__share-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .playground__share-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Shared Customization Banner */
+    .shared-customization-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--color-primary-subtle);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      color: var(--color-primary);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .shared-customization-banner svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================
        Save Version Modal
        ============================================ */
     .save-version-modal-overlay {

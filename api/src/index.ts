@@ -35,6 +35,7 @@ import generateSmart from "./routes/generate-smart.js";
 import aiAssist from "./routes/ai-assist.js";
 import subscriptions from "./routes/subscriptions.js";
 import batch from "./routes/batch.js";
+import notificationWebhooks from "./routes/notification-webhooks.js";
 
 const app = new Hono();
 
@@ -238,6 +239,8 @@ app.route("/v1/generate/smart", generateSmart);
 app.route("/v1/ai", aiAssist);
 // Event subscriptions (Zapier/Make integration)
 app.route("/v1/subscriptions", subscriptions);
+// Notification webhooks (user-registered callback URLs)
+app.route("/v1/notification-webhooks", notificationWebhooks);
 
 // 404 handler
 app.notFound((c) => {

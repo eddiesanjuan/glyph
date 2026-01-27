@@ -34,7 +34,12 @@ import {
   getTableViews,
   getRecordCount,
 } from "../services/batch.js";
+import { generatePNG } from "../services/pdf.js";
+import { templateEngine } from "../services/template.js";
 import type { ApiError } from "../lib/types.js";
+
+// In-memory cache for template preview thumbnails
+const thumbnailCache = new Map<string, Buffer>();
 
 const templates = new Hono();
 
@@ -198,6 +203,61 @@ templates.get("/", (c) => {
     templates: TEMPLATE_CATALOG,
     count: TEMPLATE_CATALOG.length,
   });
+});
+
+/**
+ * GET /:id/preview
+ * Return a PNG thumbnail of a built-in template rendered with sample data.
+ * Results are cached in-memory after first generation.
+ */
+templates.get("/:id/preview", async (c) => {
+  const id = c.req.param("id");
+
+  // Find template in catalog
+  const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === id);
+  if (!catalogEntry) {
+    const error: ApiError = {
+      error: `Template '${id}' not found`,
+      code: "TEMPLATE_NOT_FOUND",
+    };
+    return c.json(error, 404);
+  }
+
+  // Return cached thumbnail if available
+  if (thumbnailCache.has(id)) {
+    const cached = thumbnailCache.get(id)!;
+    c.header("Content-Type", "image/png");
+    c.header("Content-Length", String(cached.length));
+    c.header("Cache-Control", "public, max-age=86400");
+    return c.body(new Uint8Array(cached));
+  }
+
+  try {
+    // Load template HTML and render with sample data
+    const templateHtml = await templateEngine.getTemplateHtml(id);
+    const renderedHtml = Mustache.render(templateHtml, catalogEntry.sampleData);
+
+    // Generate PNG thumbnail at 400x300
+    const pngBuffer = await generatePNG(renderedHtml, {
+      width: 400,
+      height: 300,
+    });
+
+    // Cache for future requests
+    thumbnailCache.set(id, pngBuffer);
+
+    c.header("Content-Type", "image/png");
+    c.header("Content-Length", String(pngBuffer.length));
+    c.header("Cache-Control", "public, max-age=86400");
+    return c.body(new Uint8Array(pngBuffer));
+  } catch (err) {
+    console.error(`Thumbnail generation error for '${id}':`, err);
+    const error: ApiError = {
+      error: err instanceof Error ? err.message : "Thumbnail generation failed",
+      code: "THUMBNAIL_ERROR",
+    };
+    return c.json(error, 500);
+  }
 });
 
 /**

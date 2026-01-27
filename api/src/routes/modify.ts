@@ -32,6 +32,7 @@ import { validateModification as selfCheckValidation } from "../services/validat
 import { canFastTransform, fastTransform } from "../services/fastTransform.js";
 import type { Context } from "hono";
 import { triggerEventSubscriptions } from "./subscriptions.js";
+import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
 
 const modify = new Hono();
 
@@ -495,6 +496,13 @@ Do NOT truncate or cut off the output. Include ALL closing tags.`;
         prompt,
         region: region || null,
         changes: result.changes,
+      });
+
+      // Fire notification webhooks (fire and forget)
+      fireNotificationWebhooks("modify.completed", {
+        session_id: sessionId,
+        prompt,
+        selfCheckPassed: true,
       });
 
       // Track usage (only for database sessions)

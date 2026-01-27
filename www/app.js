@@ -6048,6 +6048,36 @@ print(result['html'])  # Updated HTML`;
       }
     });
 
+    // Share button
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        const actions = historyEntries
+          .filter(e => e.prompt && e.prompt !== 'Initial state')
+          .map(e => e.prompt);
+
+        if (actions.length === 0) {
+          showToast('Apply some changes first before sharing', 'info');
+          return;
+        }
+
+        // Get current template from active tab
+        const activeTab = document.querySelector('.playground__tab--active');
+        const template = activeTab ? activeTab.dataset.template : 'quote-modern';
+
+        const payload = { template, actions };
+        const encoded = btoa(JSON.stringify(payload));
+        const shareUrl = window.location.origin + window.location.pathname + '#playground?mods=' + encoded;
+
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showToast('Link copied to clipboard', 'success');
+        }).catch(() => {
+          // Fallback for clipboard API failure
+          showToast('Could not copy link', 'error');
+        });
+      });
+    }
+
     // Cancel button for long-running modifications
     const loadingCancelBtn = document.getElementById('loading-cancel-btn');
     if (loadingCancelBtn) {
@@ -6175,7 +6205,87 @@ print(result['html'])  # Updated HTML`;
       setupDemoModeBanner();
 
       initializePreview();
+
+      // Check for shared customization URL
+      handleSharedUrl();
     });
+
+    // ============================================
+    // Shared URL Handler
+    // ============================================
+    function handleSharedUrl() {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#playground?mods=')) return;
+
+      const encoded = hash.replace('#playground?mods=', '');
+      let payload;
+      try {
+        payload = JSON.parse(atob(encoded));
+      } catch (e) {
+        console.warn('[Glyph] Invalid shared URL payload');
+        return;
+      }
+
+      if (!payload || !Array.isArray(payload.actions) || payload.actions.length === 0) return;
+
+      // Scroll to playground
+      const playgroundSection = document.getElementById('playground') || document.querySelector('.playground');
+      if (playgroundSection) {
+        playgroundSection.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // Show shared banner above the prompt area
+      const promptArea = document.querySelector('.playground__input-area');
+      if (promptArea) {
+        const banner = document.createElement('div');
+        banner.className = 'shared-customization-banner';
+        banner.innerHTML = `
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          <span>Viewing shared customization (${payload.actions.length} change${payload.actions.length !== 1 ? 's' : ''})</span>
+        `;
+        promptArea.insertBefore(banner, promptArea.firstChild);
+      }
+
+      // Switch template if needed
+      if (payload.template) {
+        const tab = document.querySelector(`.playground__tab[data-template="${payload.template}"]`);
+        if (tab && !tab.classList.contains('playground__tab--active')) {
+          tab.click();
+        }
+      }
+
+      // Apply actions sequentially with delays, waiting for preview to be ready
+      function waitForPreviewAndApply() {
+        const previewFrame = document.getElementById('preview-frame');
+        if (!previewFrame || !previewFrame.srcdoc) {
+          setTimeout(waitForPreviewAndApply, 500);
+          return;
+        }
+        applyActionsSequentially(payload.actions, 0);
+      }
+
+      function applyActionsSequentially(actions, index) {
+        if (index >= actions.length) return;
+        if (isProcessingModification) {
+          // Wait for current modification to finish
+          setTimeout(() => applyActionsSequentially(actions, index), 1000);
+          return;
+        }
+        const prompt = actions[index];
+        const promptInput = document.getElementById('prompt-input');
+        if (promptInput) {
+          promptInput.value = prompt;
+          applyModifications(prompt);
+        }
+        // Wait then apply next
+        setTimeout(() => applyActionsSequentially(actions, index + 1), 2000);
+      }
+
+      // Wait a bit for the preview to initialize
+      setTimeout(waitForPreviewAndApply, 1500);
+    }
 
     // ============================================
     // Smooth Scroll for Anchor Links

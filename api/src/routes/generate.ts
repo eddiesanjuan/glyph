@@ -8,6 +8,7 @@ import { z } from "zod";
 import { generatePdf, generatePng } from "../services/pdf.js";
 import type { GenerateResponse, ApiError } from "../lib/types.js";
 import { triggerEventSubscriptions } from "./subscriptions.js";
+import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
 
 const generate = new Hono();
 
@@ -70,6 +71,12 @@ generate.post("/", async (c) => {
       format,
       size: buffer.length,
       filename,
+    });
+
+    // Fire notification webhooks (fire and forget)
+    fireNotificationWebhooks("pdf.generated", {
+      session_id: body.sessionId || null,
+      pdf_url_or_base64_snippet: `data:${contentType};base64,${buffer.toString("base64").substring(0, 100)}...`,
     });
 
     // Check Accept header to decide response format
