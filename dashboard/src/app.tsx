@@ -59,6 +59,69 @@ interface SavedTemplate {
   updatedAt: string
 }
 
+interface DataSource {
+  id: string
+  name: string
+  description: string | null
+  source_type: 'airtable' | 'rest_api' | 'webhook' | 'graphql' | 'database' | 'file' | 'manual'
+  status: 'active' | 'pending' | 'failed' | 'disabled'
+  status_message: string | null
+  discovered_schema: {
+    fields?: Array<{
+      name: string
+      path: string
+      type: string
+      sample?: string
+    }>
+    record_count?: number
+  } | null
+  last_sync_at: string | null
+  last_sync_record_count: number | null
+  created_at: string
+  updated_at: string
+}
+
+interface Mapping {
+  id: string
+  template_id: string
+  source_id: string
+  field_mappings: Record<string, string>  // template field -> source field
+  transformations: Record<string, { type: string; config?: any }>
+  is_default: boolean
+  validation_status: 'valid' | 'stale' | 'broken' | 'pending'
+  validation_message: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface MappingSuggestion {
+  templateField: string
+  sourceField: string
+  confidence: number
+  reason: string
+}
+
+interface BatchJob {
+  id: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  progress: {
+    total: number
+    completed: number
+    failed: number
+  }
+  error?: string
+  created_at: string
+  completed_at?: string
+}
+
+interface GeneratedPdf {
+  success: boolean
+  url: string
+  size: number
+  recordId?: string
+  generatedAt: string
+}
+
 interface BetaStats {
   pending: number
   approved: number
@@ -196,6 +259,36 @@ const Icons = {
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
     </svg>
   ),
+  airtable: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M11.992 0L2 5.61v12.78l9.992 5.61 9.992-5.61V5.61L11.992 0z"/>
+    </svg>
+  ),
+  api: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </svg>
+  ),
+  webhook: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/>
+      <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"/>
+      <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8H12"/>
+    </svg>
+  ),
+  zap: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  ),
+  database: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </svg>
+  ),
 }
 
 // Tier badge colors - matching landing page navy blue palette
@@ -254,6 +347,53 @@ export function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null)
   const [templateSaving, setTemplateSaving] = useState(false)
+
+  // Data Sources state
+  const [sources, setSources] = useState<DataSource[]>([])
+  const [sourcesLoading, setSourcesLoading] = useState(false)
+  const [showAddSource, setShowAddSource] = useState(false)
+  const [addSourceStep, setAddSourceStep] = useState(1)
+  const [addSourceType, setAddSourceType] = useState<string | null>(null)
+  const [addSourceConfig, setAddSourceConfig] = useState<Record<string, string>>({})
+  const [addSourceTesting, setAddSourceTesting] = useState(false)
+  const [addSourceError, setAddSourceError] = useState<string | null>(null)
+  const [addSourceSchema, setAddSourceSchema] = useState<DataSource['discovered_schema']>(null)
+  const [deleteSourceConfirm, setDeleteSourceConfirm] = useState<string | null>(null)
+  const [testingSourceId, setTestingSourceId] = useState<string | null>(null)
+  const [syncingSourceId, setSyncingSourceId] = useState<string | null>(null)
+
+  // Mapping state
+  const [mappings, setMappings] = useState<Mapping[]>([])
+  const [linkingTemplate, setLinkingTemplate] = useState<SavedTemplate | null>(null)
+  const [selectedSourceId, setSelectedSourceId] = useState('')
+  const [showMapper, setShowMapper] = useState(false)
+  const [currentMapping, setCurrentMapping] = useState<{
+    templateId: string
+    sourceId: string
+    fieldMappings: Record<string, string>
+    transformations: Record<string, { type: string }>
+  }>({ templateId: '', sourceId: '', fieldMappings: {}, transformations: {} })
+  const [templateFields, setTemplateFields] = useState<string[]>([])
+  const [sourceFields, setSourceFields] = useState<Array<{ name: string; path: string; type: string }>>([])
+  const [suggestions, setSuggestions] = useState<MappingSuggestion[]>([])
+  const [suggestingMappings, setSuggestingMappings] = useState(false)
+  const [savingMapping, setSavingMapping] = useState(false)
+  const [mappingError, setMappingError] = useState<string | null>(null)
+
+  // Generation state
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
+  const [generateTemplate, setGenerateTemplate] = useState<SavedTemplate | null>(null)
+  const [generateMapping, setGenerateMapping] = useState<Mapping | null>(null)
+  const [generateMode, setGenerateMode] = useState<'single' | 'batch'>('single')
+  const [records, setRecords] = useState<any[]>([])
+  const [recordsLoading, setRecordsLoading] = useState(false)
+  const [selectedRecordId, setSelectedRecordId] = useState('')
+  const [batchFilter, setBatchFilter] = useState('')
+  const [batchLimit, setBatchLimit] = useState(100)
+  const [generating, setGenerating] = useState(false)
+  const [generatedPdf, setGeneratedPdf] = useState<GeneratedPdf | null>(null)
+  const [batchJob, setBatchJob] = useState<BatchJob | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
   // Check for activation code in URL
   useEffect(() => {
@@ -633,12 +773,535 @@ export function App() {
     setTimeout(() => setCopiedTemplateId(null), 2000)
   }
 
+  // Source functions
+  const fetchSources = useCallback(async () => {
+    if (!apiKey) return
+    setSourcesLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/v1/sources`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSources(data.sources || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch sources:', err)
+    } finally {
+      setSourcesLoading(false)
+    }
+  }, [apiKey])
+
+  const handleTestSource = async (sourceId: string) => {
+    setTestingSourceId(sourceId)
+    try {
+      const res = await fetch(`${API_URL}/v1/sources/${sourceId}/test`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSources(prev => prev.map(s =>
+          s.id === sourceId ? { ...s, status: 'active' as const } : s
+        ))
+      } else {
+        setSources(prev => prev.map(s =>
+          s.id === sourceId ? { ...s, status: 'failed' as const, status_message: data.error } : s
+        ))
+      }
+    } catch (err) {
+      console.error('Test failed:', err)
+    } finally {
+      setTestingSourceId(null)
+    }
+  }
+
+  const handleSyncSource = async (sourceId: string) => {
+    setSyncingSourceId(sourceId)
+    try {
+      const res = await fetch(`${API_URL}/v1/sources/${sourceId}/sync`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        await fetchSources()
+      }
+    } catch (err) {
+      console.error('Sync failed:', err)
+    } finally {
+      setSyncingSourceId(null)
+    }
+  }
+
+  const handleCreateSource = async () => {
+    setAddSourceTesting(true)
+    setAddSourceError(null)
+
+    try {
+      const testRes = await fetch(`${API_URL}/v1/sources`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          name: addSourceConfig.name,
+          source_type: addSourceType,
+          config: addSourceConfig
+        })
+      })
+
+      const testData = await testRes.json()
+
+      if (!testRes.ok) {
+        throw new Error(testData.error || 'Failed to create source')
+      }
+
+      setAddSourceSchema(testData.source?.discovered_schema || null)
+      setAddSourceStep(3)
+
+      await fetchSources()
+
+      setTimeout(() => {
+        resetAddSourceWizard()
+      }, 2000)
+
+    } catch (err) {
+      setAddSourceError(err instanceof Error ? err.message : 'Failed to create source')
+    } finally {
+      setAddSourceTesting(false)
+    }
+  }
+
+  const handleDeleteSource = async (sourceId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/v1/sources/${sourceId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      if (res.ok) {
+        await fetchSources()
+        setDeleteSourceConfirm(null)
+      }
+    } catch (err) {
+      console.error('Failed to delete source:', err)
+    }
+  }
+
+  const resetAddSourceWizard = () => {
+    setShowAddSource(false)
+    setAddSourceStep(1)
+    setAddSourceType(null)
+    setAddSourceConfig({})
+    setAddSourceError(null)
+    setAddSourceSchema(null)
+  }
+
+  // Mapping functions
+  const fetchMappings = useCallback(async () => {
+    if (!apiKey) return
+    try {
+      const res = await fetch(`${API_URL}/v1/mappings`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMappings(data.mappings || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch mappings:', err)
+    }
+  }, [apiKey])
+
+  const getTemplateMappings = (templateId: string) => {
+    return mappings.filter(m => m.template_id === templateId)
+  }
+
+  const getSourceName = (sourceId: string) => {
+    const source = sources.find(s => s.id === sourceId)
+    return source?.name || 'Unknown Source'
+  }
+
+  const openLinkSource = (template: SavedTemplate) => {
+    setLinkingTemplate(template)
+    setSelectedSourceId('')
+  }
+
+  const openFieldMapper = async (templateId: string, sourceId: string) => {
+    setShowMapper(true)
+    setMappingError(null)
+    setCurrentMapping({ templateId, sourceId, fieldMappings: {}, transformations: {} })
+
+    // Fetch template fields
+    try {
+      const templateRes = await fetch(`${API_URL}/v1/templates/saved/${templateId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const templateData = await templateRes.json()
+      if (templateData.success && templateData.template?.required_fields) {
+        setTemplateFields(templateData.template.required_fields)
+      } else {
+        // Fallback: extract from template HTML using regex for {{field}}
+        setTemplateFields([])
+      }
+    } catch (err) {
+      console.error('Failed to fetch template fields:', err)
+      setTemplateFields([])
+    }
+
+    // Get source schema
+    const source = sources.find(s => s.id === sourceId)
+    if (source?.discovered_schema?.fields) {
+      setSourceFields(source.discovered_schema.fields)
+    } else {
+      setSourceFields([])
+    }
+
+    // Check for existing mapping
+    const existingMapping = mappings.find(m => m.template_id === templateId && m.source_id === sourceId)
+    if (existingMapping) {
+      setCurrentMapping({
+        templateId,
+        sourceId,
+        fieldMappings: existingMapping.field_mappings,
+        transformations: existingMapping.transformations as Record<string, { type: string }>
+      })
+    }
+
+    setLinkingTemplate(null)
+  }
+
+  const handleSuggestMappings = async () => {
+    setSuggestingMappings(true)
+    setMappingError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/ai/suggest-mappings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          templateId: currentMapping.templateId,
+          sourceId: currentMapping.sourceId
+        })
+      })
+
+      const data = await res.json()
+
+      if (data.success && data.suggestions) {
+        setSuggestions(data.suggestions)
+
+        // Apply suggestions to current mapping
+        const newFieldMappings: Record<string, string> = { ...currentMapping.fieldMappings }
+        data.suggestions.forEach((s: MappingSuggestion) => {
+          if (s.confidence > 0.7) {  // Auto-apply high confidence
+            newFieldMappings[s.templateField] = s.sourceField
+          }
+        })
+        setCurrentMapping(prev => ({ ...prev, fieldMappings: newFieldMappings }))
+      }
+    } catch (err) {
+      setMappingError('Failed to get AI suggestions')
+    } finally {
+      setSuggestingMappings(false)
+    }
+  }
+
+  const updateFieldMapping = (templateField: string, sourceField: string) => {
+    setCurrentMapping(prev => ({
+      ...prev,
+      fieldMappings: {
+        ...prev.fieldMappings,
+        [templateField]: sourceField
+      }
+    }))
+  }
+
+  const updateTransform = (templateField: string, transformType: string) => {
+    setCurrentMapping(prev => ({
+      ...prev,
+      transformations: {
+        ...prev.transformations,
+        [templateField]: { type: transformType }
+      }
+    }))
+  }
+
+  const handleSaveMapping = async () => {
+    setSavingMapping(true)
+    setMappingError(null)
+
+    try {
+      // Check if mapping exists
+      const existingMapping = mappings.find(
+        m => m.template_id === currentMapping.templateId && m.source_id === currentMapping.sourceId
+      )
+
+      const method = existingMapping ? 'PUT' : 'POST'
+      const url = existingMapping
+        ? `${API_URL}/v1/mappings/${existingMapping.id}`
+        : `${API_URL}/v1/mappings`
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          template_id: currentMapping.templateId,
+          source_id: currentMapping.sourceId,
+          field_mappings: currentMapping.fieldMappings,
+          transformations: currentMapping.transformations
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save mapping')
+      }
+
+      await fetchMappings()
+      setShowMapper(false)
+      resetMapper()
+    } catch (err) {
+      setMappingError(err instanceof Error ? err.message : 'Failed to save mapping')
+    } finally {
+      setSavingMapping(false)
+    }
+  }
+
+  const resetMapper = () => {
+    setShowMapper(false)
+    setCurrentMapping({ templateId: '', sourceId: '', fieldMappings: {}, transformations: {} })
+    setTemplateFields([])
+    setSourceFields([])
+    setSuggestions([])
+    setMappingError(null)
+  }
+
+  const getMappingCoverage = () => {
+    if (templateFields.length === 0) return 0
+    const mappedCount = templateFields.filter(f => currentMapping.fieldMappings[f]).length
+    return Math.round((mappedCount / templateFields.length) * 100)
+  }
+
+  // Generation functions
+  const openGenerateModal = async (template: SavedTemplate, mapping: Mapping) => {
+    setGenerateTemplate(template)
+    setGenerateMapping(mapping)
+    setShowGenerateModal(true)
+    setGenerateMode('single')
+    setSelectedRecordId('')
+    setGeneratedPdf(null)
+    setBatchJob(null)
+    setGenerateError(null)
+
+    // Fetch records from source
+    await fetchRecords(mapping.source_id)
+  }
+
+  const fetchRecords = async (sourceId: string) => {
+    setRecordsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/v1/sources/${sourceId}/records?limit=50`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setRecords(data.records || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch records:', err)
+      setRecords([])
+    } finally {
+      setRecordsLoading(false)
+    }
+  }
+
+  const getRecordLabel = (record: any) => {
+    // Try to find a meaningful display label
+    const fields = record.fields || record
+    const labelFields = ['name', 'title', 'Name', 'Title', 'invoice_number', 'Invoice Number', 'id', 'ID']
+    for (const field of labelFields) {
+      if (fields[field]) return String(fields[field])
+    }
+    return record.id || 'Record'
+  }
+
+  const handleGenerateSingle = async () => {
+    if (!generateTemplate || !generateMapping || !selectedRecordId) return
+
+    setGenerating(true)
+    setGenerateError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/generate/smart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          templateId: generateTemplate.id,
+          sourceId: generateMapping.source_id,
+          recordId: selectedRecordId,
+          format: 'pdf'
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Generation failed')
+      }
+
+      setGeneratedPdf({
+        success: true,
+        url: data.url,
+        size: data.size,
+        recordId: selectedRecordId,
+        generatedAt: new Date().toISOString()
+      })
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleStartBatch = async () => {
+    if (!generateTemplate || !generateMapping) return
+
+    setGenerating(true)
+    setGenerateError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/generate/smart/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          templateId: generateTemplate.id,
+          sourceId: generateMapping.source_id,
+          filter: batchFilter ? { formula: batchFilter, limit: batchLimit } : { limit: batchLimit }
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to start batch')
+      }
+
+      setBatchJob(data.job)
+      // Start polling for status
+      pollBatchStatus(data.job.id)
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Failed to start batch')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const pollBatchStatus = async (jobId: string) => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`${API_URL}/v1/generate/smart/batch/${jobId}`, {
+          headers: { 'Authorization': `Bearer ${apiKey}` }
+        })
+        const data = await res.json()
+
+        if (data.success) {
+          setBatchJob(data.job)
+
+          if (data.job.status === 'pending' || data.job.status === 'processing') {
+            setTimeout(poll, 2000) // Poll every 2 seconds
+          }
+        }
+      } catch (err) {
+        console.error('Failed to poll batch status:', err)
+      }
+    }
+    poll()
+  }
+
+  const handleDownloadBatch = async () => {
+    if (!batchJob) return
+
+    try {
+      const res = await fetch(`${API_URL}/v1/generate/smart/batch/${batchJob.id}/download`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+
+      if (!res.ok) {
+        throw new Error('Download failed')
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `batch-${batchJob.id}.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setGenerateError('Failed to download batch')
+    }
+  }
+
+  const handleDownloadPdf = () => {
+    if (!generatedPdf) return
+
+    // If it's a data URL, convert to blob and download
+    if (generatedPdf.url.startsWith('data:')) {
+      const link = document.createElement('a')
+      link.href = generatedPdf.url
+      link.download = `generated-${Date.now()}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      window.open(generatedPdf.url, '_blank')
+    }
+  }
+
+  const resetGenerateModal = () => {
+    setShowGenerateModal(false)
+    setGenerateTemplate(null)
+    setGenerateMapping(null)
+    setGenerateMode('single')
+    setRecords([])
+    setSelectedRecordId('')
+    setBatchFilter('')
+    setBatchLimit(100)
+    setGeneratedPdf(null)
+    setBatchJob(null)
+    setGenerateError(null)
+  }
+
   // Fetch templates when dashboard data loads
   useEffect(() => {
     if (data && apiKey) {
       fetchTemplates()
+      fetchSources()
     }
-  }, [data, apiKey, fetchTemplates])
+  }, [data, apiKey, fetchTemplates, fetchSources])
+
+  // Fetch mappings when sources load
+  useEffect(() => {
+    if (data && apiKey && sources.length > 0) {
+      fetchMappings()
+    }
+  }, [data, apiKey, sources, fetchMappings])
 
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'var(--error)'
@@ -1445,6 +2108,146 @@ export function App() {
                             {Icons.trash}
                           </button>
                         </div>
+
+                        {/* Linked Sources */}
+                        {sources.length > 0 && (
+                          <div class="template-sources">
+                            <div class="template-sources-header">
+                              <span class="sources-label">Data Sources</span>
+                              <button
+                                class="btn btn-sm btn-outline"
+                                onClick={() => openLinkSource(template)}
+                              >
+                                + Link
+                              </button>
+                            </div>
+
+                            {getTemplateMappings(template.id).length > 0 ? (
+                              <div class="linked-sources-list">
+                                {getTemplateMappings(template.id).map(mapping => (
+                                  <div key={mapping.id} class="linked-source">
+                                    <span class="linked-source-name">
+                                      {getSourceName(mapping.source_id)}
+                                    </span>
+                                    {mapping.is_default && (
+                                      <span class="default-badge">Default</span>
+                                    )}
+                                    <span class={`validation-badge validation-badge--${mapping.validation_status}`}>
+                                      {mapping.validation_status}
+                                    </span>
+                                    <button
+                                      class="btn btn-icon btn-sm"
+                                      onClick={() => openFieldMapper(template.id, mapping.source_id)}
+                                      title="Edit mapping"
+                                    >
+                                      {Icons.edit}
+                                    </button>
+                                    <button
+                                      class="btn btn-icon btn-sm btn-generate"
+                                      onClick={() => openGenerateModal(template, mapping)}
+                                      title="Generate PDF"
+                                    >
+                                      {Icons.file}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p class="no-sources-linked">No sources linked</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Data Sources Section */}
+              <section class="section">
+                <div class="section-header">
+                  <h2>Data Sources</h2>
+                  <button
+                    class="btn btn-primary-outline"
+                    onClick={() => setShowAddSource(true)}
+                  >
+                    + Add Source
+                  </button>
+                </div>
+
+                {sourcesLoading ? (
+                  <div class="sources-loading">Loading sources...</div>
+                ) : sources.length === 0 ? (
+                  <div class="sources-empty">
+                    <div class="empty-icon">{Icons.database}</div>
+                    <p class="empty-title">No data sources connected</p>
+                    <p class="empty-description">Connect Airtable, REST APIs, or webhooks to generate PDFs from your data</p>
+                    <button class="btn btn-primary" onClick={() => setShowAddSource(true)}>
+                      Connect Your First Source
+                    </button>
+                  </div>
+                ) : (
+                  <div class="sources-list">
+                    {sources.map(source => (
+                      <div key={source.id} class="source-card">
+                        <div class="source-header">
+                          <div class="source-icon">
+                            {source.source_type === 'airtable' && Icons.airtable}
+                            {source.source_type === 'rest_api' && Icons.api}
+                            {source.source_type === 'webhook' && Icons.webhook}
+                            {source.source_type === 'database' && Icons.database}
+                            {!['airtable', 'rest_api', 'webhook', 'database'].includes(source.source_type) && Icons.database}
+                          </div>
+                          <div class="source-info">
+                            <div class="source-name">{source.name}</div>
+                            <div class="source-type">{source.source_type.replace('_', ' ')}</div>
+                          </div>
+                          <div class={`source-status source-status--${source.status}`}>
+                            {source.status}
+                          </div>
+                        </div>
+
+                        {source.discovered_schema && (
+                          <div class="source-schema">
+                            <span>{source.discovered_schema.fields?.length || 0} fields</span>
+                            <span class="dot"></span>
+                            <span>{source.last_sync_record_count || source.discovered_schema.record_count || 0} records</span>
+                          </div>
+                        )}
+
+                        {source.status_message && source.status === 'failed' && (
+                          <div class="source-error">{source.status_message}</div>
+                        )}
+
+                        <div class="source-meta">
+                          <span>Last sync: {source.last_sync_at ? formatDate(source.last_sync_at) : 'Never'}</span>
+                        </div>
+
+                        <div class="source-actions">
+                          <button
+                            class="btn btn-icon"
+                            onClick={() => handleTestSource(source.id)}
+                            title="Test connection"
+                            disabled={testingSourceId === source.id}
+                          >
+                            {testingSourceId === source.id ? Icons.refresh : Icons.zap}
+                          </button>
+                          <button
+                            class="btn btn-icon"
+                            onClick={() => handleSyncSource(source.id)}
+                            title="Sync schema"
+                            disabled={syncingSourceId === source.id}
+                          >
+                            {Icons.refresh}
+                          </button>
+                          <button
+                            class="btn btn-icon btn-icon-danger"
+                            onClick={() => setDeleteSourceConfirm(source.id)}
+                            title="Delete"
+                          >
+                            {Icons.trash}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1634,6 +2437,759 @@ export function App() {
                 Delete Template
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Source Wizard Modal */}
+      {showAddSource && (
+        <div class="modal-overlay" onClick={resetAddSourceWizard}>
+          <div class="modal modal-wizard" onClick={(e) => e.stopPropagation()}>
+            <div class="wizard-header">
+              <h3>Add Data Source</h3>
+              <button class="btn btn-icon" onClick={resetAddSourceWizard}>
+                {Icons.x}
+              </button>
+            </div>
+
+            <div class="wizard-steps">
+              <div class={`wizard-step-indicator ${addSourceStep >= 1 ? 'active' : ''} ${addSourceStep > 1 ? 'complete' : ''}`} />
+              <div class={`wizard-step-indicator ${addSourceStep >= 2 ? 'active' : ''} ${addSourceStep > 2 ? 'complete' : ''}`} />
+              <div class={`wizard-step-indicator ${addSourceStep >= 3 ? 'active' : ''}`} />
+            </div>
+
+            {/* Step 1: Choose Type */}
+            {addSourceStep === 1 && (
+              <div class="wizard-content">
+                <p class="wizard-subtitle">Choose your data source type</p>
+
+                <div class="type-selector">
+                  <button
+                    class={`type-option ${addSourceType === 'airtable' ? 'selected' : ''}`}
+                    onClick={() => { setAddSourceType('airtable'); setAddSourceStep(2); }}
+                  >
+                    <div class="type-option-icon">{Icons.airtable}</div>
+                    <div class="type-option-label">Airtable</div>
+                  </button>
+
+                  <button
+                    class={`type-option ${addSourceType === 'rest_api' ? 'selected' : ''}`}
+                    onClick={() => { setAddSourceType('rest_api'); setAddSourceStep(2); }}
+                  >
+                    <div class="type-option-icon">{Icons.api}</div>
+                    <div class="type-option-label">REST API</div>
+                  </button>
+
+                  <button
+                    class={`type-option ${addSourceType === 'webhook' ? 'selected' : ''}`}
+                    onClick={() => { setAddSourceType('webhook'); setAddSourceStep(2); }}
+                  >
+                    <div class="type-option-icon">{Icons.webhook}</div>
+                    <div class="type-option-label">Webhook</div>
+                  </button>
+                </div>
+
+                <div class="type-selector type-selector--coming-soon">
+                  <button class="type-option disabled">
+                    <div class="type-option-icon">{Icons.database}</div>
+                    <div class="type-option-label">Database</div>
+                    <div class="type-option-coming">Coming Soon</div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Configure Airtable */}
+            {addSourceStep === 2 && addSourceType === 'airtable' && (
+              <div class="wizard-content">
+                <p class="wizard-subtitle">Configure Airtable connection</p>
+
+                <form class="wizard-form" onSubmit={(e) => { e.preventDefault(); handleCreateSource(); }}>
+                  <div class="form-group">
+                    <label>Source Name *</label>
+                    <input
+                      type="text"
+                      class="api-input"
+                      placeholder="Production Invoices"
+                      value={addSourceConfig.name || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, name: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Personal Access Token *</label>
+                    <input
+                      type="password"
+                      class="api-input mono"
+                      placeholder="pat..."
+                      value={addSourceConfig.personal_access_token || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, personal_access_token: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                    <span class="form-hint">Get from airtable.com/account</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Base ID *</label>
+                    <input
+                      type="text"
+                      class="api-input mono"
+                      placeholder="appXXXXXXXXXXXX"
+                      value={addSourceConfig.base_id || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, base_id: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Table ID *</label>
+                    <input
+                      type="text"
+                      class="api-input mono"
+                      placeholder="tblXXXXXXXXXXXX"
+                      value={addSourceConfig.table_id || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, table_id: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>View ID (optional)</label>
+                    <input
+                      type="text"
+                      class="api-input mono"
+                      placeholder="viwXXXXXXXXXXXX"
+                      value={addSourceConfig.view_id || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, view_id: (e.target as HTMLInputElement).value})}
+                    />
+                  </div>
+
+                  {addSourceError && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{addSourceError}</span>
+                    </div>
+                  )}
+
+                  <div class="wizard-actions">
+                    <button type="button" class="btn btn-ghost" onClick={() => { setAddSourceStep(1); setAddSourceType(null); }}>
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      disabled={addSourceTesting || !addSourceConfig.name || !addSourceConfig.personal_access_token || !addSourceConfig.base_id || !addSourceConfig.table_id}
+                    >
+                      {addSourceTesting ? 'Testing...' : 'Test & Connect'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Step 2: Configure REST API */}
+            {addSourceStep === 2 && addSourceType === 'rest_api' && (
+              <div class="wizard-content">
+                <p class="wizard-subtitle">Configure REST API connection</p>
+
+                <form class="wizard-form" onSubmit={(e) => { e.preventDefault(); handleCreateSource(); }}>
+                  <div class="form-group">
+                    <label>Source Name *</label>
+                    <input
+                      type="text"
+                      class="api-input"
+                      placeholder="CRM Contacts"
+                      value={addSourceConfig.name || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, name: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Endpoint URL *</label>
+                    <input
+                      type="url"
+                      class="api-input mono"
+                      placeholder="https://api.example.com/data"
+                      value={addSourceConfig.endpoint || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, endpoint: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Authentication</label>
+                    <select
+                      class="api-input"
+                      value={addSourceConfig.auth_type || 'none'}
+                      onChange={(e) => setAddSourceConfig({...addSourceConfig, auth_type: (e.target as HTMLSelectElement).value})}
+                    >
+                      <option value="none">None</option>
+                      <option value="bearer">Bearer Token</option>
+                      <option value="api_key">API Key</option>
+                      <option value="basic">Basic Auth</option>
+                    </select>
+                  </div>
+
+                  {addSourceConfig.auth_type === 'bearer' && (
+                    <div class="form-group">
+                      <label>Bearer Token *</label>
+                      <input
+                        type="password"
+                        class="api-input mono"
+                        placeholder="your-token"
+                        value={addSourceConfig.bearer_token || ''}
+                        onInput={(e) => setAddSourceConfig({...addSourceConfig, bearer_token: (e.target as HTMLInputElement).value})}
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {addSourceConfig.auth_type === 'api_key' && (
+                    <>
+                      <div class="form-group">
+                        <label>Header Name *</label>
+                        <input
+                          type="text"
+                          class="api-input"
+                          placeholder="X-API-Key"
+                          value={addSourceConfig.api_key_header || ''}
+                          onInput={(e) => setAddSourceConfig({...addSourceConfig, api_key_header: (e.target as HTMLInputElement).value})}
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>API Key *</label>
+                        <input
+                          type="password"
+                          class="api-input mono"
+                          placeholder="your-api-key"
+                          value={addSourceConfig.api_key_value || ''}
+                          onInput={(e) => setAddSourceConfig({...addSourceConfig, api_key_value: (e.target as HTMLInputElement).value})}
+                          required
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div class="form-group">
+                    <label>Response Path (optional)</label>
+                    <input
+                      type="text"
+                      class="api-input mono"
+                      placeholder="data.records"
+                      value={addSourceConfig.response_path || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, response_path: (e.target as HTMLInputElement).value})}
+                    />
+                    <span class="form-hint">Path to the array of records in the response</span>
+                  </div>
+
+                  {addSourceError && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{addSourceError}</span>
+                    </div>
+                  )}
+
+                  <div class="wizard-actions">
+                    <button type="button" class="btn btn-ghost" onClick={() => { setAddSourceStep(1); setAddSourceType(null); }}>
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      disabled={addSourceTesting || !addSourceConfig.name || !addSourceConfig.endpoint}
+                    >
+                      {addSourceTesting ? 'Testing...' : 'Test & Connect'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Step 2: Configure Webhook */}
+            {addSourceStep === 2 && addSourceType === 'webhook' && (
+              <div class="wizard-content">
+                <p class="wizard-subtitle">Configure Webhook receiver</p>
+
+                <form class="wizard-form" onSubmit={(e) => { e.preventDefault(); handleCreateSource(); }}>
+                  <div class="form-group">
+                    <label>Source Name *</label>
+                    <input
+                      type="text"
+                      class="api-input"
+                      placeholder="Order Events"
+                      value={addSourceConfig.name || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, name: (e.target as HTMLInputElement).value})}
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Webhook Secret (optional)</label>
+                    <input
+                      type="password"
+                      class="api-input mono"
+                      placeholder="whsec_..."
+                      value={addSourceConfig.secret || ''}
+                      onInput={(e) => setAddSourceConfig({...addSourceConfig, secret: (e.target as HTMLInputElement).value})}
+                    />
+                    <span class="form-hint">Used to verify incoming webhook signatures</span>
+                  </div>
+
+                  {addSourceError && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{addSourceError}</span>
+                    </div>
+                  )}
+
+                  <div class="wizard-actions">
+                    <button type="button" class="btn btn-ghost" onClick={() => { setAddSourceStep(1); setAddSourceType(null); }}>
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      disabled={addSourceTesting || !addSourceConfig.name}
+                    >
+                      {addSourceTesting ? 'Creating...' : 'Create Webhook'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Step 3: Success */}
+            {addSourceStep === 3 && (
+              <div class="wizard-content wizard-success">
+                <div class="success-icon success-icon--large">
+                  {Icons.checkCircle}
+                </div>
+                <h4>Connected Successfully!</h4>
+
+                {addSourceSchema && addSourceSchema.fields && (
+                  <div class="schema-preview">
+                    <p>Found {addSourceSchema.fields.length} fields{addSourceSchema.record_count ? ` and ${addSourceSchema.record_count} records` : ''}:</p>
+                    <div class="schema-fields">
+                      {addSourceSchema.fields.slice(0, 5).map((field) => (
+                        <div key={field.path} class="schema-field">
+                          <span class="field-name">{field.name}</span>
+                          <span class="field-type">{field.type}</span>
+                        </div>
+                      ))}
+                      {addSourceSchema.fields.length > 5 && (
+                        <div class="schema-more">+{addSourceSchema.fields.length - 5} more fields</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Source Confirmation Modal */}
+      {deleteSourceConfirm && (
+        <div class="modal-overlay" onClick={() => setDeleteSourceConfirm(null)}>
+          <div class="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Data Source?</h3>
+            <p>
+              This will permanently delete this data source and all its mappings. This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" onClick={() => setDeleteSourceConfirm(null)}>
+                Cancel
+              </button>
+              <button
+                class="btn btn-danger"
+                onClick={() => handleDeleteSource(deleteSourceConfirm)}
+              >
+                Delete Source
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Link Source Modal */}
+      {linkingTemplate && (
+        <div class="modal-overlay" onClick={() => setLinkingTemplate(null)}>
+          <div class="modal modal-link-source" onClick={(e) => e.stopPropagation()}>
+            <h3>Link Data Source</h3>
+            <p class="modal-subtitle">Select a source to link to "{linkingTemplate.name}"</p>
+
+            {sources.length === 0 ? (
+              <div class="no-sources-message">
+                <p>No data sources available.</p>
+                <button class="btn btn-primary" onClick={() => { setLinkingTemplate(null); setShowAddSource(true); }}>
+                  Add Your First Source
+                </button>
+              </div>
+            ) : (
+              <>
+                <div class="source-select-list">
+                  {sources.map(source => (
+                    <button
+                      key={source.id}
+                      class={`source-select-item ${selectedSourceId === source.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedSourceId(source.id)}
+                    >
+                      <div class="source-select-icon">
+                        {source.source_type === 'airtable' && Icons.airtable}
+                        {source.source_type === 'rest_api' && Icons.api}
+                        {source.source_type === 'webhook' && Icons.webhook}
+                        {!['airtable', 'rest_api', 'webhook'].includes(source.source_type) && Icons.database}
+                      </div>
+                      <div class="source-select-info">
+                        <div class="source-select-name">{source.name}</div>
+                        <div class="source-select-meta">
+                          {source.discovered_schema?.fields?.length || 0} fields
+                        </div>
+                      </div>
+                      {selectedSourceId === source.id && (
+                        <div class="source-select-check">{Icons.check}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div class="modal-actions">
+                  <button class="btn btn-ghost" onClick={() => setLinkingTemplate(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    class="btn btn-primary"
+                    disabled={!selectedSourceId}
+                    onClick={() => openFieldMapper(linkingTemplate.id, selectedSourceId)}
+                  >
+                    Configure Mapping
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Field Mapper Modal */}
+      {showMapper && (
+        <div class="modal-overlay mapper-overlay" onClick={resetMapper}>
+          <div class="modal modal-mapper" onClick={(e) => e.stopPropagation()}>
+            <div class="mapper-header">
+              <h3>Map Fields</h3>
+              <div class="mapper-coverage">
+                Coverage: <span class="coverage-value">{getMappingCoverage()}%</span>
+              </div>
+              <button
+                class="btn btn-ai"
+                onClick={handleSuggestMappings}
+                disabled={suggestingMappings}
+              >
+                {Icons.sparkles}
+                {suggestingMappings ? 'Suggesting...' : 'AI Suggest'}
+              </button>
+              <button class="btn btn-icon" onClick={resetMapper}>
+                {Icons.x}
+              </button>
+            </div>
+
+            <div class="mapper-body">
+              {templateFields.length === 0 ? (
+                <div class="mapper-empty">
+                  <p>No template fields detected.</p>
+                  <p class="mapper-empty-hint">Template fields are extracted from {'{{placeholders}}'} in your template.</p>
+                </div>
+              ) : (
+                <div class="mapping-rows">
+                  {templateFields.map(field => {
+                    const suggestion = suggestions.find(s => s.templateField === field)
+                    return (
+                      <div key={field} class="mapping-row">
+                        <div class="mapping-template-field">
+                          <code>{`{{${field}}}`}</code>
+                        </div>
+
+                        <div class="mapping-arrow">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+
+                        <div class="mapping-source-field">
+                          <select
+                            class="mapping-select"
+                            value={currentMapping.fieldMappings[field] || ''}
+                            onChange={(e) => updateFieldMapping(field, (e.target as HTMLSelectElement).value)}
+                          >
+                            <option value="">Select field...</option>
+                            {sourceFields.map(sf => (
+                              <option key={sf.path} value={sf.path}>
+                                {sf.name} ({sf.type})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div class="mapping-transform">
+                          <select
+                            class="transform-select"
+                            value={currentMapping.transformations[field]?.type || ''}
+                            onChange={(e) => updateTransform(field, (e.target as HTMLSelectElement).value)}
+                          >
+                            <option value="">No transform</option>
+                            <option value="currency">Currency ($)</option>
+                            <option value="date">Date</option>
+                            <option value="uppercase">UPPERCASE</option>
+                            <option value="lowercase">lowercase</option>
+                            <option value="number">Number</option>
+                          </select>
+                        </div>
+
+                        {suggestion && suggestion.confidence > 0 && (
+                          <div class="mapping-confidence" title={suggestion.reason}>
+                            AI: {Math.round(suggestion.confidence * 100)}%
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {mappingError && (
+              <div class="error-banner mapper-error">
+                {Icons.warning}
+                <span>{mappingError}</span>
+              </div>
+            )}
+
+            <div class="mapper-footer">
+              <button class="btn btn-ghost" onClick={resetMapper}>
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                onClick={handleSaveMapping}
+                disabled={savingMapping || getMappingCoverage() === 0}
+              >
+                {savingMapping ? 'Saving...' : 'Save Mapping'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate PDF Modal */}
+      {showGenerateModal && generateTemplate && generateMapping && (
+        <div class="modal-overlay" onClick={resetGenerateModal}>
+          <div class="modal modal-generate" onClick={(e) => e.stopPropagation()}>
+            <div class="generate-header">
+              <h3>Generate PDF</h3>
+              <button class="btn btn-icon" onClick={resetGenerateModal}>
+                {Icons.x}
+              </button>
+            </div>
+
+            <div class="generate-info">
+              <div class="info-row">
+                <span class="info-label">Template:</span>
+                <span class="info-value">{generateTemplate.name}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Source:</span>
+                <span class="info-value">{getSourceName(generateMapping.source_id)}</span>
+              </div>
+            </div>
+
+            {!generatedPdf && !batchJob && (
+              <>
+                <div class="generate-tabs">
+                  <button
+                    class={`generate-tab ${generateMode === 'single' ? 'active' : ''}`}
+                    onClick={() => setGenerateMode('single')}
+                  >
+                    Single Record
+                  </button>
+                  <button
+                    class={`generate-tab ${generateMode === 'batch' ? 'active' : ''}`}
+                    onClick={() => setGenerateMode('batch')}
+                  >
+                    Batch Generate
+                  </button>
+                </div>
+
+                {generateMode === 'single' ? (
+                  <div class="generate-single">
+                    <div class="form-group">
+                      <label>Select Record</label>
+                      {recordsLoading ? (
+                        <div class="records-loading">Loading records...</div>
+                      ) : records.length === 0 ? (
+                        <div class="no-records">No records found in source</div>
+                      ) : (
+                        <select
+                          class="api-input"
+                          value={selectedRecordId}
+                          onChange={(e) => setSelectedRecordId((e.target as HTMLSelectElement).value)}
+                        >
+                          <option value="">Choose a record...</option>
+                          {records.map(record => (
+                            <option key={record.id} value={record.id}>
+                              {getRecordLabel(record)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {selectedRecordId && (
+                      <div class="record-preview">
+                        <h4>Record Data</h4>
+                        <pre class="record-json">
+                          {JSON.stringify(records.find(r => r.id === selectedRecordId)?.fields || {}, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div class="generate-batch">
+                    <div class="form-group">
+                      <label>Filter Formula (optional)</label>
+                      <input
+                        type="text"
+                        class="api-input mono"
+                        placeholder="Status = 'Ready'"
+                        value={batchFilter}
+                        onInput={(e) => setBatchFilter((e.target as HTMLInputElement).value)}
+                      />
+                      <span class="form-hint">Airtable formula syntax for filtering records</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Limit</label>
+                      <input
+                        type="number"
+                        class="api-input"
+                        value={batchLimit}
+                        onInput={(e) => setBatchLimit(parseInt((e.target as HTMLInputElement).value) || 100)}
+                        min={1}
+                        max={1000}
+                      />
+                      <span class="form-hint">Maximum number of PDFs to generate (1-1000)</span>
+                    </div>
+
+                    <div class="batch-estimate">
+                      Will generate up to <strong>{batchLimit}</strong> PDFs
+                    </div>
+                  </div>
+                )}
+
+                {generateError && (
+                  <div class="error-banner">
+                    {Icons.warning}
+                    <span>{generateError}</span>
+                  </div>
+                )}
+
+                <div class="generate-actions">
+                  <button class="btn btn-ghost" onClick={resetGenerateModal}>
+                    Cancel
+                  </button>
+                  <button
+                    class="btn btn-primary"
+                    onClick={generateMode === 'single' ? handleGenerateSingle : handleStartBatch}
+                    disabled={generating || (generateMode === 'single' && !selectedRecordId)}
+                  >
+                    {generating ? 'Generating...' : generateMode === 'single' ? 'Generate PDF' : 'Start Batch'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Single PDF Result */}
+            {generatedPdf && (
+              <div class="generate-result">
+                <div class="result-success">
+                  <div class="success-icon success-icon--large">
+                    {Icons.checkCircle}
+                  </div>
+                  <h4>PDF Generated!</h4>
+                  <p class="result-size">{Math.round(generatedPdf.size / 1024)} KB</p>
+                </div>
+
+                <div class="result-actions">
+                  <button class="btn btn-primary" onClick={handleDownloadPdf}>
+                    Download PDF
+                  </button>
+                  <button class="btn btn-secondary" onClick={() => { setGeneratedPdf(null); setSelectedRecordId(''); }}>
+                    Generate Another
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Batch Progress */}
+            {batchJob && (
+              <div class="batch-progress-container">
+                <div class="batch-status">
+                  <span class={`status-badge status-badge--${batchJob.status}`}>
+                    {batchJob.status}
+                  </span>
+                </div>
+
+                <div class="batch-progress">
+                  <div class="progress-bar-container">
+                    <div
+                      class="progress-bar-fill"
+                      style={{ width: `${(batchJob.progress.completed / batchJob.progress.total) * 100}%` }}
+                    />
+                  </div>
+                  <div class="progress-text">
+                    {batchJob.progress.completed} / {batchJob.progress.total}
+                    {batchJob.progress.failed > 0 && (
+                      <span class="failed-count"> ({batchJob.progress.failed} failed)</span>
+                    )}
+                  </div>
+                </div>
+
+                {batchJob.status === 'completed' && (
+                  <div class="batch-complete">
+                    <div class="success-icon success-icon--large">
+                      {Icons.checkCircle}
+                    </div>
+                    <p>Batch complete!</p>
+                    <button class="btn btn-primary" onClick={handleDownloadBatch}>
+                      Download ZIP ({batchJob.progress.completed} PDFs)
+                    </button>
+                  </div>
+                )}
+
+                {batchJob.status === 'failed' && (
+                  <div class="batch-error">
+                    <div class="error-icon">
+                      {Icons.warning}
+                    </div>
+                    <p>{batchJob.error || 'Batch generation failed'}</p>
+                    <button class="btn btn-secondary" onClick={() => setBatchJob(null)}>
+                      Try Again
+                    </button>
+                  </div>
+                )}
+
+                {(batchJob.status === 'pending' || batchJob.status === 'processing') && (
+                  <div class="batch-running">
+                    <p class="running-hint">You can close this modal - the batch will continue in the background.</p>
+                    <button class="btn btn-ghost" onClick={resetGenerateModal}>
+                      Run in Background
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
