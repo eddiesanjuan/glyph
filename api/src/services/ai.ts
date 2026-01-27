@@ -107,7 +107,7 @@ export async function validateRequestFeasibility(prompt: string): Promise<Feasib
     const message = await anthropic.messages.create({
       model: "claude-3-5-haiku-20241022",
       max_tokens: 150,
-      system: `You determine if PDF modification requests are possible. PDFs are STATIC documents - they cannot have animations, videos, real-time updates, hover effects, or any dynamic behavior.
+      system: [{ type: "text" as const, text: `You determine if PDF modification requests are possible. PDFs are STATIC documents - they cannot have animations, videos, real-time updates, hover effects, or any dynamic behavior.
 
 FEASIBLE: color changes, fonts, layout, spacing, borders, backgrounds, adding text/images, watermarks, QR codes, styling.
 NOT FEASIBLE: animations, 3D, video, audio, real-time updates, hover effects, interactive elements, live data.
@@ -115,7 +115,7 @@ NOT FEASIBLE: animations, 3D, video, audio, real-time updates, hover effects, in
 Reply ONLY with:
 FEASIBLE
 or
-NOT_FEASIBLE: [brief reason] | SUGGESTION: [alternative approach]`,
+NOT_FEASIBLE: [brief reason] | SUGGESTION: [alternative approach]`, cache_control: { type: "ephemeral" as const } }],
       messages: [{
         role: "user",
         content: `Is this PDF modification feasible? "${prompt}"`,
@@ -1388,7 +1388,7 @@ export async function modifyTemplate(
   const message = await anthropic.messages.create({
     model,
     max_tokens: maxTokens,
-    system: systemPrompt,
+    system: [{ type: "text" as const, text: systemPrompt, cache_control: { type: "ephemeral" as const } }],
     messages: [
       {
         role: "user",
@@ -1536,7 +1536,7 @@ export async function* modifyTemplateStream(
   const stream = anthropic.messages.stream({
     model,
     max_tokens: maxTokens,
-    system: systemPrompt,
+    system: [{ type: "text" as const, text: systemPrompt, cache_control: { type: "ephemeral" as const } }],
     messages: [
       {
         role: "user",
@@ -1644,9 +1644,9 @@ export async function generateHtmlFromPrompt(prompt: string): Promise<string> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 8192,
-    system: `You are an expert HTML/CSS designer. Generate beautiful, professional HTML documents.
+    system: [{ type: "text" as const, text: `You are an expert HTML/CSS designer. Generate beautiful, professional HTML documents.
 Use modern CSS with flexbox/grid. Include all styles inline or in a <style> block.
-Return only the HTML document, no explanations.`,
+Return only the HTML document, no explanations.`, cache_control: { type: "ephemeral" as const } }],
     messages: [
       {
         role: "user",
@@ -2069,7 +2069,7 @@ CRITICAL REMINDER: If the description says "invoice", the output MUST look like 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 16384,
-    system: TEMPLATE_GENERATOR_PROMPT,
+    system: [{ type: "text" as const, text: TEMPLATE_GENERATOR_PROMPT, cache_control: { type: "ephemeral" as const } }],
     messages: [
       {
         role: "user",
@@ -2177,7 +2177,7 @@ INSTRUCTIONS:
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 16384,
-    system: TEMPLATE_GENERATOR_PROMPT,
+    system: [{ type: "text" as const, text: TEMPLATE_GENERATOR_PROMPT, cache_control: { type: "ephemeral" as const } }],
     messages: [
       {
         role: "user",

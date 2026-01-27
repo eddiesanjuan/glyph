@@ -12,7 +12,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/sdk": "^0.71.2",
     "@hono/node-server": "^1.19.9",
     "@hono/zod-validator": "^0.7.6",
     "@supabase/supabase-js": "^2.45.0",
