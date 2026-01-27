@@ -167,7 +167,7 @@
     /* Simplify on mobile for performance */
     @media (max-width: 768px) {
       .gradient-orb {
-        filter: blur(60px);
+        filter: blur(50px);
         opacity: 0.1;
       }
       .gradient-orb--2,
@@ -195,6 +195,7 @@
       transform: translate(-50%, -50%);
       transition: opacity 0.3s ease;
       opacity: 0;
+      contain: layout style paint;
     }
 
     .mouse-glow.active {
@@ -223,6 +224,10 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 24px;
+    }
+
+    .glyph-container {
+      contain: layout style;
     }
 
     .nav {

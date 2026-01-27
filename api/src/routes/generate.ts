@@ -52,13 +52,37 @@ generate.post("/", async (c) => {
     let cacheHit = false;
     const tRender = Date.now();
     if (format === "pdf") {
-      const result = await generatePdfCached(html, options);
-      buffer = result.buffer;
-      cacheHit = result.cacheHit;
+      try {
+        const result = await generatePdfCached(html, options);
+        buffer = result.buffer;
+        cacheHit = result.cacheHit;
+      } catch (pdfErr) {
+        console.error("PDF generation error:", pdfErr);
+        return c.json(
+          {
+            error: "pdf_generation_failed",
+            message: "Failed to generate PDF. The document may contain invalid HTML.",
+            status: 500,
+          },
+          500
+        );
+      }
       contentType = "application/pdf";
       filename = `glyph-document-${sessionId}.pdf`;
     } else {
-      buffer = await generatePng(html, options);
+      try {
+        buffer = await generatePng(html, options);
+      } catch (pngErr) {
+        console.error("PNG generation error:", pngErr);
+        return c.json(
+          {
+            error: "png_generation_failed",
+            message: "Failed to generate PNG. The document may contain invalid HTML.",
+            status: 500,
+          },
+          500
+        );
+      }
       contentType = "image/png";
       filename = `glyph-document-${sessionId}.png`;
     }

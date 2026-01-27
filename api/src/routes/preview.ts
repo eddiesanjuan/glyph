@@ -154,6 +154,7 @@ preview.post(
       const totalDuration = Date.now() - tStart;
       console.log(`[perf:preview] render=${renderDuration}ms total=${totalDuration}ms template=${template}`);
       c.header('Server-Timing', `render;dur=${renderDuration}, total;dur=${totalDuration}`);
+      c.header('Cache-Control', 'private, no-cache');
 
       return c.json(response);
     } catch (err) {

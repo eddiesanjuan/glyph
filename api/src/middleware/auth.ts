@@ -126,9 +126,21 @@ export async function authMiddleware(c: Context, next: Next) {
       }
 
       if (count !== null && count >= keyRecord.monthly_limit) {
-        throw new HTTPException(429, {
-          message: `Monthly API limit exceeded (${keyRecord.monthly_limit} requests)`,
-        });
+        const res = new Response(
+          JSON.stringify({
+            error: "rate_limit_exceeded",
+            message: `Monthly API limit exceeded (${keyRecord.monthly_limit} requests)`,
+            status: 429,
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              "Retry-After": "60",
+            },
+          }
+        );
+        throw new HTTPException(429, { res });
       }
 
       // Set context for downstream handlers
