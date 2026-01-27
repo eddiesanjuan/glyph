@@ -1,0 +1,303 @@
+---
+title: Streaming Modifications
+description: Real-time streaming for AI-powered document modifications using Server-Sent Events
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<span class="endpoint-badge post">POST</span> `/v1/modify?stream=true`
+
+Stream AI modifications in real time using Server-Sent Events (SSE). Instead of waiting for the full response, receive incremental HTML deltas as the AI generates them.
+
+<Aside type="tip">
+Streaming is ideal for user-facing applications where you want to show progress. For server-side batch processing, the standard `/v1/modify` endpoint is simpler.
+</Aside>
+
+## Enabling Streaming
+
+Add `?stream=true` as a query parameter to the standard `/v1/modify` endpoint. The request body is identical to [session-based modify](/api/modify/).
+
+```
+POST /v1/modify?stream=true
+Content-Type: application/json
+Authorization: Bearer gk_your_api_key
+```
+
+```json
+{
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "prompt": "Apply a Stripe-inspired design with clean typography",
+  "region": "header"
+}
+```
+
+<Aside type="caution">
+Streaming only supports session-based modifications. Direct HTML mode (`html` + `instruction`) is not available when streaming.
+</Aside>
+
+## SSE Event Types
+
+The stream emits events in this order:
+
+### `start`
+
+Sent once when the AI begins processing. Contains the model being used and an estimated completion time.
+
+```
+event: start
+data: {"sessionId":"550e8400-...","model":"claude-sonnet-4-20250514","estimatedTime":8000}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sessionId` | string | The session being modified |
+| `model` | string | AI model selected for this request |
+| `estimatedTime` | number | Estimated processing time in milliseconds |
+
+### `delta`
+
+Emitted repeatedly as the AI generates HTML. Each delta contains a chunk of the raw AI output.
+
+```
+event: delta
+data: {"html":"<div class=\"header\" style=\"background:","index":0}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `html` | string | Partial HTML chunk |
+| `index` | number | Sequential chunk index (starting at 0) |
+
+### `changes`
+
+Sent after the AI finishes, listing what was modified. Useful for toast notifications.
+
+```
+event: changes
+data: {"changes":["Updated header background to dark navy","Applied modern sans-serif font"]}
+```
+
+### `complete`
+
+Final event with the fully rendered HTML and usage metadata.
+
+```
+event: complete
+data: {"html":"<!DOCTYPE html>...","changes":[...],"tokensUsed":1250,"selfCheckPassed":true,"usage":{"promptTokens":0,"completionTokens":0,"totalTokens":0,"processingTimeMs":4523,"cached":false,"model":"claude-sonnet-4-20250514","fastTransform":false}}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `html` | string | Final rendered HTML with data applied |
+| `changes` | array | List of changes made |
+| `tokensUsed` | number | AI tokens consumed |
+| `selfCheckPassed` | boolean | Whether guardrail validation passed |
+| `usage` | object | Detailed usage and performance metrics |
+
+<Aside type="note">
+Simple modifications (watermarks, QR codes) may skip the streaming AI path entirely and emit a single `complete` event via the fast-transform engine. Check `usage.fastTransform` in the complete payload.
+</Aside>
+
+### `error`
+
+Sent if something goes wrong at any point during the stream.
+
+```
+event: error
+data: {"error":"Session has expired. Please create a new preview.","code":"SESSION_EXPIRED"}
+```
+
+Error codes match the standard [error codes](/api/error-codes/) reference. Common streaming errors:
+
+| Code | Description |
+|------|-------------|
+| `VALIDATION_ERROR` | Invalid request body or streaming not supported for direct mode |
+| `DEV_SESSION_NOT_FOUND` | Session expired or server restarted |
+| `SESSION_EXPIRED` | Session older than 1 hour |
+| `GUARDRAIL_VIOLATION` | Prompt blocked by safety checks |
+| `REQUEST_NOT_FEASIBLE` | Modification impossible for PDF documents |
+| `CONTENT_LOSS_BLOCKED` | AI attempted to remove document content |
+| `STREAM_ERROR` | Unexpected server error during streaming |
+
+## Code Examples
+
+### JavaScript
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/modify?stream=true', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer gk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    sessionId: '550e8400-e29b-41d4-a716-446655440000',
+    prompt: 'Apply a Stripe-inspired design',
+    region: 'header',
+  }),
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = '';
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  buffer += decoder.decode(value, { stream: true });
+  const lines = buffer.split('\n');
+  buffer = lines.pop(); // Keep incomplete line in buffer
+
+  for (const line of lines) {
+    if (line.startsWith('event: ')) {
+      const eventType = line.slice(7);
+      continue;
+    }
+    if (line.startsWith('data: ')) {
+      const data = JSON.parse(line.slice(6));
+
+      switch (eventType) {
+        case 'start':
+          console.log(`AI model: ${data.model}, ETA: ${data.estimatedTime}ms`);
+          break;
+        case 'delta':
+          // Append partial HTML for progressive rendering
+          break;
+        case 'changes':
+          console.log('Changes:', data.changes);
+          break;
+        case 'complete':
+          document.querySelector('iframe').srcdoc = data.html;
+          console.log(`Done in ${data.usage.processingTimeMs}ms`);
+          break;
+        case 'error':
+          console.error(`Error [${data.code}]: ${data.error}`);
+          break;
+      }
+    }
+  }
+}
+```
+
+Using `EventSource` is not possible here because the request requires `POST` with a body. Use the `fetch` + `ReadableStream` pattern shown above, or a library like [eventsource-parser](https://github.com/rexxars/eventsource-parser).
+
+### Python
+
+```python
+import requests
+import json
+
+response = requests.post(
+    'https://api.glyph.you/v1/modify?stream=true',
+    headers={
+        'Authorization': 'Bearer gk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'sessionId': '550e8400-e29b-41d4-a716-446655440000',
+        'prompt': 'Apply a Stripe-inspired design',
+        'region': 'header',
+    },
+    stream=True,
+)
+
+event_type = None
+for line in response.iter_lines(decode_unicode=True):
+    if not line:
+        continue
+    if line.startswith('event: '):
+        event_type = line[7:]
+        continue
+    if line.startswith('data: '):
+        data = json.loads(line[6:])
+
+        if event_type == 'start':
+            print(f"Model: {data['model']}, ETA: {data['estimatedTime']}ms")
+        elif event_type == 'delta':
+            pass  # Progressive HTML chunks
+        elif event_type == 'changes':
+            print(f"Changes: {data['changes']}")
+        elif event_type == 'complete':
+            final_html = data['html']
+            print(f"Done in {data['usage']['processingTimeMs']}ms")
+        elif event_type == 'error':
+            print(f"Error [{data['code']}]: {data['error']}")
+            break
+```
+
+### cURL
+
+```bash
+curl -N -X POST 'https://api.glyph.you/v1/modify?stream=true' \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+    "prompt": "Make the header more professional",
+    "region": "header"
+  }'
+```
+
+The `-N` flag disables output buffering so you see events as they arrive.
+
+## Error Handling
+
+Errors can arrive at any point during the stream. Always listen for the `error` event type:
+
+```javascript
+// Robust error handling pattern
+function consumeStream(response) {
+  return new Promise((resolve, reject) => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let currentEvent = '';
+
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          reject(new Error('Stream ended without complete event'));
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7);
+          } else if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6));
+            if (currentEvent === 'error') {
+              reject(new Error(`${data.code}: ${data.error}`));
+              return;
+            }
+            if (currentEvent === 'complete') {
+              resolve(data);
+              return;
+            }
+          }
+        }
+        read();
+      }).catch(reject);
+    }
+
+    read();
+  });
+}
+```
+
+## When to Use Streaming vs Standard
+
+| Use Case | Recommendation |
+|----------|----------------|
+| Interactive UI with progress feedback | Streaming |
+| Server-side batch processing | Standard |
+| Mobile apps with slow connections | Streaming |
+| Simple automations and scripts | Standard |
+| Real-time collaborative editing | Streaming |
+| CI/CD pipelines | Standard |
+
+The standard endpoint returns the same final result. Streaming adds real-time visibility into the AI processing step but requires more client-side code to consume.

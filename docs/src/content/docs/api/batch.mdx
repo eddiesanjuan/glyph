@@ -1,0 +1,256 @@
+---
+title: POST /v1/batch/generate
+description: Generate multiple PDFs or PNGs in a single API call
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<span class="endpoint-badge post">POST</span> `/v1/batch/generate`
+
+Generates up to 10 documents in one request. Each item is processed sequentially. Individual failures do not abort the batch.
+
+<Aside type="tip">
+For a walkthrough with practical patterns, see the [Batch PDF Generation guide](/guides/batch-generation/).
+</Aside>
+
+## Request
+
+### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer gk_your_api_key` |
+| `Content-Type` | Yes | `application/json` |
+
+### Body
+
+```json
+{
+  "items": [
+    {
+      "data": { "client": { "name": "Acme Corp" }, "lineItems": [...] },
+      "template": "auto",
+      "modifications": ["Add a DRAFT watermark"],
+      "format": "pdf",
+      "style": "stripe-clean",
+      "options": {
+        "pageSize": "letter",
+        "orientation": "portrait",
+        "scale": 1
+      }
+    }
+  ]
+}
+```
+
+### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `items` | array | Yes | -- | Array of 1-10 item objects |
+
+#### Item Object
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `data` | object | Yes | -- | Document data. Must have at least one key. |
+| `template` | string | No | `"auto"` | Template ID. `"auto"` selects based on data structure. |
+| `modifications` | string[] | No | `[]` | AI modification prompts, applied sequentially. Max 1,000 chars each. |
+| `format` | `"pdf"` \| `"png"` | No | `"pdf"` | Output format |
+| `style` | string | No | Auto-detected | `"stripe-clean"`, `"bold"`, `"minimal"`, or `"corporate"` |
+| `options.pageSize` | string | No | `"letter"` | `"A4"`, `"letter"`, or `"legal"` |
+| `options.orientation` | string | No | `"portrait"` | `"portrait"` or `"landscape"` |
+| `options.margin` | object | No | -- | Custom margins with `top`, `bottom`, `left`, `right` (CSS strings) |
+| `options.scale` | number | No | 1 | Scale factor, 0.1 to 3 |
+
+## Response
+
+### Success (200)
+
+```json
+{
+  "results": [
+    {
+      "index": 0,
+      "status": "success",
+      "url": "data:application/pdf;base64,JVBERi0...",
+      "filename": "invoice-0-1706000000000.pdf",
+      "size": 45230,
+      "format": "pdf",
+      "processingTimeMs": 2340
+    },
+    {
+      "index": 1,
+      "status": "error",
+      "error": "Data object cannot be empty",
+      "errorCode": "ITEM_GENERATION_FAILED",
+      "processingTimeMs": 12
+    }
+  ],
+  "totalTimeMs": 4820,
+  "successCount": 1,
+  "failCount": 1
+}
+```
+
+### Result Fields
+
+| Field | Type | Present | Description |
+|-------|------|---------|-------------|
+| `index` | number | Always | Position in the input `items` array |
+| `status` | `"success"` \| `"error"` | Always | Item outcome |
+| `url` | string | Success | Base64 data URL of the generated file |
+| `filename` | string | Success | Suggested filename (`{docType}-{index}-{timestamp}.{ext}`) |
+| `size` | number | Success | File size in bytes |
+| `format` | string | Success | `"pdf"` or `"png"` |
+| `processingTimeMs` | number | Always | Time spent processing this item in milliseconds |
+| `error` | string | Error | Human-readable error message |
+| `errorCode` | string | Error | Machine-readable error code |
+
+### Top-Level Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `results` | array | One result per input item, in order |
+| `totalTimeMs` | number | Total batch processing time in milliseconds |
+| `successCount` | number | Number of items that succeeded |
+| `failCount` | number | Number of items that failed |
+
+## Limits
+
+| Constraint | Value |
+|------------|-------|
+| Max items per request | 10 |
+| Max modification prompt length | 1,000 characters |
+| Processing | Sequential (not parallel) |
+
+<Aside type="note">
+Items are processed sequentially to manage server resources. A 10-item batch takes roughly 10x a single generation. If you need more than 10 items, split into multiple requests.
+</Aside>
+
+## Error Responses
+
+### 400 - Validation Error
+
+Returned when the request body fails schema validation (before any items are processed).
+
+```json
+{
+  "error": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "details": [
+    { "path": ["items"], "message": "At least one item is required" }
+  ]
+}
+```
+
+### 500 - Batch Error
+
+Returned on unexpected server errors.
+
+```json
+{
+  "error": "Unexpected error message",
+  "code": "BATCH_ERROR"
+}
+```
+
+### Per-Item Errors
+
+Items that fail get `"status": "error"` with `errorCode: "ITEM_GENERATION_FAILED"`. The batch continues processing remaining items.
+
+Failed modifications within an item are skipped silently -- the document generates using the last successful HTML state.
+
+## Code Examples
+
+### cURL
+
+```bash
+curl -X POST https://api.glyph.you/v1/batch/generate \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "data": {
+          "client": { "name": "Acme Corp" },
+          "lineItems": [{ "description": "Consulting", "quantity": 10, "unitPrice": 150, "total": 1500 }],
+          "totals": { "subtotal": 1500, "total": 1500 }
+        },
+        "style": "stripe-clean",
+        "modifications": ["Add a watermark saying DRAFT"]
+      },
+      {
+        "data": {
+          "client": { "name": "Globex Inc" },
+          "lineItems": [{ "description": "License", "quantity": 1, "unitPrice": 12000, "total": 12000 }],
+          "totals": { "subtotal": 12000, "total": 12000 }
+        },
+        "style": "corporate"
+      }
+    ]
+  }'
+```
+
+### JavaScript
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer gk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: invoices.map(invoice => ({
+      data: invoice,
+      style: 'stripe-clean',
+      format: 'pdf',
+    })),
+  }),
+});
+
+const { results, successCount, failCount } = await response.json();
+
+for (const result of results) {
+  if (result.status === 'success') {
+    console.log(`Item ${result.index}: ${result.filename} (${result.size} bytes)`);
+  } else {
+    console.error(`Item ${result.index} failed: ${result.error}`);
+  }
+}
+```
+
+### Node.js (Save to Disk)
+
+```javascript
+import { writeFileSync, mkdirSync } from 'fs';
+
+mkdirSync('output', { recursive: true });
+
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.GLYPH_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: invoices.map(inv => ({ data: inv, format: 'pdf' })),
+  }),
+});
+
+const { results } = await response.json();
+
+for (const result of results) {
+  if (result.status === 'success') {
+    const buffer = Buffer.from(result.url.split(',')[1], 'base64');
+    writeFileSync(`output/${result.filename}`, buffer);
+  }
+}
+```
+
+## See Also
+
+- [Batch PDF Generation Guide](/guides/batch-generation/) -- walkthrough with practical patterns
+- [POST /v1/generate](/api/generate/) -- single document generation
+- [Error Codes](/api/error-codes/) -- full error reference

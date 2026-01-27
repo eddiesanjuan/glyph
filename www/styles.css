@@ -9320,3 +9320,133 @@
     .char-counter--limit {
       color: #ef4444;
     }
+
+/* ============================================
+   Feature Comparison Section
+   ============================================ */
+.comparison {
+  padding: var(--space-section) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.comparison__header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.comparison__title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  letter-spacing: -0.025em;
+}
+
+.comparison__subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-muted);
+}
+
+.comparison__table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+}
+
+.comparison__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.9375rem;
+  min-width: 600px;
+}
+
+.comparison__table thead {
+  background: rgba(30, 58, 95, 0.15);
+}
+
+.comparison__table th {
+  padding: 16px 20px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-subtle);
+  white-space: nowrap;
+}
+
+.comparison__table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  color: var(--color-text);
+}
+
+.comparison__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.comparison__table tbody tr:hover {
+  background: rgba(30, 58, 95, 0.08);
+}
+
+.comparison__feature-col {
+  text-align: left !important;
+}
+
+.comparison__table td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.comparison__glyph-col {
+  background: rgba(37, 99, 235, 0.06);
+  position: relative;
+}
+
+.comparison__table thead .comparison__glyph-col {
+  color: var(--color-primary-bright);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.comparison__check {
+  color: var(--color-success);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.comparison__cross {
+  color: var(--color-text-subtle);
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+.comparison__limited {
+  color: var(--color-warning);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .comparison__title {
+    font-size: 1.75rem;
+  }
+
+  .comparison__subtitle {
+    font-size: 1rem;
+  }
+
+  .comparison__header {
+    margin-bottom: 32px;
+  }
+
+  .comparison__table th,
+  .comparison__table td {
+    padding: 12px 14px;
+  }
+}

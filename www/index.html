@@ -131,9 +131,9 @@
     .hero { min-height: 100vh; padding: 140px 24px 80px; position: relative; z-index: 2; }
   </style>
 
-  <link rel="preload" href="styles.css" as="style">
-  <link rel="preload" href="app.js" as="script">
-  <link rel="stylesheet" href="styles.css" fetchpriority="high">
+  <link rel="preload" href="styles.min.css" as="style">
+  <link rel="preload" href="app.min.js" as="script">
+  <link rel="stylesheet" href="styles.min.css" fetchpriority="high">
 </head>
 <body>
   <!-- Page Loading Skeleton - P2 FOUC Prevention -->
@@ -1643,6 +1643,87 @@
     </div>
   </section>
 
+  <!-- Feature Comparison -->
+  <section class="comparison" id="comparison">
+    <div class="container">
+      <div class="comparison__header">
+        <h2 class="comparison__title">How Glyph compares</h2>
+        <p class="comparison__subtitle">The only PDF SDK built for the AI era.</p>
+      </div>
+      <div class="comparison__table-wrap">
+        <table class="comparison__table">
+          <thead>
+            <tr>
+              <th class="comparison__feature-col">Feature</th>
+              <th class="comparison__glyph-col">Glyph</th>
+              <th>DocRaptor</th>
+              <th>CraftMyPDF</th>
+              <th>PDFMonkey</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>AI-Powered Editing</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+            </tr>
+            <tr>
+              <td>Natural Language</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__limited">Limited</span></td>
+            </tr>
+            <tr>
+              <td>MCP Server (AI Agent)</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+            </tr>
+            <tr>
+              <td>Live Preview</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+            </tr>
+            <tr>
+              <td>Batch Generation</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+            </tr>
+            <tr>
+              <td>Airtable Integration</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+            </tr>
+            <tr>
+              <td>2-Line Integration</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+            </tr>
+            <tr>
+              <td>Voice Input</td>
+              <td class="comparison__glyph-col"><span class="comparison__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+              <td><span class="comparison__cross" aria-label="No">&#10005;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
@@ -2285,7 +2366,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="app.js" defer></script>
+  <script src="app.min.js" defer></script>
 
   <!-- Keyboard Shortcuts Bar -->
   <div class="shortcuts-bar" id="shortcuts-bar">
