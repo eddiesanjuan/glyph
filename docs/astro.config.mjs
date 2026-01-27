@@ -81,6 +81,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Custom Templates', slug: 'guides/custom-templates' },
 						{ label: 'Batch PDF Generation', slug: 'guides/batch-generation' },
+						{ label: 'Troubleshooting', slug: 'guides/troubleshooting' },
 					],
 				},
 				{

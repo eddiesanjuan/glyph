@@ -17,6 +17,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import Mustache from "mustache";
+import { createHash } from "crypto";
 import {
   AirtableService,
   isValidAirtableKeyFormat,
@@ -42,6 +43,17 @@ import type { ApiError } from "../lib/types.js";
 const thumbnailCache = new Map<string, Buffer>();
 
 const templates = new Hono();
+
+/** Generate a short ETag from content using SHA-256 (first 16 hex chars). */
+function generateETag(content: string | Buffer | Uint8Array): string {
+  const hash = createHash("sha256");
+  if (typeof content === "string") {
+    hash.update(content);
+  } else {
+    hash.update(content);
+  }
+  return `"${hash.digest("hex").slice(0, 16)}"`;
+}
 
 // =============================================================================
 // Request Schemas
@@ -198,11 +210,20 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
  * List all available built-in templates with metadata and sample data.
  */
 templates.get("/", (c) => {
-  c.header("Cache-Control", "public, max-age=3600");
-  return c.json({
+  const body = JSON.stringify({
     templates: TEMPLATE_CATALOG,
     count: TEMPLATE_CATALOG.length,
   });
+  const etag = generateETag(body);
+
+  if (c.req.header("If-None-Match") === etag) {
+    return c.body(null, 304);
+  }
+
+  c.header("Cache-Control", "public, max-age=3600");
+  c.header("ETag", etag);
+  c.header("Content-Type", "application/json; charset=UTF-8");
+  return c.body(body);
 });
 
 /**
@@ -226,9 +247,16 @@ templates.get("/:id/preview", async (c) => {
   // Return cached thumbnail if available
   if (thumbnailCache.has(id)) {
     const cached = thumbnailCache.get(id)!;
+    const etag = generateETag(cached);
+
+    if (c.req.header("If-None-Match") === etag) {
+      return c.body(null, 304);
+    }
+
     c.header("Content-Type", "image/png");
     c.header("Content-Length", String(cached.length));
     c.header("Cache-Control", "public, max-age=86400");
+    c.header("ETag", etag);
     return c.body(new Uint8Array(cached));
   }
 
@@ -246,9 +274,11 @@ templates.get("/:id/preview", async (c) => {
     // Cache for future requests
     thumbnailCache.set(id, pngBuffer);
 
+    const etag = generateETag(pngBuffer);
     c.header("Content-Type", "image/png");
     c.header("Content-Length", String(pngBuffer.length));
     c.header("Cache-Control", "public, max-age=86400");
+    c.header("ETag", etag);
     return c.body(new Uint8Array(pngBuffer));
   } catch (err) {
     console.error(`Thumbnail generation error for '${id}':`, err);
@@ -527,8 +557,7 @@ templates.post(
  * automatically from the user's description (invoice, receipt, report, etc.)
  */
 templates.get("/styles", (c) => {
-  c.header("Cache-Control", "public, max-age=3600");
-  return c.json({
+  const body = JSON.stringify({
     styles: [
       {
         id: "modern",
@@ -574,6 +603,16 @@ templates.get("/styles", (c) => {
       },
     ],
   });
+  const etag = generateETag(body);
+
+  if (c.req.header("If-None-Match") === etag) {
+    return c.body(null, 304);
+  }
+
+  c.header("Cache-Control", "public, max-age=3600");
+  c.header("ETag", etag);
+  c.header("Content-Type", "application/json; charset=UTF-8");
+  return c.body(body);
 });
 
 // =============================================================================

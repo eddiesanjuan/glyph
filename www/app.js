@@ -8462,8 +8462,9 @@ print(result['html'])  # Updated HTML`;
       initSaveTemplateFeature();
     }
 
-// Mouse-Following Glow Effect
+// Mouse-Following Glow Effect (deferred to avoid blocking initial render)
   (function() {
+    const initMouseGlow = function() {
     const glow = document.getElementById('mouseGlow');
     if (!glow) return;
 
@@ -8533,6 +8534,14 @@ print(result['html'])  # Updated HTML`;
     // Start animation (only if page is visible)
     if (!document.hidden) {
       startAnimation();
+    }
+  }; // end initMouseGlow
+
+    // Defer non-critical animation to avoid blocking initial render
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(initMouseGlow);
+    } else {
+      setTimeout(initMouseGlow, 2000);
     }
   })();
 

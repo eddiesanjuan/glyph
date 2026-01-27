@@ -1,0 +1,282 @@
+---
+title: Troubleshooting
+description: Solutions for common issues with the Glyph API, SDK, sessions, and PDF generation
+---
+
+import { Aside, Steps, Code } from '@astrojs/starlight/components';
+
+This guide covers common issues you may encounter when working with Glyph and how to resolve them.
+
+## Common API Errors
+
+### 401 Unauthorized - Invalid API Key
+
+Your API key is missing, malformed, or revoked.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing API key"
+}
+```
+
+**Fixes:**
+- Confirm the `Authorization` header uses the `Bearer` scheme: `Authorization: Bearer gk_your_key_here`
+- Verify the key in your [Dashboard](https://dashboard.glyph.you) — revoked keys return 401
+- Check for trailing whitespace or newline characters in the key string
+- Environment variable not loading? Log its length to confirm it is populated
+
+### 404 Not Found - Session Expired
+
+The session ID you referenced no longer exists. Sessions expire after **1 hour** of inactivity.
+
+```json
+{
+  "error": "Not Found",
+  "message": "Session not found or expired"
+}
+```
+
+See [Session Issues](#session-issues) below for recovery steps.
+
+### 429 Too Many Requests - Rate Limited
+
+You have exceeded your plan's rate limit. The response includes a `Retry-After` header.
+
+```json
+{
+  "error": "Rate Limited",
+  "message": "Too many requests. Retry after 30 seconds."
+}
+```
+
+**Fixes:**
+- Honor the `Retry-After` header before retrying
+- Implement exponential backoff in your client code
+- Use the [batch endpoint](/api/batch) to combine multiple PDF generations into one request
+- Upgrade your plan for higher limits — see [Rate Limits](/api/rate-limits)
+
+### 500 Internal Server Error
+
+An unexpected error on the Glyph side. These are automatically logged and investigated.
+
+**Fixes:**
+- Retry the request once after a short delay (1-2 seconds)
+- If the error persists, check [status.glyph.you](https://status.glyph.you) for ongoing incidents
+- Include the `x-request-id` response header when contacting support
+
+---
+
+## Session Issues
+
+Sessions are the core state object in Glyph. A session holds your rendered HTML template and tracks every modification.
+
+### Sessions Expire After 1 Hour
+
+Every session has a 1-hour TTL from the last interaction. After expiry, all endpoints referencing that session return 404.
+
+**How to handle expiry gracefully:**
+
+```javascript
+async function modifyWithRetry(sessionId, prompt) {
+  const res = await fetch(`https://api.glyph.you/v1/modify`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sessionId, prompt }),
+  });
+
+  if (res.status === 404) {
+    // Session expired — create a new one and retry
+    const newSession = await createSession(templateData);
+    return modifyWithRetry(newSession.id, prompt);
+  }
+
+  return res.json();
+}
+```
+
+<Aside type="tip">
+If your workflow involves long gaps between API calls, create a fresh session right before you need it rather than reusing a stale one.
+</Aside>
+
+### Creating a New Session
+
+Call `POST /v1/preview` with your template and data to get a new session:
+
+```bash
+curl -X POST https://api.glyph.you/v1/preview \
+  -H "Authorization: Bearer gk_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"template": "quote-modern", "data": { "company": "Acme" }}'
+```
+
+The response contains a `sessionId` you can use for subsequent `/v1/modify` and `/v1/generate` calls.
+
+---
+
+## AI Modification Issues
+
+### Request Too Vague
+
+The AI works best with specific, actionable instructions. Vague prompts produce unpredictable results.
+
+| Vague | Specific |
+|-------|----------|
+| "Make it better" | "Increase the font size of the header to 24px and change its color to navy blue" |
+| "Fix the layout" | "Add 20px padding to the left column and align the total row to the right" |
+| "Make it professional" | "Use a serif font for headings, add a thin border below the header, and change the accent color to #1a1a2e" |
+
+### Impossible Requests
+
+Glyph's guardrails block requests that fall outside what PDF template modification can achieve. Examples:
+
+- "Send an email to the client" — Glyph modifies documents, not workflows
+- "Query my database" — Glyph has no access to external systems
+- "Delete all content" — destructive requests are blocked by safety checks
+
+When a request is blocked, the API returns a clear explanation of why.
+
+### Content Safety Blocks
+
+The guardrail system (`selfCheckPassed` in the response) validates every AI modification. If the self-check fails:
+
+```json
+{
+  "success": true,
+  "selfCheckPassed": false,
+  "selfCheckMessage": "Modification would remove required template regions"
+}
+```
+
+**What to do:**
+- Rephrase your prompt to be more specific
+- Avoid requests that would remove structural elements of the template
+- Check the `selfCheckMessage` field for details on what failed
+
+---
+
+## PDF Generation Issues
+
+### Timeout During Generation
+
+PDF generation uses a headless browser to render HTML to PDF. Complex documents may exceed the default timeout.
+
+**Fixes:**
+- Simplify the HTML — reduce large inline images or deeply nested elements
+- Split very long documents into multiple pages using the batch endpoint
+- Ensure custom fonts are loaded from fast CDNs (Google Fonts, Bunny Fonts)
+
+### Large Documents
+
+Documents with many pages or high-resolution embedded images can cause slow generation or memory issues.
+
+**Recommendations:**
+- Keep embedded images under 500KB each; use JPEG over PNG where quality allows
+- For documents over 20 pages, use the batch endpoint to generate in chunks
+- Compress images before embedding them in template data
+
+### Font Rendering
+
+Fonts render differently across environments. The Glyph PDF renderer uses Chromium, so results match what you see in Chrome.
+
+**Common issues:**
+- **Missing fonts:** Use web fonts (Google Fonts) rather than relying on system fonts
+- **Font weight not applied:** Ensure you load the specific weight variants you reference in CSS
+- **CJK or RTF text:** Include the appropriate font family that supports your character set
+
+---
+
+## SDK Integration Issues
+
+### CORS Errors
+
+If you see `Access-Control-Allow-Origin` errors in the browser console, the API is rejecting requests from your domain.
+
+**Fixes:**
+- The Glyph API allows requests from any origin for SDK usage. If you see CORS errors, confirm you are hitting `https://api.glyph.you` and not a localhost URL in production
+- Check that your request includes the correct `Content-Type: application/json` header
+- Preflight (`OPTIONS`) requests must not include authentication headers — this is handled automatically by the browser
+
+### SDK Not Loading
+
+The `<glyph-editor>` web component fails to render or throws errors.
+
+**Checklist:**
+1. Confirm the SDK script is loaded before the component is used:
+   ```html
+   <script src="https://sdk.glyph.you/glyph-editor.js"></script>
+   ```
+2. Check the browser console for network errors fetching the script
+3. Verify your API key is passed as an attribute: `<glyph-editor api-key="gk_...">`
+4. Ensure no Content Security Policy (CSP) headers block the SDK domain
+
+### API URL Configuration
+
+By default, the SDK connects to `https://api.glyph.you`. For local development, override this with localStorage:
+
+```javascript
+// Point SDK at local API
+localStorage.setItem('USE_LOCAL_API', 'true');
+
+// Revert to production
+localStorage.removeItem('USE_LOCAL_API');
+```
+
+<Aside type="caution">
+Never ship code that sets `USE_LOCAL_API` to production. The flag is for development only.
+</Aside>
+
+---
+
+## Performance Tips
+
+### Use Instant Actions When Possible
+
+Instant actions (watermark, QR code, page numbers) bypass the AI entirely and apply changes in milliseconds. Use them for common modifications instead of free-text prompts.
+
+### Batch Multiple PDFs
+
+Instead of making N separate `/v1/generate` calls, use the [batch endpoint](/api/batch) to generate up to 10 PDFs in a single request. This reduces HTTP overhead and runs generations in parallel on the server.
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    items: invoices.map(invoice => ({
+      data: invoice,
+      template: 'quote-modern',
+      format: 'pdf',
+    })),
+  }),
+});
+```
+
+### Cache Previews
+
+If you render the same template with the same data repeatedly, cache the session ID and reuse it for PDF generation. This avoids redundant preview rendering.
+
+### Minimize AI Round-Trips
+
+Combine multiple modifications into a single prompt when they apply to the same region:
+
+| Slow (3 requests) | Fast (1 request) |
+|--------------------|-------------------|
+| "Change header color to blue" | "Change the header color to blue, increase font size to 24px, and add a bottom border" |
+| "Increase font size to 24px" | |
+| "Add a bottom border" | |
+
+---
+
+## Still Stuck?
+
+- **API status:** [status.glyph.you](https://status.glyph.you)
+- **Documentation:** [docs.glyph.you](https://docs.glyph.you)
+- **Support:** support@glyph.you
+- **Community:** [GitHub Discussions](https://github.com/glyph-so/glyph/discussions)
