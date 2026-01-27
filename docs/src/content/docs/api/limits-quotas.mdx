@@ -1,0 +1,183 @@
+---
+title: Limits & Quotas
+description: Complete reference for all Glyph API limits, quotas, and constraints
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Every Glyph resource has limits to ensure reliability and fair usage. This page is the single reference for all of them. For rate limit handling strategies and code examples, see [Rate Limits](/api/rate-limits/).
+
+## Rate Limits
+
+Per-minute request limits by tier. Applies to all API endpoints.
+
+| Tier | Requests/min | Monthly PDFs | Price |
+|------|-------------|--------------|-------|
+| Demo | 20 | Unlimited (in-memory only) | $0 |
+| Free | 10 | 100 | $0 |
+| Pro | 60 | 1,000 | $29/mo |
+| Scale | 120 | 10,000 | $99/mo |
+| Enterprise | 300 | Unlimited | Custom |
+
+<Aside type="note">
+Demo tier is reserved for the playground on glyph.you. Sessions are in-memory only and cannot generate downloadable PDFs.
+</Aside>
+
+## Session Limits
+
+Sessions are created via `/v1/preview` or `/v1/create` and hold the working HTML state.
+
+| Constraint | Limit |
+|------------|-------|
+| Session TTL | 1 hour from creation |
+| Max modifications per session | 50 |
+| Max session HTML size | 500 KB |
+
+When a session expires, all subsequent `/v1/modify` and `/v1/generate` calls return `SESSION_EXPIRED`. Create a new preview to continue.
+
+## PDF Generation
+
+Limits for the `/v1/generate` and `/v1/batch/generate` endpoints.
+
+| Constraint | Limit |
+|------------|-------|
+| Max page count per PDF | 50 pages |
+| Max input HTML size | 2 MB |
+| Render timeout | 30 seconds per PDF |
+| Batch limit | 20 documents per request |
+| Monthly PDF cap | Tier-dependent (see table above) |
+
+PDFs that exceed the render timeout return a `504` with code `PDF_TIMEOUT`.
+
+## AI Modifications
+
+Limits for the `/v1/modify` endpoint (both standard and streaming).
+
+| Constraint | Limit |
+|------------|-------|
+| Max prompt length | 2,000 characters |
+| Max concurrent AI requests per key | 3 |
+| AI response timeout | 60 seconds |
+| Pre-flight validation timeout | 5 seconds |
+
+The pre-flight check detects impossible or destructive requests early, typically within 2-5 seconds, before committing to a full AI call.
+
+## Response Headers
+
+Every API response includes rate limit headers so your application can track usage proactively.
+
+### Per-Minute Headers
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1705320060
+```
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining before throttling |
+| `X-RateLimit-Reset` | Unix timestamp (seconds) when the window resets |
+
+### Monthly PDF Headers
+
+Returned only on `/v1/generate` responses.
+
+```http
+X-Monthly-Limit: 1000
+X-Monthly-Used: 150
+X-Monthly-Remaining: 850
+```
+
+### 429 Response
+
+When a limit is exceeded, the response includes a `Retry-After` header:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+Content-Type: application/json
+```
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "retryAfter": 45,
+  "tier": "free",
+  "limit": 10,
+  "windowMs": 60000
+}
+```
+
+## Handling Limits
+
+Read the headers after every response and back off when `X-RateLimit-Remaining` reaches zero.
+
+### JavaScript
+
+```javascript
+async function callGlyph(endpoint, body, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(`https://api.glyph.you${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    // Proactively log remaining quota
+    const remaining = res.headers.get('X-RateLimit-Remaining');
+    if (remaining !== null && parseInt(remaining) < 5) {
+      console.warn(`Glyph: only ${remaining} requests left in this window`);
+    }
+
+    if (res.status !== 429) return res.json();
+
+    const retryAfter = parseInt(res.headers.get('Retry-After') || '60', 10);
+    console.log(`Rate limited. Waiting ${retryAfter}s before retry...`);
+    await new Promise((r) => setTimeout(r, retryAfter * 1000));
+  }
+
+  throw new Error('Glyph API: max retries exceeded');
+}
+```
+
+### Python
+
+```python
+import time
+import requests
+
+def call_glyph(endpoint: str, body: dict, max_retries: int = 3):
+    for attempt in range(max_retries):
+        res = requests.post(
+            f"https://api.glyph.you{endpoint}",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=body,
+        )
+
+        if res.status_code != 429:
+            res.raise_for_status()
+            return res.json()
+
+        retry_after = int(res.headers.get("Retry-After", 60))
+        print(f"Rate limited. Waiting {retry_after}s...")
+        time.sleep(retry_after)
+
+    raise Exception("Glyph API: max retries exceeded")
+```
+
+## Upgrading
+
+If you are consistently hitting limits, upgrade your tier in the [dashboard](https://dashboard.glyph.you) under **Billing**. New limits apply immediately.
+
+<Aside type="tip">
+Enterprise customers can negotiate custom rate limits, session TTLs, and PDF quotas. Contact sales@glyph.you.
+</Aside>

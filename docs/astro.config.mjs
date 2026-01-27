@@ -53,6 +53,7 @@ export default defineConfig({
 						{ label: 'POST /v1/batch/generate', slug: 'api/batch' },
 						{ label: 'Authentication', slug: 'api/authentication' },
 						{ label: 'Rate Limits', slug: 'api/rate-limits' },
+						{ label: 'Limits & Quotas', slug: 'api/limits-quotas' },
 						{ label: 'Error Codes', slug: 'api/error-codes' },
 					],
 				},

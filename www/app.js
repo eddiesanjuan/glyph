@@ -319,6 +319,22 @@
       });
     }
 
+    // Copy quick start snippet
+    function copyQuickStart(btn) {
+      const snippet = '<script src="https://sdk.glyph.you/glyph.min.js"></script>\n<glyph-editor\n  api-key="YOUR_KEY"\n  template="quote-modern"\n></glyph-editor>';
+
+      copyTextToClipboard(snippet).then((success) => {
+        if (success) {
+          btn.classList.add('copied');
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/></svg> Copy';
+          }, 2000);
+        }
+      });
+    }
+
     // Copy integration code from the currently visible tab
     function copyIntegrationCode() {
       // Find the active code block
@@ -4352,160 +4368,77 @@ print(result['html'])  # Updated HTML`;
     // Shows document building in real-time during AI streaming
     // ============================================
 
-    // Progressive preview for streaming - shows document building in real-time
-    function updateProgressivePreview(partialHtml) {
-      if (!previewContainer) return;
+    // Stepper progress - clean step-based UI (no streaming preview)
+    function setStepperStep(stepName) {
+      const steps = document.querySelectorAll('.stepper__step');
+      const connectors = document.querySelectorAll('.stepper__connector');
+      const stepOrder = ['analyze', 'generate', 'render'];
+      const targetIndex = stepOrder.indexOf(stepName);
+      if (targetIndex === -1) return;
 
-      let streamFrame = previewContainer.querySelector('.streaming-preview-frame');
-      const mainFrame = previewContainer.querySelector('#preview-frame');
+      steps.forEach((step, i) => {
+        step.classList.remove('active', 'completed');
+        if (i < targetIndex) {
+          step.classList.add('completed');
+        } else if (i === targetIndex) {
+          step.classList.add('active');
+        }
+      });
 
-      // Create streaming frame if it doesn't exist
-      if (!streamFrame) {
-        streamFrame = document.createElement('iframe');
-        streamFrame.className = 'streaming-preview-frame';
-        streamFrame.style.cssText = `
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          border: none;
-          opacity: 0.85;
-          pointer-events: none;
-          z-index: 10;
-        `;
-        previewContainer.style.position = 'relative';
-        previewContainer.appendChild(streamFrame);
-
-        // Fade out main frame slightly to show streaming is happening
-        if (mainFrame) mainFrame.style.opacity = '0.3';
-      }
-
-      // Update streaming frame content
-      try {
-        const doc = streamFrame.contentDocument || streamFrame.contentWindow.document;
-        doc.open();
-        doc.write(partialHtml);
-        doc.close();
-      } catch (e) {
-        console.warn('[Glyph] Progressive preview update failed:', e);
-      }
+      connectors.forEach((conn, i) => {
+        conn.classList.toggle('done', i < targetIndex);
+      });
     }
 
-    // Clean up streaming preview frame
-    function clearProgressivePreview() {
-      if (!previewContainer) return;
-
-      const streamFrame = previewContainer.querySelector('.streaming-preview-frame');
-      if (streamFrame) {
-        // Smooth fade out
-        streamFrame.style.transition = 'opacity 0.3s ease';
-        streamFrame.style.opacity = '0';
-        setTimeout(() => streamFrame.remove(), 300);
-      }
-
-      // Restore main frame opacity
-      const mainFrame = previewContainer.querySelector('#preview-frame');
-      if (mainFrame) {
-        mainFrame.style.transition = 'opacity 0.3s ease';
-        mainFrame.style.opacity = '1';
-      }
+    function completeAllSteps() {
+      document.querySelectorAll('.stepper__step').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('completed');
+      });
+      document.querySelectorAll('.stepper__connector').forEach(c => {
+        c.classList.add('done');
+      });
     }
 
-    // Show/hide loading with smooth progress bar animation and staged feedback
-    let loadingProgressInterval = null;
-    let loadingProgress = 0;
-    let stageTimeouts = [];
+    function resetStepper() {
+      document.querySelectorAll('.stepper__step').forEach(s => {
+        s.classList.remove('active', 'completed');
+      });
+      document.querySelectorAll('.stepper__connector').forEach(c => {
+        c.classList.remove('done');
+      });
+    }
+
+    // Legacy stubs for code that may reference these
+    function updateProgressivePreview() {}
+    function clearProgressivePreview() {}
+
+    // Show/hide loading with clean step-based progress
     let elapsedTimerInterval = null;
     let loadingStartTime = null;
     let currentAbortController = null;  // For cancel button
     let cancelButtonTimeout = null;     // Shows cancel after 5 seconds
 
-    // Time-aware loading stages with context messages
-    // Calibrated for 45-50 second typical operations
-    const loadingStages = [
-      { name: 'analyze', text: 'Analyzing your request...', delay: 0, maxTime: 15 },
-      { name: 'generate', text: 'Generating modifications...', delay: 15000, maxTime: 30 },
-      { name: 'apply', text: 'Applying changes...', delay: 30000, maxTime: 45 },
-      { name: 'validate', text: 'Almost there...', delay: 45000, maxTime: 60 },
-      { name: 'extended', text: 'This one\'s complex - hang tight!', delay: 60000, maxTime: 999 }
-    ];
-
-    // Tips that rotate during loading (shown after 10 seconds)
-    // Focus on building anticipation and demonstrating value
-    const loadingTips = [
-      'AI is finding the best way to apply your change...',
-      'Glyph validates every edit to protect your document structure',
-      'Fun fact: This same AI powers enterprise PDF workflows',
-      'Your changes are reversible - use Undo anytime',
-      'Try instant actions like "Add watermark" for immediate results',
-      'MCP integration lets Claude Code do this automatically for you'
-    ];
-    let currentTipIndex = 0;
-    let tipRotationInterval = null;
-
-    // Get context-aware status message based on elapsed time
-    function getTimeAwareMessage(elapsedSeconds) {
-      if (elapsedSeconds < 10) return 'Analyzing your request (~60-90s for complex changes)...';
-      if (elapsedSeconds < 25) return 'Generating modifications...';
-      if (elapsedSeconds < 45) return 'Applying changes...';
-      if (elapsedSeconds < 65) return 'Almost there...';
-      if (elapsedSeconds < 80) return 'Finishing up...';
-      return 'This one\'s complex - hang tight!';
-    }
-
-    function resetLoadingStages() {
-      const stages = document.querySelectorAll('.loading-stage');
-      stages.forEach(stage => {
-        stage.classList.remove('active', 'completed');
-      });
-      stageTimeouts.forEach(t => clearTimeout(t));
-      stageTimeouts = [];
-    }
-
+    // Legacy stubs referenced elsewhere in the codebase
+    function resetLoadingStages() { resetStepper(); }
     function activateStage(stageName) {
-      const stages = document.querySelectorAll('.loading-stage');
-      stages.forEach(stage => {
-        if (stage.dataset.stage === stageName) {
-          // Mark previous stages as completed
-          let found = false;
-          stages.forEach(s => {
-            if (s.dataset.stage === stageName) {
-              found = true;
-              s.classList.add('active');
-              s.classList.remove('completed');
-            } else if (!found) {
-              s.classList.remove('active');
-              s.classList.add('completed');
-            }
-          });
-        }
-      });
-      // Update loading text
-      const loadingText = document.getElementById('loading-text');
-      const stageInfo = loadingStages.find(s => s.name === stageName);
-      if (loadingText && stageInfo) {
-        loadingText.textContent = stageInfo.text;
-      }
+      // Map old stage names to new stepper steps
+      const map = { analyze: 'analyze', generate: 'generate', apply: 'generate', validate: 'render' };
+      setStepperStep(map[stageName] || stageName);
     }
 
     function showLoading(show) {
       previewLoading.classList.toggle('visible', show);
-      const progressBar = document.getElementById('loading-progress-bar');
-      const loadingText = document.getElementById('loading-text');
       const cancelBtn = document.getElementById('loading-cancel-btn');
 
       if (show) {
-        // Reset progress and stages
-        loadingProgress = 0;
-        progressBar.style.width = '0%';
-        resetLoadingStages();
+        resetStepper();
         loadingStartTime = Date.now();
+        // Start on first step immediately
+        setStepperStep('analyze');
 
         // Hide cancel button initially
-        if (cancelBtn) {
-          cancelBtn.classList.remove('visible');
-        }
+        if (cancelBtn) cancelBtn.classList.remove('visible');
 
         // Clear any existing cancel button timeout
         if (cancelButtonTimeout) {
@@ -4526,79 +4459,13 @@ print(result['html'])  # Updated HTML`;
           elapsedTimerInterval = null;
         }
 
-        // Reset and hide tip
-        const tipElement = document.getElementById('loading-tip');
-        if (tipElement) {
-          tipElement.classList.remove('visible');
-          tipElement.textContent = '';
-        }
-        currentTipIndex = Math.floor(Math.random() * loadingTips.length);
-        if (tipRotationInterval) {
-          clearInterval(tipRotationInterval);
-          tipRotationInterval = null;
-        }
-
-        // Start elapsed time counter that updates every second
+        // Update status bar with elapsed seconds
         elapsedTimerInterval = setInterval(() => {
           const elapsedSeconds = Math.floor((Date.now() - loadingStartTime) / 1000);
-          const message = getTimeAwareMessage(elapsedSeconds);
-
-          // Update loading text with elapsed time
-          if (loadingText) {
-            loadingText.textContent = `${message} (${elapsedSeconds}s)`;
-          }
-
-          // Also update status indicator with elapsed time
           setStatus(`Applying... ${elapsedSeconds}s`);
-
-          // Show first tip after 10 seconds
-          if (elapsedSeconds === 10 && tipElement) {
-            tipElement.textContent = loadingTips[currentTipIndex];
-            tipElement.classList.add('visible');
-            // Start rotating tips every 12 seconds
-            tipRotationInterval = setInterval(() => {
-              currentTipIndex = (currentTipIndex + 1) % loadingTips.length;
-              tipElement.classList.remove('visible');
-              setTimeout(() => {
-                tipElement.textContent = loadingTips[currentTipIndex];
-                tipElement.classList.add('visible');
-              }, 300);
-            }, 12000);
-          }
         }, 1000);
 
-        // Initial message with time estimate for AI requests
-        if (loadingText) {
-          loadingText.textContent = 'AI requests may take 60-90 seconds. Analyzing... (0s)';
-        }
-
-        // Animate progress with logarithmic curve for 90 second operations
-        // Fast start, progressively slower as it approaches 95%
-        const startTime = Date.now();
-        const duration = 90000; // 90 seconds to reach ~95%
-
-        loadingProgressInterval = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          // Logarithmic progression: fast start, slow approach to 95%
-          // Uses log curve that reaches ~95% at duration, continues slowly after
-          const t = elapsed / duration;
-          if (t <= 1) {
-            // During first 90s: logarithmic curve from 0 to 95%
-            loadingProgress = 95 * (1 - Math.pow(1 - t, 2.5));
-          } else {
-            // After 90s: very slow crawl from 95% toward 98% (never reaches)
-            const extraTime = (elapsed - duration) / 90000; // additional 90s intervals
-            loadingProgress = 95 + 3 * (1 - Math.exp(-extraTime));
-          }
-          progressBar.style.width = loadingProgress + '%';
-        }, 50);
       } else {
-        // Complete the progress bar smoothly
-        if (loadingProgressInterval) {
-          clearInterval(loadingProgressInterval);
-          loadingProgressInterval = null;
-        }
-
         // Stop elapsed timer
         if (elapsedTimerInterval) {
           clearInterval(elapsedTimerInterval);
@@ -4610,43 +4477,12 @@ print(result['html'])  # Updated HTML`;
           clearTimeout(cancelButtonTimeout);
           cancelButtonTimeout = null;
         }
-        if (cancelBtn) {
-          cancelBtn.classList.remove('visible');
-        }
+        if (cancelBtn) cancelBtn.classList.remove('visible');
 
-        // Stop tip rotation and hide tip
-        if (tipRotationInterval) {
-          clearInterval(tipRotationInterval);
-          tipRotationInterval = null;
-        }
-        const tipElement = document.getElementById('loading-tip');
-        if (tipElement) {
-          tipElement.classList.remove('visible');
-        }
-
-        // Mark all stages as completed
-        const stages = document.querySelectorAll('.loading-stage');
-        stages.forEach(stage => {
-          stage.classList.remove('active');
-          stage.classList.add('completed');
-        });
-
-        if (loadingText) {
-          loadingText.textContent = 'Done!';
-        }
-
-        progressBar.style.width = '100%';
-        // Reset after animation completes
+        // Mark all steps completed, then fade out
+        completeAllSteps();
         setTimeout(() => {
-          progressBar.style.width = '0%';
-          resetLoadingStages();
-          if (loadingText) {
-            loadingText.textContent = 'Applying changes...';
-          }
-          // Also reset tip
-          if (tipElement) {
-            tipElement.textContent = '';
-          }
+          resetStepper();
         }, 500);
       }
     }
@@ -4968,30 +4804,11 @@ print(result['html'])  # Updated HTML`;
           let deltaCount = 0;
           let streamingHtml = '';
 
-          // Process streaming response with progress callbacks
-          // User-friendly messages instead of technical "chunks"
-          const progressMessages = [
-            'Understanding your request...',
-            'Building the layout...',
-            'Adding content...',
-            'Styling elements...',
-            'Refining details...',
-            'Almost there...'
-          ];
-          let currentMessageIndex = 0;
-
           const data = await processStreamingResponse(response, {
             onStart: (event) => {
               console.log('[Glyph Stream] Started:', event.model);
-              // CRITICAL: Stop the timer-based progress updates when streaming starts
-              if (elapsedTimerInterval) {
-                clearInterval(elapsedTimerInterval);
-                elapsedTimerInterval = null;
-              }
-              // Activate first stage
-              activateStage('analyze');
-              const loadingText = document.getElementById('loading-text');
-              if (loadingText) loadingText.textContent = progressMessages[0];
+              // Step 1: Analyzing document (already set by showLoading)
+              setStepperStep('analyze');
               setStatus('AI is working...');
             },
             onDelta: (event) => {
@@ -5001,32 +4818,12 @@ print(result['html'])  # Updated HTML`;
               // ACTIVITY TIMEOUT: Reset timeout on every chunk - AI is actively working
               resetActivityTimeout();
 
-              // PROGRESSIVE PREVIEW: Update preview every ~50 chunks for smooth visual
-              // This creates the "Watch It Build" experience where users see the document forming
-              if (deltaCount % 50 === 0) {
-                updateProgressivePreview(streamingHtml);
-              }
-
-              // Progress through stages based on content received
-              // Typical response is ~500-1000 chunks, so we pace the stages
+              // Move to step 2 after receiving some data
               if (deltaCount === 20) {
-                activateStage('generate');
-              } else if (deltaCount === 150) {
-                activateStage('apply');
+                setStepperStep('generate');
               }
 
-              // Rotate through friendly messages every ~80 chunks
-              const newMessageIndex = Math.min(
-                Math.floor(deltaCount / 80),
-                progressMessages.length - 1
-              );
-              if (newMessageIndex !== currentMessageIndex) {
-                currentMessageIndex = newMessageIndex;
-                const loadingText = document.getElementById('loading-text');
-                if (loadingText) loadingText.textContent = progressMessages[currentMessageIndex];
-              }
-
-              // Update status indicator with elapsed time instead of chunks
+              // Update status with elapsed time periodically
               if (deltaCount % 20 === 0) {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
                 setStatus(`AI is working... ${elapsed}s`);
@@ -5034,33 +4831,21 @@ print(result['html'])  # Updated HTML`;
             },
             onChanges: (event) => {
               console.log('[Glyph Stream] Changes:', event.changes);
-              // Activate apply stage when we receive changes
-              activateStage('apply');
-              const loadingText = document.getElementById('loading-text');
-              if (loadingText) loadingText.textContent = 'Applying your changes...';
+              // Move to step 2 if not already there
+              setStepperStep('generate');
             },
             onComplete: (event) => {
               console.log('[Glyph Stream] Complete:', event.fastPath ? 'fast path' : `${deltaCount} chunks`);
-
-              // Clean up progressive preview before final render
-              clearProgressivePreview();
-
-              // Clear timer on complete (handles fast path which skips start event)
+              // Step 3: Rendering preview
+              setStepperStep('render');
+              // Clear elapsed timer on complete
               if (elapsedTimerInterval) {
                 clearInterval(elapsedTimerInterval);
                 elapsedTimerInterval = null;
               }
-              // Activate final stage briefly
-              activateStage('validate');
-              const loadingText = document.getElementById('loading-text');
-              if (loadingText) {
-                loadingText.textContent = event.fastPath ? 'Applied instantly!' : 'Validating output...';
-              }
             },
             onError: (event) => {
               console.error('[Glyph Stream] Error:', event);
-              // Clean up progressive preview on error too
-              clearProgressivePreview();
             }
           });
 
