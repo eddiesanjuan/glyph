@@ -10,16 +10,40 @@ import { templateEngine } from "../services/template.js";
 import { supabase, getSupabase } from "../lib/supabase.js";
 import type { QuoteData, PreviewResponse, ApiError } from "../lib/types.js";
 import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
+import { readFile } from "fs/promises";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const preview = new Hono();
 
 // Request validation schema
 // Data is intentionally flexible: different template types (quote, invoice, receipt, report)
 // have different data shapes. The template engine handles field mapping.
+// Data is optional: when omitted, sample data from the template's schema.json is used.
 const previewRequestSchema = z.object({
   template: z.string().min(1).default("quote-modern"),
-  data: z.record(z.unknown()),
+  data: z.record(z.unknown()).optional(),
 });
+
+/**
+ * Load sample data from a template's schema.json examples[0].
+ * Returns undefined if the schema or examples are not available.
+ */
+async function loadTemplateSampleData(templateId: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    // Resolve templates directory relative to this file (api/src/routes/ -> project root/templates/)
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const schemaPath = join(currentDir, "..", "..", "..", "templates", templateId, "schema.json");
+    const raw = await readFile(schemaPath, "utf-8");
+    const schema = JSON.parse(raw);
+    if (Array.isArray(schema.examples) && schema.examples.length > 0) {
+      return schema.examples[0] as Record<string, unknown>;
+    }
+  } catch {
+    // Schema not found or invalid - caller will handle the missing data
+  }
+  return undefined;
+}
 
 preview.post(
   "/",
@@ -38,8 +62,22 @@ preview.post(
   async (c) => {
     try {
       const tStart = Date.now();
-      const { template, data } = c.req.valid("json");
+      const { template, data: providedData } = c.req.valid("json");
       const apiKeyId = c.get("apiKeyId") as string | undefined;
+
+      // If no data provided, load sample data from the template's schema.json
+      let data = providedData;
+      if (!data) {
+        data = await loadTemplateSampleData(template);
+        if (!data) {
+          const error: ApiError = {
+            error: "No data provided and no sample data found for template",
+            code: "MISSING_DATA",
+            details: { template },
+          };
+          return c.json(error, 400);
+        }
+      }
 
       // Render template using Mustache engine
       const tRender = Date.now();
@@ -124,6 +162,17 @@ preview.post(
       return c.json(response);
     } catch (err) {
       console.error("Preview error:", err);
+
+      // Return 404 for template-not-found errors
+      if (err instanceof Error && err.message.startsWith("Template not found:")) {
+        const templateId = err.message.replace("Template not found: ", "");
+        const error: ApiError = {
+          error: "Template not found",
+          code: "TEMPLATE_NOT_FOUND",
+          details: { templateId },
+        };
+        return c.json(error, 404);
+      }
 
       const error: ApiError = {
         error: err instanceof Error ? err.message : "Unknown error",

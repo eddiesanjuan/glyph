@@ -972,91 +972,35 @@ export async function handleGlyphGenerate(args: {
 export async function handleGlyphSchema(args: {
   template: string;
 }): Promise<ToolResult> {
-  // Hardcoded schemas for now - in production these would come from the API
-  const schemas: Record<string, object> = {
-    "quote-modern": {
-      template: "quote-modern",
-      description:
-        "Modern quote/proposal template with line items and totals",
-      required: ["client", "lineItems", "totals", "branding"],
-      fields: {
-        meta: {
-          type: "object",
-          description: "Quote metadata",
-          properties: {
-            quoteNumber: { type: "string", example: "Q-2024-001" },
-            date: { type: "string", example: "January 15, 2024" },
-            validUntil: { type: "string", example: "February 15, 2024" },
-            notes: { type: "string", example: "Payment due within 30 days" },
-            terms: { type: "string", example: "Net 30" },
-            showSignature: { type: "boolean", default: false },
-          },
-        },
-        client: {
-          type: "object",
-          required: ["name"],
-          properties: {
-            name: { type: "string", example: "John Smith" },
-            company: { type: "string", example: "Acme Corp" },
-            address: { type: "string", example: "123 Main St" },
-            email: { type: "string", example: "john@acme.com" },
-            phone: { type: "string", example: "(555) 123-4567" },
-          },
-        },
-        lineItems: {
-          type: "array",
-          description: "List of quoted items/services",
-          itemProperties: {
-            description: { type: "string", required: true },
-            details: { type: "string" },
-            quantity: { type: "number", required: true },
-            unitPrice: { type: "number", required: true },
-            total: { type: "number", required: true },
-          },
-        },
-        totals: {
-          type: "object",
-          properties: {
-            subtotal: { type: "number", required: true },
-            discount: { type: "number" },
-            discountPercent: { type: "number" },
-            tax: { type: "number" },
-            taxRate: { type: "number", example: 8.25 },
-            total: { type: "number", required: true },
-          },
-        },
-        branding: {
-          type: "object",
-          properties: {
-            logoUrl: { type: "string", format: "uri" },
-            companyName: { type: "string", required: true },
-            companyAddress: { type: "string" },
-          },
-        },
-        styles: {
-          type: "object",
-          description: "Optional style customizations",
-          properties: {
-            accentColor: { type: "string", default: "#1e3a5f" },
-            fontFamily: { type: "string" },
-            fontSize: { type: "string", default: "14px" },
-          },
-        },
-      },
-    },
-  };
+  const { readFileSync, existsSync } = await import("fs");
+  const { join, dirname } = await import("path");
+  const { fileURLToPath } = await import("url");
 
-  const schema = schemas[args.template];
+  const AVAILABLE_TEMPLATES = [
+    "quote-modern",
+    "quote-bold",
+    "quote-professional",
+    "invoice-clean",
+    "receipt-minimal",
+    "report-cover",
+  ];
 
-  if (!schema) {
+  // Resolve templates directory relative to this file (mcp-server/src/tools.ts -> templates/)
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const templatesDir = join(currentDir, "..", "..", "templates");
+
+  const templateId = args.template;
+  const schemaPath = join(templatesDir, templateId, "schema.json");
+
+  if (!existsSync(schemaPath)) {
     return {
       content: [
         {
           type: "text",
           text: JSON.stringify(
             {
-              error: `Template "${args.template}" not found`,
-              availableTemplates: Object.keys(schemas),
+              error: `Template "${templateId}" not found`,
+              availableTemplates: AVAILABLE_TEMPLATES,
               suggestion:
                 "Use glyph_templates to see all available templates",
             },
@@ -1069,14 +1013,43 @@ export async function handleGlyphSchema(args: {
     };
   }
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(schema, null, 2),
-      },
-    ],
-  };
+  try {
+    const schemaContent = readFileSync(schemaPath, "utf-8");
+    const schema = JSON.parse(schemaContent);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              template: templateId,
+              ...schema,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (err) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              error: `Failed to read schema for "${templateId}": ${err instanceof Error ? err.message : String(err)}`,
+              availableTemplates: AVAILABLE_TEMPLATES,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
 }
 
 export async function handleGlyphTemplates(args: {

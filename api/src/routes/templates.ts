@@ -16,6 +16,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import { resolve, join } from "path";
 import Mustache from "mustache";
 import { createHash } from "crypto";
 import {
@@ -924,6 +925,72 @@ templates.get("/count", async (c) => {
     const error: ApiError = {
       error: err instanceof Error ? err.message : "Unknown error",
       code: "COUNT_ERROR",
+    };
+    return c.json(error, 500);
+  }
+});
+
+/**
+ * GET /:id
+ * Return full template detail including JSON schema, metadata, and sample data.
+ * Registered last to avoid matching static routes like /styles, /views, /count.
+ */
+templates.get("/:id", async (c) => {
+  const id = c.req.param("id");
+
+  // Find template in catalog
+  const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === id);
+  if (!catalogEntry) {
+    const error: ApiError = {
+      error: "Template not found",
+      code: "TEMPLATE_NOT_FOUND",
+    };
+    return c.json(error, 404);
+  }
+
+  // Read schema.json from templates directory
+  const templatesDir = resolve(import.meta.dir, "..", "..", "..", "templates");
+  const schemaPath = join(templatesDir, id, "schema.json");
+
+  try {
+    const schemaFile = Bun.file(schemaPath);
+    const schemaExists = await schemaFile.exists();
+
+    if (!schemaExists) {
+      const error: ApiError = {
+        error: "Template not found",
+        code: "TEMPLATE_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    const schema = await schemaFile.json();
+    const sampleData = Array.isArray(schema.examples) && schema.examples.length > 0
+      ? schema.examples[0]
+      : catalogEntry.sampleData;
+
+    const body = JSON.stringify({
+      id: catalogEntry.id,
+      name: catalogEntry.name,
+      description: catalogEntry.description,
+      schema,
+      sampleData,
+    });
+
+    const etag = generateETag(body);
+    if (c.req.header("If-None-Match") === etag) {
+      return c.body(null, 304);
+    }
+
+    c.header("Cache-Control", "public, max-age=3600");
+    c.header("ETag", etag);
+    c.header("Content-Type", "application/json; charset=UTF-8");
+    return c.body(body);
+  } catch (err) {
+    console.error(`Schema read error for '${id}':`, err);
+    const error: ApiError = {
+      error: err instanceof Error ? err.message : "Failed to read template schema",
+      code: "SCHEMA_READ_ERROR",
     };
     return c.json(error, 500);
   }
