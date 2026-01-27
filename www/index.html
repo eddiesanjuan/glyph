@@ -3795,6 +3795,341 @@
     }
 
     /* ============================================
+       Copy as Code Modal - API Code Snippets
+       ============================================ */
+    .copy-code-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .copy-code-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .copy-code-modal {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 600px;
+      margin: 16px;
+      transform: scale(0.95);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .copy-code-modal-overlay.active .copy-code-modal {
+      transform: scale(1);
+    }
+
+    .copy-code-modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .copy-code-modal__header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .copy-code-modal__icon {
+      width: 36px;
+      height: 36px;
+      background: var(--color-primary-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .copy-code-modal__icon svg {
+      width: 18px;
+      height: 18px;
+      color: var(--color-primary-bright);
+    }
+
+    .copy-code-modal__title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .copy-code-modal__close {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+
+    .copy-code-modal__close:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .copy-code-modal__close svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .copy-code-modal__tabs {
+      display: flex;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .copy-code-modal__tab {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color var(--transition-fast);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .copy-code-modal__tab:hover {
+      color: var(--color-text);
+    }
+
+    .copy-code-modal__tab--active {
+      color: var(--color-primary-bright);
+      border-bottom-color: var(--color-primary-bright);
+    }
+
+    .copy-code-modal__tab svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .copy-code-modal__tab--active svg {
+      opacity: 1;
+    }
+
+    .copy-code-modal__content {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .copy-code-modal__snippet {
+      display: none;
+    }
+
+    .copy-code-modal__snippet--active {
+      display: block;
+    }
+
+    .copy-code-modal__code-wrapper {
+      position: relative;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .copy-code-modal__code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .copy-code-modal__code-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+    }
+
+    .copy-code-modal__copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-bright);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .copy-code-modal__copy-btn:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .copy-code-modal__copy-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .copy-code-modal__copy-btn--copied {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: var(--color-success);
+      color: var(--color-success);
+    }
+
+    .copy-code-modal__copy-btn--copied:hover {
+      background: rgba(34, 197, 94, 0.25);
+      color: var(--color-success);
+    }
+
+    .copy-code-modal__pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--color-text-muted);
+      max-height: 300px;
+    }
+
+    .copy-code-modal__note {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .copy-code-modal__note svg {
+      width: 16px;
+      height: 16px;
+      color: var(--color-primary-bright);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .copy-code-modal__note a {
+      color: var(--color-primary-bright);
+      text-decoration: none;
+    }
+
+    .copy-code-modal__note a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .copy-code-modal {
+        margin: 12px;
+        max-height: 90vh;
+      }
+
+      .copy-code-modal__header {
+        padding: 16px;
+      }
+
+      .copy-code-modal__tab {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .copy-code-modal__tab svg {
+        display: none;
+      }
+
+      .copy-code-modal__pre {
+        font-size: 11px;
+        padding: 12px;
+      }
+    }
+
+    /* Get API Code button in success toast */
+    .modification-success-toast__actions {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      padding-left: 12px;
+    }
+
+    .modification-success-toast__code-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .modification-success-toast__code-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .modification-success-toast__code-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    @media (max-width: 480px) {
+      .modification-success-toast__actions {
+        margin-left: 8px;
+        padding-left: 8px;
+      }
+
+      .modification-success-toast__code-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+      }
+
+      .modification-success-toast__code-btn span {
+        display: none;
+      }
+    }
+
+    /* ============================================
        Saved Versions Section
        ============================================ */
     .saved-versions {
@@ -12926,8 +13261,8 @@
         }, 800);
       }
 
-      // Show special first-win toast message
-      showToast('Nice! Your first modification worked instantly.', 'success', 3000);
+      // Show success toast with Get Code button (first win uses showModificationSuccessToast which handles first-win state)
+      showModificationSuccessToast(0, true);
 
       // Pulse the save button to encourage saving (if no versions saved yet)
       promptSaveAfterFirstWin();
@@ -13080,13 +13415,200 @@
     }
 
     // ============================================
+    // Copy as Code - Track last successful modification
+    // ============================================
+    let lastSuccessfulModifyRequest = null;
+
+    function trackModifyRequest(params) {
+      lastSuccessfulModifyRequest = {
+        sessionId: params.sessionId || sessionId,
+        prompt: params.prompt,
+        timestamp: Date.now()
+      };
+    }
+
+    // ============================================
+    // Copy as Code Modal - API Code Snippets
+    // ============================================
+    function openCopyCodeModal() {
+      const modal = document.getElementById('copy-code-modal');
+      if (!modal || !lastSuccessfulModifyRequest) return;
+
+      // Generate code snippets
+      generateCodeSnippets();
+
+      // Show modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCopyCodeModal() {
+      const modal = document.getElementById('copy-code-modal');
+      if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function generateCodeSnippets() {
+      if (!lastSuccessfulModifyRequest) return;
+
+      const { sessionId: reqSessionId, prompt } = lastSuccessfulModifyRequest;
+      const apiUrl = 'https://api.glyph.you';
+
+      // Escape strings for code generation
+      const escapeForJson = (str) => JSON.stringify(str).slice(1, -1);
+      const escapedPrompt = escapeForJson(prompt);
+
+      // cURL snippet
+      const curlSnippet = `curl -X POST ${apiUrl}/v1/modify \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "sessionId": "${reqSessionId}",
+    "prompt": "${escapedPrompt}"
+  }'`;
+
+      // JavaScript snippet
+      const jsSnippet = `const response = await fetch('${apiUrl}/v1/modify', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sessionId: '${reqSessionId}',
+    prompt: '${escapedPrompt}'
+  })
+});
+
+const result = await response.json();
+console.log(result.html); // Updated HTML`;
+
+      // Python snippet
+      const pythonSnippet = `import requests
+
+response = requests.post(
+    '${apiUrl}/v1/modify',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'sessionId': '${reqSessionId}',
+        'prompt': '${escapedPrompt}'
+    }
+)
+
+result = response.json()
+print(result['html'])  # Updated HTML`;
+
+      // Update pre elements
+      const curlEl = document.getElementById('code-snippet-curl');
+      const jsEl = document.getElementById('code-snippet-javascript');
+      const pythonEl = document.getElementById('code-snippet-python');
+
+      if (curlEl) curlEl.textContent = curlSnippet;
+      if (jsEl) jsEl.textContent = jsSnippet;
+      if (pythonEl) pythonEl.textContent = pythonSnippet;
+    }
+
+    function initCopyCodeModal() {
+      const modal = document.getElementById('copy-code-modal');
+      if (!modal) return;
+
+      // Close button
+      const closeBtn = document.getElementById('copy-code-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeCopyCodeModal);
+      }
+
+      // Click outside to close
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeCopyCodeModal();
+        }
+      });
+
+      // Escape key to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeCopyCodeModal();
+        }
+      });
+
+      // Tab switching
+      const tabs = modal.querySelectorAll('.copy-code-modal__tab');
+      const snippets = modal.querySelectorAll('.copy-code-modal__snippet');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const lang = tab.dataset.lang;
+
+          // Update active tab
+          tabs.forEach(t => t.classList.remove('copy-code-modal__tab--active'));
+          tab.classList.add('copy-code-modal__tab--active');
+
+          // Show corresponding snippet
+          snippets.forEach(s => {
+            if (s.dataset.lang === lang) {
+              s.classList.add('copy-code-modal__snippet--active');
+            } else {
+              s.classList.remove('copy-code-modal__snippet--active');
+            }
+          });
+        });
+      });
+
+      // Copy buttons
+      const copyBtns = modal.querySelectorAll('.copy-code-modal__copy-btn');
+      copyBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const lang = btn.dataset.lang;
+          const preEl = document.getElementById(`code-snippet-${lang}`);
+          if (!preEl) return;
+
+          const success = await copyTextToClipboard(preEl.textContent);
+
+          if (success) {
+            // Visual feedback
+            const originalHtml = btn.innerHTML;
+            btn.classList.add('copy-code-modal__copy-btn--copied');
+            btn.innerHTML = `
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Copied!
+            `;
+
+            setTimeout(() => {
+              btn.classList.remove('copy-code-modal__copy-btn--copied');
+              btn.innerHTML = originalHtml;
+            }, 2000);
+          } else {
+            showToast("Couldn't copy to clipboard - try Ctrl/Cmd+C", 'error', 4000);
+          }
+        });
+      });
+
+      console.log('[Glyph] Copy as Code modal initialized');
+    }
+
+    // Initialize Copy Code Modal on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCopyCodeModal);
+    } else {
+      initCopyCodeModal();
+    }
+
+    // ============================================
     // Modification Success Toast - Cycle 6 Addition
     // Celebrates the magic moment when changes are applied
     // ============================================
     let modificationSuccessToastElement = null;
     let modificationSuccessToastTimeout = null;
 
-    function showModificationSuccessToast(elapsed) {
+    function showModificationSuccessToast(elapsed, isInstant = false) {
       // Check if this is the user's first win BEFORE we update localStorage
       const isFirst = isFirstWin();
 
@@ -13102,8 +13624,31 @@
             <span class="modification-success-toast__title">Changes applied successfully</span>
             <span class="modification-success-toast__detail"></span>
           </div>
+          <div class="modification-success-toast__actions">
+            <button class="modification-success-toast__code-btn" id="toast-get-code-btn" title="Get API code for this modification">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+              </svg>
+              <span>Get Code</span>
+            </button>
+          </div>
         `;
         document.body.appendChild(modificationSuccessToastElement);
+
+        // Add click handler for the "Get Code" button
+        const codeBtn = modificationSuccessToastElement.querySelector('#toast-get-code-btn');
+        if (codeBtn) {
+          codeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Hide toast
+            modificationSuccessToastElement.classList.remove('visible');
+            if (modificationSuccessToastTimeout) {
+              clearTimeout(modificationSuccessToastTimeout);
+            }
+            // Open modal
+            openCopyCodeModal();
+          });
+        }
       }
 
       // Update toast content - special message for first win
@@ -13115,6 +13660,9 @@
         if (detailEl) detailEl.textContent = 'That was all you. Try another change!';
         // Mark first win complete (no confetti - user preference)
         markFirstWinComplete();
+      } else if (isInstant) {
+        if (titleEl) titleEl.textContent = 'Changes applied instantly!';
+        if (detailEl) detailEl.textContent = 'Local transformation - no API call needed';
       } else {
         if (titleEl) titleEl.textContent = 'Changes applied successfully';
         if (detailEl) detailEl.textContent = `Completed in ${elapsed}s`;
@@ -14055,12 +14603,15 @@
         // Clear the prompt input
         promptInput.value = '';
 
+        // Track for Copy as Code feature (instant actions use same API)
+        trackModifyRequest({ sessionId, prompt });
+
         // First instant win celebration (once per session)
         if (!hasShownFirstInstantWin) {
           celebrateFirstInstantWin();
         } else {
-          // Normal success toast for subsequent instant actions
-          showToast('Changes applied instantly!', 'success', 2000);
+          // Show success toast with Get Code button for instant actions too
+          showModificationSuccessToast(0, true); // 0 elapsed, isInstant=true
           flashPreviewArea(); // Mobile visual feedback
         }
 
@@ -14307,6 +14858,9 @@
           // Show success CTA after first modification
           showSuccessCta();
 
+          // Track for Copy as Code feature
+          trackModifyRequest({ sessionId, prompt });
+
           // Cycle 6: Show celebratory success toast
           showModificationSuccessToast(elapsed);
 
@@ -14384,6 +14938,9 @@
 
         // Show success CTA after first modification
         showSuccessCta();
+
+        // Track for Copy as Code feature (fallback path uses instruction instead of prompt)
+        trackModifyRequest({ prompt });
 
         // Cycle 6: Show celebratory success toast
         showModificationSuccessToast(elapsed);
@@ -17718,6 +18275,105 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Copy as Code Modal - API Code Snippets -->
+  <div class="copy-code-modal-overlay" id="copy-code-modal">
+    <div class="copy-code-modal">
+      <div class="copy-code-modal__header">
+        <div class="copy-code-modal__header-left">
+          <div class="copy-code-modal__icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+          </div>
+          <div class="copy-code-modal__title">Get API Code</div>
+        </div>
+        <button class="copy-code-modal__close" id="copy-code-close" aria-label="Close modal">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="copy-code-modal__tabs">
+        <button class="copy-code-modal__tab copy-code-modal__tab--active" data-lang="curl">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          cURL
+        </button>
+        <button class="copy-code-modal__tab" data-lang="javascript">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 3h18v18H3V3zm16.525 13.707c-.131-.821-.666-1.511-2.252-2.155-.552-.259-1.165-.438-1.349-.854-.068-.248-.078-.382-.034-.529.113-.484.687-.629 1.137-.495.293.09.563.315.732.676.775-.507.775-.507 1.316-.844-.203-.314-.304-.451-.439-.586-.473-.528-1.103-.798-2.126-.775l-.528.067c-.507.124-.991.395-1.283.754-.855.968-.608 2.655.427 3.354 1.023.765 2.521.933 2.712 1.653.18.878-.652 1.159-1.475 1.058-.607-.136-.945-.439-1.316-1.002l-1.372.788c.157.359.337.517.607.832 1.305 1.316 4.568 1.249 5.153-.754.021-.067.18-.528.056-1.237l.034.049zm-6.737-5.434h-1.686c0 1.453-.007 2.898-.007 4.354 0 .924.047 1.772-.104 2.033-.247.517-.886.451-1.175.359-.297-.146-.448-.349-.623-.641-.047-.078-.082-.146-.095-.146l-1.368.844c.229.473.563.879.994 1.137.641.383 1.502.507 2.404.305.588-.17 1.095-.519 1.358-1.059.384-.697.302-1.553.299-2.509.008-1.541 0-3.083 0-4.635l.003-.042z"/>
+          </svg>
+          JavaScript
+        </button>
+        <button class="copy-code-modal__tab" data-lang="python">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z"/>
+          </svg>
+          Python
+        </button>
+      </div>
+
+      <div class="copy-code-modal__content">
+        <!-- cURL snippet -->
+        <div class="copy-code-modal__snippet copy-code-modal__snippet--active" data-lang="curl">
+          <div class="copy-code-modal__code-wrapper">
+            <div class="copy-code-modal__code-header">
+              <span class="copy-code-modal__code-label">cURL</span>
+              <button class="copy-code-modal__copy-btn" data-lang="curl">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="copy-code-modal__pre" id="code-snippet-curl"></pre>
+          </div>
+        </div>
+
+        <!-- JavaScript snippet -->
+        <div class="copy-code-modal__snippet" data-lang="javascript">
+          <div class="copy-code-modal__code-wrapper">
+            <div class="copy-code-modal__code-header">
+              <span class="copy-code-modal__code-label">JavaScript (Fetch)</span>
+              <button class="copy-code-modal__copy-btn" data-lang="javascript">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="copy-code-modal__pre" id="code-snippet-javascript"></pre>
+          </div>
+        </div>
+
+        <!-- Python snippet -->
+        <div class="copy-code-modal__snippet" data-lang="python">
+          <div class="copy-code-modal__code-wrapper">
+            <div class="copy-code-modal__code-header">
+              <span class="copy-code-modal__code-label">Python (Requests)</span>
+              <button class="copy-code-modal__copy-btn" data-lang="python">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012-2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="copy-code-modal__pre" id="code-snippet-python"></pre>
+          </div>
+        </div>
+
+        <div class="copy-code-modal__note">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Replace <code>YOUR_API_KEY</code> with your key from the <a href="https://dashboard.glyph.you" target="_blank">Dashboard</a>. Get a free key to start making API calls.</span>
+        </div>
+      </div>
     </div>
   </div>
 
