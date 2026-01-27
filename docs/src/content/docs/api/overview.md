@@ -42,23 +42,11 @@ See [Authentication](/api/authentication/) for details.
 
 ## Typical Workflow
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant A as Glyph API
-    participant AI as Claude AI
-
-    C->>A: POST /v1/preview (template + data)
-    A->>C: HTML + sessionId
-
-    C->>A: POST /v1/modify (sessionId + prompt)
-    A->>AI: Process modification
-    AI->>A: Modified HTML
-    A->>C: New HTML + changes
-
-    C->>A: POST /v1/generate (sessionId)
-    A->>C: PDF file
-```
+| Step | Request | Response |
+|------|---------|----------|
+| **1. Preview** | `Client → POST /v1/preview (template + data) → API` | `API → HTML + sessionId → Client` |
+| **2. Modify** | `Client → POST /v1/modify (sessionId + prompt) → API → Claude AI` | `Claude AI → Modified HTML → API → New HTML + changes → Client` |
+| **3. Generate** | `Client → POST /v1/generate (sessionId) → API` | `API → PDF file → Client` |
 
 ## Request Format
 
@@ -132,8 +120,8 @@ Response:
 While you can use the API directly, we provide SDKs for easier integration:
 
 - **JavaScript/TypeScript**: `@glyph/sdk` - Includes the `<glyph-editor>` web component
-- **Python**: Coming soon
-- **Ruby**: Coming soon
+- **Python**: Interested? Let us know at hello@glyph.you
+- **Ruby**: Interested? Let us know at hello@glyph.you
 
 ## Next Steps
 
