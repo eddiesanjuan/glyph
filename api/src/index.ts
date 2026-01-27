@@ -28,6 +28,7 @@ import templates from "./routes/templates.js";
 import savedTemplates from "./routes/savedTemplates.js";
 import webhooks from "./routes/webhooks.js";
 import analyze from "./routes/analyze.js";
+import { templateEngine } from "./services/template.js";
 import beta from "./routes/beta.js";
 import sources from "./routes/sources.js";
 import mappings from "./routes/mappings.js";
@@ -276,6 +277,9 @@ app.onError((err, c) => {
     500
   );
 });
+
+// Warm template cache before accepting requests
+templateEngine.warmCache();
 
 // Start server
 const port = Number(process.env.PORT) || 3000;

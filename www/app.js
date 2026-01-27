@@ -394,6 +394,10 @@
     const MAX_REDO_HISTORY = 20;
     let redoHistory = [];
 
+    // Diff toggle - stores region snapshots before/after modification
+    let diffRegionSnapshots = null; // { before: Map<regionName, innerHTML>, after: Map<regionName, innerHTML> }
+    let isDiffActive = false;
+
     // Track applied instant actions - shows visual "applied" state on buttons
     const appliedActions = new Set();
 
@@ -453,7 +457,28 @@
       // Update timer every second
       sessionTimerInterval = setInterval(updateSessionTimer, 1000);
       updateSessionTimer(); // Initial update
+
+      // Pause timer when tab is hidden to save CPU/battery
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
       console.log('[Glyph] Session timer started');
+    }
+
+    // Pause/resume session timer based on tab visibility
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        // Tab hidden - pause the interval
+        if (sessionTimerInterval) {
+          clearInterval(sessionTimerInterval);
+          sessionTimerInterval = null;
+        }
+      } else {
+        // Tab visible - resume and immediately update
+        if (sessionStartTime && !sessionTimerInterval) {
+          updateSessionTimer();
+          sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+        }
+      }
     }
 
     // Update session timer display and check warnings
@@ -1097,6 +1122,7 @@
     const suggestions = document.querySelectorAll('.playground__suggestion');
     const applyBtn = document.getElementById('apply-btn');
     const undoBtn = document.getElementById('undo-btn');
+    const diffToggleBtn = document.getElementById('diff-toggle-btn');
     const generateBtn = document.getElementById('generate-btn');
     const previewFrame = document.getElementById('preview-frame');
     const previewContainer = document.getElementById('preview-container');
@@ -2424,6 +2450,7 @@
       setTimeout(() => setStatus('Ready'), 1500);
 
       updateUndoButtonState();
+      clearDiffState();
     }
 
     // Update undo button disabled state based on history
@@ -2442,6 +2469,162 @@
       updateUndoButtonState();
       // Also clear applied action states when switching templates
       clearAllAppliedActions();
+      // Clear diff state when switching templates
+      clearDiffState();
+    }
+
+    // ============================================
+    // Visual Diff Toggle
+    // ============================================
+
+    /**
+     * Snapshot all data-glyph-region innerHTML from an HTML string.
+     * Returns a Map<regionName, innerHTML>.
+     */
+    function snapshotRegions(html) {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      const map = new Map();
+      temp.querySelectorAll('[data-glyph-region]').forEach(el => {
+        map.set(el.getAttribute('data-glyph-region'), el.innerHTML);
+      });
+      return map;
+    }
+
+    /**
+     * Called before a modification to capture the "before" state.
+     */
+    function captureDiffBefore() {
+      if (!currentHtml) return;
+      diffRegionSnapshots = { before: snapshotRegions(currentHtml), after: null };
+      // Turn off active diff view while a new modification is in progress
+      if (isDiffActive) {
+        toggleDiffView(false);
+      }
+    }
+
+    /**
+     * Called after a successful modification to capture the "after" state.
+     */
+    function captureDiffAfter() {
+      if (!diffRegionSnapshots || !currentHtml) return;
+      diffRegionSnapshots.after = snapshotRegions(currentHtml);
+      updateDiffButtonState();
+    }
+
+    /**
+     * Determine which regions changed between before and after snapshots.
+     * Returns an array of region names that differ.
+     */
+    function getChangedRegionNames() {
+      if (!diffRegionSnapshots || !diffRegionSnapshots.before || !diffRegionSnapshots.after) return [];
+      const changed = [];
+      const after = diffRegionSnapshots.after;
+      const before = diffRegionSnapshots.before;
+
+      after.forEach((html, name) => {
+        const prevHtml = before.get(name);
+        if (prevHtml === undefined || prevHtml !== html) {
+          changed.push(name);
+        }
+      });
+
+      // Also check for regions that were removed
+      before.forEach((html, name) => {
+        if (!after.has(name)) {
+          changed.push(name);
+        }
+      });
+
+      return changed;
+    }
+
+    /**
+     * Toggle the diff highlight overlay in the preview iframe.
+     */
+    function toggleDiffView(forceState) {
+      const newState = forceState !== undefined ? forceState : !isDiffActive;
+      isDiffActive = newState;
+
+      if (diffToggleBtn) {
+        diffToggleBtn.classList.toggle('active', isDiffActive);
+      }
+
+      const iframe = previewFrame;
+      if (!iframe || !iframe.contentDocument) return;
+      const doc = iframe.contentDocument;
+
+      const styleId = 'glyph-diff-toggle-styles';
+
+      if (!isDiffActive) {
+        // Remove diff highlights
+        const existingStyle = doc.getElementById(styleId);
+        if (existingStyle) existingStyle.remove();
+        doc.querySelectorAll('.glyph-diff-changed').forEach(el => {
+          el.classList.remove('glyph-diff-changed');
+        });
+        return;
+      }
+
+      // Inject diff highlight CSS
+      if (!doc.getElementById(styleId)) {
+        const style = doc.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          .glyph-diff-changed {
+            outline: 2px solid rgba(34, 197, 94, 0.6);
+            outline-offset: 2px;
+            background-color: rgba(34, 197, 94, 0.06);
+            border-radius: 3px;
+            transition: outline-color 0.2s, background-color 0.2s;
+          }
+        `;
+        doc.head.appendChild(style);
+      }
+
+      // Apply highlight to changed regions
+      const changedNames = getChangedRegionNames();
+      changedNames.forEach(name => {
+        const el = doc.querySelector(`[data-glyph-region="${name}"]`);
+        if (el) {
+          el.classList.add('glyph-diff-changed');
+        }
+      });
+
+      console.log(`[Glyph] Diff view: ${changedNames.length} changed regions highlighted`);
+    }
+
+    /**
+     * Update diff button enabled/disabled state.
+     */
+    function updateDiffButtonState() {
+      if (!diffToggleBtn) return;
+      const hasChanges = getChangedRegionNames().length > 0;
+      diffToggleBtn.disabled = !hasChanges;
+      diffToggleBtn.title = hasChanges
+        ? `Show changes (${getChangedRegionNames().length} regions changed)`
+        : 'No changes to show';
+    }
+
+    /**
+     * Clear diff state entirely.
+     */
+    function clearDiffState() {
+      diffRegionSnapshots = null;
+      isDiffActive = false;
+      if (diffToggleBtn) {
+        diffToggleBtn.classList.remove('active');
+        diffToggleBtn.disabled = true;
+        diffToggleBtn.title = 'No changes to show';
+      }
+    }
+
+    // Wire up diff toggle button
+    if (diffToggleBtn) {
+      diffToggleBtn.addEventListener('click', () => {
+        if (diffToggleBtn.disabled) return;
+        toggleDiffView();
+      });
     }
 
 
@@ -2548,6 +2731,7 @@
       setTimeout(() => setStatus('Ready'), 1500);
 
       updateUndoButtonState();
+      clearDiffState();
     };
 
     // Keyboard shortcut handler
@@ -4612,6 +4796,9 @@ print(result['html'])  # Updated HTML`;
       if (isInstantAction(prompt)) {
         console.log('[Glyph] Applying instant action locally:', prompt);
 
+        // Capture region snapshots for diff toggle
+        captureDiffBefore();
+
         // Save current state to undo history before modification
         saveToUndoHistory();
 
@@ -4623,6 +4810,9 @@ print(result['html'])  # Updated HTML`;
 
         // Clear the prompt input
         promptInput.value = '';
+
+        // Capture diff "after" state for toggle
+        captureDiffAfter();
 
         // Track for Copy as Code feature (instant actions use same API)
         trackModifyRequest({ sessionId, prompt });
@@ -4652,6 +4842,9 @@ print(result['html'])  # Updated HTML`;
 
       // Capture previous HTML for diff highlighting
       const previousHtml = currentHtml;
+
+      // Capture region snapshots for diff toggle
+      captureDiffBefore();
 
       // Save current state to undo history before modification
       saveToUndoHistory();
@@ -4881,6 +5074,9 @@ print(result['html'])  # Updated HTML`;
           // Show success CTA after first modification
           showSuccessCta();
 
+          // Capture diff "after" state for toggle
+          captureDiffAfter();
+
           // Track for Copy as Code feature
           trackModifyRequest({ sessionId, prompt });
 
@@ -4963,6 +5159,9 @@ print(result['html'])  # Updated HTML`;
 
         // Show success CTA after first modification
         showSuccessCta();
+
+        // Capture diff "after" state for toggle
+        captureDiffAfter();
 
         // Track for Copy as Code feature (fallback path uses instruction instead of prompt)
         trackModifyRequest({ prompt });

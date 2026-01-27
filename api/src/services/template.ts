@@ -163,6 +163,26 @@ export class TemplateEngine {
   }
 
   /**
+   * Pre-load all available templates into the cache.
+   * Call at startup to avoid first-request latency.
+   */
+  warmCache(): void {
+    const templates = this.getAvailableTemplates();
+    for (const name of templates) {
+      if (!this.templateCache.has(name)) {
+        const templatePath = join(TEMPLATES_DIR, name, "template.html");
+        try {
+          const template = readFileSync(templatePath, "utf-8");
+          this.templateCache.set(name, template);
+        } catch (error) {
+          console.warn(`Failed to warm cache for template "${name}":`, error);
+        }
+      }
+    }
+    console.log(`[Glyph] Template cache warmed: ${this.templateCache.size} templates loaded`);
+  }
+
+  /**
    * Clear the template cache (useful for development)
    */
   clearCache(): void {
