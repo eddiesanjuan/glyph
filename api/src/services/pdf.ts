@@ -213,6 +213,79 @@ export async function generatePNG(html: string, options: PNGOptions = {}): Promi
   }
 }
 
+/**
+ * Generate PDF by navigating to a URL and capturing the page
+ */
+export async function generatePDFFromURL(
+  url: string,
+  options: PDFOptions = {}
+): Promise<Buffer> {
+  const page = await getPage();
+
+  try {
+    await page.goto(url, {
+      waitUntil: 'networkidle',
+      timeout: 30000,
+    });
+
+    // Wait for fonts to load
+    await page.waitForTimeout(500);
+
+    const pdf = await page.pdf({
+      format: options.format === 'a4' ? 'A4' : 'Letter',
+      landscape: options.landscape || false,
+      printBackground: true,
+      margin: {
+        top: options.margin?.top || '0.5in',
+        bottom: options.margin?.bottom || '0.5in',
+        left: options.margin?.left || '0.5in',
+        right: options.margin?.right || '0.5in',
+      },
+      scale: options.scale || 1,
+    });
+
+    return Buffer.from(pdf);
+  } finally {
+    returnPage(page);
+  }
+}
+
+/**
+ * Generate PNG by navigating to a URL and capturing a screenshot
+ */
+export async function generatePNGFromURL(
+  url: string,
+  options: PNGOptions = {}
+): Promise<Buffer> {
+  const page = await getPage();
+
+  try {
+    if (options.width || options.height) {
+      await page.setViewportSize({
+        width: options.width || 800,
+        height: options.height || 1000,
+      });
+    }
+
+    await page.goto(url, {
+      waitUntil: 'networkidle',
+      timeout: 30000,
+    });
+
+    // Wait for fonts to load
+    await page.waitForTimeout(500);
+
+    const screenshot = await page.screenshot({
+      fullPage: true,
+      type: 'png',
+    });
+
+    return Buffer.from(screenshot);
+  } finally {
+    returnPage(page);
+  }
+}
+
 // Keep old function names for backwards compatibility
 export const generatePdf = generatePDF;
 export const generatePdfCached = generatePDFCached;

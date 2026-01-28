@@ -1,16 +1,25 @@
 /**
  * Create Route
- * POST /v1/create - One-shot data-to-PDF generation
+ * POST /v1/create - One-shot PDF generation from data, HTML, or URL
  * POST /v1/create/analyze - Analysis-only endpoint (no PDF generation)
  *
  * The star of the show: One API call, beautiful PDF.
+ *
+ * Three input paths:
+ *   1. data   - Auto-analyze structure, pick/use template, generate layout
+ *   2. html   - Render raw HTML directly to PDF/PNG via Playwright
+ *   3. url    - Navigate Playwright to a URL and capture as PDF/PNG
+ *
+ * When using the data path, an optional templateId can be provided to
+ * skip auto-detection and use a specific built-in template.
  */
 
 import { Hono } from "hono";
 import { z } from "zod";
 import { analyzeData, DataAnalysis } from "../services/dataAnalyzer.js";
 import { generateLayout, generateFullDocument, LayoutOptions } from "../services/layoutGenerator.js";
-import { generatePDF, generatePNG, PDFOptions, PNGOptions } from "../services/pdf.js";
+import { generatePDF, generatePNG, generatePDFFromURL, generatePNGFromURL, PDFOptions, PNGOptions } from "../services/pdf.js";
+import { templateEngine } from "../services/template.js";
 import {
   createDevSession,
   generateDevSessionId,
@@ -44,35 +53,56 @@ const ERROR_RESPONSES = {
     message: "Could not analyze data structure",
     status: 500 as const,
   },
+  TEMPLATE_NOT_FOUND: {
+    code: "TEMPLATE_NOT_FOUND",
+    message: "The specified template was not found",
+    status: 404 as const,
+  },
+  URL_FETCH_FAILED: {
+    code: "URL_FETCH_FAILED",
+    message: "Failed to fetch content from the provided URL",
+    status: 502 as const,
+  },
 };
 
 // ============================================================================
 // Request Validation
 // ============================================================================
 
-const createRequestSchema = z.object({
-  data: z.record(z.unknown()).refine((val) => Object.keys(val).length > 0, {
-    message: "Data object cannot be empty",
-  }),
-  intent: z.string().optional(),
-  style: z.enum(["stripe-clean", "bold", "minimal", "corporate"]).optional(),
-  format: z.enum(["pdf", "png"]).optional().default("pdf"),
-  options: z
-    .object({
-      pageSize: z.enum(["A4", "letter", "legal"]).optional(),
-      orientation: z.enum(["portrait", "landscape"]).optional(),
-      margin: z
-        .object({
-          top: z.string().optional(),
-          bottom: z.string().optional(),
-          left: z.string().optional(),
-          right: z.string().optional(),
-        })
-        .optional(),
-      scale: z.number().positive().max(3).optional(),
-    })
-    .optional(),
-});
+const createRequestSchema = z
+  .object({
+    data: z
+      .record(z.unknown())
+      .refine((val) => Object.keys(val).length > 0, {
+        message: "Data object cannot be empty",
+      })
+      .optional(),
+    html: z.string().optional(),
+    url: z.string().url().optional(),
+    templateId: z.string().optional(),
+    intent: z.string().optional(),
+    style: z.enum(["stripe-clean", "bold", "minimal", "corporate"]).optional(),
+    format: z.enum(["pdf", "png"]).optional().default("pdf"),
+    options: z
+      .object({
+        pageSize: z.enum(["A4", "letter", "legal"]).optional(),
+        orientation: z.enum(["portrait", "landscape"]).optional(),
+        margin: z
+          .object({
+            top: z.string().optional(),
+            bottom: z.string().optional(),
+            left: z.string().optional(),
+            right: z.string().optional(),
+          })
+          .optional(),
+        scale: z.number().positive().max(3).optional(),
+      })
+      .optional(),
+  })
+  .refine((val) => val.data || val.html || val.url, {
+    message: "At least one of 'data', 'html', or 'url' must be provided",
+    path: ["data"],
+  });
 
 const analyzeRequestSchema = z.object({
   data: z.record(z.unknown()).refine((val) => Object.keys(val).length > 0, {
@@ -87,13 +117,15 @@ const analyzeRequestSchema = z.object({
 
 /**
  * POST /v1/create
- * One-shot data-to-PDF generation
+ * One-shot PDF generation from data, HTML, or URL
  *
- * Flow:
- * 1. Analyze data structure
- * 2. Generate layout HTML
- * 3. Generate PDF/PNG output
- * 4. Create session for subsequent modifications
+ * Input paths (checked in order):
+ *   url  -> Navigate Playwright to URL, capture as PDF/PNG
+ *   html -> Render raw HTML directly via Playwright
+ *   data -> Analyze structure, generate layout, render PDF/PNG
+ *          (optionally with templateId to skip auto-detection)
+ *
+ * All paths create a session for subsequent /v1/modify calls.
  */
 create.post("/", async (c) => {
   try {
@@ -110,14 +142,315 @@ create.post("/", async (c) => {
       return c.json(error, 400);
     }
 
-    const { data, intent, style, format, options } = parsed.data;
+    const { data, html, url, templateId, intent, style, format, options } = parsed.data;
 
-    console.log(`[Create] Starting one-shot generation for ${format} document`);
+    // Shared PDF/PNG options
+    const pdfOptions: PDFOptions = {
+      format: options?.pageSize === "A4" ? "a4" : "letter",
+      landscape: options?.orientation === "landscape",
+      margin: options?.margin,
+      scale: options?.scale,
+    };
+    const pngOptions: PNGOptions = {
+      scale: options?.scale,
+    };
 
-    // Step 1: Analyze data structure
+    // ========================================================================
+    // Path 1: URL-based capture
+    // Navigate Playwright to a URL and capture as PDF/PNG
+    // ========================================================================
+    if (url) {
+      console.log(`[Create] URL path: capturing ${format} from ${url}`);
+
+      let outputBuffer: Buffer;
+      let contentType: string;
+      let filename: string;
+
+      try {
+        if (format === "pdf") {
+          outputBuffer = await generatePDFFromURL(url, pdfOptions);
+          contentType = "application/pdf";
+          filename = `glyph-url-capture-${Date.now()}.pdf`;
+        } else {
+          outputBuffer = await generatePNGFromURL(url, pngOptions);
+          contentType = "image/png";
+          filename = `glyph-url-capture-${Date.now()}.png`;
+        }
+        console.log(`[Create] URL capture ${format.toUpperCase()}: ${outputBuffer.length} bytes`);
+      } catch (err) {
+        console.error("[Create] URL capture failed:", err);
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+        if (errorMessage.includes("Playwright")) {
+          return c.json(
+            {
+              error: "PDF generation not available. Playwright is not installed.",
+              code: "PLAYWRIGHT_NOT_INSTALLED",
+              details: {
+                install: "bun add playwright && npx playwright install chromium",
+              },
+            },
+            503
+          );
+        }
+
+        return c.json(
+          {
+            error: ERROR_RESPONSES.URL_FETCH_FAILED.message,
+            code: ERROR_RESPONSES.URL_FETCH_FAILED.code,
+            details: errorMessage,
+          },
+          ERROR_RESPONSES.URL_FETCH_FAILED.status
+        );
+      }
+
+      // Create session for subsequent modifications
+      const sessionId = generateDevSessionId();
+      createDevSession(sessionId, "url-capture", "", "", {});
+      console.log(`[Create] Session created: ${sessionId}`);
+
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      const accept = c.req.header("Accept");
+      if (accept?.includes("application/json") || !accept?.includes(contentType)) {
+        return c.json({
+          success: true,
+          format,
+          url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+          size: outputBuffer.length,
+          filename,
+          expiresAt: expiresAt.toISOString(),
+          source: { type: "url", url },
+          sessionId,
+          _links: {
+            modify: `/v1/modify`,
+            generate: `/v1/generate`,
+          },
+        });
+      }
+
+      c.header("Content-Type", contentType);
+      c.header("Content-Disposition", `attachment; filename="${filename}"`);
+      c.header("Content-Length", String(outputBuffer.length));
+      c.header("X-Glyph-Session-Id", sessionId);
+      return c.body(new Uint8Array(outputBuffer));
+    }
+
+    // ========================================================================
+    // Path 2: Raw HTML rendering
+    // Render provided HTML directly to PDF/PNG
+    // ========================================================================
+    if (html) {
+      console.log(`[Create] HTML path: rendering ${format} from raw HTML (${html.length} chars)`);
+
+      let outputBuffer: Buffer;
+      let contentType: string;
+      let filename: string;
+
+      try {
+        if (format === "pdf") {
+          outputBuffer = await generatePDF(html, pdfOptions);
+          contentType = "application/pdf";
+          filename = `glyph-html-render-${Date.now()}.pdf`;
+        } else {
+          outputBuffer = await generatePNG(html, pngOptions);
+          contentType = "image/png";
+          filename = `glyph-html-render-${Date.now()}.png`;
+        }
+        console.log(`[Create] HTML render ${format.toUpperCase()}: ${outputBuffer.length} bytes`);
+      } catch (err) {
+        console.error("[Create] HTML render failed:", err);
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+        if (errorMessage.includes("Playwright")) {
+          return c.json(
+            {
+              error: "PDF generation not available. Playwright is not installed.",
+              code: "PLAYWRIGHT_NOT_INSTALLED",
+              details: {
+                install: "bun add playwright && npx playwright install chromium",
+              },
+            },
+            503
+          );
+        }
+
+        return c.json(
+          {
+            error: ERROR_RESPONSES.GENERATION_FAILED.message,
+            code: ERROR_RESPONSES.GENERATION_FAILED.code,
+            details: errorMessage,
+          },
+          ERROR_RESPONSES.GENERATION_FAILED.status
+        );
+      }
+
+      // Create session for subsequent modifications
+      const sessionId = generateDevSessionId();
+      createDevSession(sessionId, "html-render", html, html, {});
+      console.log(`[Create] Session created: ${sessionId}`);
+
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      const accept = c.req.header("Accept");
+      if (accept?.includes("application/json") || !accept?.includes(contentType)) {
+        return c.json({
+          success: true,
+          format,
+          url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+          size: outputBuffer.length,
+          filename,
+          expiresAt: expiresAt.toISOString(),
+          source: { type: "html" },
+          sessionId,
+          _links: {
+            modify: `/v1/modify`,
+            generate: `/v1/generate`,
+          },
+        });
+      }
+
+      c.header("Content-Type", contentType);
+      c.header("Content-Disposition", `attachment; filename="${filename}"`);
+      c.header("Content-Length", String(outputBuffer.length));
+      c.header("X-Glyph-Session-Id", sessionId);
+      return c.body(new Uint8Array(outputBuffer));
+    }
+
+    // ========================================================================
+    // Path 3: Data-driven generation (original flow)
+    // Analyze data, auto-detect or use specified template, generate layout
+    // ========================================================================
+    // data is guaranteed non-undefined here due to the .refine() check
+    const resolvedData = data!;
+
+    console.log(`[Create] Data path: starting one-shot generation for ${format} document`);
+
+    // Step 1: If templateId is provided, try to render using that template directly
+    if (templateId) {
+      console.log(`[Create] Using specified template: ${templateId}`);
+
+      // Verify template exists
+      const availableTemplates = templateEngine.getAvailableTemplates();
+      if (!availableTemplates.includes(templateId)) {
+        return c.json(
+          {
+            error: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.message,
+            code: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.code,
+            details: {
+              templateId,
+              availableTemplates,
+            },
+          },
+          ERROR_RESPONSES.TEMPLATE_NOT_FOUND.status
+        );
+      }
+
+      let templateResult;
+      try {
+        templateResult = await templateEngine.render(
+          templateId,
+          resolvedData as any
+        );
+      } catch (err) {
+        console.error(`[Create] Template render failed for ${templateId}:`, err);
+        // Fall through to auto-detect path if template render fails
+        console.log("[Create] Falling back to auto-detect path");
+      }
+
+      if (templateResult) {
+        const fullHtml = templateResult.html;
+        console.log(`[Create] Template ${templateId} rendered successfully`);
+
+        let outputBuffer: Buffer;
+        let contentType: string;
+        let filename: string;
+
+        try {
+          if (format === "pdf") {
+            outputBuffer = await generatePDF(fullHtml, pdfOptions);
+            contentType = "application/pdf";
+            filename = `glyph-${templateId}-${Date.now()}.pdf`;
+          } else {
+            outputBuffer = await generatePNG(fullHtml, pngOptions);
+            contentType = "image/png";
+            filename = `glyph-${templateId}-${Date.now()}.png`;
+          }
+          console.log(`[Create] ${format.toUpperCase()} generated: ${outputBuffer.length} bytes`);
+        } catch (err) {
+          console.error("[Create] Output generation failed:", err);
+          const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+          if (errorMessage.includes("Playwright")) {
+            return c.json(
+              {
+                error: "PDF generation not available. Playwright is not installed.",
+                code: "PLAYWRIGHT_NOT_INSTALLED",
+                details: {
+                  install: "bun add playwright && npx playwright install chromium",
+                },
+              },
+              503
+            );
+          }
+
+          return c.json(
+            {
+              error: ERROR_RESPONSES.GENERATION_FAILED.message,
+              code: ERROR_RESPONSES.GENERATION_FAILED.code,
+              details: errorMessage,
+            },
+            ERROR_RESPONSES.GENERATION_FAILED.status
+          );
+        }
+
+        // Create session for modifications
+        const sessionId = generateDevSessionId();
+        createDevSession(
+          sessionId,
+          templateId,
+          fullHtml,
+          templateResult.templateHtml,
+          resolvedData
+        );
+        console.log(`[Create] Session created: ${sessionId}`);
+
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        const accept = c.req.header("Accept");
+        if (accept?.includes("application/json") || !accept?.includes(contentType)) {
+          return c.json({
+            success: true,
+            format,
+            url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+            size: outputBuffer.length,
+            filename,
+            expiresAt: expiresAt.toISOString(),
+            source: { type: "template", templateId },
+            sessionId,
+            _links: {
+              modify: `/v1/modify`,
+              generate: `/v1/generate`,
+            },
+          });
+        }
+
+        c.header("Content-Type", contentType);
+        c.header("Content-Disposition", `attachment; filename="${filename}"`);
+        c.header("Content-Length", String(outputBuffer.length));
+        c.header("X-Glyph-Session-Id", sessionId);
+        c.header("X-Glyph-Document-Type", templateId);
+        return c.body(new Uint8Array(outputBuffer));
+      }
+    }
+
+    // Step 2: Auto-detect via data analysis (original flow)
     let analysis: DataAnalysis;
     try {
-      analysis = await analyzeData(data, intent);
+      analysis = await analyzeData(resolvedData, intent);
       console.log(
         `[Create] Data analyzed: ${analysis.documentType} (confidence: ${analysis.confidence.toFixed(2)})`
       );
@@ -133,7 +466,7 @@ create.post("/", async (c) => {
       );
     }
 
-    // Step 2: Generate layout HTML
+    // Step 3: Generate layout HTML
     const layoutOptions: LayoutOptions = {
       style: style || (analysis.styling.suggestedStyle as LayoutOptions["style"]) || "stripe-clean",
       pageSize: options?.pageSize || "letter",
@@ -143,7 +476,7 @@ create.post("/", async (c) => {
 
     let fullHtml: string;
     try {
-      fullHtml = await generateFullDocument(data, analysis, layoutOptions);
+      fullHtml = await generateFullDocument(resolvedData, analysis, layoutOptions);
       console.log(`[Create] Layout generated with style: ${layoutOptions.style}`);
     } catch (err) {
       console.error("[Create] Layout generation failed:", err);
@@ -157,26 +490,17 @@ create.post("/", async (c) => {
       );
     }
 
-    // Step 3: Generate output (PDF or PNG)
+    // Step 4: Generate output (PDF or PNG)
     let outputBuffer: Buffer;
     let contentType: string;
     let filename: string;
 
     try {
       if (format === "pdf") {
-        const pdfOptions: PDFOptions = {
-          format: options?.pageSize === "A4" ? "a4" : "letter",
-          landscape: options?.orientation === "landscape",
-          margin: options?.margin,
-          scale: options?.scale,
-        };
         outputBuffer = await generatePDF(fullHtml, pdfOptions);
         contentType = "application/pdf";
         filename = `glyph-${analysis.documentType}-${Date.now()}.pdf`;
       } else {
-        const pngOptions: PNGOptions = {
-          scale: options?.scale,
-        };
         outputBuffer = await generatePNG(fullHtml, pngOptions);
         contentType = "image/png";
         filename = `glyph-${analysis.documentType}-${Date.now()}.png`;
@@ -211,16 +535,16 @@ create.post("/", async (c) => {
       );
     }
 
-    // Step 4: Create session for potential modifications
+    // Step 5: Create session for potential modifications
     const sessionId = generateDevSessionId();
-    const layout = await generateLayout(data, analysis, layoutOptions);
+    const layout = await generateLayout(resolvedData, analysis, layoutOptions);
 
     createDevSession(
       sessionId,
       `generated-${analysis.documentType}`,
       fullHtml,
       layout.html, // template HTML for modifications
-      data
+      resolvedData
     );
     console.log(`[Create] Session created: ${sessionId}`);
 

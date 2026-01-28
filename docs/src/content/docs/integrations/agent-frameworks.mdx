@@ -1,0 +1,427 @@
+---
+title: Agent Frameworks
+description: Integrate Glyph PDF generation into AI agents built with OpenAI, Anthropic, LangChain, and Vercel AI SDK
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Give your AI agents the ability to generate professional PDFs. Glyph works with any agent framework that supports tool/function calling. Send data, get a PDF back -- one API call.
+
+## Overview
+
+AI agents often need to produce documents: invoices after a sale, reports after analysis, contracts after negotiation. Glyph's `/v1/create` endpoint is built for this. It takes JSON data, auto-detects the document type, and returns a finished PDF.
+
+Your agent needs one tool definition and one HTTP call. No sessions, no templates, no multi-step workflows.
+
+<Aside type="tip">
+For interactive document editing (click a region, describe changes), use the [MCP Server](/integrations/mcp-server/) instead. Agent framework integrations are best for stateless, single-call generation.
+</Aside>
+
+## Tool Definition
+
+Every framework needs the same information expressed in its own format:
+
+- **Name:** `generate_pdf`
+- **Description:** Generate a professional PDF document from structured data. Supports invoices, quotes, receipts, reports, contracts, certificates, and letters.
+- **Parameters:** `data` (required object), `intent` (optional string), `style` (optional enum), `format` (optional enum)
+
+---
+
+## OpenAI Function Calling
+
+### Tool Definition
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "generate_pdf",
+    "description": "Generate a professional PDF document from structured data. Automatically detects document type (invoice, quote, receipt, report, contract, certificate, letter) and produces a formatted PDF.",
+    "parameters": {
+      "type": "object",
+      "required": ["data"],
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "The document data. Include fields like company, customer/client, items/lineItems, totals, dates. Field names are auto-detected."
+        },
+        "intent": {
+          "type": "string",
+          "description": "Natural language description of the document, e.g. 'professional invoice' or 'minimal receipt'"
+        },
+        "style": {
+          "type": "string",
+          "enum": ["stripe-clean", "bold", "minimal", "corporate"],
+          "description": "Visual style preset. Defaults to auto-selected based on document type."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["pdf", "png"],
+          "description": "Output format. Defaults to pdf."
+        }
+      }
+    }
+  }
+}
+```
+
+### End-to-End Example
+
+```python
+import openai
+import json
+import base64
+
+client = openai.OpenAI()
+GLYPH_API_KEY = "gk_your_api_key"
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "generate_pdf",
+        "description": "Generate a professional PDF from structured data.",
+        "parameters": {
+            "type": "object",
+            "required": ["data"],
+            "properties": {
+                "data": {"type": "object", "description": "Document data"},
+                "intent": {"type": "string", "description": "Document intent"},
+                "style": {"type": "string", "enum": ["stripe-clean", "bold", "minimal", "corporate"]}
+            }
+        }
+    }
+}]
+
+def handle_generate_pdf(args):
+    import requests
+    response = requests.post(
+        "https://api.glyph.you/v1/create",
+        headers={
+            "Authorization": f"Bearer {GLYPH_API_KEY}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        json=args
+    )
+    result = response.json()
+    if result.get("success"):
+        # Save PDF
+        pdf_data = base64.b64decode(result["url"].split(",")[1])
+        with open(result["filename"], "wb") as f:
+            f.write(pdf_data)
+        return {"status": "success", "filename": result["filename"], "size": result["size"]}
+    return {"status": "error", "error": result.get("error")}
+
+# Run the agent
+messages = [{"role": "user", "content": "Create an invoice for Acme Corp. 2 items: API Integration ($5,000), Support Plan ($2,400). Tax 8%."}]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=messages,
+    tools=tools,
+    tool_choice="auto"
+)
+
+message = response.choices[0].message
+if message.tool_calls:
+    for tool_call in message.tool_calls:
+        if tool_call.function.name == "generate_pdf":
+            args = json.loads(tool_call.function.arguments)
+            result = handle_generate_pdf(args)
+            print(f"PDF generated: {result}")
+```
+
+---
+
+## Anthropic Tool Use
+
+### Tool Definition
+
+```json
+{
+  "name": "generate_pdf",
+  "description": "Generate a professional PDF document from structured data. Automatically detects document type (invoice, quote, receipt, report, contract, certificate, letter) and produces a formatted PDF.",
+  "input_schema": {
+    "type": "object",
+    "required": ["data"],
+    "properties": {
+      "data": {
+        "type": "object",
+        "description": "The document data. Include fields like company, customer/client, items/lineItems, totals, dates."
+      },
+      "intent": {
+        "type": "string",
+        "description": "Natural language description of the document"
+      },
+      "style": {
+        "type": "string",
+        "enum": ["stripe-clean", "bold", "minimal", "corporate"],
+        "description": "Visual style preset"
+      },
+      "format": {
+        "type": "string",
+        "enum": ["pdf", "png"],
+        "description": "Output format. Defaults to pdf."
+      }
+    }
+  }
+}
+```
+
+### End-to-End Example
+
+```python
+import anthropic
+import requests
+import json
+import base64
+
+client = anthropic.Anthropic()
+GLYPH_API_KEY = "gk_your_api_key"
+
+tools = [{
+    "name": "generate_pdf",
+    "description": "Generate a professional PDF from structured data.",
+    "input_schema": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+            "data": {"type": "object", "description": "Document data"},
+            "intent": {"type": "string", "description": "Document intent"},
+            "style": {"type": "string", "enum": ["stripe-clean", "bold", "minimal", "corporate"]}
+        }
+    }
+}]
+
+def handle_tool(name, input_data):
+    if name == "generate_pdf":
+        response = requests.post(
+            "https://api.glyph.you/v1/create",
+            headers={
+                "Authorization": f"Bearer {GLYPH_API_KEY}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            json=input_data
+        )
+        result = response.json()
+        if result.get("success"):
+            pdf_data = base64.b64decode(result["url"].split(",")[1])
+            with open(result["filename"], "wb") as f:
+                f.write(pdf_data)
+            return json.dumps({"status": "success", "filename": result["filename"], "size": result["size"]})
+        return json.dumps({"status": "error", "error": result.get("error")})
+
+messages = [{"role": "user", "content": "Create an invoice for Acme Corp. 2 items: API Integration ($5,000), Support Plan ($2,400). Tax 8%."}]
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=4096,
+    tools=tools,
+    messages=messages
+)
+
+# Handle tool use
+for block in response.content:
+    if block.type == "tool_use":
+        result = handle_tool(block.name, block.input)
+        # Send result back to continue conversation
+        messages.append({"role": "assistant", "content": response.content})
+        messages.append({
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": block.id, "content": result}]
+        })
+        final = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4096,
+            tools=tools,
+            messages=messages
+        )
+        print(final.content[0].text)
+```
+
+---
+
+## LangChain
+
+### Tool Definition
+
+```python
+from langchain_core.tools import tool
+import requests
+import base64
+
+GLYPH_API_KEY = "gk_your_api_key"
+
+@tool
+def generate_pdf(data: dict, intent: str = "", style: str = "stripe-clean", format: str = "pdf") -> str:
+    """Generate a professional PDF document from structured data.
+
+    Automatically detects document type (invoice, quote, receipt, report,
+    contract, certificate, letter) and produces a formatted PDF.
+
+    Args:
+        data: Document data with fields like company, customer, items, totals.
+        intent: Natural language description (e.g. 'professional invoice').
+        style: Visual style: stripe-clean, bold, minimal, or corporate.
+        format: Output format: pdf or png.
+
+    Returns:
+        JSON string with filename and size on success, or error details.
+    """
+    body = {"data": data, "format": format}
+    if intent:
+        body["intent"] = intent
+    if style:
+        body["style"] = style
+
+    response = requests.post(
+        "https://api.glyph.you/v1/create",
+        headers={
+            "Authorization": f"Bearer {GLYPH_API_KEY}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        json=body
+    )
+    result = response.json()
+
+    if result.get("success"):
+        pdf_data = base64.b64decode(result["url"].split(",")[1])
+        filename = result["filename"]
+        with open(filename, "wb") as f:
+            f.write(pdf_data)
+        return f"PDF saved to {filename} ({result['size']} bytes). Document type: {result['analysis']['detectedType']}."
+    return f"Error: {result.get('error', 'Unknown error')}"
+```
+
+### End-to-End Example
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+llm = ChatOpenAI(model="gpt-4o")
+llm_with_tools = llm.bind_tools([generate_pdf])
+
+messages = [HumanMessage("Create an invoice for Acme Corp. API Integration $5,000, Support Plan $2,400. Tax 8%.")]
+response = llm_with_tools.invoke(messages)
+
+# Execute tool calls
+for tool_call in response.tool_calls:
+    result = generate_pdf.invoke(tool_call["args"])
+    print(result)
+```
+
+---
+
+## Vercel AI SDK
+
+### Tool Definition
+
+```typescript
+import { tool } from 'ai';
+import { z } from 'zod';
+
+const GLYPH_API_KEY = 'gk_your_api_key';
+
+const generatePdf = tool({
+  description: 'Generate a professional PDF document from structured data. Automatically detects document type (invoice, quote, receipt, report, contract, certificate, letter).',
+  parameters: z.object({
+    data: z.record(z.unknown()).describe('Document data with fields like company, customer, items, totals'),
+    intent: z.string().optional().describe('Natural language description, e.g. "professional invoice"'),
+    style: z.enum(['stripe-clean', 'bold', 'minimal', 'corporate']).optional().describe('Visual style preset'),
+    format: z.enum(['pdf', 'png']).optional().describe('Output format, defaults to pdf'),
+  }),
+  execute: async ({ data, intent, style, format }) => {
+    const response = await fetch('https://api.glyph.you/v1/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GLYPH_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        data,
+        ...(intent && { intent }),
+        ...(style && { style }),
+        ...(format && { format }),
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return {
+        status: 'success',
+        filename: result.filename,
+        size: result.size,
+        documentType: result.analysis.detectedType,
+        sessionId: result.sessionId,
+      };
+    }
+    return { status: 'error', error: result.error };
+  },
+});
+```
+
+### End-to-End Example (Next.js Route Handler)
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+
+  const { text, toolResults } = await generateText({
+    model: openai('gpt-4o'),
+    tools: { generatePdf },
+    prompt,
+    maxSteps: 3,
+  });
+
+  return Response.json({ text, toolResults });
+}
+```
+
+### Streaming Example (Next.js)
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = streamText({
+    model: openai('gpt-4o'),
+    tools: { generatePdf },
+    messages,
+    maxSteps: 3,
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+---
+
+## Best Practices
+
+1. **Keep tool descriptions concise.** The LLM reads them on every call. Include what the tool does and what data shapes work, but skip implementation details.
+
+2. **Let the agent structure the data.** The `/v1/create` endpoint auto-detects document types. You do not need to pre-process or validate data before calling Glyph.
+
+3. **Use `intent` for better results.** A short phrase like `"professional invoice"` or `"minimal receipt"` helps Glyph choose the right layout.
+
+4. **Handle the session ID.** The response includes a `sessionId` that you can pass to `/v1/modify` for follow-up changes. This is useful for multi-turn agent conversations where the user refines a document.
+
+5. **Store the base64 URL or save to disk.** The `url` field is a base64 data URL. Decode it to save a file, or pass it directly to a downstream system.
+
+## Next Steps
+
+- [POST /v1/create](/api/create/) - Full API reference for the create endpoint
+- [MCP Server](/integrations/mcp-server/) - For interactive editing with AI coding assistants
+- [POST /v1/modify](/api/modify/) - Refine generated documents with natural language
+- [Templates Overview](/templates/overview/) - Available document templates

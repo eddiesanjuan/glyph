@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://docs.glyph.you/sitemap-index.xml

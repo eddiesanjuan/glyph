@@ -1,24 +1,30 @@
 ---
-title: POST /v1/analyze/preview/auto - Data-First PDF Generation
-description: Generate professional PDFs from raw data with automatic type detection
+title: POST /v1/create - Stateless PDF Generation
+description: One API call to generate a PDF from raw data. No sessions, no templates, just data in, PDF out.
 ---
 
-<span class="endpoint-badge post">POST</span> `/v1/analyze/preview/auto`
+import { Aside } from '@astrojs/starlight/components';
 
-Generate professional PDFs from raw data with natural language intent. No templates required - Glyph automatically detects your document type and creates a beautiful layout.
+<span class="endpoint-badge post">POST</span> `/v1/create`
 
-**One API call. Beautiful PDF.**
+Generate a professional PDF from raw data in a single API call. Glyph analyzes your data structure, detects the document type, generates a layout, and returns a finished PDF or PNG.
+
+**One call. Beautiful document.**
 
 ## Overview
 
-The Data-First approach is the simplest way to generate PDFs with Glyph:
+The `/v1/create` endpoint is the fastest path to a PDF:
 
-1. Send your data in any JSON structure
-2. Glyph analyzes and detects the document type
-3. Fields are automatically mapped to the best template
-4. A professional PDF preview is generated
+1. Send your data as JSON
+2. Glyph analyzes the structure and detects the document type
+3. A professional layout is generated automatically
+4. You get back a PDF (or PNG) and a `sessionId` for further modifications
 
-No template selection. No field mapping. Just data in, PDF out.
+No template selection. No session management. Just data in, document out.
+
+<Aside type="tip">
+This is the recommended starting point for most integrations. Use `/v1/preview` + `/v1/modify` + `/v1/generate` only when you need interactive editing.
+</Aside>
 
 ## Request
 
@@ -28,13 +34,14 @@ No template selection. No field mapping. Just data in, PDF out.
 |--------|----------|-------------|
 | `Authorization` | Yes | `Bearer gk_your_api_key` |
 | `Content-Type` | Yes | `application/json` |
+| `Accept` | No | `application/json` for JSON response with base64 data URL. Omit for raw binary file. |
 
 ### Body
 
 ```json
 {
   "data": {
-    "company": { "name": "Acme Inc", "email": "hello@acme.com" },
+    "company": { "name": "Acme Inc", "email": "billing@acme.com" },
     "customer": { "name": "John Doe", "email": "john@example.com" },
     "items": [
       { "description": "Consulting", "hours": 10, "rate": 150, "total": 1500 }
@@ -43,7 +50,9 @@ No template selection. No field mapping. Just data in, PDF out.
     "tax": 120,
     "total": 1620
   },
-  "template": "auto"
+  "intent": "professional invoice",
+  "style": "stripe-clean",
+  "format": "pdf"
 }
 ```
 
@@ -51,73 +60,107 @@ No template selection. No field mapping. Just data in, PDF out.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `data` | object | Yes | Your data in any JSON structure |
-| `template` | string | No | Override detected template. Use `"auto"` for detection (default) |
+| `data` | object | Yes | Your data in any JSON structure. Must have at least one key. |
+| `intent` | string | No | Natural language description of what you want (e.g., `"professional invoice"`, `"Stripe-styled proposal"`) |
+| `style` | string | No | Style preset: `stripe-clean`, `bold`, `minimal`, `corporate` |
+| `format` | string | No | Output format: `pdf` (default) or `png` |
+| `options` | object | No | Rendering options (see below) |
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `options.pageSize` | string | `A4`, `letter` (default), or `legal` |
+| `options.orientation` | string | `portrait` (default) or `landscape` |
+| `options.margin` | object | Custom margins: `{ top, bottom, left, right }` as CSS strings |
+| `options.scale` | number | Scale factor (0.1 to 3, default: 1) |
 
 ## Response
 
-### Success (200)
+### JSON Response
+
+When `Accept: application/json` is set (or the accept header does not match the output content type):
 
 ```json
 {
-  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-  "html": "<!DOCTYPE html><html>...</html>",
+  "success": true,
+  "format": "pdf",
+  "url": "data:application/pdf;base64,JVBERi0xLjQK...",
+  "size": 45678,
+  "filename": "glyph-invoice-1706000000000.pdf",
+  "expiresAt": "2026-01-29T12:00:00.000Z",
   "analysis": {
-    "documentType": "invoice",
+    "detectedType": "invoice",
     "confidence": 0.95,
-    "template": "quote-modern",
-    "fieldMappings": [
-      { "source": "customer.name", "target": "client.name", "mapped": true },
-      { "source": "items", "target": "lineItems", "mapped": true },
-      { "source": "total", "target": "totals.total", "mapped": true }
-    ],
-    "missingFields": [],
-    "warnings": []
+    "fieldsIdentified": ["header", "recipient", "lineItems", "summary"],
+    "layoutDecisions": ["professional header", "table content", "summary summary"]
+  },
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "_links": {
+    "modify": "/v1/modify",
+    "generate": "/v1/generate"
   }
 }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `sessionId` | string | Session ID for modifications and PDF generation |
-| `html` | string | Rendered HTML preview |
+| `success` | boolean | Whether generation succeeded |
+| `format` | string | Output format (`pdf` or `png`) |
+| `url` | string | Base64 data URL of the generated file |
+| `size` | number | File size in bytes |
+| `filename` | string | Suggested filename |
+| `expiresAt` | string | ISO timestamp (24 hours from generation) |
 | `analysis` | object | How Glyph interpreted your data |
-| `analysis.documentType` | string | Detected document type |
-| `analysis.confidence` | number | Detection confidence (0-1) |
-| `analysis.template` | string | Template used for rendering |
-| `analysis.fieldMappings` | array | How your fields were mapped |
+| `analysis.detectedType` | string | Detected document type |
+| `analysis.confidence` | number | Detection confidence (0 to 1) |
+| `analysis.fieldsIdentified` | array | Field categories found in your data |
+| `analysis.layoutDecisions` | array | Layout choices made during generation |
+| `sessionId` | string | Session ID for subsequent `/v1/modify` and `/v1/generate` calls |
+| `_links` | object | Hypermedia links for next actions |
 
-:::tip
-Use the `sessionId` with `/v1/modify` to make AI-powered changes, then `/v1/generate` to create the final PDF.
-:::
+<Aside type="note">
+The `sessionId` lets you make AI-powered modifications after generation. Call `/v1/modify` with the session ID to refine the document, then `/v1/generate` to export the updated version. Sessions expire after 1 hour.
+</Aside>
 
-## How It Works
+### Raw File Response
 
-1. **Data Analysis**: AI examines your data structure to detect document type (invoice, quote, receipt, report, etc.)
-2. **Field Identification**: Semantic roles are assigned (header, line items, totals, metadata)
-3. **Template Selection**: The best-matching template is chosen automatically
-4. **Layout Generation**: Professional HTML is generated with proper formatting
-5. **Session Creation**: A session is created for further modifications
+When the `Accept` header matches the output content type (e.g., `application/pdf`), the response is the raw binary file:
 
-## Detected Document Types
+**Headers:**
+```http
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="glyph-invoice-1706000000000.pdf"
+Content-Length: 45678
+X-Glyph-Session-Id: 550e8400-e29b-41d4-a716-446655440000
+X-Glyph-Document-Type: invoice
+```
+
+**Body:** Binary PDF or PNG data
+
+## Document Type Detection
+
+Glyph automatically detects the document type from your data:
 
 | Type | Detection Signals |
 |------|-------------------|
-| `invoice` | lineItems + totals + dueDate, invoiceNumber |
-| `quote` | lineItems + totals + validUntil, quoteNumber |
-| `receipt` | items + paid, transactionId, paymentMethod |
-| `report` | summary, metrics, analysis, findings |
-| `certificate` | awarded, completion, certifiedTo |
-| `letter` | recipient, sender, body, salutation |
+| `invoice` | `items` + `total` + `tax`, `dueDate`, `invoiceNumber` |
+| `quote` | `items` + `total` + `validUntil`, `quoteNumber` |
+| `receipt` | `items` + `paid`, `transactionId`, `paymentMethod` |
+| `report` | `summary`, `metrics`, `analysis`, `findings` |
+| `certificate` | `awarded`, `completion`, `certifiedTo` |
+| `letter` | `recipient`, `sender`, `body`, `salutation` |
+| `contract` | `contract`, `agreement`, `terms`, `signature`, `parties` |
 
-## Example: Invoice
+## Code Examples
 
 ### cURL
 
 ```bash
-curl -X POST https://api.glyph.you/v1/analyze/preview/auto \
+curl -X POST https://api.glyph.you/v1/create \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
   -d '{
     "data": {
       "company": { "name": "Acme Inc", "email": "billing@acme.com" },
@@ -129,83 +172,134 @@ curl -X POST https://api.glyph.you/v1/analyze/preview/auto \
       "subtotal": 4000,
       "tax": 320,
       "total": 4320,
-      "invoiceNumber": "INV-2024-001",
-      "date": "2024-01-15",
-      "dueDate": "2024-02-15"
-    }
+      "invoiceNumber": "INV-2026-001",
+      "date": "2026-01-15",
+      "dueDate": "2026-02-15"
+    },
+    "intent": "professional invoice",
+    "style": "stripe-clean"
   }'
+```
+
+### cURL (Download raw PDF)
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "company": { "name": "Acme Inc" },
+      "customer": { "name": "John Doe" },
+      "items": [{ "description": "Consulting", "total": 1500 }],
+      "total": 1500
+    }
+  }' \
+  --output invoice.pdf
 ```
 
 ### JavaScript
 
 ```javascript
-const response = await fetch('https://api.glyph.you/v1/analyze/preview/auto', {
+const response = await fetch('https://api.glyph.you/v1/create', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer gk_your_api_key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
   body: JSON.stringify({
     data: {
       company: { name: 'Acme Inc' },
-      customer: { name: 'John Doe' },
+      customer: { name: 'John Doe', email: 'john@example.com' },
       items: [
         { description: 'Consulting', hours: 10, rate: 150, total: 1500 }
       ],
       subtotal: 1500,
       tax: 120,
       total: 1620
-    }
+    },
+    intent: 'professional invoice',
+    style: 'stripe-clean'
   })
 });
 
-const { sessionId, html, analysis } = await response.json();
-console.log(`Detected: ${analysis.documentType} (${analysis.confidence * 100}% confidence)`);
-console.log(`Session ID: ${sessionId}`);
+const result = await response.json();
+console.log(`Detected: ${result.analysis.detectedType} (${(result.analysis.confidence * 100).toFixed(0)}%)`);
+console.log(`Size: ${result.size} bytes`);
+console.log(`Session: ${result.sessionId}`);
+
+// Optionally modify and re-generate
+await fetch('https://api.glyph.you/v1/modify', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer gk_your_api_key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sessionId: result.sessionId,
+    instruction: 'Add a QR code for payment'
+  })
+});
 ```
 
 ### Python
 
 ```python
 import requests
+import base64
 
 response = requests.post(
-    'https://api.glyph.you/v1/analyze/preview/auto',
+    'https://api.glyph.you/v1/create',
     headers={
         'Authorization': 'Bearer gk_your_api_key',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
     },
     json={
         'data': {
             'company': {'name': 'Acme Inc'},
-            'customer': {'name': 'John Doe'},
+            'customer': {'name': 'John Doe', 'email': 'john@example.com'},
             'items': [
                 {'description': 'Consulting', 'hours': 10, 'rate': 150, 'total': 1500}
             ],
             'subtotal': 1500,
             'tax': 120,
             'total': 1620
-        }
+        },
+        'intent': 'professional invoice',
+        'style': 'stripe-clean'
     }
 )
 
-data = response.json()
-print(f"Detected: {data['analysis']['documentType']}")
-print(f"Session ID: {data['sessionId']}")
+result = response.json()
+print(f"Detected: {result['analysis']['detectedType']}")
+print(f"Size: {result['size']} bytes")
+print(f"Session: {result['sessionId']}")
+
+# Save the PDF from the base64 data URL
+data_url = result['url']
+base64_data = data_url.split(',')[1]
+with open('invoice.pdf', 'wb') as f:
+    f.write(base64.b64decode(base64_data))
 ```
 
 ## Analysis-Only Endpoint
 
-To see how Glyph would interpret your data without generating a preview:
+To see how Glyph interprets your data without generating a document:
 
-<span class="endpoint-badge post">POST</span> `/v1/analyze`
+<span class="endpoint-badge post">POST</span> `/v1/create/analyze`
 
 ```bash
-curl -X POST https://api.glyph.you/v1/analyze \
+curl -X POST https://api.glyph.you/v1/create/analyze \
   -H "Authorization: Bearer gk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
-    "data": { "items": [{"name": "Widget", "price": 99}], "total": 99 }
+    "data": {
+      "items": [{"name": "Widget", "price": 99}],
+      "total": 99
+    },
+    "intent": "receipt"
   }'
 ```
 
@@ -213,73 +307,36 @@ Response:
 
 ```json
 {
-  "documentType": "receipt",
-  "confidence": 0.8,
-  "suggestedTemplate": "quote-modern",
-  "fieldMappings": [
-    { "source": "items", "target": "lineItems", "example": [...], "confidence": 0.9, "required": true }
-  ],
-  "missingFields": [
-    { "field": "client.name", "reason": "No customer/client name detected" }
-  ],
-  "warnings": ["Consider adding a document number for tracking"]
+  "success": true,
+  "analysis": {
+    "documentType": "receipt",
+    "confidence": 0.8,
+    "fields": {
+      "header": [...],
+      "recipient": [...],
+      "lineItems": [...],
+      "summary": [...],
+      "metadata": [...],
+      "footer": [...]
+    },
+    "layout": {
+      "headerStyle": "professional",
+      "contentStyle": "table",
+      "summaryStyle": "summary"
+    },
+    "styling": {
+      "suggestedStyle": "stripe-clean"
+    }
+  },
+  "recommendations": {
+    "suggestedStyle": "stripe-clean",
+    "suggestedLayout": "table",
+    "fieldsFound": 5,
+    "tips": [
+      "No recipient information found. Add 'customer', 'client', or 'recipient' fields for better document structure."
+    ]
+  }
 }
-```
-
-## Field Mappings Reference
-
-Glyph automatically maps common field names to template fields:
-
-<span class="endpoint-badge get">GET</span> `/v1/analyze/mappings`
-
-```bash
-curl https://api.glyph.you/v1/analyze/mappings \
-  -H "Authorization: Bearer gk_your_api_key"
-```
-
-Returns a comprehensive reference of field name variations that Glyph recognizes.
-
-## Tips for Best Results
-
-- **Use descriptive field names**: Names like `customer`, `total`, `items` are recognized automatically
-- **Include line items as arrays**: Use arrays for products, services, or items
-- **Add context fields**: Include `invoiceNumber`, `date`, `dueDate` to improve detection
-- **Use ISO dates**: Dates in ISO format (`2024-01-15`) or human-readable strings work well
-- **The more structure, the better**: Nested objects with clear naming improve accuracy
-
-## Complete Workflow
-
-```javascript
-// 1. Create preview with auto-detection
-const preview = await fetch('https://api.glyph.you/v1/analyze/preview/auto', {
-  method: 'POST',
-  headers: { 'Authorization': 'Bearer gk_xxx', 'Content-Type': 'application/json' },
-  body: JSON.stringify({ data: invoiceData })
-}).then(r => r.json());
-
-console.log(`Detected: ${preview.analysis.documentType}`);
-
-// 2. Optionally modify with AI
-await fetch('https://api.glyph.you/v1/modify', {
-  method: 'POST',
-  headers: { 'Authorization': 'Bearer gk_xxx', 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    sessionId: preview.sessionId,
-    instruction: 'Add a professional watermark that says DRAFT'
-  })
-});
-
-// 3. Generate final PDF
-const pdf = await fetch('https://api.glyph.you/v1/generate', {
-  method: 'POST',
-  headers: { 'Authorization': 'Bearer gk_xxx', 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    sessionId: preview.sessionId,
-    format: 'pdf'
-  })
-}).then(r => r.json());
-
-console.log(`PDF generated: ${pdf.size} bytes`);
 ```
 
 ## Error Responses
@@ -290,7 +347,7 @@ console.log(`PDF generated: ${pdf.size} bytes`);
 {
   "error": "Validation failed",
   "code": "VALIDATION_ERROR",
-  "details": [{ "path": ["data"], "message": "Required" }]
+  "details": [{ "path": ["data"], "message": "Data object cannot be empty" }]
 }
 ```
 
@@ -303,17 +360,47 @@ console.log(`PDF generated: ${pdf.size} bytes`);
 }
 ```
 
-**500 Internal Server Error** - Processing error
+**500 Internal Server Error** - Analysis or generation failed
 
 ```json
 {
-  "error": "Analysis failed",
-  "code": "ANALYZE_ERROR"
+  "error": "Could not analyze data structure",
+  "code": "ANALYSIS_FAILED",
+  "details": "..."
 }
 ```
 
+```json
+{
+  "error": "Failed to generate document",
+  "code": "GENERATION_FAILED",
+  "details": "..."
+}
+```
+
+**503 Service Unavailable** - Playwright not installed
+
+```json
+{
+  "error": "PDF generation not available. Playwright is not installed.",
+  "code": "PLAYWRIGHT_NOT_INSTALLED",
+  "details": {
+    "install": "bun add playwright && npx playwright install chromium"
+  }
+}
+```
+
+## Tips for Best Results
+
+- **Use descriptive field names**: Names like `customer`, `total`, `items` are recognized automatically
+- **Include line items as arrays**: Use arrays for products, services, or items
+- **Add context fields**: Include `invoiceNumber`, `date`, `dueDate` to improve detection
+- **Use the `intent` parameter**: A short description like `"professional invoice"` helps Glyph make better layout decisions
+- **Choose a style**: The `style` parameter gives you control over the visual output without writing CSS
+
 ## Next Steps
 
-- [POST /v1/modify](/api/modify/) - Make AI-powered changes to your document
-- [POST /v1/generate](/api/generate/) - Generate the final PDF
+- [POST /v1/modify](/api/modify/) - Make AI-powered changes to a generated document
+- [POST /v1/generate](/api/generate/) - Re-generate after modifications
+- [Templates Overview](/templates/overview/) - Browse available document templates
 - [MCP Server](/integrations/mcp-server/) - Use with AI coding assistants

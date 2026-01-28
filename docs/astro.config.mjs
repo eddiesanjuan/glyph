@@ -1,9 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://docs.glyph.you',
 	trailingSlash: 'never',
 	integrations: [
 		starlight({
@@ -40,6 +42,7 @@ export default defineConfig({
 						{ label: 'Webhooks & Automation', slug: 'integrations/webhooks' },
 						{ label: 'Airtable', slug: 'integrations/airtable' },
 						{ label: 'MCP Server', slug: 'integrations/mcp-server' },
+						{ label: 'Agent Frameworks', slug: 'integrations/agent-frameworks' },
 					],
 				},
 				{
@@ -124,5 +127,6 @@ export default defineConfig({
 				baseUrl: 'https://github.com/glyph-so/glyph/edit/main/docs/',
 			},
 		}),
+		sitemap(),
 	],
 });
