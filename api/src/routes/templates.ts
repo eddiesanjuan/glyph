@@ -325,6 +325,23 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
 ];
 
 // =============================================================================
+// Template Style Tags
+// =============================================================================
+
+const templateStyleTags: Record<string, { style: string; tags: string[] }> = {
+  'quote-modern': { style: 'modern', tags: ['modern', 'minimal', 'clean'] },
+  'quote-bold': { style: 'modern', tags: ['modern', 'bold', 'high-contrast'] },
+  'quote-professional': { style: 'traditional', tags: ['traditional', 'formal', 'serif'] },
+  'invoice-clean': { style: 'modern', tags: ['modern', 'clean', 'minimal'] },
+  'receipt-minimal': { style: 'minimal', tags: ['minimal', 'compact'] },
+  'report-cover': { style: 'modern', tags: ['modern', 'cover-page'] },
+  'contract-simple': { style: 'traditional', tags: ['formal', 'legal'] },
+  'certificate-modern': { style: 'modern', tags: ['modern', 'decorative', 'formal'] },
+  'letter-business': { style: 'traditional', tags: ['traditional', 'formal', 'business'] },
+  'proposal-basic': { style: 'modern', tags: ['modern', 'professional'] },
+};
+
+// =============================================================================
 // Routes
 // =============================================================================
 
@@ -335,6 +352,8 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
 templates.get("/", (c) => {
   const category = c.req.query("category");
   const search = c.req.query("search");
+  const styleFilter = c.req.query("style");
+  const tagFilter = c.req.query("tag");
 
   let filtered = TEMPLATE_CATALOG;
 
@@ -352,8 +371,28 @@ templates.get("/", (c) => {
     );
   }
 
+  if (styleFilter) {
+    const s = styleFilter.toLowerCase();
+    filtered = filtered.filter((t) => {
+      const meta = templateStyleTags[t.id];
+      return meta && meta.style.toLowerCase() === s;
+    });
+  }
+
+  if (tagFilter) {
+    const tag = tagFilter.toLowerCase();
+    filtered = filtered.filter((t) => {
+      const meta = templateStyleTags[t.id];
+      return meta && meta.tags.some((tg) => tg.toLowerCase() === tag);
+    });
+  }
+
   const body = JSON.stringify({
-    templates: filtered,
+    templates: filtered.map((t) => ({
+      ...t,
+      style: templateStyleTags[t.id]?.style ?? null,
+      tags: templateStyleTags[t.id]?.tags ?? [],
+    })),
     count: filtered.length,
   });
   const etag = generateETag(body);
@@ -362,7 +401,7 @@ templates.get("/", (c) => {
     return c.body(null, 304);
   }
 
-  c.header("Cache-Control", "public, max-age=3600");
+  c.header("Cache-Control", "public, max-age=300");
   c.header("ETag", etag);
   c.header("Content-Type", "application/json; charset=UTF-8");
   return c.body(body);
@@ -1274,7 +1313,7 @@ templates.get("/:id/schema", async (c) => {
       return c.body(null, 304);
     }
 
-    c.header("Cache-Control", "public, max-age=3600");
+    c.header("Cache-Control", "public, max-age=300");
     c.header("ETag", etag);
     c.header("Content-Type", "application/schema+json; charset=UTF-8");
     return c.body(raw);
@@ -1343,7 +1382,7 @@ templates.get("/:id", async (c) => {
       return c.body(null, 304);
     }
 
-    c.header("Cache-Control", "public, max-age=3600");
+    c.header("Cache-Control", "public, max-age=300");
     c.header("ETag", etag);
     c.header("Content-Type", "application/json; charset=UTF-8");
     return c.body(body);

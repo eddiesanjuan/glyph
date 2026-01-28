@@ -83,7 +83,7 @@ preview.post(
 
       // If no data provided, load sample data from the template's schema.json
       let data = providedData;
-      if (!data) {
+      if (!data || Object.keys(data).length === 0) {
         data = await loadTemplateSampleData(template);
         if (!data) {
           const error: ApiError = {

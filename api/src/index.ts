@@ -282,7 +282,7 @@ app.get("/v1/openapi.json", (c) => {
             { name: "category", in: "query", schema: { type: "string" }, description: "Filter by category" },
             { name: "search", in: "query", schema: { type: "string" }, description: "Search templates" },
           ],
-          responses: { "200": { description: "Template catalog" } },
+          responses: { "200": { description: "Template catalog", content: { "application/json": { schema: { type: "object", properties: { templates: { type: "array", items: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, description: { type: "string" }, category: { type: "string" }, sampleData: { type: "object" } }, required: ["id", "name", "description", "category"] } } }, required: ["templates"] }, example: { templates: [{ id: "quote-modern", name: "Modern Quote", description: "Clean, professional quote template with itemized pricing", category: "business", sampleData: { company: "Acme Corp", items: [{ name: "Widget", price: 29.99 }] } }] } } } } },
         },
       },
       "/v1/templates/{id}": {
@@ -321,7 +321,7 @@ app.get("/v1/openapi.json", (c) => {
           tags: ["Core"],
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { templateId: { type: "string" }, data: { type: "object" } }, required: ["templateId", "data"] } } } },
-          responses: { "200": { description: "Preview session created" } },
+          responses: { "200": { description: "Preview session created", content: { "application/json": { schema: { type: "object", properties: { html: { type: "string", description: "Rendered HTML preview" }, sessionId: { type: "string", description: "Session ID for subsequent modify/generate calls" }, template: { type: "string", description: "Template ID used" } }, required: ["html", "sessionId", "template"] }, example: { html: "<div class=\"quote\">...</div>", sessionId: "sess_abc123def456", template: "quote-modern" } } } } },
         },
       },
       "/v1/modify": {
@@ -331,7 +331,7 @@ app.get("/v1/openapi.json", (c) => {
           tags: ["Core"],
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { sessionId: { type: "string" }, instruction: { type: "string" } }, required: ["sessionId", "instruction"] } } } },
-          responses: { "200": { description: "Modified document" } },
+          responses: { "200": { description: "Modified document", content: { "application/json": { schema: { type: "object", properties: { html: { type: "string", description: "Updated HTML after modification" }, changes: { type: "array", items: { type: "string" }, description: "List of changes applied" }, selfCheckPassed: { type: "boolean", description: "Whether the AI self-check validator approved the changes" }, usage: { type: "object", properties: { tokensUsed: { type: "integer" }, inputTokens: { type: "integer" }, outputTokens: { type: "integer" } }, required: ["tokensUsed", "inputTokens", "outputTokens"] } }, required: ["html", "changes", "selfCheckPassed", "usage"] }, example: { html: "<div class=\"quote\" style=\"font-family: 'Inter'\">...</div>", changes: ["Updated font family to Inter", "Applied Stripe-inspired color palette"], selfCheckPassed: true, usage: { tokensUsed: 1850, inputTokens: 1200, outputTokens: 650 } } } } } },
         },
       },
       "/v1/generate": {
@@ -341,7 +341,7 @@ app.get("/v1/openapi.json", (c) => {
           tags: ["Core"],
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { sessionId: { type: "string" }, format: { type: "string", enum: ["pdf", "png"] } }, required: ["sessionId"] } } } },
-          responses: { "200": { description: "Generated PDF/PNG" } },
+          responses: { "200": { description: "Generated PDF/PNG", content: { "application/json": { schema: { type: "object", properties: { url: { type: "string", description: "URL to download the generated file" }, format: { type: "string", enum: ["pdf", "png"], description: "Output format" }, size: { type: "integer", description: "File size in bytes" } }, required: ["url", "format", "size"] }, example: { url: "https://api.glyph.you/v1/files/gen_abc123.pdf", format: "pdf", size: 45230 } } } } },
         },
       },
       "/v1/create": {

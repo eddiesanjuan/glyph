@@ -30,9 +30,9 @@
         "type": "object",
         "required": ["name", "quantity", "price"],
         "properties": {
-          "name": { "type": "string" },
-          "quantity": { "type": ["number", "string"] },
-          "price": { "type": ["number", "string"] }
+          "name": { "type": "string", "description": "Item name as it appears on the receipt" },
+          "quantity": { "type": ["number", "string"], "description": "Number of this item purchased" },
+          "price": { "type": ["number", "string"], "description": "Price per unit of this item" }
         }
       }
     },
@@ -40,9 +40,9 @@
       "type": "object",
       "required": ["subtotal", "total"],
       "properties": {
-        "subtotal": { "type": ["number", "string"] },
-        "tax": { "type": ["number", "string"] },
-        "total": { "type": ["number", "string"] }
+        "subtotal": { "type": ["number", "string"], "description": "Sum of all item prices before tax" },
+        "tax": { "type": ["number", "string"], "description": "Tax amount applied" },
+        "total": { "type": ["number", "string"], "description": "Final amount charged to the customer" }
       }
     },
     "payment": {
@@ -56,7 +56,7 @@
     "styles": {
       "type": "object",
       "properties": {
-        "accentColor": { "type": "string", "default": "#18181b" }
+        "accentColor": { "type": "string", "default": "#18181b", "description": "Primary accent color as a CSS value, e.g. #18181b" }
       }
     }
   },

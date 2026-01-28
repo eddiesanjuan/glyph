@@ -52,11 +52,11 @@
         "type": "object",
         "required": ["description", "quantity", "rate", "amount"],
         "properties": {
-          "description": { "type": "string" },
-          "details": { "type": "string" },
-          "quantity": { "type": ["number", "string"] },
-          "rate": { "type": ["number", "string"] },
-          "amount": { "type": ["number", "string"] }
+          "description": { "type": "string", "description": "Name of the service or product being billed" },
+          "details": { "type": "string", "description": "Additional specifics about the line item, e.g. deliverables included" },
+          "quantity": { "type": ["number", "string"], "description": "Number of units or hours billed" },
+          "rate": { "type": ["number", "string"], "description": "Price per unit, e.g. 175.00" },
+          "amount": { "type": ["number", "string"], "description": "Line total (quantity * rate), e.g. 1,400.00" }
         }
       }
     },
@@ -64,26 +64,26 @@
       "type": "object",
       "required": ["subtotal", "total"],
       "properties": {
-        "subtotal": { "type": ["number", "string"] },
-        "tax": { "type": ["number", "string"] },
-        "taxRate": { "type": "number" },
-        "total": { "type": ["number", "string"] }
+        "subtotal": { "type": ["number", "string"], "description": "Sum of all line item amounts before tax" },
+        "tax": { "type": ["number", "string"], "description": "Tax amount applied to the subtotal" },
+        "taxRate": { "type": "number", "description": "Tax rate percentage, e.g. 9 for 9%" },
+        "total": { "type": ["number", "string"], "description": "Final amount due after tax" }
       }
     },
     "branding": {
       "type": "object",
       "required": ["companyName"],
       "properties": {
-        "logoUrl": { "type": "string", "format": "uri" },
-        "logoInitial": { "type": "string", "description": "Single letter fallback when no logo" },
-        "companyName": { "type": "string" },
-        "companyAddress": { "type": "string" }
+        "logoUrl": { "type": "string", "format": "uri", "description": "URL to the company logo image" },
+        "logoInitial": { "type": "string", "description": "Single letter fallback when no logo URL is provided" },
+        "companyName": { "type": "string", "description": "Name of the company issuing the invoice" },
+        "companyAddress": { "type": "string", "description": "Company address, supports multi-line with \\n" }
       }
     },
     "styles": {
       "type": "object",
       "properties": {
-        "accentColor": { "type": "string", "default": "#2563eb" }
+        "accentColor": { "type": "string", "default": "#2563eb", "description": "Primary accent color as a CSS value, e.g. #2563eb" }
       }
     }
   },
