@@ -4,47 +4,101 @@ Adds feedback to CYCLE_FEEDBACK.md for the next Ralph cycle to act on.
 
 ## Usage
 
-```bash
-/feedback The mobile preview is still hard to see on small screens
-/feedback Stop testing the docs page - focus only on the playground
-/feedback P0: The watermark button is broken again
+Run `/feedback` with or without arguments:
+
+```
+/feedback                             → Interactive: asks system, priority, feedback
+/feedback The watermark is broken     → Quick: asks system + priority, uses text as feedback
+/feedback P0: Watermark is broken     → Quickest: infers priority from prefix, asks system only
 ```
 
 ---
 
 ## Instructions
 
-You received feedback from Eddie. Your job:
+You received a `/feedback` command from Eddie. Follow this flow:
 
-1. **Read the current feedback file** at `.claude/CYCLE_FEEDBACK.md`
+### Step 1: Check for inline feedback
 
-2. **Append the new feedback** in this format:
+Look at `$ARGUMENTS`. Three scenarios:
+
+**A) No arguments (empty):** Ask all three questions below in order.
+**B) Has text but no priority prefix:** Use text as feedback, ask system and priority.
+**C) Has priority prefix (e.g., "P0: ..."):** Parse priority and feedback text, ask system only.
+
+### Step 2: Gather what's missing (conversational, fast)
+
+Ask ONLY what you don't already have. Ask one message at a time to keep it fast.
+
+**System** — Ask:
+> What's this about?
+> 1. Performance Sprint (product polish)
+> 2. Infrastructure Blitz (distribution)
+> 3. General (applies to everything)
+
+Eddie can reply with a number or a word. Map accordingly:
+- 1, "perf", "performance", "product", "polish" → Performance Sprint
+- 2, "infra", "infrastructure", "blitz", "distribution" → Infrastructure Blitz
+- 3, "general", "all", "everything", anything else → General
+
+**Priority** — Ask:
+> Priority?
+> - **P0:** Must fix THIS cycle, blocks everything
+> - **P1:** Important, address soon
+> - **P2:** Nice to have, can wait
+
+Eddie can reply with "P0", "0", "p0", "P1", "1", etc. Map accordingly.
+
+**Feedback** — Ask:
+> What's the feedback?
+
+Accept whatever Eddie writes as-is.
+
+### Step 3: Write to CYCLE_FEEDBACK.md
+
+1. **Read** the current contents of `.claude/CYCLE_FEEDBACK.md`
+2. **Append** the new entry at the END of the file, using this exact format:
 
 ```markdown
-## Feedback from Eddie - [timestamp]
+## Feedback from Eddie - [YYYY-MM-DD HH:MM CST]
 
-**Priority:** [P0/P1/P2 - infer from tone/content, P0 if urgent/broken, P1 if important, P2 if nice-to-have]
+**Priority:** P[0/1/2]
+**System:** [Performance Sprint / Infrastructure Blitz / General]
 
 **Feedback:**
-[The exact feedback provided]
+[Eddie's exact feedback text]
 
 **Context:**
-[Add 1-2 sentences of helpful context based on what you know about the current state of Glyph, recent changes, or relevant files]
+[1-2 sentences of helpful context you know about the current state of Glyph, recent changes, or relevant files. If you have no useful context, omit this section entirely.]
 
-**Suggested Focus:**
-[1-2 bullet points on what the cycle should investigate or fix]
+**Status:** PENDING
 
 ---
+
 ```
 
-3. **Confirm** with a brief message showing what you added
+**Timestamp rules:**
+- Always use CST (Central Standard Time, UTC-6)
+- Format: `YYYY-MM-DD HH:MM CST`
+- Use the current date and time
+
+### Step 4: Confirm
+
+Reply with a brief confirmation like:
+
+> Added P1 feedback to Performance Sprint. Next cycle will pick it up.
+
+Show the entry you wrote so Eddie can verify it looks right.
 
 ## Rules
 
-- Don't overthink it - just capture the feedback clearly
-- Infer priority from urgency words ("broken", "stop", "critical" = P0)
-- Add context that will help the cycle understand the issue
-- Keep it concise - cycles have limited context
+- **APPEND only** — never overwrite or remove existing entries
+- **Preserve the file header** — keep the `# Cycle Feedback` title and description at the top
+- **Keep it fast** — this is a mid-work interrupt, don't write essays
+- **Infer when possible** — if Eddie says "broken" or "blocks me", lean P0 without asking
+- **CST timezone always** — Eddie is in Central Time
+- **Don't ask unnecessary questions** — if the arguments give you everything, skip straight to writing
+- **Status is always PENDING** — cycles will update status when they act on it
 
 ## Arguments
 
