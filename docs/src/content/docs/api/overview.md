@@ -125,7 +125,7 @@ While you can use the API directly, we provide SDKs for easier integration:
 
 ## Next Steps
 
-- [Data-First API](/api/create/) - Generate PDFs from any data structure (recommended)
+- [Data-First API](/api/overview/) - Generate PDFs from any data structure (recommended)
 - [Authentication](/api/authentication/) - API key setup and usage
 - [POST /v1/preview](/api/preview/) - Generate document previews
 - [POST /v1/modify](/api/modify/) - AI-powered modifications

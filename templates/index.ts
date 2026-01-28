@@ -9,7 +9,7 @@ export interface TemplateMetadata {
   id: string;
   name: string;
   description: string;
-  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report';
+  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'receipt' | 'certificate' | 'letter';
   regions: string[];
   schemaUrl: string;
   previewUrl?: string;
@@ -50,9 +50,62 @@ export const templateMetadata: Record<string, TemplateMetadata> = {
     regions: ['header', 'meta', 'client-info', 'line-items', 'totals', 'notes', 'footer'],
     schemaUrl: '/templates/quote-bold/schema.json',
   },
-  // Future templates:
-  // 'invoice-modern': { ... },
-  // 'proposal-executive': { ... },
+  'certificate-modern': {
+    id: 'certificate-modern',
+    name: 'Modern Certificate',
+    description: 'Contemporary certificate design with clean layout for awards, completion, and recognition.',
+    category: 'certificate',
+    regions: ['header', 'recipient', 'description', 'footer'],
+    schemaUrl: '/templates/certificate-modern/schema.json',
+  },
+  'contract-simple': {
+    id: 'contract-simple',
+    name: 'Simple Contract',
+    description: 'Straightforward contract template with parties, sections, jurisdiction, and signature blocks.',
+    category: 'contract',
+    regions: ['header', 'parties', 'sections', 'jurisdiction', 'signatures'],
+    schemaUrl: '/templates/contract-simple/schema.json',
+  },
+  'invoice-clean': {
+    id: 'invoice-clean',
+    name: 'Clean Invoice',
+    description: 'Minimal invoice layout with billing details, itemized line items, and totals summary.',
+    category: 'invoice',
+    regions: ['header', 'bill-to', 'line-items', 'totals', 'footer'],
+    schemaUrl: '/templates/invoice-clean/schema.json',
+  },
+  'letter-business': {
+    id: 'letter-business',
+    name: 'Business Letter',
+    description: 'Formal business letter with sender, recipient, subject line, body, and closing.',
+    category: 'letter',
+    regions: ['sender', 'date', 'recipient', 'subject', 'body', 'closing'],
+    schemaUrl: '/templates/letter-business/schema.json',
+  },
+  'proposal-basic': {
+    id: 'proposal-basic',
+    name: 'Basic Proposal',
+    description: 'Project proposal with deliverables, timeline, pricing, and terms sections.',
+    category: 'proposal',
+    regions: ['header', 'title', 'client', 'description', 'deliverables', 'timeline', 'pricing', 'terms'],
+    schemaUrl: '/templates/proposal-basic/schema.json',
+  },
+  'receipt-minimal': {
+    id: 'receipt-minimal',
+    name: 'Minimal Receipt',
+    description: 'Compact receipt template with items, totals, and payment confirmation.',
+    category: 'receipt',
+    regions: ['header', 'items', 'totals', 'footer'],
+    schemaUrl: '/templates/receipt-minimal/schema.json',
+  },
+  'report-cover': {
+    id: 'report-cover',
+    name: 'Report Cover Page',
+    description: 'Professional report cover with title block, metadata, and abstract summary.',
+    category: 'report',
+    regions: ['header', 'title-block', 'meta', 'abstract'],
+    schemaUrl: '/templates/report-cover/schema.json',
+  },
 };
 
 /**
@@ -100,6 +153,104 @@ export const templateLoaders = {
       css: cssModule.default,
       schema: schemaModule.default,
       metadata: templateMetadata['quote-bold'],
+    };
+  },
+  'certificate-modern': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./certificate-modern/template.html?raw'),
+      import('./certificate-modern/styles.css?raw'),
+      import('./certificate-modern/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['certificate-modern'],
+    };
+  },
+  'contract-simple': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./contract-simple/template.html?raw'),
+      import('./contract-simple/styles.css?raw'),
+      import('./contract-simple/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['contract-simple'],
+    };
+  },
+  'invoice-clean': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./invoice-clean/template.html?raw'),
+      import('./invoice-clean/styles.css?raw'),
+      import('./invoice-clean/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['invoice-clean'],
+    };
+  },
+  'letter-business': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./letter-business/template.html?raw'),
+      import('./letter-business/styles.css?raw'),
+      import('./letter-business/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['letter-business'],
+    };
+  },
+  'proposal-basic': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./proposal-basic/template.html?raw'),
+      import('./proposal-basic/styles.css?raw'),
+      import('./proposal-basic/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['proposal-basic'],
+    };
+  },
+  'receipt-minimal': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./receipt-minimal/template.html?raw'),
+      import('./receipt-minimal/styles.css?raw'),
+      import('./receipt-minimal/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['receipt-minimal'],
+    };
+  },
+  'report-cover': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./report-cover/template.html?raw'),
+      import('./report-cover/styles.css?raw'),
+      import('./report-cover/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['report-cover'],
     };
   },
 };

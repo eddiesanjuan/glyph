@@ -46,7 +46,7 @@ curl -X POST https://api.glyph.you/v1/generate \
   -d '{"sessionId": "YOUR_SESSION_ID", "format": "pdf"}'
 ```
 
-Learn more: [Data-First API Reference](/api/create/)
+Learn more: [Data-First API Reference](/api/overview/)
 
 ---
 
@@ -170,7 +170,7 @@ Here's a complete HTML page you can copy and use:
 
 ## What's Next?
 
-- [Data-First API](/api/create/) - Generate PDFs from any data structure
+- [Data-First API](/api/overview/) - Generate PDFs from any data structure
 - [Installation Options](/getting-started/installation/) - npm, CDN, and direct integration
 - [API Reference](/api/overview/) - Building custom integrations
 - [MCP Server](/integrations/mcp-server/) - Use with AI coding assistants
