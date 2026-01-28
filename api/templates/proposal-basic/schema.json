@@ -1,0 +1,214 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/proposal-basic.json",
+  "title": "ProposalData",
+  "description": "Data schema for the proposal-basic template",
+  "type": "object",
+  "required": ["proposal", "client", "deliverables", "pricing", "branding"],
+  "properties": {
+    "proposal": {
+      "type": "object",
+      "description": "Proposal metadata",
+      "required": ["title", "date"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Proposal title"
+        },
+        "number": {
+          "type": "string",
+          "description": "Proposal reference number"
+        },
+        "date": {
+          "type": "string",
+          "description": "Proposal date"
+        },
+        "validUntil": {
+          "type": "string",
+          "description": "Proposal validity date"
+        },
+        "description": {
+          "type": "string",
+          "description": "Project overview / executive summary"
+        }
+      }
+    },
+    "client": {
+      "type": "object",
+      "description": "Client information",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Client contact name" },
+        "company": { "type": "string", "description": "Client company name" },
+        "address": { "type": "string", "description": "Client address" },
+        "email": { "type": "string", "format": "email", "description": "Client email" }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "description": "Project deliverables",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "description": "Project timeline milestones",
+      "items": {
+        "type": "object",
+        "required": ["phase", "duration"],
+        "properties": {
+          "phase": { "type": "string" },
+          "duration": { "type": "string" },
+          "details": { "type": "string" }
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "description": "Pricing breakdown",
+      "required": ["lineItems", "total"],
+      "properties": {
+        "lineItems": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["description", "amount"],
+            "properties": {
+              "description": { "type": "string" },
+              "details": { "type": "string" },
+              "amount": { "type": ["number", "string"] }
+            }
+          }
+        },
+        "subtotal": { "type": ["number", "string"] },
+        "tax": { "type": ["number", "string"] },
+        "taxRate": { "type": "number" },
+        "total": { "type": ["number", "string"] }
+      }
+    },
+    "terms": {
+      "type": "string",
+      "description": "Terms and conditions text"
+    },
+    "branding": {
+      "type": "object",
+      "required": ["companyName"],
+      "properties": {
+        "logoUrl": { "type": "string", "format": "uri" },
+        "logoInitial": { "type": "string", "description": "Single letter fallback when no logo" },
+        "companyName": { "type": "string" },
+        "companyAddress": { "type": "string" }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "properties": {
+        "accentColor": { "type": "string", "default": "#2563eb" }
+      }
+    }
+  },
+  "examples": [
+    {
+      "proposal": {
+        "title": "Website Redesign & Development",
+        "number": "PROP-2024-018",
+        "date": "January 25, 2024",
+        "validUntil": "February 24, 2024",
+        "description": "A comprehensive redesign and development of your company website to improve user experience, modernize the visual identity, and increase conversion rates. This proposal outlines the scope, timeline, and investment required."
+      },
+      "client": {
+        "name": "James Mitchell",
+        "company": "Clearwater Analytics",
+        "address": "450 Market Street\nSuite 800\nSan Francisco, CA 94105",
+        "email": "james@clearwater.io"
+      },
+      "deliverables": [
+        {
+          "title": "Discovery & Research",
+          "description": "Stakeholder interviews, competitive analysis, user research, and requirements documentation."
+        },
+        {
+          "title": "UX Design",
+          "description": "Wireframes, user flows, and interactive prototypes for all key pages."
+        },
+        {
+          "title": "Visual Design",
+          "description": "High-fidelity mockups, design system, and component library."
+        },
+        {
+          "title": "Frontend Development",
+          "description": "Responsive implementation using Next.js with performance optimization."
+        },
+        {
+          "title": "QA & Launch",
+          "description": "Cross-browser testing, accessibility audit, and production deployment."
+        }
+      ],
+      "timeline": [
+        {
+          "phase": "Discovery & Research",
+          "duration": "2 weeks",
+          "details": "Kickoff, interviews, audit"
+        },
+        {
+          "phase": "UX & Visual Design",
+          "duration": "3 weeks",
+          "details": "Wireframes, prototypes, mockups"
+        },
+        {
+          "phase": "Development",
+          "duration": "4 weeks",
+          "details": "Build, integrate, iterate"
+        },
+        {
+          "phase": "QA & Launch",
+          "duration": "1 week",
+          "details": "Testing, fixes, deployment"
+        }
+      ],
+      "pricing": {
+        "lineItems": [
+          {
+            "description": "Discovery & Research",
+            "details": "Stakeholder interviews, competitive audit",
+            "amount": "3,500.00"
+          },
+          {
+            "description": "UX & Visual Design",
+            "details": "Wireframes, prototypes, design system",
+            "amount": "8,500.00"
+          },
+          {
+            "description": "Frontend Development",
+            "details": "Next.js implementation, CMS integration",
+            "amount": "12,000.00"
+          },
+          {
+            "description": "QA & Launch Support",
+            "details": "Testing, accessibility, deployment",
+            "amount": "2,000.00"
+          }
+        ],
+        "subtotal": "26,000.00",
+        "total": "26,000.00"
+      },
+      "terms": "Payment is due in three installments: 40% upon signing, 30% at design approval, and 30% upon project completion. All work product becomes client property upon final payment. Changes beyond the agreed scope will be billed at $175/hour.",
+      "branding": {
+        "logoInitial": "A",
+        "companyName": "Apex Digital Studio",
+        "companyAddress": "220 Design Way\nAustin, TX 78701"
+      },
+      "styles": {
+        "accentColor": "#2563eb"
+      }
+    }
+  ]
+}

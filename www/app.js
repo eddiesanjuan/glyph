@@ -1933,6 +1933,110 @@
       styles: { accentColor: '#7c3aed' }
     };
 
+    const sampleContractData = {
+      contract: {
+        title: 'Service Agreement',
+        number: 'CTR-2026-0042',
+        effectiveDate: 'March 1, 2026',
+        term: '12 months',
+        jurisdiction: 'State of California'
+      },
+      parties: {
+        party1: { name: 'Acme Solutions Inc.', address: '100 Innovation Drive\nSan Francisco, CA 94105' },
+        party2: { name: 'Northwind Traders LLC', address: '250 Commerce Street\nPortland, OR 97201' }
+      },
+      sections: [
+        { number: '1', title: 'Scope of Services', content: 'The Service Provider agrees to deliver software development consulting services as outlined in Exhibit A.' },
+        { number: '2', title: 'Compensation', content: 'The Client agrees to pay a monthly retainer of $15,000 USD, due on the first business day of each month.' },
+        { number: '3', title: 'Confidentiality', content: 'Both parties agree to maintain the confidentiality of all proprietary information shared during the term of this agreement.' },
+        { number: '4', title: 'Termination', content: 'Either party may terminate this agreement with thirty (30) days written notice.' }
+      ],
+      signatures: { showLines: true },
+      styles: { accentColor: '#1e40af' }
+    };
+
+    const sampleCertificateData = {
+      certificate: {
+        title: 'Certificate of Achievement',
+        recipientName: 'Alexandra Chen',
+        description: 'In recognition of exceptional performance and dedication in the Advanced Software Engineering Program.',
+        date: 'January 27, 2026',
+        issuer: 'Dr. James Walker',
+        issuerTitle: 'Program Director',
+        organization: 'Meridian Institute of Technology'
+      },
+      styles: { accentColor: '#b45309' }
+    };
+
+    const sampleLetterData = {
+      letter: {
+        date: 'January 27, 2026',
+        senderName: 'Michael Torres',
+        senderTitle: 'Vice President, Business Development',
+        senderCompany: 'Cascade Partners LLC',
+        senderAddress: '800 Fifth Avenue, Suite 3200\nSeattle, WA 98104',
+        recipientName: 'Sarah Chen',
+        recipientTitle: 'Chief Technology Officer',
+        recipientCompany: 'Horizon Dynamics Inc.',
+        recipientAddress: '1200 Market Street\nSan Francisco, CA 94103',
+        subject: 'Strategic Partnership Proposal - Q1 2026',
+        salutation: 'Dear Ms. Chen,',
+        body: [
+          'I am writing to express our strong interest in establishing a strategic partnership between Cascade Partners and Horizon Dynamics.',
+          'Cascade Partners brings over fifteen years of expertise in cloud infrastructure optimization. Combined with your innovative approach to AI-driven analytics, we see a significant opportunity.',
+          'Please let me know if you are available for a meeting during the week of February 5th.'
+        ],
+        closing: 'Sincerely,'
+      },
+      styles: { accentColor: '#374151' }
+    };
+
+    const sampleProposalData = {
+      proposal: {
+        title: 'Website Redesign & Development',
+        number: 'PROP-2026-018',
+        date: 'January 27, 2026',
+        validUntil: 'February 26, 2026',
+        description: 'A comprehensive redesign and development of your company website to improve user experience, modernize the visual identity, and increase conversion rates.'
+      },
+      client: {
+        name: 'James Mitchell',
+        company: 'Clearwater Analytics',
+        address: '450 Market Street\nSuite 800\nSan Francisco, CA 94105',
+        email: 'james@clearwater.io'
+      },
+      deliverables: [
+        { title: 'Discovery & Research', description: 'Stakeholder interviews, competitive analysis, user research, and requirements documentation.' },
+        { title: 'UX Design', description: 'Wireframes, user flows, and interactive prototypes for all key pages.' },
+        { title: 'Visual Design', description: 'High-fidelity mockups, design system, and component library.' },
+        { title: 'Frontend Development', description: 'Responsive implementation using Next.js with performance optimization.' },
+        { title: 'QA & Launch', description: 'Cross-browser testing, accessibility audit, and production deployment.' }
+      ],
+      timeline: [
+        { phase: 'Discovery & Research', duration: '2 weeks', details: 'Kickoff, interviews, audit' },
+        { phase: 'UX & Visual Design', duration: '3 weeks', details: 'Wireframes, prototypes, mockups' },
+        { phase: 'Development', duration: '4 weeks', details: 'Build, integrate, iterate' },
+        { phase: 'QA & Launch', duration: '1 week', details: 'Testing, fixes, deployment' }
+      ],
+      pricing: {
+        lineItems: [
+          { description: 'Discovery & Research', details: 'Stakeholder interviews, competitive audit', amount: '3,500.00' },
+          { description: 'UX & Visual Design', details: 'Wireframes, prototypes, design system', amount: '8,500.00' },
+          { description: 'Frontend Development', details: 'Next.js implementation, CMS integration', amount: '12,000.00' },
+          { description: 'QA & Launch Support', details: 'Testing, accessibility, deployment', amount: '2,000.00' }
+        ],
+        subtotal: '26,000.00',
+        total: '26,000.00'
+      },
+      terms: 'Payment is due in three installments: 40% upon signing, 30% at design approval, and 30% upon project completion.',
+      branding: {
+        logoInitial: 'A',
+        companyName: 'Apex Digital Studio',
+        companyAddress: '220 Design Way\nAustin, TX 78701'
+      },
+      styles: { accentColor: '#2563eb' }
+    };
+
     // Map template types to their style variants and sample data
     const TEMPLATE_TYPE_CONFIG = {
       quote: {
@@ -1960,6 +2064,30 @@
           { id: 'report-cover', label: 'Cover' }
         ],
         data: sampleReportData
+      },
+      contract: {
+        variants: [
+          { id: 'contract-simple', label: 'Simple' }
+        ],
+        data: sampleContractData
+      },
+      certificate: {
+        variants: [
+          { id: 'certificate-modern', label: 'Modern' }
+        ],
+        data: sampleCertificateData
+      },
+      letter: {
+        variants: [
+          { id: 'letter-business', label: 'Business' }
+        ],
+        data: sampleLetterData
+      },
+      proposal: {
+        variants: [
+          { id: 'proposal-basic', label: 'Basic' }
+        ],
+        data: sampleProposalData
       }
     };
 
@@ -2865,6 +2993,10 @@
       { name: 'Switch to Invoice', action: () => switchToTemplateType('invoice'), category: 'Templates', icon: 'template' },
       { name: 'Switch to Receipt', action: () => switchToTemplateType('receipt'), category: 'Templates', icon: 'template' },
       { name: 'Switch to Report Cover', action: () => switchToTemplateType('report'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Contract', action: () => switchToTemplateType('contract'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Certificate', action: () => switchToTemplateType('certificate'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Letter', action: () => switchToTemplateType('letter'), category: 'Templates', icon: 'template' },
+      { name: 'Switch to Proposal', action: () => switchToTemplateType('proposal'), category: 'Templates', icon: 'template' },
       // Edit
       { name: 'Undo', action: () => performUndo(), category: 'Edit', shortcut: isMac ? '\u2318Z' : 'Ctrl+Z', icon: 'undo' },
       { name: 'Redo', action: () => performRedo(), category: 'Edit', shortcut: isMac ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z', icon: 'redo' },

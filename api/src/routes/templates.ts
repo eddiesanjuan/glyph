@@ -271,6 +271,57 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
       },
     },
   },
+  {
+    id: "proposal-basic",
+    name: "Basic Proposal",
+    description: "Clean project proposal with deliverables, timeline, and pricing breakdown.",
+    category: "proposal",
+    sampleData: {
+      proposal: {
+        title: "Website Redesign & Development",
+        number: "PROP-2024-018",
+        date: "January 25, 2024",
+        validUntil: "February 24, 2024",
+        description: "A comprehensive redesign and development of your company website to improve user experience, modernize the visual identity, and increase conversion rates.",
+      },
+      client: {
+        name: "James Mitchell",
+        company: "Clearwater Analytics",
+        address: "450 Market Street\nSuite 800\nSan Francisco, CA 94105",
+        email: "james@clearwater.io",
+      },
+      deliverables: [
+        { title: "Discovery & Research", description: "Stakeholder interviews, competitive analysis, user research, and requirements documentation." },
+        { title: "UX Design", description: "Wireframes, user flows, and interactive prototypes for all key pages." },
+        { title: "Visual Design", description: "High-fidelity mockups, design system, and component library." },
+        { title: "Frontend Development", description: "Responsive implementation using Next.js with performance optimization." },
+        { title: "QA & Launch", description: "Cross-browser testing, accessibility audit, and production deployment." },
+      ],
+      timeline: [
+        { phase: "Discovery & Research", duration: "2 weeks", details: "Kickoff, interviews, audit" },
+        { phase: "UX & Visual Design", duration: "3 weeks", details: "Wireframes, prototypes, mockups" },
+        { phase: "Development", duration: "4 weeks", details: "Build, integrate, iterate" },
+        { phase: "QA & Launch", duration: "1 week", details: "Testing, fixes, deployment" },
+      ],
+      pricing: {
+        lineItems: [
+          { description: "Discovery & Research", details: "Stakeholder interviews, competitive audit", amount: "3,500.00" },
+          { description: "UX & Visual Design", details: "Wireframes, prototypes, design system", amount: "8,500.00" },
+          { description: "Frontend Development", details: "Next.js implementation, CMS integration", amount: "12,000.00" },
+          { description: "QA & Launch Support", details: "Testing, accessibility, deployment", amount: "2,000.00" },
+        ],
+        subtotal: "26,000.00",
+        total: "26,000.00",
+      },
+      terms: "Payment is due in three installments: 40% upon signing, 30% at design approval, and 30% upon project completion.",
+      branding: {
+        logoInitial: "A",
+        companyName: "Apex Digital Studio",
+        companyAddress: "220 Design Way\nAustin, TX 78701",
+      },
+      styles: { accentColor: "#2563eb" },
+    },
+  },
 ];
 
 // =============================================================================

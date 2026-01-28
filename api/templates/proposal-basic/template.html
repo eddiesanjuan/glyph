@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposal — {{proposal.title}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #f9fafb;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .proposal-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-placeholder {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .company-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .company-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      white-space: pre-line;
+    }
+
+    .proposal-badge {
+      text-align: right;
+    }
+
+    .proposal-label {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-color);
+      letter-spacing: -0.02em;
+    }
+
+    .proposal-number {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Title & Client */
+    [data-glyph-region="title"] {
+      margin-bottom: 2rem;
+    }
+
+    .proposal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .proposal-meta {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .meta-item-label {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+    }
+
+    .meta-item-value {
+      margin-top: 0.125rem;
+    }
+
+    /* Client Info */
+    [data-glyph-region="client"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-light);
+      border-radius: 8px;
+    }
+
+    .info-block-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-block-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-block-detail {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* Project Description */
+    [data-glyph-region="description"] {
+      margin-bottom: 2rem;
+    }
+
+    .section-heading {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-color);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .description-text {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    /* Deliverables */
+    [data-glyph-region="deliverables"] {
+      margin-bottom: 2rem;
+    }
+
+    .deliverable-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .deliverable-item:last-child {
+      border-bottom: none;
+    }
+
+    .deliverable-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    .deliverable-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      line-height: 1.6;
+    }
+
+    /* Timeline */
+    [data-glyph-region="timeline"] {
+      margin-bottom: 2rem;
+    }
+
+    .timeline-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .timeline-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .timeline-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+    }
+
+    .phase-name {
+      font-weight: 500;
+    }
+
+    .phase-duration {
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    .phase-details {
+      color: var(--text-secondary);
+    }
+
+    /* Pricing */
+    [data-glyph-region="pricing"] {
+      margin-bottom: 2rem;
+    }
+
+    .pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+
+    .pricing-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .pricing-table th:last-child {
+      text-align: right;
+    }
+
+    .pricing-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+    }
+
+    .pricing-table td:last-child {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .price-item-name {
+      font-weight: 500;
+    }
+
+    .price-item-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
+    }
+
+    .totals-box {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .totals-inner {
+      width: 280px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .totals-row-label {
+      color: var(--text-secondary);
+    }
+
+    .totals-row-value {
+      font-weight: 500;
+    }
+
+    .totals-row-grand {
+      border-top: 2px solid var(--accent-color);
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+    }
+
+    .totals-row-grand .totals-row-label,
+    .totals-row-grand .totals-row-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Terms */
+    [data-glyph-region="terms"] {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .terms-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .proposal-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="proposal-document">
+    <header data-glyph-region="header">
+      <div class="header-brand">
+        {{#branding.logoUrl}}
+        <img src="{{branding.logoUrl}}" style="max-height:48px;max-width:160px;object-fit:contain;" alt="Logo" />
+        {{/branding.logoUrl}}
+        {{^branding.logoUrl}}
+        <div class="logo-placeholder">{{branding.logoInitial}}</div>
+        {{/branding.logoUrl}}
+        <div>
+          <div class="company-name">{{branding.companyName}}</div>
+          {{#branding.companyAddress}}
+          <div class="company-details">{{branding.companyAddress}}</div>
+          {{/branding.companyAddress}}
+        </div>
+      </div>
+      <div class="proposal-badge">
+        <div class="proposal-label">Proposal</div>
+        {{#proposal.number}}
+        <div class="proposal-number">#{{proposal.number}}</div>
+        {{/proposal.number}}
+      </div>
+    </header>
+
+    <section data-glyph-region="title">
+      <div class="proposal-title">{{proposal.title}}</div>
+      <div class="proposal-meta">
+        <div>
+          <div class="meta-item-label">Date</div>
+          <div class="meta-item-value">{{proposal.date}}</div>
+        </div>
+        {{#proposal.validUntil}}
+        <div>
+          <div class="meta-item-label">Valid Until</div>
+          <div class="meta-item-value">{{proposal.validUntil}}</div>
+        </div>
+        {{/proposal.validUntil}}
+      </div>
+    </section>
+
+    <section data-glyph-region="client">
+      <div>
+        <div class="info-block-label">Prepared For</div>
+        <div class="info-block-name">{{client.name}}</div>
+        {{#client.company}}
+        <div class="info-block-detail">{{client.company}}</div>
+        {{/client.company}}
+        {{#client.address}}
+        <div class="info-block-detail">{{client.address}}</div>
+        {{/client.address}}
+        {{#client.email}}
+        <div class="info-block-detail">{{client.email}}</div>
+        {{/client.email}}
+      </div>
+      <div>
+        <div class="info-block-label">Prepared By</div>
+        <div class="info-block-name">{{branding.companyName}}</div>
+        {{#branding.companyAddress}}
+        <div class="info-block-detail">{{branding.companyAddress}}</div>
+        {{/branding.companyAddress}}
+      </div>
+    </section>
+
+    {{#proposal.description}}
+    <section data-glyph-region="description">
+      <div class="section-heading">Project Overview</div>
+      <p class="description-text">{{proposal.description}}</p>
+    </section>
+    {{/proposal.description}}
+
+    <section data-glyph-region="deliverables">
+      <div class="section-heading">Deliverables</div>
+      {{#deliverables}}
+      <div class="deliverable-item">
+        <div class="deliverable-title">{{title}}</div>
+        {{#description}}
+        <div class="deliverable-desc">{{description}}</div>
+        {{/description}}
+      </div>
+      {{/deliverables}}
+    </section>
+
+    {{#timeline.length}}
+    <section data-glyph-region="timeline">
+      <div class="section-heading">Timeline</div>
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Duration</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#timeline}}
+          <tr>
+            <td class="phase-name">{{phase}}</td>
+            <td class="phase-duration">{{duration}}</td>
+            <td class="phase-details">{{details}}</td>
+          </tr>
+          {{/timeline}}
+        </tbody>
+      </table>
+    </section>
+    {{/timeline.length}}
+
+    <section data-glyph-region="pricing">
+      <div class="section-heading">Investment</div>
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#pricing.lineItems}}
+          <tr>
+            <td>
+              <div class="price-item-name">{{description}}</div>
+              {{#details}}
+              <div class="price-item-details">{{details}}</div>
+              {{/details}}
+            </td>
+            <td>${{amount}}</td>
+          </tr>
+          {{/pricing.lineItems}}
+        </tbody>
+      </table>
+      <div class="totals-box">
+        <div class="totals-inner">
+          {{#pricing.subtotal}}
+          <div class="totals-row">
+            <span class="totals-row-label">Subtotal</span>
+            <span class="totals-row-value">${{pricing.subtotal}}</span>
+          </div>
+          {{/pricing.subtotal}}
+          {{#pricing.tax}}
+          <div class="totals-row">
+            <span class="totals-row-label">Tax ({{pricing.taxRate}}%)</span>
+            <span class="totals-row-value">${{pricing.tax}}</span>
+          </div>
+          {{/pricing.tax}}
+          <div class="totals-row totals-row-grand">
+            <span class="totals-row-label">Total</span>
+            <span class="totals-row-value">${{pricing.total}}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {{#terms}}
+    <footer data-glyph-region="terms">
+      <div class="section-heading">Terms & Conditions</div>
+      <p class="terms-text">{{terms}}</p>
+    </footer>
+    {{/terms}}
+  </div>
+</body>
+</html>
