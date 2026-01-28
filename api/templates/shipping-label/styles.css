@@ -1,0 +1,18 @@
+/**
+ * shipping-label default styles
+ *
+ * Customizable via the Glyph API:
+ * - branding.companyColor: Primary accent color (default: #1a1a1a)
+ *
+ * Standard shipping label size: 4" x 6" (thermal label printers)
+ */
+
+:root {
+  --accent-color: #1a1a1a;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 12px;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #d1d5db;
+  --bg-light: #f3f4f6;
+}
