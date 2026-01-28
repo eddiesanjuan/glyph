@@ -106,7 +106,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping";
   sampleData: Record<string, unknown>;
 }
 
@@ -322,6 +322,42 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
       styles: { accentColor: "#2563eb" },
     },
   },
+  {
+    id: "shipping-label",
+    name: "Shipping Label",
+    description: "Standard 4x6 shipping label with sender/recipient addresses, tracking barcode, and shipment details.",
+    category: "shipping",
+    sampleData: {
+      sender: {
+        name: "John Martinez",
+        company: "Acme Fulfillment Center",
+        address: "1234 Warehouse Blvd",
+        city: "Memphis",
+        state: "TN",
+        zip: "38118",
+        phone: "(901) 555-0123",
+      },
+      recipient: {
+        name: "Sarah Chen",
+        company: "Horizon Dynamics Inc.",
+        address: "567 Innovation Drive, Suite 200",
+        city: "San Francisco",
+        state: "CA",
+        zip: "94105",
+        phone: "(415) 555-0456",
+      },
+      shipment: {
+        trackingNumber: "1Z999AA10123456784",
+        weight: "3.2 lbs",
+        dimensions: "12x10x8 in",
+        method: "Ground",
+        carrier: "UPS",
+        serviceType: "2-Day Air",
+        shipDate: "Jan 28, 2024",
+      },
+      branding: { companyColor: "#351c15" },
+    },
+  },
 ];
 
 // =============================================================================
@@ -339,6 +375,7 @@ const templateStyleTags: Record<string, { style: string; tags: string[] }> = {
   'certificate-modern': { style: 'modern', tags: ['modern', 'decorative', 'formal'] },
   'letter-business': { style: 'traditional', tags: ['traditional', 'formal', 'business'] },
   'proposal-basic': { style: 'modern', tags: ['modern', 'professional'] },
+  'shipping-label': { style: 'minimal', tags: ['minimal', 'compact', 'logistics', 'thermal'] },
 };
 
 // =============================================================================

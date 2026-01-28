@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/shipping-label.json",
+  "title": "ShippingLabelData",
+  "description": "Data schema for the shipping-label template",
+  "type": "object",
+  "required": ["sender", "recipient", "shipment"],
+  "properties": {
+    "sender": {
+      "type": "object",
+      "description": "Sender/shipper address information",
+      "required": ["name", "address", "city", "state", "zip"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Sender's full name"
+        },
+        "company": {
+          "type": "string",
+          "description": "Sender's company name (optional)"
+        },
+        "address": {
+          "type": "string",
+          "description": "Sender's street address"
+        },
+        "city": {
+          "type": "string",
+          "description": "Sender's city"
+        },
+        "state": {
+          "type": "string",
+          "description": "Sender's state or province abbreviation"
+        },
+        "zip": {
+          "type": "string",
+          "description": "Sender's postal/ZIP code"
+        },
+        "country": {
+          "type": "string",
+          "description": "Sender's country (for international shipments)"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Sender's phone number"
+        }
+      }
+    },
+    "recipient": {
+      "type": "object",
+      "description": "Recipient/destination address information",
+      "required": ["name", "address", "city", "state", "zip"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Recipient's full name"
+        },
+        "company": {
+          "type": "string",
+          "description": "Recipient's company name (optional)"
+        },
+        "address": {
+          "type": "string",
+          "description": "Recipient's street address"
+        },
+        "city": {
+          "type": "string",
+          "description": "Recipient's city"
+        },
+        "state": {
+          "type": "string",
+          "description": "Recipient's state or province abbreviation"
+        },
+        "zip": {
+          "type": "string",
+          "description": "Recipient's postal/ZIP code"
+        },
+        "country": {
+          "type": "string",
+          "description": "Recipient's country (for international shipments)"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Recipient's phone number"
+        }
+      }
+    },
+    "shipment": {
+      "type": "object",
+      "description": "Shipment details and carrier information",
+      "required": ["trackingNumber", "carrier", "serviceType"],
+      "properties": {
+        "trackingNumber": {
+          "type": "string",
+          "description": "Unique tracking number for the shipment"
+        },
+        "weight": {
+          "type": "string",
+          "description": "Package weight with unit, e.g. '2.5 lbs' or '1.2 kg'"
+        },
+        "dimensions": {
+          "type": "string",
+          "description": "Package dimensions, e.g. '12x8x6 in'"
+        },
+        "method": {
+          "type": "string",
+          "description": "Shipping method, e.g. 'Ground', 'Air', '2-Day'"
+        },
+        "carrier": {
+          "type": "string",
+          "description": "Carrier name, e.g. 'FedEx', 'UPS', 'USPS', 'DHL'"
+        },
+        "serviceType": {
+          "type": "string",
+          "description": "Service level, e.g. 'Priority', 'Express', 'Standard'"
+        },
+        "shipDate": {
+          "type": "string",
+          "description": "Date of shipment"
+        }
+      }
+    },
+    "barcode": {
+      "type": "object",
+      "description": "Barcode configuration (optional, visual barcode is generated from tracking number)",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "Barcode value (defaults to tracking number)"
+        },
+        "format": {
+          "type": "string",
+          "description": "Barcode format, e.g. 'CODE128', 'QR'",
+          "enum": ["CODE128", "CODE39", "QR", "DATAMATRIX"]
+        }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "description": "Carrier branding customization",
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to carrier or company logo"
+        },
+        "companyColor": {
+          "type": "string",
+          "default": "#1a1a1a",
+          "description": "Primary brand color as CSS value, e.g. '#4B0082' for FedEx purple"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "sender": {
+        "name": "John Martinez",
+        "company": "Acme Fulfillment Center",
+        "address": "1234 Warehouse Blvd",
+        "city": "Memphis",
+        "state": "TN",
+        "zip": "38118",
+        "country": "USA",
+        "phone": "(901) 555-0123"
+      },
+      "recipient": {
+        "name": "Sarah Chen",
+        "company": "Horizon Dynamics Inc.",
+        "address": "567 Innovation Drive, Suite 200",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94105",
+        "country": "USA",
+        "phone": "(415) 555-0456"
+      },
+      "shipment": {
+        "trackingNumber": "1Z999AA10123456784",
+        "weight": "3.2 lbs",
+        "dimensions": "12x10x8 in",
+        "method": "Ground",
+        "carrier": "UPS",
+        "serviceType": "2-Day Air",
+        "shipDate": "Jan 28, 2024"
+      },
+      "barcode": {
+        "value": "1Z999AA10123456784",
+        "format": "CODE128"
+      },
+      "branding": {
+        "companyColor": "#351c15"
+      }
+    }
+  ]
+}

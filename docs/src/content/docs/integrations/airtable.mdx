@@ -426,9 +426,69 @@ Generate one or more PDFs using a saved template and a connected data source. Su
 
 ## Automation and Scripting
 
-### Airtable Scripting Extension
+### Using with Airtable's Omni AI
 
-Use this inside an Airtable Scripting block to generate a PDF for the current record:
+Airtable's Omni AI can interact with the Glyph API to generate PDFs from your data. Here are example prompts you can use:
+
+**Generate an invoice:**
+```
+Generate a PDF invoice for the selected record using Glyph API.
+Use the invoice-clean template and map fields from this table.
+```
+
+**Create a quote document:**
+```
+Use the Glyph API to create a professional quote PDF from this record.
+Include the client name, line items, and totals.
+```
+
+**Batch generate receipts:**
+```
+For each record in the "Completed Orders" view, generate a receipt PDF
+using Glyph's /v1/create endpoint and save the download link to the
+"Receipt URL" field.
+```
+
+<Aside type="tip">
+Omni AI works best when you describe the document type, which fields to include, and where to save the result.
+</Aside>
+
+### Airtable Scripting Extension (Quick Start)
+
+The simplest way to generate a PDF from a record using the one-shot `/v1/create` endpoint:
+
+```javascript
+// Airtable Scripting Extension - Generate PDF with Glyph
+const table = base.getTable('Invoices');
+const record = await input.recordAsync('Select a record', table);
+
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    data: {
+      invoice: { number: record.getCellValue('Invoice Number') },
+      client: { name: record.getCellValue('Client Name') },
+      items: record.getCellValue('Line Items') || [],
+      total: record.getCellValue('Total')
+    }
+  })
+});
+
+const result = await response.json();
+output.markdown(`[Download PDF](${result.url})`);
+```
+
+<Aside type="note">
+The `/v1/create` endpoint auto-detects your document type and generates a PDF in one call. No template selection or field mapping required.
+</Aside>
+
+### Airtable Scripting Extension (Full Control)
+
+For more control over templates and the generation process, use this inside an Airtable Scripting block:
 
 ```javascript
 // Airtable Scripting Extension

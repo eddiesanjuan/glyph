@@ -138,17 +138,29 @@ export async function authMiddleware(c: Context, next: Next) {
       }
 
       if (count !== null && count >= keyRecord.monthly_limit) {
+        // Calculate seconds until start of next month
+        const nextMonth = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth() + 1,
+          1
+        );
+        const retryAfter = Math.ceil(
+          (nextMonth.getTime() - Date.now()) / 1000
+        );
+
         const res = new Response(
           JSON.stringify({
             error: "rate_limit_exceeded",
             message: `Monthly API limit exceeded (${keyRecord.monthly_limit} requests)`,
             status: 429,
+            retryAfter,
+            resetsAt: nextMonth.toISOString(),
           }),
           {
             status: 429,
             headers: {
               "Content-Type": "application/json",
-              "Retry-After": "60",
+              "Retry-After": retryAfter.toString(),
             },
           }
         );

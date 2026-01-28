@@ -124,6 +124,12 @@ export async function monthlyLimitMiddleware(c: Context, next: Next) {
   );
 
   if (currentUsage >= monthlyLimit) {
+    // Calculate seconds until start of next month
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const retryAfter = Math.ceil((nextMonth.getTime() - now.getTime()) / 1000);
+
+    c.header("Retry-After", retryAfter.toString());
     return c.json(
       {
         error: "Monthly PDF limit exceeded",
@@ -131,6 +137,8 @@ export async function monthlyLimitMiddleware(c: Context, next: Next) {
         limit: monthlyLimit,
         used: currentUsage,
         tier,
+        retryAfter,
+        resetsAt: nextMonth.toISOString(),
         upgrade: tier !== "enterprise" ? "https://glyph.you/pricing" : null,
       },
       429
