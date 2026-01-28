@@ -288,7 +288,8 @@ templates.get("/", (c) => {
   let filtered = TEMPLATE_CATALOG;
 
   if (category) {
-    filtered = filtered.filter((t) => t.category === category);
+    const categoryLower = category.toLowerCase();
+    filtered = filtered.filter((t) => t.category.toLowerCase() === categoryLower);
   }
 
   if (search) {

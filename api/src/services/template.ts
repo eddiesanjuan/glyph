@@ -86,7 +86,7 @@ export class TemplateEngine {
           : null,
         total: this.formatNumber(data.totals.total),
         taxRate: data.totals.tax
-          ? Math.round((data.totals.tax / data.totals.subtotal) * 100)
+          ? (data.totals.taxRate ?? Math.round((data.totals.tax / data.totals.subtotal) * 100))
           : null,
       },
       meta: {
@@ -254,7 +254,7 @@ export async function renderTemplate(data: QuoteData, templateId?: string): Prom
         maximumFractionDigits: 2,
       }),
       taxRate: data.totals.tax
-        ? Math.round((data.totals.tax / data.totals.subtotal) * 100)
+        ? (data.totals.taxRate ?? Math.round((data.totals.tax / data.totals.subtotal) * 100))
         : null,
     },
     meta: {

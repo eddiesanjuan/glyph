@@ -18,6 +18,7 @@ export interface QuoteData {
   totals: {
     subtotal: number;
     tax?: number;
+    taxRate?: number;
     discount?: number;
     total: number;
   };

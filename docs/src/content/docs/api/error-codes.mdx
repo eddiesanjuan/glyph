@@ -3,8 +3,6 @@ title: Error Codes
 description: Understanding Glyph API error responses
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 When an API request fails, Glyph returns a structured error response with details to help you diagnose and handle the issue.
 
 ## Error Response Format
@@ -381,6 +379,6 @@ async function callGlyph(endpoint, data) {
 }
 ```
 
-<Aside type="tip">
+:::tip
 For production applications, implement proper error logging and user-friendly error messages based on these error codes.
-</Aside>
+:::
