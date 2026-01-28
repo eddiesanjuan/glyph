@@ -983,6 +983,10 @@ export async function handleGlyphSchema(args: {
     "invoice-clean",
     "receipt-minimal",
     "report-cover",
+    "contract-simple",
+    "certificate-modern",
+    "letter-business",
+    "proposal-basic",
   ];
 
   // Resolve templates directory relative to this file (mcp-server/src/tools.ts -> templates/)

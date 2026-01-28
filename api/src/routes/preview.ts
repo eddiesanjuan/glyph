@@ -22,6 +22,7 @@ const preview = new Hono();
 // Data is optional: when omitted, sample data from the template's schema.json is used.
 const previewRequestSchema = z.object({
   template: z.string().min(1).default("quote-modern"),
+  templateId: z.string().min(1).optional(),
   data: z.record(z.unknown()).optional(),
 });
 
@@ -62,7 +63,22 @@ preview.post(
   async (c) => {
     try {
       const tStart = Date.now();
-      const { template, data: providedData } = c.req.valid("json");
+      const { template: templateField, templateId, data: providedData } = c.req.valid("json");
+
+      // Support templateId as an alias for template; templateId takes precedence when explicitly provided
+      const template = templateId ?? templateField;
+
+      // Validate that the requested template exists before rendering
+      const availableTemplates = templateEngine.getAvailableTemplates();
+      if (!availableTemplates.includes(template)) {
+        const error: ApiError = {
+          error: "Template not found",
+          code: "TEMPLATE_NOT_FOUND",
+          details: { templateId: template, availableTemplates },
+        };
+        return c.json(error, 400);
+      }
+
       const apiKeyId = c.get("apiKeyId") as string | undefined;
 
       // If no data provided, load sample data from the template's schema.json
