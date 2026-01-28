@@ -25,17 +25,18 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export async function authMiddleware(c: Context, next: Next) {
   // Skip auth for health check
-  if (c.req.path === "/health") {
+  if (c.req.path === "/health" || c.req.path === "/v1/openapi.json") {
     return next();
   }
 
   // Skip auth for public template catalog endpoints (GET only)
   // Agents and developers need to discover templates without an API key
-  if (c.req.method === "GET" && (
+  if ((c.req.method === "GET" || c.req.method === "HEAD") && (
     c.req.path === "/v1/templates" ||
     c.req.path === "/v1/templates/styles" ||
     c.req.path.match(/^\/v1\/templates\/[^/]+$/) ||
-    c.req.path.match(/^\/v1\/templates\/[^/]+\/preview$/)
+    c.req.path.match(/^\/v1\/templates\/[^/]+\/preview$/) ||
+    c.req.path.match(/^\/v1\/templates\/[^/]+\/schema$/)
   )) {
     return next();
   }

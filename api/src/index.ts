@@ -63,7 +63,7 @@ app.use(
       // In production, could restrict further
       return origin; // Allow all for now during beta
     },
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
     credentials: true,
     maxAge: 86400,
@@ -183,7 +183,11 @@ app.get("/", (c) => {
       airtableSchema: "GET /v1/airtable/bases/:baseId/tables/:tableId/schema",
       airtableRecords: "GET /v1/airtable/bases/:baseId/tables/:tableId/records",
       // Template generation
+      openApiSpec: "GET /v1/openapi.json",
       templatesList: "GET /v1/templates",
+      templateDetail: "GET /v1/templates/:id",
+      templateSchema: "GET /v1/templates/:id/schema",
+      templateValidate: "POST /v1/templates/:id/validate",
       templateGenerate: "POST /v1/templates/generate",
       templateRefine: "POST /v1/templates/refine",
       templatePreview: "POST /v1/templates/preview",
@@ -250,6 +254,126 @@ app.get("/", (c) => {
       subscriptionDelete: "DELETE /v1/subscriptions/:id",
     },
   });
+});
+
+// OpenAPI specification (public, no auth)
+app.get("/v1/openapi.json", (c) => {
+  const spec = {
+    openapi: "3.1.0",
+    info: {
+      title: "Glyph API",
+      version: "0.13.1",
+      description: "AI-powered PDF generation and document customization API. Generate professional PDFs from templates and data with natural language customization.",
+      contact: { url: "https://docs.glyph.you" },
+    },
+    servers: [
+      { url: "https://api.glyph.you", description: "Production" },
+    ],
+    paths: {
+      "/health": {
+        get: { summary: "Health check", operationId: "healthCheck", tags: ["System"], responses: { "200": { description: "API is healthy" } } },
+      },
+      "/v1/templates": {
+        get: {
+          summary: "List built-in templates",
+          operationId: "listTemplates",
+          tags: ["Templates"],
+          parameters: [
+            { name: "category", in: "query", schema: { type: "string" }, description: "Filter by category" },
+            { name: "search", in: "query", schema: { type: "string" }, description: "Search templates" },
+          ],
+          responses: { "200": { description: "Template catalog" } },
+        },
+      },
+      "/v1/templates/{id}": {
+        get: {
+          summary: "Get template details with JSON Schema",
+          operationId: "getTemplate",
+          tags: ["Templates"],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          responses: { "200": { description: "Template with schema and sample data" }, "404": { description: "Template not found" } },
+        },
+      },
+      "/v1/templates/{id}/schema": {
+        get: {
+          summary: "Get template JSON Schema only",
+          operationId: "getTemplateSchema",
+          tags: ["Templates"],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          responses: { "200": { description: "JSON Schema for the template" }, "404": { description: "Template not found" } },
+        },
+      },
+      "/v1/templates/{id}/validate": {
+        post: {
+          summary: "Validate data against template schema",
+          operationId: "validateTemplateData",
+          tags: ["Templates"],
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { data: { type: "object" } }, required: ["data"] } } } },
+          responses: { "200": { description: "Validation result" } },
+        },
+      },
+      "/v1/preview": {
+        post: {
+          summary: "Create HTML preview session",
+          operationId: "createPreview",
+          tags: ["Core"],
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { templateId: { type: "string" }, data: { type: "object" } }, required: ["templateId", "data"] } } } },
+          responses: { "200": { description: "Preview session created" } },
+        },
+      },
+      "/v1/modify": {
+        post: {
+          summary: "AI-powered document modification",
+          operationId: "modifyDocument",
+          tags: ["Core"],
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { sessionId: { type: "string" }, instruction: { type: "string" } }, required: ["sessionId", "instruction"] } } } },
+          responses: { "200": { description: "Modified document" } },
+        },
+      },
+      "/v1/generate": {
+        post: {
+          summary: "Generate PDF from session",
+          operationId: "generatePdf",
+          tags: ["Core"],
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { sessionId: { type: "string" }, format: { type: "string", enum: ["pdf", "png"] } }, required: ["sessionId"] } } } },
+          responses: { "200": { description: "Generated PDF/PNG" } },
+        },
+      },
+      "/v1/create": {
+        post: {
+          summary: "One-shot PDF creation (data in, PDF out)",
+          operationId: "createPdf",
+          tags: ["Core"],
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { templateId: { type: "string" }, data: { type: "object" }, intent: { type: "string" } } } } } },
+          responses: { "200": { description: "Generated PDF" } },
+        },
+      },
+      "/v1/airtable/connect": {
+        post: {
+          summary: "Connect Airtable base",
+          operationId: "connectAirtable",
+          tags: ["Airtable"],
+          security: [{ bearerAuth: [] }],
+          responses: { "200": { description: "Connection established" } },
+        },
+      },
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: "http", scheme: "bearer", description: "Glyph API key (gk_...)" },
+      },
+    },
+  };
+
+  c.header("Cache-Control", "public, max-age=3600");
+  c.header("Content-Type", "application/json; charset=UTF-8");
+  return c.json(spec);
 });
 
 // Mount routes

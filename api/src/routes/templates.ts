@@ -106,7 +106,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal";
   sampleData: Record<string, unknown>;
 }
 
@@ -1233,6 +1233,60 @@ templates.post(
     }
   }
 );
+
+/**
+ * GET /:id/schema
+ * Return only the JSON Schema for a template (agent-friendly).
+ */
+templates.get("/:id/schema", async (c) => {
+  const id = c.req.param("id");
+
+  const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === id);
+  if (!catalogEntry) {
+    const error: ApiError = {
+      error: `Template '${id}' not found`,
+      code: "TEMPLATE_NOT_FOUND",
+    };
+    return c.json(error, 404);
+  }
+
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const templatesDir = resolve(currentDir, "..", "..", "..", "templates");
+  const schemaPath = join(templatesDir, id, "schema.json");
+
+  try {
+    const { readFile, access } = await import("fs/promises");
+
+    try {
+      await access(schemaPath);
+    } catch {
+      const error: ApiError = {
+        error: `Schema not found for template '${id}'`,
+        code: "SCHEMA_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    const raw = await readFile(schemaPath, "utf-8");
+    const etag = generateETag(raw);
+
+    if (c.req.header("If-None-Match") === etag) {
+      return c.body(null, 304);
+    }
+
+    c.header("Cache-Control", "public, max-age=3600");
+    c.header("ETag", etag);
+    c.header("Content-Type", "application/schema+json; charset=UTF-8");
+    return c.body(raw);
+  } catch (err) {
+    console.error(`Schema read error for '${id}':`, err);
+    const error: ApiError = {
+      error: err instanceof Error ? err.message : "Failed to read schema",
+      code: "SCHEMA_READ_ERROR",
+    };
+    return c.json(error, 500);
+  }
+});
 
 /**
  * GET /:id
