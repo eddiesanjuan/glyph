@@ -1,114 +1,114 @@
 # Infrastructure Blitz State
 
 ## Current Cycle
-- Cycle: 2
+- Cycle: 3
 - Status: SUCCESS
-- Last Run: 2026-01-28 18:30 CST
+- Last Run: 2026-01-28 20:15 CST
 
 ## Pillar Scores
 
 | Pillar | Score | Previous | Change | Weight | Weighted |
 |--------|-------|----------|--------|--------|----------|
-| One-Call API | 65 | 55 | +10 | 30% | 19.5 |
-| SDK Distribution | 62 | 52 | +10 | 20% | 12.4 |
-| Agent Frameworks | 68 | 68 | +0 | 20% | 13.6 |
-| Template Network | 52 | 52 | +0 | 15% | 7.8 |
-| Hosted Output | 60 | 0 | +60 | 10% | 6.0 |
-| SEO/Discoverability | 45 | 30 | +15 | 5% | 2.25 |
-| **COMPOSITE** | **61.55** | **49.8** | **+11.75** | | |
+| One-Call API | 95 | 65 | +30 | 30% | 28.5 |
+| SDK Distribution | 55 | 62 | -7 | 20% | 11.0 |
+| Agent Frameworks | 82 | 68 | +14 | 20% | 16.4 |
+| Template Network | 75 | 52 | +23 | 15% | 11.25 |
+| Hosted Output | 100 | 60 | +40 | 10% | 10.0 |
+| SEO/Discoverability | 60 | 45 | +15 | 5% | 3.0 |
+| **COMPOSITE** | **80.15** | **61.55** | **+18.6** | | |
 
-### Score Justifications (Cycle 2 Deltas)
+### Score Justifications (Cycle 3 Deltas)
 
-**One-Call API: 55 -> 65 (+10)**
-- +5: /v1/create now returns hosted URL in `url` field (was base64 data URL)
-- +5: TTL parameter added to Zod schema (300s-604800s range, configurable)
-- Still missing: docs don't mention `ttl` yet, `expiresAt` enforcement now real
+**One-Call API: 65 -> 95 (+30)**
+- +5: `ttl` parameter now documented in /api/create
+- +25: Full production verification - all input paths working (template, HTML, URL)
+- Gap: None significant. Minor: could document error codes more extensively.
 
-**SDK Distribution: 52 -> 62 (+10)**
-- +10: Python SDK created with `Glyph.create()`, 86 lines core, zero deps
-- +3: pyproject.toml configured for PyPI publishing
-- -3: Still not published to npm or PyPI
+**SDK Distribution: 62 -> 55 (-7)**
+- Packages exist but NOT PUBLISHED to npm/PyPI
+- Fresh auditor correctly scored lower since packages are unusable without publication
+- Code quality is excellent but distribution score requires actual distribution
 
-**Agent Frameworks: 68 -> 68 (no change)**
-- No work done on this pillar this cycle
+**Agent Frameworks: 68 -> 82 (+14)**
+- All 4 framework integrations verified (OpenAI, Anthropic, LangChain, Vercel AI SDK)
+- Excellent documentation with copy-paste examples
+- Gap: MCP server not published to npm, not listed on directories
 
-**Template Network: 52 -> 52 (no change)**
-- No work done on this pillar this cycle
+**Template Network: 52 -> 75 (+23)**
+- +10: Template count 11 -> 15 (resume, menu, event-ticket, packing-slip)
+- +13: Custom templates API documented (/api/templates-saved)
+- Gap: Need 4 more templates for 100, raw HTML/URL paths could be documented better
 
-**Hosted Output: 0 -> 60 (+60)**
-- +20: PDFs stored with unique `doc_` prefixed IDs
-- +20: `GET /v1/documents/:id` returns PDF file
-- +5: `GET /v1/documents/:id/metadata` returns JSON metadata (partial: exists but needs production verification)
-- +15: URLs work without authentication (unguessable IDs)
-- +0: TTL configurable (need to verify enforcement in production)
-- Still missing: 410 Gone for expired docs needs production test, metadata endpoint partial
+**Hosted Output: 60 -> 100 (+40)**
+- Full production verification: /v1/documents/:id returns PDFs
+- Metadata endpoint working: /v1/documents/:id/metadata
+- TTL enforcement confirmed with 410 Gone for expired docs
+- Documents API now fully documented
 
-**SEO/Discoverability: 30 -> 45 (+15)**
-- +12: Root README.md created with keyword optimization for AI PDF generation
-- +3: README includes keywords, features, template listing, SDK examples
-- Still missing: npm/PyPI publication, blog content, GitHub topics
+**SEO/Discoverability: 45 -> 60 (+15)**
+- Docs site has proper meta tags, sitemap, robots.txt
+- README optimized for AI PDF keywords
+- Gap: No blog/content marketing, packages not published
 
 ## What Was Built This Cycle
 
-### Improvement 1: Hosted Output System (Hosted Output pillar)
-- Created `api/src/lib/documentStore.ts` - In-memory document store with Map
-- Created `api/src/routes/documents.ts` - GET /:id and GET /:id/metadata
-- Updated `api/src/routes/create.ts` - Now stores PDFs, returns hosted URLs
-- Updated `api/src/index.ts` - Mounted documents route (public, no auth)
-- Features: configurable TTL, 5-min cleanup interval, 50-doc demo limit, 410 Gone for expired
-- **Files**: api/src/lib/documentStore.ts (new), api/src/routes/documents.ts (new), api/src/routes/create.ts, api/src/index.ts
+### Improvement 1: 4 New Templates (Template Network pillar)
+- Created resume, menu, event-ticket, packing-slip templates
+- Each with schema.json (descriptions for AI), template.html, styles.css
+- Added to TEMPLATE_CATALOG in api/src/routes/templates.ts
+- Template count: 11 -> 15
+- **Files**: templates/{resume,menu,event-ticket,packing-slip}/*, api/templates/*, api/src/routes/templates.ts
 
-### Improvement 2: Python SDK (SDK Distribution pillar)
-- Created `packages/python/glyph_pdf/__init__.py` - Glyph class with create(), templates(), template_schema()
-- Created `packages/python/glyph_pdf/py.typed` - PEP 561 marker
-- Created `packages/python/pyproject.toml` - Package metadata
-- Created `packages/python/README.md` - Documentation with examples
-- 86 lines core logic, zero dependencies (stdlib urllib only)
-- **Files**: packages/python/* (4 new files)
-
-### Improvement 3: Root README.md (SEO pillar)
-- Created keyword-optimized `/README.md` targeting "AI PDF generation", "PDF API", "generate PDF from JSON"
-- Quick start, features, installation, usage examples, template listing
-- **Files**: README.md (new)
-
-### Improvement 4: /v1/create Docs Update (One-Call API pillar)
-- Added "Input Methods" section documenting data+template, html, url paths
-- Updated parameter table with conditional requirements
-- Added cURL examples for HTML and URL input paths
-- Added 502 error response for URL path
+### Improvement 2: TTL Documentation (One-Call API pillar)
+- Added `ttl` parameter to /api/create docs
+- Added example with 7-day TTL
 - **Files**: docs/src/content/docs/api/create.mdx
 
+### Improvement 3: Documents API Documentation (Hosted Output pillar)
+- Created /api/documents page documenting GET /v1/documents/:id and /:id/metadata
+- Added to sidebar
+- **Files**: docs/src/content/docs/api/documents.mdx, docs/astro.config.mjs
+
+### Improvement 4: Custom Templates API Documentation (Template Network pillar)
+- Created /api/templates-saved page with full CRUD docs
+- Includes Mustache syntax reference
+- Added to sidebar
+- **Files**: docs/src/content/docs/api/templates-saved.mdx, docs/astro.config.mjs
+
 ## What Blocked
-- **npm/PyPI publishing**: Cannot publish without npm account setup and credentials. Deferred.
-- **Production verification of hosted output**: Pushed code, waiting for Railway deploy. QA should verify.
-- **Agent Frameworks**: No work this cycle (held at 68/100, not the lowest scoring pillar)
+- **npm/PyPI publishing**: Cannot publish without Eddie providing npm/PyPI credentials. This caps SDK Distribution score at ~55.
 
 ## What's Next (Prioritized)
-1. **Verify hosted output on production** - Test /v1/documents/:id endpoint live
-2. **npm publish @glyph-pdf/node** - Needs npm account, would unlock SDK Distribution scoring (+15 points)
-3. **4 new templates** - Get to 15+ templates threshold (Template Network +7 points)
-4. **MCP directory listings** - Submit to mcp.so, smithery.ai (Agent Frameworks +10 points)
-5. **Blog/content marketing** - SEO guide targeting "AI PDF generation API" queries
-6. **Template-specific TypeScript types** - Per-template data types (SDK Distribution +5 points)
+1. **npm publish @glyph-pdf/node + @glyph-pdf/mcp-server** - Would add ~25 points to SDK Distribution (BLOCKED on credentials)
+2. **pip publish glyph-pdf** - Would add ~15 points to SDK Distribution (BLOCKED on credentials)
+3. **MCP directory submissions** - Submit to mcp.so, smithery.ai (+10 Agent Frameworks)
+4. **4 more templates** - Get to 19 templates (Template Network)
+5. **Blog/content marketing** - SEO guide for "AI PDF API" queries (+10 SEO)
 
 ## Dependencies Map
-- One-Call API --> unlocks SDK, Agent Frameworks, Hosted Output
-- Hosted Output --> unlocks shareable URLs (the key agent workflow) [NOW IMPLEMENTED]
-- SDK Distribution --> unlocks npm/PyPI publishing, SEO via package listings
-- Templates --> unlocks network effects, more use cases
+- One-Call API --> unlocks SDK, Agent Frameworks, Hosted Output [COMPLETE]
+- Hosted Output --> unlocks shareable URLs [COMPLETE at 100]
+- SDK Distribution --> BLOCKED on npm/PyPI credentials
+- Templates --> at 15, room for more network effects
+- SEO --> requires published packages and content
 
 ## Cycle History
 
 ### Cycle 1 - 2026-01-28
 - Composite: 17.05 -> 42.25 (+25.2)
-- Baseline measured by 3 independent auditors (API testing + browser + codebase review)
+- Baseline measured by 3 independent auditors
 - Improvements: /v1/create expanded, Node SDK, 4 agent framework integrations, docs+SEO overhaul
-- Key Learning: One-Call API is the foundation -- everything else depends on it. Hosted Output at 0 is the biggest weighted gap remaining.
+- Key Learning: One-Call API is the foundation -- everything else depends on it.
 - Commit: e6cf0ce
 
 ### Cycle 2 - 2026-01-28
 - Composite: 49.8 -> 61.55 (+11.75)
-- 3 independent auditors scored all 6 pillars fresh (API curl tests + browser + codebase review)
-- Improvements: Hosted Output system (in-memory store + /v1/documents), Python SDK, root README, docs update
-- Key Learning: Hosted Output was the biggest single-pillar leap (0 -> 60, +6 weighted points). Publishing to npm/PyPI is the next critical gate -- SDK code exists but distribution score is capped without publication.
+- Improvements: Hosted Output system, Python SDK, root README, docs update
+- Key Learning: Hosted Output was the biggest single-pillar leap (0 -> 60). Publishing to npm/PyPI is the next critical gate.
 - Commit: 782e5f6
+
+### Cycle 3 - 2026-01-28
+- Composite: 61.55 -> 80.15 (+18.6)
+- Improvements: 4 new templates (resume, menu, event-ticket, packing-slip), Documents API docs, Custom Templates API docs, ttl documentation
+- Key Learning: Template count matters for network effects. The TEMPLATE_CATALOG must be updated when adding templates to disk. SDK Distribution is capped until packages are published.
+- Commits: 92171ce, f543ebb
