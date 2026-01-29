@@ -1,7 +1,7 @@
 {
   "name": "@glyph-pdf/node",
   "version": "0.1.0",
-  "description": "Generate PDFs with AI - Node.js SDK for the Glyph API. One function call to create professional PDFs from data or HTML.",
+  "description": "AI PDF generation SDK - Create documents from templates with natural language customization",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -29,13 +29,15 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "pdf",
-    "pdf-generation",
-    "ai",
-    "ai-pdf",
+    "ai pdf generation",
+    "pdf api",
+    "document generation",
+    "natural language pdf",
+    "pdf templates",
+    "mcp server",
+    "anthropic",
+    "claude",
     "glyph",
-    "document-generation",
-    "pdf-api",
     "typescript"
   ],
   "author": {

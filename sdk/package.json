@@ -1,7 +1,7 @@
 {
   "name": "@glyph-pdf/sdk",
   "version": "0.7.0",
-  "description": "Embeddable PDF editor SDK with AI-powered document generation. Add professional PDF editing to any web app with a single web component.",
+  "description": "AI PDF generation web component - Embed natural language PDF editing in any app",
   "type": "module",
   "main": "./dist/glyph.cjs.js",
   "module": "./dist/glyph.esm.js",
@@ -39,20 +39,17 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "pdf",
-    "pdf-editor",
-    "pdf-generation",
+    "ai pdf generation",
+    "pdf api",
+    "document generation",
+    "natural language pdf",
+    "pdf templates",
+    "mcp server",
+    "anthropic",
+    "claude",
     "web-component",
-    "custom-element",
-    "ai",
-    "ai-powered",
-    "document-generation",
-    "document-editor",
     "embeddable",
-    "sdk",
-    "typescript",
-    "quote-generator",
-    "invoice-generator"
+    "sdk"
   ],
   "author": {
     "name": "Eddie San Juan",
