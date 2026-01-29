@@ -1,0 +1,212 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/menu.json",
+  "title": "MenuData",
+  "description": "Data schema for the restaurant/cafe menu template",
+  "type": "object",
+  "required": ["restaurant_name", "sections"],
+  "properties": {
+    "restaurant_name": {
+      "type": "string",
+      "description": "Name of the restaurant or cafe",
+      "examples": ["The Golden Fork", "Cafe Milano"]
+    },
+    "tagline": {
+      "type": "string",
+      "description": "Restaurant tagline or slogan",
+      "examples": ["Farm to Table Since 2010", "Authentic Italian Cuisine"]
+    },
+    "logo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the restaurant logo image"
+    },
+    "address": {
+      "type": "string",
+      "description": "Restaurant address",
+      "examples": ["123 Main Street, San Francisco, CA"]
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number",
+      "examples": ["(415) 555-0123"]
+    },
+    "hours": {
+      "type": "string",
+      "description": "Operating hours",
+      "examples": ["Mon-Sat 11am-10pm, Sun 10am-9pm"]
+    },
+    "sections": {
+      "type": "array",
+      "description": "Menu sections (e.g., Appetizers, Main Courses, Desserts)",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "items"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Section name",
+            "examples": ["Appetizers", "Main Courses", "Beverages"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional section description",
+            "examples": ["Start your meal with these delicious bites"]
+          },
+          "items": {
+            "type": "array",
+            "description": "Menu items in this section",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "price"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Item name",
+                  "examples": ["Truffle Fries", "Grilled Salmon"]
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Item description with ingredients or preparation details",
+                  "examples": ["Hand-cut fries with truffle oil and parmesan"]
+                },
+                "price": {
+                  "type": ["string", "number"],
+                  "description": "Item price",
+                  "examples": ["12.99", "18", "Market Price"]
+                },
+                "dietary": {
+                  "type": "array",
+                  "description": "Dietary indicators (V=Vegetarian, VG=Vegan, GF=Gluten-Free)",
+                  "items": {
+                    "type": "string",
+                    "enum": ["V", "VG", "GF", "DF", "N"]
+                  },
+                  "examples": [["V", "GF"], ["VG"]]
+                },
+                "spicy": {
+                  "type": "boolean",
+                  "description": "Whether the item is spicy"
+                },
+                "popular": {
+                  "type": "boolean",
+                  "description": "Whether to mark as a popular/featured item"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "footer_text": {
+      "type": "string",
+      "description": "Footer note (allergen info, gratuity policy, etc.)",
+      "examples": ["Please inform your server of any allergies. 20% gratuity added to parties of 6 or more."]
+    },
+    "styles": {
+      "type": "object",
+      "description": "Visual styling options",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "default": "#1a4d7c",
+          "description": "Primary accent color",
+          "examples": ["#1a4d7c", "#8b4513", "#2d5016"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "restaurant_name": "The Golden Fork",
+      "tagline": "Farm to Table Since 2010",
+      "address": "123 Main Street, San Francisco, CA",
+      "phone": "(415) 555-0123",
+      "hours": "Mon-Sat 11am-10pm | Sun 10am-9pm",
+      "sections": [
+        {
+          "name": "Starters",
+          "items": [
+            {
+              "name": "Truffle Fries",
+              "description": "Hand-cut fries with truffle oil, parmesan, and fresh herbs",
+              "price": "12",
+              "dietary": ["V", "GF"],
+              "popular": true
+            },
+            {
+              "name": "Burrata Salad",
+              "description": "Creamy burrata with heirloom tomatoes, basil, and aged balsamic",
+              "price": "16",
+              "dietary": ["V", "GF"]
+            },
+            {
+              "name": "Crispy Calamari",
+              "description": "Lightly fried calamari with lemon aioli and marinara",
+              "price": "15"
+            }
+          ]
+        },
+        {
+          "name": "Main Courses",
+          "items": [
+            {
+              "name": "Grilled Salmon",
+              "description": "Wild-caught salmon with roasted vegetables and lemon butter sauce",
+              "price": "32",
+              "dietary": ["GF"],
+              "popular": true
+            },
+            {
+              "name": "Ribeye Steak",
+              "description": "12oz prime ribeye with garlic mashed potatoes and seasonal greens",
+              "price": "45"
+            },
+            {
+              "name": "Wild Mushroom Risotto",
+              "description": "Arborio rice with forest mushrooms, truffle oil, and aged parmesan",
+              "price": "24",
+              "dietary": ["V", "GF"]
+            },
+            {
+              "name": "Thai Coconut Curry",
+              "description": "Vegetables in aromatic coconut curry with jasmine rice",
+              "price": "22",
+              "dietary": ["VG", "GF"],
+              "spicy": true
+            }
+          ]
+        },
+        {
+          "name": "Desserts",
+          "items": [
+            {
+              "name": "Chocolate Lava Cake",
+              "description": "Warm chocolate cake with molten center and vanilla ice cream",
+              "price": "10",
+              "popular": true
+            },
+            {
+              "name": "Tiramisu",
+              "description": "Classic Italian dessert with espresso-soaked ladyfingers",
+              "price": "9",
+              "dietary": ["V"]
+            },
+            {
+              "name": "Seasonal Sorbet",
+              "description": "Three scoops of house-made fruit sorbet",
+              "price": "8",
+              "dietary": ["VG", "GF"]
+            }
+          ]
+        }
+      ],
+      "footer_text": "Please inform your server of any allergies. V=Vegetarian, VG=Vegan, GF=Gluten-Free. 20% gratuity added to parties of 6 or more.",
+      "styles": {
+        "accentColor": "#1a4d7c"
+      }
+    }
+  ]
+}

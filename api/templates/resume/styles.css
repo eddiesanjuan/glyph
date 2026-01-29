@@ -1,0 +1,16 @@
+/**
+ * resume template default styles
+ *
+ * Customizable via the Glyph API:
+ * - styles.accentColor: Primary accent color (default: #2563eb)
+ */
+
+:root {
+  --accent-color: #2563eb;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 11px;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --bg-light: #f9fafb;
+}

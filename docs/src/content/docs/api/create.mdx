@@ -124,6 +124,7 @@ At least one of `data`, `html`, or `url` must be provided.
 | `intent` | string | No | Natural language description of what you want (e.g., `"professional invoice"`, `"Stripe-styled proposal"`). Used with the `data` path only. |
 | `style` | string | No | Style preset: `stripe-clean`, `bold`, `minimal`, `corporate`. Used with the `data` path only. |
 | `format` | string | No | Output format: `pdf` (default) or `png` |
+| `ttl` | number | No | Time-to-live in seconds for the hosted document URL. Range: 300 (5 min) to 604800 (7 days). Default: 86400 (24 hours). Affects the `expiresAt` timestamp in the response. |
 | `options` | object | No | Rendering options (see below) |
 
 ### Options
@@ -281,6 +282,24 @@ curl -X POST https://api.glyph.you/v1/create \
     "url": "https://example.com/invoice/12345"
   }' \
   --output captured.pdf
+```
+
+### cURL (Custom TTL - 7 days)
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "company": { "name": "Acme Inc" },
+      "customer": { "name": "John Doe" },
+      "items": [{ "description": "Consulting", "total": 1500 }],
+      "total": 1500
+    },
+    "ttl": 604800
+  }' \
+  --output invoice.pdf
 ```
 
 ### JavaScript

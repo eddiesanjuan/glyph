@@ -1,0 +1,235 @@
+---
+title: GET /v1/documents - Retrieve Generated PDFs
+description: Retrieve generated PDFs and their metadata by document ID
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<span class="endpoint-badge get">GET</span> `/v1/documents/:id`
+
+Retrieve PDFs generated via the [Create endpoint](/api/create). Each generated PDF is assigned a unique document ID and stored for the configured TTL (default 24 hours).
+
+## Overview
+
+When you generate a PDF via `/v1/create`, the response includes a document ID (e.g., `doc_abc123...`). Use this ID to:
+
+1. **Download the PDF** - Retrieve the raw file at any time before expiration
+2. **Check metadata** - Get file size, creation time, and expiration without downloading
+3. **Share securely** - Document URLs work without API keys (security via unguessable IDs)
+
+<Aside type="tip">
+Document URLs are shareable. You can send the URL directly to customers, partners, or embed it in emails without exposing your API key.
+</Aside>
+
+## GET /v1/documents/:id
+
+Retrieve a generated PDF by its document ID.
+
+### Parameters
+
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Path | The document ID (e.g., `doc_abc123...`) |
+
+### Response
+
+Returns the PDF file directly with appropriate headers:
+
+**Headers:**
+```http
+Content-Type: application/pdf
+Content-Disposition: inline; filename="glyph-invoice-clean-1706000000000.pdf"
+Content-Length: 45678
+```
+
+**Body:** Binary PDF data
+
+### Example
+
+```bash
+# Download a generated PDF
+curl https://api.glyph.you/v1/documents/doc_abc123 -o document.pdf
+```
+
+```javascript
+// Fetch and display in browser
+const response = await fetch('https://api.glyph.you/v1/documents/doc_abc123');
+const blob = await response.blob();
+const url = URL.createObjectURL(blob);
+window.open(url);
+```
+
+```python
+import requests
+
+response = requests.get('https://api.glyph.you/v1/documents/doc_abc123')
+with open('document.pdf', 'wb') as f:
+    f.write(response.content)
+```
+
+### Errors
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 404 | `DOCUMENT_NOT_FOUND` | Document ID does not exist |
+| 410 | `DOCUMENT_EXPIRED` | Document has expired. Response includes `expiredAt` timestamp. |
+
+**404 Response:**
+```json
+{
+  "error": "Document not found",
+  "code": "DOCUMENT_NOT_FOUND"
+}
+```
+
+**410 Response:**
+```json
+{
+  "error": "Document has expired",
+  "code": "DOCUMENT_EXPIRED",
+  "expiredAt": "2026-01-28T12:00:00.000Z"
+}
+```
+
+---
+
+## GET /v1/documents/:id/metadata
+
+<span class="endpoint-badge get">GET</span> `/v1/documents/:id/metadata`
+
+Retrieve metadata about a document without downloading the file. Useful for checking expiration or file size before download.
+
+### Parameters
+
+| Parameter | Type | Location | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Path | The document ID (e.g., `doc_abc123...`) |
+
+### Response
+
+```json
+{
+  "id": "doc_abc123...",
+  "format": "pdf",
+  "size": 45678,
+  "filename": "glyph-invoice-clean-1706000000000.pdf",
+  "createdAt": "2026-01-28T12:00:00.000Z",
+  "expiresAt": "2026-01-29T12:00:00.000Z",
+  "source": {
+    "type": "template",
+    "templateId": "invoice-clean"
+  },
+  "sessionId": "dev_xyz789..."
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Document ID |
+| `format` | string | Output format (`pdf` or `png`) |
+| `size` | number | File size in bytes |
+| `filename` | string | Generated filename |
+| `createdAt` | string | ISO 8601 creation timestamp |
+| `expiresAt` | string | ISO 8601 expiration timestamp |
+| `source` | object | How the document was created |
+| `source.type` | string | `template`, `html`, or `url` |
+| `source.templateId` | string | Template ID (if `type` is `template`) |
+| `source.url` | string | Source URL (if `type` is `url`) |
+| `sessionId` | string | Session used to generate the document |
+
+### Example
+
+```bash
+curl https://api.glyph.you/v1/documents/doc_abc123/metadata
+```
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/documents/doc_abc123/metadata');
+const metadata = await response.json();
+
+console.log(`File size: ${(metadata.size / 1024).toFixed(1)} KB`);
+console.log(`Expires: ${new Date(metadata.expiresAt).toLocaleString()}`);
+
+// Check if document is still valid
+const expiresAt = new Date(metadata.expiresAt);
+if (expiresAt > new Date()) {
+  console.log('Document is still available');
+}
+```
+
+```python
+import requests
+from datetime import datetime
+
+response = requests.get('https://api.glyph.you/v1/documents/doc_abc123/metadata')
+metadata = response.json()
+
+print(f"File size: {metadata['size'] / 1024:.1f} KB")
+print(f"Created: {metadata['createdAt']}")
+print(f"Expires: {metadata['expiresAt']}")
+```
+
+---
+
+## Notes
+
+### No Authentication Required
+
+Document URLs work without API keys. Security is provided through unguessable document IDs (cryptographically random 32-character strings). This means:
+
+- Share document URLs directly with customers
+- Embed in emails or notifications
+- Use in client-side applications without exposing API keys
+
+### Automatic Cleanup
+
+Documents are automatically deleted after their TTL expires. You can configure the TTL (5 minutes to 7 days) when calling `/v1/create`:
+
+```json
+{
+  "data": { ... },
+  "ttl": 604800  // 7 days in seconds
+}
+```
+
+See [POST /v1/create](/api/create) for full TTL documentation.
+
+### Workflow Example
+
+A typical workflow for generating and sharing a PDF:
+
+```javascript
+// 1. Generate the PDF
+const createResponse = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer gk_your_api_key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    templateId: 'invoice-clean',
+    data: invoiceData,
+    ttl: 604800  // Keep for 7 days
+  })
+});
+
+const { documentId, expiresAt } = await createResponse.json();
+
+// 2. Build the shareable URL
+const shareableUrl = `https://api.glyph.you/v1/documents/${documentId}`;
+
+// 3. Send to customer (no API key needed)
+await sendEmail({
+  to: customer.email,
+  subject: 'Your Invoice',
+  body: `Download your invoice: ${shareableUrl}\n\nThis link expires on ${expiresAt}.`
+});
+```
+
+## Next Steps
+
+- [POST /v1/create](/api/create) - Generate PDFs with custom TTL
+- [POST /v1/modify](/api/modify) - Make AI-powered changes before finalizing
+- [Error Codes](/api/error-codes) - Full error reference

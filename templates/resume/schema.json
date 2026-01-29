@@ -1,0 +1,240 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/resume.json",
+  "title": "ResumeData",
+  "description": "Data schema for the professional resume/CV template",
+  "type": "object",
+  "required": ["name", "title", "email", "summary", "experience", "education", "skills"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Full name of the candidate",
+      "examples": ["Sarah Chen"]
+    },
+    "title": {
+      "type": "string",
+      "description": "Professional title or desired position",
+      "examples": ["Senior Software Engineer", "Product Manager"]
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email address",
+      "examples": ["sarah.chen@email.com"]
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number",
+      "examples": ["(555) 123-4567"]
+    },
+    "location": {
+      "type": "string",
+      "description": "City and state/country",
+      "examples": ["San Francisco, CA"]
+    },
+    "linkedin": {
+      "type": "string",
+      "description": "LinkedIn profile URL or username",
+      "examples": ["linkedin.com/in/sarahchen"]
+    },
+    "website": {
+      "type": "string",
+      "description": "Personal website or portfolio URL",
+      "examples": ["sarahchen.dev"]
+    },
+    "summary": {
+      "type": "string",
+      "description": "Professional summary or objective statement (2-4 sentences)",
+      "examples": ["Results-driven software engineer with 8+ years of experience building scalable web applications."]
+    },
+    "experience": {
+      "type": "array",
+      "description": "Work experience entries, ordered from most recent to oldest",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["company", "role", "dates"],
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "Company or organization name",
+            "examples": ["Acme Corp"]
+          },
+          "role": {
+            "type": "string",
+            "description": "Job title or position held",
+            "examples": ["Senior Software Engineer"]
+          },
+          "dates": {
+            "type": "string",
+            "description": "Employment period",
+            "examples": ["Jan 2020 - Present", "2018 - 2020"]
+          },
+          "location": {
+            "type": "string",
+            "description": "Work location",
+            "examples": ["San Francisco, CA"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Responsibilities and achievements, can include bullet points separated by newlines",
+            "examples": ["Led team of 5 engineers building microservices architecture\nReduced API latency by 40% through optimization"]
+          }
+        }
+      }
+    },
+    "education": {
+      "type": "array",
+      "description": "Educational background entries",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["school", "degree"],
+        "properties": {
+          "school": {
+            "type": "string",
+            "description": "Name of educational institution",
+            "examples": ["Stanford University"]
+          },
+          "degree": {
+            "type": "string",
+            "description": "Degree and field of study",
+            "examples": ["B.S. Computer Science"]
+          },
+          "dates": {
+            "type": "string",
+            "description": "Attendance period",
+            "examples": ["2012 - 2016"]
+          },
+          "gpa": {
+            "type": "string",
+            "description": "Grade point average (optional)",
+            "examples": ["3.8/4.0"]
+          },
+          "honors": {
+            "type": "string",
+            "description": "Honors, awards, or notable achievements",
+            "examples": ["Magna Cum Laude, Dean's List"]
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "description": "List of professional skills",
+      "items": {
+        "type": "string",
+        "description": "Individual skill",
+        "examples": ["JavaScript", "Python", "AWS", "Team Leadership"]
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "description": "Professional certifications (optional)",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Certification name",
+            "examples": ["AWS Solutions Architect"]
+          },
+          "issuer": {
+            "type": "string",
+            "description": "Issuing organization",
+            "examples": ["Amazon Web Services"]
+          },
+          "date": {
+            "type": "string",
+            "description": "Date obtained",
+            "examples": ["2023"]
+          }
+        }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "description": "Visual styling options",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "default": "#2563eb",
+          "description": "Primary accent color as a CSS value",
+          "examples": ["#2563eb", "#059669", "#7c3aed"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "Sarah Chen",
+      "title": "Senior Software Engineer",
+      "email": "sarah.chen@email.com",
+      "phone": "(555) 123-4567",
+      "location": "San Francisco, CA",
+      "linkedin": "linkedin.com/in/sarahchen",
+      "website": "sarahchen.dev",
+      "summary": "Results-driven software engineer with 8+ years of experience building scalable web applications and leading engineering teams. Passionate about clean code, developer experience, and mentoring junior engineers.",
+      "experience": [
+        {
+          "company": "Stripe",
+          "role": "Senior Software Engineer",
+          "dates": "Jan 2021 - Present",
+          "location": "San Francisco, CA",
+          "description": "Lead backend team building payment processing infrastructure\nDesigned and implemented real-time fraud detection system handling 10M+ transactions/day\nMentored 4 junior engineers through technical growth programs"
+        },
+        {
+          "company": "Airbnb",
+          "role": "Software Engineer",
+          "dates": "Jun 2018 - Dec 2020",
+          "location": "San Francisco, CA",
+          "description": "Built and maintained search ranking algorithms improving conversion by 15%\nDeveloped internal tooling reducing deployment time by 60%"
+        },
+        {
+          "company": "Google",
+          "role": "Software Engineer Intern",
+          "dates": "Summer 2017",
+          "location": "Mountain View, CA",
+          "description": "Developed features for Google Maps mobile application\nImplemented offline caching system for improved user experience"
+        }
+      ],
+      "education": [
+        {
+          "school": "Stanford University",
+          "degree": "M.S. Computer Science",
+          "dates": "2016 - 2018",
+          "honors": "Focus on Distributed Systems"
+        },
+        {
+          "school": "UC Berkeley",
+          "degree": "B.S. Computer Science",
+          "dates": "2012 - 2016",
+          "gpa": "3.85/4.0",
+          "honors": "Magna Cum Laude, Dean's List"
+        }
+      ],
+      "skills": [
+        "Python",
+        "Go",
+        "TypeScript",
+        "PostgreSQL",
+        "Redis",
+        "AWS",
+        "Kubernetes",
+        "System Design",
+        "Technical Leadership"
+      ],
+      "certifications": [
+        {
+          "name": "AWS Solutions Architect Professional",
+          "issuer": "Amazon Web Services",
+          "date": "2023"
+        }
+      ],
+      "styles": {
+        "accentColor": "#2563eb"
+      }
+    }
+  ]
+}

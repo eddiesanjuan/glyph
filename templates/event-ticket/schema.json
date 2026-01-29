@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/event-ticket.json",
+  "title": "EventTicketData",
+  "description": "Data schema for the event/concert ticket template",
+  "type": "object",
+  "required": ["event_name", "date", "time", "venue", "ticket_holder_name"],
+  "properties": {
+    "event_name": {
+      "type": "string",
+      "description": "Name of the event or concert",
+      "examples": ["Summer Music Festival 2024", "Hamilton - Broadway Tour"]
+    },
+    "event_subtitle": {
+      "type": "string",
+      "description": "Optional subtitle or performer name",
+      "examples": ["Featuring Taylor Swift", "A New Musical"]
+    },
+    "date": {
+      "type": "string",
+      "description": "Event date",
+      "examples": ["Saturday, August 15, 2024", "Aug 15, 2024"]
+    },
+    "time": {
+      "type": "string",
+      "description": "Event start time",
+      "examples": ["7:30 PM", "Doors 6:00 PM | Show 7:30 PM"]
+    },
+    "venue": {
+      "type": "string",
+      "description": "Venue name",
+      "examples": ["Madison Square Garden", "The Greek Theatre"]
+    },
+    "venue_address": {
+      "type": "string",
+      "description": "Venue address",
+      "examples": ["4 Pennsylvania Plaza, New York, NY 10001"]
+    },
+    "seat_section": {
+      "type": "string",
+      "description": "Seating section",
+      "examples": ["Orchestra", "Section 101", "GA Floor"]
+    },
+    "seat_row": {
+      "type": "string",
+      "description": "Row identifier",
+      "examples": ["A", "12", "N/A"]
+    },
+    "seat_number": {
+      "type": "string",
+      "description": "Seat number",
+      "examples": ["15", "101-102", "General Admission"]
+    },
+    "ticket_holder_name": {
+      "type": "string",
+      "description": "Name of the ticket holder",
+      "examples": ["John Smith"]
+    },
+    "ticket_type": {
+      "type": "string",
+      "description": "Type of ticket",
+      "examples": ["VIP", "General Admission", "Premium", "Standard"]
+    },
+    "ticket_price": {
+      "type": ["string", "number"],
+      "description": "Ticket price",
+      "examples": ["$150.00", "125"]
+    },
+    "barcode_value": {
+      "type": "string",
+      "description": "Barcode or QR code value for ticket validation",
+      "examples": ["TKT-2024-08150001", "1234567890"]
+    },
+    "confirmation_number": {
+      "type": "string",
+      "description": "Order or confirmation number",
+      "examples": ["ORD-789456123"]
+    },
+    "special_instructions": {
+      "type": "string",
+      "description": "Special instructions or notes",
+      "examples": ["No re-entry. Doors open 1 hour before showtime."]
+    },
+    "logo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to event or venue logo"
+    },
+    "styles": {
+      "type": "object",
+      "description": "Visual styling options",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "default": "#7c3aed",
+          "description": "Primary accent color",
+          "examples": ["#7c3aed", "#dc2626", "#059669"]
+        },
+        "backgroundImage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional background image URL"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "event_name": "Summer Music Festival",
+      "event_subtitle": "Featuring The Midnight & ODESZA",
+      "date": "Saturday, August 15, 2024",
+      "time": "Doors 6:00 PM | Show 7:30 PM",
+      "venue": "The Greek Theatre",
+      "venue_address": "2700 N Vermont Ave, Los Angeles, CA 90027",
+      "seat_section": "Orchestra Center",
+      "seat_row": "H",
+      "seat_number": "115",
+      "ticket_holder_name": "Sarah Johnson",
+      "ticket_type": "VIP",
+      "ticket_price": "$175.00",
+      "barcode_value": "SMF-2024-0815-VIP-0115",
+      "confirmation_number": "ORD-789456123",
+      "special_instructions": "VIP entrance on Vermont Ave. No re-entry. All ages welcome.",
+      "styles": {
+        "accentColor": "#7c3aed"
+      }
+    }
+  ]
+}

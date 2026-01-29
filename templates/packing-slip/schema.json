@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/packing-slip.json",
+  "title": "PackingSlipData",
+  "description": "Data schema for the shipping packing slip template",
+  "type": "object",
+  "required": ["order_number", "ship_date", "ship_to", "items"],
+  "properties": {
+    "order_number": {
+      "type": "string",
+      "description": "Unique order identifier",
+      "examples": ["ORD-2024-00156", "#10042"]
+    },
+    "ship_date": {
+      "type": "string",
+      "description": "Date the order was shipped",
+      "examples": ["January 28, 2024", "2024-01-28"]
+    },
+    "order_date": {
+      "type": "string",
+      "description": "Date the order was placed",
+      "examples": ["January 25, 2024"]
+    },
+    "ship_to": {
+      "type": "object",
+      "description": "Shipping destination address",
+      "required": ["name", "address", "city", "state", "zip"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Recipient name",
+          "examples": ["John Smith"]
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name (optional)",
+          "examples": ["Acme Corp"]
+        },
+        "address": {
+          "type": "string",
+          "description": "Street address",
+          "examples": ["123 Main Street", "456 Oak Ave, Suite 200"]
+        },
+        "city": {
+          "type": "string",
+          "description": "City name",
+          "examples": ["San Francisco"]
+        },
+        "state": {
+          "type": "string",
+          "description": "State or province",
+          "examples": ["CA", "California", "NY"]
+        },
+        "zip": {
+          "type": "string",
+          "description": "Postal/ZIP code",
+          "examples": ["94102", "10001-1234"]
+        },
+        "country": {
+          "type": "string",
+          "description": "Country (optional, for international shipments)",
+          "examples": ["USA", "Canada"]
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number",
+          "examples": ["(555) 123-4567"]
+        }
+      }
+    },
+    "ship_from": {
+      "type": "object",
+      "description": "Shipping origin (your warehouse/company address)",
+      "properties": {
+        "company": {
+          "type": "string",
+          "description": "Company name",
+          "examples": ["Your Store Name"]
+        },
+        "address": {
+          "type": "string",
+          "description": "Full address",
+          "examples": ["789 Warehouse Blvd, Los Angeles, CA 90001"]
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone",
+          "examples": ["1-800-555-0199"]
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email",
+          "examples": ["support@yourstore.com"]
+        }
+      }
+    },
+    "shipping_method": {
+      "type": "string",
+      "description": "Shipping carrier and method",
+      "examples": ["USPS Priority Mail", "FedEx Ground", "UPS Next Day Air"]
+    },
+    "tracking_number": {
+      "type": "string",
+      "description": "Shipment tracking number",
+      "examples": ["1Z999AA10123456784"]
+    },
+    "items": {
+      "type": "array",
+      "description": "Items included in this shipment",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "quantity"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Product name",
+            "examples": ["Wireless Bluetooth Headphones"]
+          },
+          "sku": {
+            "type": "string",
+            "description": "Stock keeping unit / product code",
+            "examples": ["WBH-001-BLK", "SKU-12345"]
+          },
+          "quantity": {
+            "type": ["number", "string"],
+            "description": "Number of units",
+            "examples": [1, 2, "1"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief product description or variant info",
+            "examples": ["Color: Black, Size: Large"]
+          },
+          "location": {
+            "type": "string",
+            "description": "Warehouse location/bin (for picker reference)",
+            "examples": ["A-12-3", "Bin 45"]
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Special instructions or notes for the recipient",
+      "examples": ["Gift wrapping requested. Include gift message."]
+    },
+    "gift_message": {
+      "type": "string",
+      "description": "Gift message to include (if this is a gift order)",
+      "examples": ["Happy Birthday! Enjoy your new headphones. - Mom"]
+    },
+    "total_items": {
+      "type": ["number", "string"],
+      "description": "Total number of items in shipment",
+      "examples": [3, "3"]
+    },
+    "package_weight": {
+      "type": "string",
+      "description": "Total package weight",
+      "examples": ["2.5 lbs", "1.1 kg"]
+    },
+    "logo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to company logo"
+    },
+    "styles": {
+      "type": "object",
+      "description": "Visual styling options",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "default": "#059669",
+          "description": "Primary accent color",
+          "examples": ["#059669", "#2563eb", "#dc2626"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "order_number": "ORD-2024-00156",
+      "order_date": "January 25, 2024",
+      "ship_date": "January 28, 2024",
+      "ship_to": {
+        "name": "Sarah Johnson",
+        "company": "Acme Corp",
+        "address": "456 Oak Avenue, Suite 200",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "phone": "(555) 234-5678"
+      },
+      "ship_from": {
+        "company": "TechGear Store",
+        "address": "789 Warehouse Blvd, Los Angeles, CA 90001",
+        "phone": "1-800-555-0199",
+        "email": "support@techgear.com"
+      },
+      "shipping_method": "FedEx Ground",
+      "tracking_number": "794644790298",
+      "items": [
+        {
+          "name": "Wireless Bluetooth Headphones",
+          "sku": "WBH-001-BLK",
+          "quantity": 1,
+          "description": "Color: Matte Black",
+          "location": "A-12-3"
+        },
+        {
+          "name": "USB-C Charging Cable (6ft)",
+          "sku": "USB-C-6FT",
+          "quantity": 2,
+          "description": "Braided nylon, white",
+          "location": "B-04-1"
+        },
+        {
+          "name": "Headphone Stand",
+          "sku": "HS-WOOD-01",
+          "quantity": 1,
+          "description": "Walnut wood finish",
+          "location": "C-08-2"
+        }
+      ],
+      "notes": "Handle with care. Fragile items enclosed.",
+      "total_items": 4,
+      "package_weight": "2.3 lbs",
+      "styles": {
+        "accentColor": "#059669"
+      }
+    }
+  ]
+}

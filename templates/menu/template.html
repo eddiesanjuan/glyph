@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{restaurant_name}} - Menu</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --text-muted: #888888;
+      --border-color: #e5e7eb;
+      --bg-light: #faf9f7;
+    }
+
+    html {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', Times, serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .menu-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.6in 0.75in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .restaurant-name {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    .tagline {
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .restaurant-info {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+    }
+
+    /* Sections */
+    .menu-section {
+      margin-bottom: 1.75rem;
+    }
+
+    .menu-section:last-of-type {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .section-name {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.25rem;
+    }
+
+    .section-description {
+      font-size: 0.9rem;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    .section-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      height: 1px;
+      width: 60px;
+      background: var(--accent-color);
+      opacity: 0.4;
+    }
+
+    .section-divider-icon {
+      color: var(--accent-color);
+      font-size: 0.75rem;
+    }
+
+    /* Menu Items */
+    .menu-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .item-details {
+      flex: 1;
+    }
+
+    .item-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .item-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .item-badges {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .badge {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.1rem 0.3rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+
+    .badge-dietary {
+      background: var(--bg-light);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .badge-popular {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .badge-spicy {
+      background: #dc2626;
+      color: white;
+    }
+
+    .item-description {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+      line-height: 1.4;
+    }
+
+    .item-price {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .item-price::before {
+      content: '$';
+    }
+
+    /* Footer */
+    [data-glyph-region="footer"] {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .menu-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="menu-document">
+    <header data-glyph-region="header">
+      <h1 class="restaurant-name">{{restaurant_name}}</h1>
+      {{#tagline}}
+      <p class="tagline">{{tagline}}</p>
+      {{/tagline}}
+      <div class="restaurant-info">
+        {{#address}}<span>{{address}}</span>{{/address}}
+        {{#phone}}<span>{{phone}}</span>{{/phone}}
+        {{#hours}}<span>{{hours}}</span>{{/hours}}
+      </div>
+    </header>
+
+    {{#sections}}
+    <section class="menu-section" data-glyph-region="section-{{name}}">
+      <div class="section-header">
+        <h2 class="section-name">{{name}}</h2>
+        {{#description}}
+        <p class="section-description">{{description}}</p>
+        {{/description}}
+      </div>
+      <div class="section-divider">
+        <span class="section-divider-icon">&#9830;</span>
+      </div>
+      <div class="menu-items">
+        {{#items}}
+        <div class="menu-item">
+          <div class="item-details">
+            <div class="item-header">
+              <span class="item-name">{{name}}</span>
+              <div class="item-badges">
+                {{#popular}}<span class="badge badge-popular">Popular</span>{{/popular}}
+                {{#spicy}}<span class="badge badge-spicy">Spicy</span>{{/spicy}}
+                {{#dietary}}
+                <span class="badge badge-dietary">{{.}}</span>
+                {{/dietary}}
+              </div>
+            </div>
+            {{#description}}
+            <p class="item-description">{{description}}</p>
+            {{/description}}
+          </div>
+          <span class="item-price">{{price}}</span>
+        </div>
+        {{/items}}
+      </div>
+    </section>
+    {{/sections}}
+
+    {{#footer_text}}
+    <footer data-glyph-region="footer">
+      <p class="footer-text">{{footer_text}}</p>
+    </footer>
+    {{/footer_text}}
+  </div>
+</body>
+</html>

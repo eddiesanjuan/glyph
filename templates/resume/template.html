@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}} - Resume</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #f9fafb;
+    }
+
+    html {
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .resume-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in 0.6in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .candidate-name {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .candidate-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--accent-color);
+      margin-bottom: 0.75rem;
+    }
+
+    .contact-info {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .contact-item a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .contact-item a:hover {
+      color: var(--accent-color);
+    }
+
+    /* Section styling */
+    .section {
+      margin-bottom: 1.25rem;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-color);
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Summary */
+    [data-glyph-region="summary"] .summary-text {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Experience */
+    .experience-item {
+      margin-bottom: 1rem;
+    }
+
+    .experience-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .experience-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.15rem;
+    }
+
+    .experience-role {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .experience-dates {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .experience-company {
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .experience-location {
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .experience-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      white-space: pre-line;
+      padding-left: 0.5rem;
+    }
+
+    .experience-description::before {
+      content: none;
+    }
+
+    /* Education */
+    .education-item {
+      margin-bottom: 0.75rem;
+    }
+
+    .education-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .education-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .education-degree {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .education-dates {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .education-school {
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      font-weight: 500;
+    }
+
+    .education-details {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+    }
+
+    /* Skills */
+    [data-glyph-region="skills"] .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .skill-tag {
+      background: var(--bg-light);
+      color: var(--text-primary);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Certifications */
+    .certification-item {
+      margin-bottom: 0.5rem;
+    }
+
+    .certification-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .certification-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .certification-details {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .resume-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="resume-document">
+    <header data-glyph-region="header">
+      <h1 class="candidate-name">{{name}}</h1>
+      <div class="candidate-title">{{title}}</div>
+      <div class="contact-info">
+        <span class="contact-item">{{email}}</span>
+        {{#phone}}
+        <span class="contact-item">{{phone}}</span>
+        {{/phone}}
+        {{#location}}
+        <span class="contact-item">{{location}}</span>
+        {{/location}}
+        {{#linkedin}}
+        <span class="contact-item"><a href="https://{{linkedin}}">{{linkedin}}</a></span>
+        {{/linkedin}}
+        {{#website}}
+        <span class="contact-item"><a href="https://{{website}}">{{website}}</a></span>
+        {{/website}}
+      </div>
+    </header>
+
+    <section class="section" data-glyph-region="summary">
+      <h2 class="section-title">Summary</h2>
+      <p class="summary-text">{{summary}}</p>
+    </section>
+
+    <section class="section" data-glyph-region="experience">
+      <h2 class="section-title">Experience</h2>
+      {{#experience}}
+      <div class="experience-item">
+        <div class="experience-header">
+          <span class="experience-role">{{role}}</span>
+          <span class="experience-dates">{{dates}}</span>
+        </div>
+        <div class="experience-company">{{company}}{{#location}} <span class="experience-location">| {{location}}</span>{{/location}}</div>
+        {{#description}}
+        <div class="experience-description">{{description}}</div>
+        {{/description}}
+      </div>
+      {{/experience}}
+    </section>
+
+    <section class="section" data-glyph-region="education">
+      <h2 class="section-title">Education</h2>
+      {{#education}}
+      <div class="education-item">
+        <div class="education-header">
+          <span class="education-degree">{{degree}}</span>
+          {{#dates}}<span class="education-dates">{{dates}}</span>{{/dates}}
+        </div>
+        <div class="education-school">{{school}}</div>
+        {{#gpa}}<div class="education-details">GPA: {{gpa}}</div>{{/gpa}}
+        {{#honors}}<div class="education-details">{{honors}}</div>{{/honors}}
+      </div>
+      {{/education}}
+    </section>
+
+    <section class="section" data-glyph-region="skills">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-list">
+        {{#skills}}
+        <span class="skill-tag">{{.}}</span>
+        {{/skills}}
+      </div>
+    </section>
+
+    {{#certifications.length}}
+    <section class="section" data-glyph-region="certifications">
+      <h2 class="section-title">Certifications</h2>
+      {{#certifications}}
+      <div class="certification-item">
+        <span class="certification-name">{{name}}</span>
+        <span class="certification-details">{{#issuer}} - {{issuer}}{{/issuer}}{{#date}} ({{date}}){{/date}}</span>
+      </div>
+      {{/certifications}}
+    </section>
+    {{/certifications.length}}
+  </div>
+</body>
+</html>

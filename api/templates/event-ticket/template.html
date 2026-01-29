@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{event_name}} - Ticket</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-light: #ffffff;
+      --border-color: #e5e7eb;
+      --bg-dark: #1f2937;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: #f3f4f6;
+    }
+
+    .ticket-document {
+      width: 8in;
+      height: 3.5in;
+      margin: 0.5in auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    /* Perforation line */
+    .ticket-document::before {
+      content: '';
+      position: absolute;
+      right: 2.25in;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      border-right: 2px dashed var(--border-color);
+      z-index: 1;
+    }
+
+    /* Main ticket section */
+    .ticket-main {
+      flex: 1;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, white 0%, #faf5ff 100%);
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      margin-bottom: 0.75rem;
+    }
+
+    .ticket-type-badge {
+      display: inline-block;
+      background: var(--accent-color);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 0.15rem;
+    }
+
+    .event-subtitle {
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      font-weight: 500;
+    }
+
+    /* Event details */
+    [data-glyph-region="details"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .detail-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 0.1rem;
+    }
+
+    .detail-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .detail-value-small {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    /* Seating */
+    [data-glyph-region="seating"] {
+      display: flex;
+      gap: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-dark);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+    }
+
+    .seat-info {
+      text-align: center;
+    }
+
+    .seat-label {
+      font-size: 0.55rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 0.1rem;
+    }
+
+    .seat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: white;
+    }
+
+    /* Ticket holder */
+    [data-glyph-region="holder"] {
+      margin-top: auto;
+    }
+
+    .holder-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .confirmation {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    /* Stub section */
+    .ticket-stub {
+      width: 2.25in;
+      background: var(--accent-color);
+      color: white;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    [data-glyph-region="stub"] .stub-event {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .stub-datetime {
+      font-size: 0.7rem;
+      opacity: 0.9;
+      margin-bottom: 0.75rem;
+    }
+
+    .barcode-area {
+      background: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .barcode-placeholder {
+      font-family: 'Courier New', monospace;
+      font-size: 0.55rem;
+      color: var(--text-primary);
+      letter-spacing: 0.1em;
+      word-break: break-all;
+    }
+
+    .barcode-lines {
+      display: flex;
+      justify-content: center;
+      gap: 1px;
+      margin-bottom: 0.25rem;
+    }
+
+    .barcode-line {
+      width: 2px;
+      height: 35px;
+      background: var(--text-primary);
+    }
+
+    .barcode-line:nth-child(even) {
+      width: 1px;
+    }
+
+    .barcode-line:nth-child(3n) {
+      width: 3px;
+    }
+
+    .stub-seat {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    .stub-price {
+      font-size: 0.65rem;
+      opacity: 0.8;
+    }
+
+    .special-instructions {
+      font-size: 0.6rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+      text-align: center;
+      max-width: 100%;
+    }
+
+    @media print {
+      body { background: white; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .ticket-document { margin: 0; box-shadow: none; }
+    }
+
+    @page {
+      size: 8in 4.5in;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="ticket-document">
+    <div class="ticket-main">
+      <div data-glyph-region="header">
+        {{#ticket_type}}
+        <span class="ticket-type-badge">{{ticket_type}}</span>
+        {{/ticket_type}}
+        <h1 class="event-name">{{event_name}}</h1>
+        {{#event_subtitle}}
+        <p class="event-subtitle">{{event_subtitle}}</p>
+        {{/event_subtitle}}
+      </div>
+
+      <div data-glyph-region="details">
+        <div class="detail-group">
+          <span class="detail-label">Date</span>
+          <span class="detail-value">{{date}}</span>
+        </div>
+        <div class="detail-group">
+          <span class="detail-label">Time</span>
+          <span class="detail-value">{{time}}</span>
+        </div>
+        <div class="detail-group">
+          <span class="detail-label">Venue</span>
+          <span class="detail-value">{{venue}}</span>
+          {{#venue_address}}
+          <span class="detail-value-small">{{venue_address}}</span>
+          {{/venue_address}}
+        </div>
+        {{#ticket_price}}
+        <div class="detail-group">
+          <span class="detail-label">Price</span>
+          <span class="detail-value">{{ticket_price}}</span>
+        </div>
+        {{/ticket_price}}
+      </div>
+
+      <div data-glyph-region="seating">
+        {{#seat_section}}
+        <div class="seat-info">
+          <div class="seat-label">Section</div>
+          <div class="seat-value">{{seat_section}}</div>
+        </div>
+        {{/seat_section}}
+        {{#seat_row}}
+        <div class="seat-info">
+          <div class="seat-label">Row</div>
+          <div class="seat-value">{{seat_row}}</div>
+        </div>
+        {{/seat_row}}
+        {{#seat_number}}
+        <div class="seat-info">
+          <div class="seat-label">Seat</div>
+          <div class="seat-value">{{seat_number}}</div>
+        </div>
+        {{/seat_number}}
+      </div>
+
+      <div data-glyph-region="holder">
+        <div class="holder-name">{{ticket_holder_name}}</div>
+        {{#confirmation_number}}
+        <div class="confirmation">Confirmation: {{confirmation_number}}</div>
+        {{/confirmation_number}}
+      </div>
+
+      {{#special_instructions}}
+      <p class="special-instructions">{{special_instructions}}</p>
+      {{/special_instructions}}
+    </div>
+
+    <div class="ticket-stub" data-glyph-region="stub">
+      <div class="stub-event">{{event_name}}</div>
+      <div class="stub-datetime">{{date}}<br>{{time}}</div>
+      {{#barcode_value}}
+      <div class="barcode-area">
+        <div class="barcode-lines">
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+          <span class="barcode-line"></span>
+        </div>
+        <div class="barcode-placeholder">{{barcode_value}}</div>
+      </div>
+      {{/barcode_value}}
+      {{#seat_section}}
+      <div class="stub-seat">{{seat_section}}{{#seat_row}} / Row {{seat_row}}{{/seat_row}}{{#seat_number}} / Seat {{seat_number}}{{/seat_number}}</div>
+      {{/seat_section}}
+      {{#ticket_price}}
+      <div class="stub-price">{{ticket_price}}</div>
+      {{/ticket_price}}
+    </div>
+  </div>
+</body>
+</html>

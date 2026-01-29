@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Packing Slip - {{order_number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #f9fafb;
+      --success-color: #059669;
+    }
+
+    html {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .slip-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in 0.6in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 3px solid var(--accent-color);
+    }
+
+    .header-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .document-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .company-info {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .order-badge {
+      text-align: right;
+    }
+
+    .order-number {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .order-dates {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Address blocks */
+    [data-glyph-region="addresses"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .address-block {
+      padding: 1rem;
+      background: var(--bg-light);
+      border-radius: 6px;
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .address-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .address-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.15rem;
+    }
+
+    .address-company {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .address-line {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Shipping info */
+    [data-glyph-region="shipping-info"] {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-light);
+      border-radius: 6px;
+    }
+
+    .shipping-detail {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shipping-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+
+    .shipping-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Items table */
+    [data-glyph-region="items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+    }
+
+    [data-glyph-region="items"] thead {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    [data-glyph-region="items"] th {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    [data-glyph-region="items"] th:nth-child(3) {
+      text-align: center;
+    }
+
+    [data-glyph-region="items"] th:last-child {
+      text-align: center;
+      width: 60px;
+    }
+
+    [data-glyph-region="items"] td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    [data-glyph-region="items"] tbody tr:nth-child(even) {
+      background: var(--bg-light);
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .item-sku {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+    }
+
+    .item-description {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+    }
+
+    .item-location {
+      font-size: 0.8rem;
+      color: var(--accent-color);
+      font-weight: 500;
+    }
+
+    .item-qty {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .item-check {
+      text-align: center;
+    }
+
+    .checkbox {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    /* Summary */
+    [data-glyph-region="summary"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-light);
+      border-radius: 6px;
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-color);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+
+    .summary-notes {
+      max-width: 300px;
+    }
+
+    .notes-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .notes-text {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    /* Gift message */
+    [data-glyph-region="gift-message"] {
+      padding: 1rem;
+      background: #fef3c7;
+      border-radius: 6px;
+      border-left: 4px solid #f59e0b;
+      margin-bottom: 1.5rem;
+    }
+
+    .gift-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #b45309;
+      margin-bottom: 0.5rem;
+    }
+
+    .gift-text {
+      font-size: 0.9rem;
+      color: #92400e;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    [data-glyph-region="footer"] {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .footer-contact {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      margin-top: 0.25rem;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .slip-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="slip-document">
+    <header data-glyph-region="header">
+      <div class="header-brand">
+        <h1 class="document-title">Packing Slip</h1>
+        {{#ship_from}}
+        <div class="company-info">
+          {{#company}}{{company}}<br>{{/company}}
+          {{#address}}{{address}}<br>{{/address}}
+          {{#phone}}{{phone}}{{/phone}}{{#email}} | {{email}}{{/email}}
+        </div>
+        {{/ship_from}}
+      </div>
+      <div class="order-badge">
+        <div class="order-number">{{order_number}}</div>
+        <div class="order-dates">
+          {{#order_date}}Ordered: {{order_date}}<br>{{/order_date}}
+          Shipped: {{ship_date}}
+        </div>
+      </div>
+    </header>
+
+    <section data-glyph-region="addresses">
+      <div class="address-block">
+        <div class="address-label">Ship To</div>
+        <div class="address-name">{{ship_to.name}}</div>
+        {{#ship_to.company}}
+        <div class="address-company">{{ship_to.company}}</div>
+        {{/ship_to.company}}
+        <div class="address-line">{{ship_to.address}}</div>
+        <div class="address-line">{{ship_to.city}}, {{ship_to.state}} {{ship_to.zip}}</div>
+        {{#ship_to.country}}
+        <div class="address-line">{{ship_to.country}}</div>
+        {{/ship_to.country}}
+        {{#ship_to.phone}}
+        <div class="address-line">{{ship_to.phone}}</div>
+        {{/ship_to.phone}}
+      </div>
+      {{#ship_from}}
+      <div class="address-block">
+        <div class="address-label">Ship From</div>
+        {{#company}}
+        <div class="address-name">{{company}}</div>
+        {{/company}}
+        {{#address}}
+        <div class="address-line">{{address}}</div>
+        {{/address}}
+        {{#phone}}
+        <div class="address-line">{{phone}}</div>
+        {{/phone}}
+      </div>
+      {{/ship_from}}
+    </section>
+
+    {{#shipping_method}}
+    <section data-glyph-region="shipping-info">
+      <div class="shipping-detail">
+        <span class="shipping-label">Shipping Method</span>
+        <span class="shipping-value">{{shipping_method}}</span>
+      </div>
+      {{#tracking_number}}
+      <div class="shipping-detail">
+        <span class="shipping-label">Tracking Number</span>
+        <span class="shipping-value">{{tracking_number}}</span>
+      </div>
+      {{/tracking_number}}
+      {{#package_weight}}
+      <div class="shipping-detail">
+        <span class="shipping-label">Package Weight</span>
+        <span class="shipping-value">{{package_weight}}</span>
+      </div>
+      {{/package_weight}}
+    </section>
+    {{/shipping_method}}
+
+    <table data-glyph-region="items">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>SKU / Location</th>
+          <th>Qty</th>
+          <th>Check</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#items}}
+        <tr>
+          <td>
+            <div class="item-name">{{name}}</div>
+            {{#description}}
+            <div class="item-description">{{description}}</div>
+            {{/description}}
+          </td>
+          <td>
+            {{#sku}}<div class="item-sku">{{sku}}</div>{{/sku}}
+            {{#location}}<div class="item-location">{{location}}</div>{{/location}}
+          </td>
+          <td class="item-qty">{{quantity}}</td>
+          <td class="item-check"><span class="checkbox"></span></td>
+        </tr>
+        {{/items}}
+      </tbody>
+    </table>
+
+    <section data-glyph-region="summary">
+      <div class="summary-stats">
+        {{#total_items}}
+        <div class="stat-item">
+          <div class="stat-value">{{total_items}}</div>
+          <div class="stat-label">Total Items</div>
+        </div>
+        {{/total_items}}
+        <div class="stat-item">
+          <div class="stat-value">{{items.length}}</div>
+          <div class="stat-label">Line Items</div>
+        </div>
+      </div>
+      {{#notes}}
+      <div class="summary-notes">
+        <div class="notes-label">Notes</div>
+        <div class="notes-text">{{notes}}</div>
+      </div>
+      {{/notes}}
+    </section>
+
+    {{#gift_message}}
+    <section data-glyph-region="gift-message">
+      <div class="gift-label">Gift Message</div>
+      <p class="gift-text">{{gift_message}}</p>
+    </section>
+    {{/gift_message}}
+
+    <footer data-glyph-region="footer">
+      <p class="footer-text">Thank you for your order! If you have any questions, please contact us.</p>
+      {{#ship_from.email}}
+      <p class="footer-contact">{{ship_from.email}}{{#ship_from.phone}} | {{ship_from.phone}}{{/ship_from.phone}}</p>
+      {{/ship_from.email}}
+    </footer>
+  </div>
+</body>
+</html>

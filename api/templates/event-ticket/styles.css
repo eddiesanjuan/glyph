@@ -1,0 +1,17 @@
+/**
+ * event-ticket template default styles
+ *
+ * Customizable via the Glyph API:
+ * - styles.accentColor: Primary accent color (default: #7c3aed)
+ */
+
+:root {
+  --accent-color: #7c3aed;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 14px;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-light: #ffffff;
+  --border-color: #e5e7eb;
+  --bg-dark: #1f2937;
+}
