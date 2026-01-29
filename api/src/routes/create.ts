@@ -26,6 +26,11 @@ import {
 } from "../lib/devSessions.js";
 import { storeDocument } from "../lib/documentStore.js";
 import type { ApiError } from "../lib/types.js";
+import {
+  getCustomTemplate,
+  isCustomTemplateId,
+} from "../lib/customTemplates.js";
+import Mustache from "mustache";
 
 const create = new Hono();
 
@@ -392,36 +397,75 @@ create.post("/", async (c) => {
     if (templateId) {
       console.log(`[Create] Using specified template: ${templateId}`);
 
-      // Verify template exists
-      const availableTemplates = templateEngine.getAvailableTemplates();
-      if (!availableTemplates.includes(templateId)) {
-        return c.json(
-          {
-            error: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.message,
-            code: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.code,
-            details: {
-              templateId,
-              availableTemplates,
+      let fullHtml: string | null = null;
+      let templateHtml: string | null = null;
+
+      // Check if this is a custom template (tpl_xxx format)
+      if (isCustomTemplateId(templateId)) {
+        const customTemplate = getCustomTemplate(templateId);
+        if (!customTemplate) {
+          return c.json(
+            {
+              error: "Custom template not found or expired",
+              code: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.code,
+              details: {
+                templateId,
+                hint: "Custom templates expire after 24 hours. Create a new one with POST /v1/templates",
+              },
             },
-          },
-          ERROR_RESPONSES.TEMPLATE_NOT_FOUND.status
-        );
+            ERROR_RESPONSES.TEMPLATE_NOT_FOUND.status
+          );
+        }
+
+        // Render custom template with Mustache
+        try {
+          templateHtml = customTemplate.html;
+          fullHtml = Mustache.render(customTemplate.html, resolvedData);
+          console.log(`[Create] Custom template ${templateId} rendered successfully`);
+        } catch (err) {
+          console.error(`[Create] Custom template render failed for ${templateId}:`, err);
+          return c.json(
+            {
+              error: "Failed to render custom template",
+              code: "TEMPLATE_RENDER_ERROR",
+              details: err instanceof Error ? err.message : "Unknown error",
+            },
+            400
+          );
+        }
+      } else {
+        // Check built-in templates
+        const availableTemplates = templateEngine.getAvailableTemplates();
+        if (!availableTemplates.includes(templateId)) {
+          return c.json(
+            {
+              error: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.message,
+              code: ERROR_RESPONSES.TEMPLATE_NOT_FOUND.code,
+              details: {
+                templateId,
+                availableTemplates,
+              },
+            },
+            ERROR_RESPONSES.TEMPLATE_NOT_FOUND.status
+          );
+        }
+
+        let templateResult;
+        try {
+          templateResult = await templateEngine.render(
+            templateId,
+            resolvedData as any
+          );
+          fullHtml = templateResult.html;
+          templateHtml = templateResult.templateHtml;
+        } catch (err) {
+          console.error(`[Create] Template render failed for ${templateId}:`, err);
+          // Fall through to auto-detect path if template render fails
+          console.log("[Create] Falling back to auto-detect path");
+        }
       }
 
-      let templateResult;
-      try {
-        templateResult = await templateEngine.render(
-          templateId,
-          resolvedData as any
-        );
-      } catch (err) {
-        console.error(`[Create] Template render failed for ${templateId}:`, err);
-        // Fall through to auto-detect path if template render fails
-        console.log("[Create] Falling back to auto-detect path");
-      }
-
-      if (templateResult) {
-        const fullHtml = templateResult.html;
+      if (fullHtml) {
         console.log(`[Create] Template ${templateId} rendered successfully`);
 
         let outputBuffer: Buffer;
@@ -472,7 +516,7 @@ create.post("/", async (c) => {
           sessionId,
           templateId,
           fullHtml,
-          templateResult.templateHtml,
+          templateHtml || fullHtml,
           resolvedData
         );
         console.log(`[Create] Session created: ${sessionId}`);

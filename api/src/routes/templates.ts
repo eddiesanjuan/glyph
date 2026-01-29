@@ -2,6 +2,9 @@
  * Templates Routes
  * AI-powered template generation from Airtable schema
  *
+ * GET  /v1/templates - List all available built-in templates
+ * POST /v1/templates - Create a custom template (returns ID usable with /v1/create)
+ * GET  /v1/templates/:id - Get template details (built-in or custom)
  * POST /v1/templates/generate - Generate template from description + schema
  * POST /v1/templates/refine - Refine existing template with natural language
  * POST /v1/templates/preview - Render template with sample data
@@ -40,6 +43,11 @@ import {
 import { generatePNG } from "../services/pdf.js";
 import { templateEngine } from "../services/template.js";
 import type { ApiError } from "../lib/types.js";
+import {
+  createCustomTemplate,
+  getCustomTemplate,
+  isCustomTemplateId,
+} from "../lib/customTemplates.js";
 
 // In-memory cache for template preview thumbnails
 const thumbnailCache = new Map<string, Buffer>();
@@ -561,6 +569,88 @@ templates.get("/", (c) => {
   c.header("Content-Type", "application/json; charset=UTF-8");
   return c.body(body);
 });
+
+// =============================================================================
+// Custom Template Creation Schema
+// =============================================================================
+
+const createCustomTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required").max(255),
+  html: z.string().min(1, "Template HTML is required"),
+  schema: z.record(z.unknown()).optional().default({}),
+  description: z.string().max(1000).optional(),
+});
+
+/**
+ * POST /
+ * Create a custom template that can be used with /v1/create via templateId.
+ *
+ * This endpoint allows users to store their own HTML templates with optional
+ * JSON schemas. The returned template ID (tpl_xxx) can be passed to /v1/create
+ * to generate PDFs using the custom template.
+ *
+ * Templates are stored in-memory and expire after 24 hours.
+ * For persistent storage, use POST /v1/templates/saved instead.
+ */
+templates.post(
+  "/",
+  zValidator("json", createCustomTemplateSchema, (result, c) => {
+    if (!result.success) {
+      const error: ApiError = {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: result.error.issues,
+      };
+      return c.json(error, 400);
+    }
+    return;
+  }),
+  async (c) => {
+    try {
+      const { name, html, schema, description } = c.req.valid("json");
+
+      // Get the API key ID from context (set by auth middleware)
+      const apiKeyId = c.get("apiKeyId") as string | undefined;
+
+      // Create the custom template
+      const template = createCustomTemplate(name, html, schema, {
+        description,
+        createdBy: apiKeyId,
+      });
+
+      console.log(`[Templates] Created custom template: ${template.id} (name: "${name}")`);
+
+      return c.json(
+        {
+          success: true,
+          id: template.id,
+          name: template.name,
+          createdAt: template.createdAt,
+          expiresAt: template.expiresAt,
+          usage: {
+            createEndpoint: `/v1/create`,
+            example: {
+              templateId: template.id,
+              data: "{ ...your data matching the schema... }",
+            },
+          },
+          _links: {
+            create: `/v1/create`,
+            template: `/v1/templates/${template.id}`,
+          },
+        },
+        201
+      );
+    } catch (err) {
+      console.error("Template creation error:", err);
+      const error: ApiError = {
+        error: err instanceof Error ? err.message : "Unknown error",
+        code: "TEMPLATE_CREATION_ERROR",
+      };
+      return c.json(error, 500);
+    }
+  }
+);
 
 /**
  * GET /:id/preview
@@ -1485,12 +1575,36 @@ templates.get("/:id/schema", async (c) => {
 /**
  * GET /:id
  * Return full template detail including JSON schema, metadata, and sample data.
+ * Supports both built-in templates and custom templates (tpl_xxx IDs).
  * Registered last to avoid matching static routes like /styles, /views, /count.
  */
 templates.get("/:id", async (c) => {
   const id = c.req.param("id");
 
-  // Find template in catalog
+  // Check if this is a custom template (tpl_xxx format)
+  if (isCustomTemplateId(id)) {
+    const customTemplate = getCustomTemplate(id);
+    if (!customTemplate) {
+      const error: ApiError = {
+        error: "Template not found or expired",
+        code: "TEMPLATE_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    return c.json({
+      id: customTemplate.id,
+      name: customTemplate.name,
+      description: customTemplate.description || null,
+      type: "custom",
+      html: customTemplate.html,
+      schema: customTemplate.schema,
+      createdAt: customTemplate.createdAt,
+      expiresAt: customTemplate.expiresAt,
+    });
+  }
+
+  // Find template in built-in catalog
   const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === id);
   if (!catalogEntry) {
     const error: ApiError = {
@@ -1528,6 +1642,7 @@ templates.get("/:id", async (c) => {
       id: catalogEntry.id,
       name: catalogEntry.name,
       description: catalogEntry.description,
+      type: "builtin",
       schema,
       sampleData,
     });
