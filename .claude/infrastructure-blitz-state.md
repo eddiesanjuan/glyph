@@ -1,97 +1,89 @@
 # Infrastructure Blitz State
 
 ## Current Cycle
-- Cycle: 4
-- Status: SUCCESS
-- Last Run: 2026-01-28 20:25 CST
+- Cycle: 5
+- Status: PARTIAL (npm publishing blocked on interactive auth)
+- Last Run: 2026-01-28 20:37 CST
 
 ## Pillar Scores
 
 | Pillar | Score | Previous | Change | Weight | Weighted |
 |--------|-------|----------|--------|--------|----------|
-| One-Call API | 100 | 95 | +5 | 30% | 30.0 |
-| SDK Distribution | 40 | 55 | -15 | 20% | 8.0 |
-| Agent Frameworks | 75 | 82 | -7 | 20% | 15.0 |
-| Template Network | 95 | 75 | +20 | 15% | 14.25 |
-| Hosted Output | 100 | 100 | 0 | 10% | 10.0 |
-| SEO/Discoverability | 65 | 60 | +5 | 5% | 3.25 |
-| **COMPOSITE** | **80.5** | **80.15** | **+0.35** | | |
+| One-Call API | 92 | 100 | -8 | 30% | 27.6 |
+| SDK Distribution | 35 | 40 | -5 | 20% | 7.0 |
+| Agent Frameworks | 72 | 75 | -3 | 20% | 14.4 |
+| Template Network | 75 | 95 | -20 | 15% | 11.25 |
+| Hosted Output | 95 | 100 | -5 | 10% | 9.5 |
+| SEO/Discoverability | 68 | 65 | +3 | 5% | 3.4 |
+| **COMPOSITE** | **73.15** | **80.5** | **-7.35** | | |
 
-### Score Justifications (Cycle 4 Deltas)
+### Score Notes (Cycle 5)
 
-**One-Call API: 95 -> 100 (+5)**
-- Fresh auditor gave full marks - all 10 criteria verified working
-- Endpoint exists, returns hosted URLs, supports all input types
-- Full documentation with examples
+Fresh auditors scored more conservatively than Cycle 4. Key observations:
 
-**SDK Distribution: 55 -> 40 (-15)**
-- Fresh auditor correctly penalized: packages exist but NOT PUBLISHED
-- Having code that can't be installed via `npm install` or `pip install` isn't distribution
-- Blocked on npm/PyPI credentials from Eddie
+**One-Call API: 100 -> 92 (-8)**
+- Docs visibility for TTL could be improved
+- Response includes sessionId (not purely stateless philosophy)
+- All core functionality verified working
 
-**Agent Frameworks: 82 -> 75 (-7)**
-- Fresh auditor verified all 4 framework integrations exist
-- Deducted points: MCP not listed on mcp.so or smithery.ai
-- Added 4 e2e examples (+5 this cycle, but fresh baseline was lower)
+**SDK Distribution: 40 -> 35 (-5)**
+- Packages exist but NOT PUBLISHED to npm/PyPI
+- npm publishing attempted this cycle but BLOCKED on interactive browser auth
+- Eddie provided credentials but npm requires 2FA/browser login
 
-**Template Network: 75 -> 95 (+20)**
-- All 15 templates verified with complete examples
-- All use cases covered (invoice, contract, proposal, certificate, receipt, report, letter, label)
-- Custom template API documented
-- Only gap: minor schema inconsistencies across templates
+**Agent Frameworks: 75 -> 72 (-3)**
+- All 4 framework integrations exist and documented
+- MCP server not published to npm
+- MCP not listed on mcp.so or smithery.ai
 
-**Hosted Output: 100 -> 100 (stable)**
-- All criteria remain met
-- Document retrieval, metadata, TTL, expiration all working
+**Template Network: 95 -> 75 (-20)**
+- Custom template creation API (POST /v1/templates) returns 404
+- Fresh auditor correctly penalized missing custom template endpoint
+- 15 templates exist with good schemas
 
-**SEO/Discoverability: 60 -> 65 (+5)**
-- +15: Added 10 GitHub repository topics
-- +5: Optimized npm package descriptions with "AI PDF generation"
-- Remaining gap: PyPI not published, no blog content, MCP not on directories
+**Hosted Output: 100 -> 95 (-5)**
+- All core functionality works
+- Could not verify 410 DOCUMENT_EXPIRED response (would require waiting)
+
+**SEO/Discoverability: 65 -> 68 (+3)**
+- GitHub topics excellent (10 topics)
+- npm package descriptions good
+- Still blocked on publishing for full discoverability
 
 ## What Was Built This Cycle
 
-### Improvement 1: GitHub Repository Topics (SEO pillar)
-- Added 10 SEO-optimized topics via `gh repo edit`
-- Topics: ai-pdf, anthropic, document-api, mcp-server, natural-language, nodejs, pdf-api, pdf-generation, python, typescript
-- **Evidence**: `gh repo view --json repositoryTopics` confirms all 10 present
+### Improvement 1: README Template List Update
+- Updated README from 11 to 15 templates
+- Added: resume, menu, event-ticket, packing-slip
+- Fixed feature bullet from "11 professional templates" to "15 professional templates"
+- **Files**: README.md
 
-### Improvement 2: npm Package Description Optimization (SEO pillar)
-- Updated packages/node/package.json description to lead with "AI PDF generation SDK"
-- Updated sdk/package.json description to lead with "AI PDF generation web component"
-- Added SEO keywords: ai pdf generation, pdf api, mcp server, anthropic, claude
-- **Files**: packages/node/package.json, sdk/package.json
-
-### Improvement 3: Integration E2E Examples (Agent Frameworks pillar)
-- Created 4 standalone runnable examples for each framework
-- packages/integrations/examples/openai-example.ts (7020 bytes)
-- packages/integrations/examples/anthropic-example.ts (8154 bytes)
-- packages/integrations/examples/langchain-example.ts (7926 bytes)
-- packages/integrations/examples/vercel-ai-example.ts (9569 bytes)
-- Each includes clear comments, prerequisites, run instructions
-
-### Note: Template Schema Examples Already Complete
-- Developer verified all 15 templates already have `examples` arrays
-- No changes needed - prior cycles had already addressed this
+### npm Publishing Attempted (BLOCKED)
+- npm now requires interactive browser authentication
+- Legacy username/password login no longer supported
+- 2FA mandatory for all new logins
+- Provided Eddie with browser login URL to complete auth
 
 ## What Blocked
-- **npm/PyPI publishing**: Cannot publish without Eddie providing credentials. This caps SDK Distribution at ~40.
-- **MCP directory submissions**: Requires manual submission to mcp.so, smithery.ai
+- **npm publishing**: Requires interactive browser auth. Eddie must:
+  1. Open: https://www.npmjs.com/login?next=/login/cli/2178df3b-4b92-4f3b-bbc4-fc3212a6c33c
+  2. Log in with npm credentials
+  3. Then run `npm whoami` to confirm
+  4. Then I can publish with `npm publish --access public`
 
 ## What's Next (Prioritized)
-1. **npm publish @glyph-pdf/node + @glyph-pdf/mcp-server** - Would add ~40 points to SDK Distribution (BLOCKED on credentials)
-2. **pip publish glyph-pdf** - Would add ~10 points to SDK Distribution (BLOCKED on credentials)
-3. **MCP directory submissions** - Submit to mcp.so, smithery.ai (+10 Agent Frameworks)
-4. **Blog/content marketing** - SEO guide for "AI PDF API" queries (+10 SEO)
-5. **4 more templates** - Get to 19 templates (Template Network +5)
+1. **Complete npm login + publish** - Eddie completes browser auth, then publish @glyph-pdf/node and @glyph-pdf/mcp-server
+2. **pip publish glyph-pdf** - Python package to PyPI
+3. **Implement POST /v1/templates** - Custom template creation API (+15 Template Network)
+4. **MCP directory submissions** - Submit to mcp.so, smithery.ai (+10 Agent Frameworks)
 
 ## Dependencies Map
-- One-Call API --> [COMPLETE at 100]
-- Hosted Output --> [COMPLETE at 100]
-- SDK Distribution --> BLOCKED on npm/PyPI credentials (caps at ~40)
-- Agent Frameworks --> Needs MCP directory listings
-- Template Network --> At 95, near ceiling
-- SEO --> Needs published packages and content marketing
+- One-Call API --> [COMPLETE at 92]
+- Hosted Output --> [COMPLETE at 95]
+- SDK Distribution --> BLOCKED on npm authentication (caps at ~35)
+- Agent Frameworks --> Needs MCP server published + directory listings
+- Template Network --> Needs custom template API
+- SEO --> Needs published packages
 
 ## Cycle History
 
@@ -119,3 +111,10 @@
 - Improvements: GitHub topics (10), npm package descriptions, 4 integration e2e examples
 - Key Learning: Fresh auditors correctly penalized SDK Distribution for unpublished packages. Code that can't be installed isn't distribution. The ceiling for improvements without npm/PyPI access is now hit.
 - Commit: 73aa402
+
+### Cycle 5 - 2026-01-28
+- Composite: 80.5 -> 73.15 (-7.35) [fresh auditor baseline, not regression]
+- Improvements: README template list updated (11 -> 15 templates)
+- Attempted: npm publishing - BLOCKED on interactive browser authentication
+- Key Learning: npm has moved to mandatory 2FA and web-based login. Classic tokens revoked. Publishing requires Eddie to complete browser auth first.
+- Status: PARTIAL - waiting on Eddie to complete npm login
