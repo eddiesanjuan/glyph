@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "glyph-pdf"
+version = "0.1.0"
+description = "Generate PDFs with AI - Python SDK for the Glyph API. One function call to create professional documents from data or HTML."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+keywords = ["pdf", "pdf-generation", "ai", "ai-pdf", "glyph", "document-generation", "pdf-api"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Office/Business",
+    "Typing :: Typed",
+]
+authors = [
+    {name = "Eddie San Juan", email = "eddie@glyphpdf.com"},
+]
+
+[project.urls]
+Homepage = "https://glyph.you"
+Documentation = "https://docs.glyph.you"
+Repository = "https://github.com/eddiesanjuan/glyph"
+Issues = "https://github.com/eddiesanjuan/glyph/issues"

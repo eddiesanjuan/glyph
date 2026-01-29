@@ -24,6 +24,7 @@ import {
   createDevSession,
   generateDevSessionId,
 } from "../lib/devSessions.js";
+import { storeDocument } from "../lib/documentStore.js";
 import type { ApiError } from "../lib/types.js";
 
 const create = new Hono();
@@ -66,6 +67,32 @@ const ERROR_RESPONSES = {
 };
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Derive the public base URL for hosted document links.
+ * Prefers the X-Forwarded-Host / Host headers so links work behind proxies.
+ */
+function getBaseUrl(c: { req: { header: (name: string) => string | undefined; url: string } }): string {
+  const forwardedHost = c.req.header("X-Forwarded-Host");
+  const host = forwardedHost || c.req.header("Host");
+  const proto = c.req.header("X-Forwarded-Proto") || "https";
+
+  if (host) {
+    return `${proto}://${host}`;
+  }
+
+  // Fallback: derive from request URL
+  try {
+    const parsed = new URL(c.req.url);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return "https://api.glyph.you";
+  }
+}
+
+// ============================================================================
 // Request Validation
 // ============================================================================
 
@@ -83,6 +110,7 @@ const createRequestSchema = z
     intent: z.string().optional(),
     style: z.enum(["stripe-clean", "bold", "minimal", "corporate"]).optional(),
     format: z.enum(["pdf", "png"]).optional().default("pdf"),
+    ttl: z.number().int().min(300).max(604800).optional(),
     options: z
       .object({
         pageSize: z.enum(["A4", "letter", "legal"]).optional(),
@@ -142,7 +170,7 @@ create.post("/", async (c) => {
       return c.json(error, 400);
     }
 
-    const { data, html, url, templateId, intent, style, format, options } = parsed.data;
+    const { data, html, url, templateId, intent, style, format, options, ttl } = parsed.data;
 
     // Shared PDF/PNG options
     const pdfOptions: PDFOptions = {
@@ -209,21 +237,35 @@ create.post("/", async (c) => {
       createDevSession(sessionId, "url-capture", "", "", {});
       console.log(`[Create] Session created: ${sessionId}`);
 
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
+      // Store document for hosted access
+      const storedDoc = storeDocument({
+        buffer: outputBuffer,
+        format: format as "pdf" | "png",
+        filename,
+        source: { type: "url", url },
+        sessionId,
+        ttlSeconds: ttl,
+      });
+
+      const baseUrl = getBaseUrl(c);
+      const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
 
       const accept = c.req.header("Accept");
       if (accept?.includes("application/json") || !accept?.includes(contentType)) {
         return c.json({
           success: true,
+          id: storedDoc.id,
           format,
-          url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+          url: hostedUrl,
+          dataUrl: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
           size: outputBuffer.length,
           filename,
-          expiresAt: expiresAt.toISOString(),
+          expiresAt: storedDoc.expiresAt,
           source: { type: "url", url },
           sessionId,
           _links: {
+            self: `/v1/documents/${storedDoc.id}`,
+            metadata: `/v1/documents/${storedDoc.id}/metadata`,
             modify: `/v1/modify`,
             generate: `/v1/generate`,
           },
@@ -234,6 +276,8 @@ create.post("/", async (c) => {
       c.header("Content-Disposition", `attachment; filename="${filename}"`);
       c.header("Content-Length", String(outputBuffer.length));
       c.header("X-Glyph-Session-Id", sessionId);
+      c.header("X-Glyph-Document-Id", storedDoc.id);
+      c.header("X-Glyph-Document-Url", hostedUrl);
       return c.body(new Uint8Array(outputBuffer));
     }
 
@@ -291,21 +335,35 @@ create.post("/", async (c) => {
       createDevSession(sessionId, "html-render", html, html, {});
       console.log(`[Create] Session created: ${sessionId}`);
 
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
+      // Store document for hosted access
+      const storedDoc = storeDocument({
+        buffer: outputBuffer,
+        format: format as "pdf" | "png",
+        filename,
+        source: { type: "html" },
+        sessionId,
+        ttlSeconds: ttl,
+      });
+
+      const baseUrl = getBaseUrl(c);
+      const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
 
       const accept = c.req.header("Accept");
       if (accept?.includes("application/json") || !accept?.includes(contentType)) {
         return c.json({
           success: true,
+          id: storedDoc.id,
           format,
-          url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+          url: hostedUrl,
+          dataUrl: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
           size: outputBuffer.length,
           filename,
-          expiresAt: expiresAt.toISOString(),
+          expiresAt: storedDoc.expiresAt,
           source: { type: "html" },
           sessionId,
           _links: {
+            self: `/v1/documents/${storedDoc.id}`,
+            metadata: `/v1/documents/${storedDoc.id}/metadata`,
             modify: `/v1/modify`,
             generate: `/v1/generate`,
           },
@@ -316,6 +374,8 @@ create.post("/", async (c) => {
       c.header("Content-Disposition", `attachment; filename="${filename}"`);
       c.header("Content-Length", String(outputBuffer.length));
       c.header("X-Glyph-Session-Id", sessionId);
+      c.header("X-Glyph-Document-Id", storedDoc.id);
+      c.header("X-Glyph-Document-Url", hostedUrl);
       return c.body(new Uint8Array(outputBuffer));
     }
 
@@ -417,21 +477,35 @@ create.post("/", async (c) => {
         );
         console.log(`[Create] Session created: ${sessionId}`);
 
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
+        // Store document for hosted access
+        const storedDoc = storeDocument({
+          buffer: outputBuffer,
+          format: format as "pdf" | "png",
+          filename,
+          source: { type: "template", templateId },
+          sessionId,
+          ttlSeconds: ttl,
+        });
+
+        const baseUrl = getBaseUrl(c);
+        const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
 
         const accept = c.req.header("Accept");
         if (accept?.includes("application/json") || !accept?.includes(contentType)) {
           return c.json({
             success: true,
+            id: storedDoc.id,
             format,
-            url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+            url: hostedUrl,
+            dataUrl: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
             size: outputBuffer.length,
             filename,
-            expiresAt: expiresAt.toISOString(),
+            expiresAt: storedDoc.expiresAt,
             source: { type: "template", templateId },
             sessionId,
             _links: {
+              self: `/v1/documents/${storedDoc.id}`,
+              metadata: `/v1/documents/${storedDoc.id}/metadata`,
               modify: `/v1/modify`,
               generate: `/v1/generate`,
             },
@@ -443,6 +517,8 @@ create.post("/", async (c) => {
         c.header("Content-Length", String(outputBuffer.length));
         c.header("X-Glyph-Session-Id", sessionId);
         c.header("X-Glyph-Document-Type", templateId);
+        c.header("X-Glyph-Document-Id", storedDoc.id);
+        c.header("X-Glyph-Document-Url", hostedUrl);
         return c.body(new Uint8Array(outputBuffer));
       }
     }
@@ -548,22 +624,33 @@ create.post("/", async (c) => {
     );
     console.log(`[Create] Session created: ${sessionId}`);
 
-    // Build response
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
+    // Store document for hosted access
+    const storedDoc = storeDocument({
+      buffer: outputBuffer,
+      format: format as "pdf" | "png",
+      filename,
+      source: { type: "data" },
+      sessionId,
+      ttlSeconds: ttl,
+    });
+
+    const baseUrl = getBaseUrl(c);
+    const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
 
     // Determine response format based on Accept header
     const accept = c.req.header("Accept");
 
     if (accept?.includes("application/json") || !accept?.includes(contentType)) {
-      // Return JSON with base64 data URL
+      // Return JSON with hosted URL + backward-compatible dataUrl
       return c.json({
         success: true,
+        id: storedDoc.id,
         format,
-        url: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
+        url: hostedUrl,
+        dataUrl: `data:${contentType};base64,${outputBuffer.toString("base64")}`,
         size: outputBuffer.length,
         filename,
-        expiresAt: expiresAt.toISOString(),
+        expiresAt: storedDoc.expiresAt,
         analysis: {
           detectedType: analysis.documentType,
           confidence: analysis.confidence,
@@ -578,6 +665,8 @@ create.post("/", async (c) => {
         },
         sessionId, // For subsequent modifications via /v1/modify
         _links: {
+          self: `/v1/documents/${storedDoc.id}`,
+          metadata: `/v1/documents/${storedDoc.id}/metadata`,
           modify: `/v1/modify`,
           generate: `/v1/generate`,
         },
@@ -590,6 +679,8 @@ create.post("/", async (c) => {
     c.header("Content-Length", String(outputBuffer.length));
     c.header("X-Glyph-Session-Id", sessionId);
     c.header("X-Glyph-Document-Type", analysis.documentType);
+    c.header("X-Glyph-Document-Id", storedDoc.id);
+    c.header("X-Glyph-Document-Url", hostedUrl);
 
     return c.body(new Uint8Array(outputBuffer));
   } catch (err) {

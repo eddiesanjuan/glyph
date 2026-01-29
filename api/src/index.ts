@@ -37,6 +37,7 @@ import aiAssist from "./routes/ai-assist.js";
 import subscriptions from "./routes/subscriptions.js";
 import batch from "./routes/batch.js";
 import notificationWebhooks from "./routes/notification-webhooks.js";
+import documents from "./routes/documents.js";
 
 const app = new Hono();
 
@@ -140,6 +141,8 @@ app.route("/v1/webhooks", webhooksPublic);
 // These endpoints don't require API key authentication
 app.route("/v1/beta", beta);
 
+// Hosted document retrieval (public, uses unguessable IDs as security model)
+app.route("/v1/documents", documents);
 
 // Authentication first (to get tier info for rate limiting)
 app.use("/v1/*", authMiddleware);
@@ -252,6 +255,9 @@ app.get("/", (c) => {
       subscriptionList: "GET /v1/subscriptions",
       subscriptionGet: "GET /v1/subscriptions/:id",
       subscriptionDelete: "DELETE /v1/subscriptions/:id",
+      // Hosted document retrieval (public)
+      documentGet: "GET /v1/documents/:id",
+      documentMetadata: "GET /v1/documents/:id/metadata",
     },
   });
 });
@@ -354,6 +360,24 @@ app.get("/v1/openapi.json", (c) => {
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", description: "Provide one of: data (auto-layout), html (direct render), or url (page capture)", properties: { data: { type: "object", description: "Document data for auto-analysis and layout generation" }, html: { type: "string", description: "Raw HTML to render directly as PDF/PNG" }, url: { type: "string", format: "uri", description: "URL to navigate to and capture as PDF/PNG" }, templateId: { type: "string", description: "Built-in template ID (used with data; auto-detected if omitted)" }, intent: { type: "string", description: "Natural language description of desired output (used with data path)" }, style: { type: "string", enum: ["stripe-clean", "bold", "minimal", "corporate"], description: "Visual style preset (used with data path)" }, format: { type: "string", enum: ["pdf", "png"], default: "pdf", description: "Output format" }, options: { type: "object", description: "Output generation options", properties: { pageSize: { type: "string", enum: ["A4", "letter", "legal"] }, orientation: { type: "string", enum: ["portrait", "landscape"] }, margin: { type: "object", properties: { top: { type: "string" }, bottom: { type: "string" }, left: { type: "string" }, right: { type: "string" } } }, scale: { type: "number", minimum: 0, maximum: 3 } } } } } } } },
           responses: { "200": { description: "Generated PDF/PNG with metadata", content: { "application/json": { schema: { type: "object", properties: { success: { type: "boolean" }, format: { type: "string", enum: ["pdf", "png"] }, url: { type: "string", description: "Base64 data URL of the generated file" }, size: { type: "integer", description: "File size in bytes" }, filename: { type: "string" }, expiresAt: { type: "string", format: "date-time" }, source: { type: "object", description: "Source information (type: data, html, url, or template)", properties: { type: { type: "string", enum: ["data", "html", "url", "template"] }, url: { type: "string" }, templateId: { type: "string" } } }, analysis: { type: "object", description: "Data analysis results (only present for data path)", properties: { detectedType: { type: "string" }, confidence: { type: "number" }, fieldsIdentified: { type: "array", items: { type: "string" } }, layoutDecisions: { type: "array", items: { type: "string" } } } }, sessionId: { type: "string", description: "Session ID for subsequent modify calls" }, _links: { type: "object", properties: { modify: { type: "string" }, generate: { type: "string" } } } }, required: ["success", "format", "url", "size", "sessionId"] } } } }, "400": { description: "Validation error (missing required input)", content: { "application/json": { schema: { type: "object", properties: { error: { type: "string" }, code: { type: "string" }, details: { type: "array" } } } } } }, "404": { description: "Template not found", content: { "application/json": { schema: { type: "object", properties: { error: { type: "string" }, code: { type: "string" }, details: { type: "object" } } } } } }, "502": { description: "URL fetch failed", content: { "application/json": { schema: { type: "object", properties: { error: { type: "string" }, code: { type: "string" }, details: { type: "string" } } } } } } },
+        },
+      },
+      "/v1/documents/{id}": {
+        get: {
+          summary: "Download a hosted document by ID",
+          operationId: "getDocument",
+          tags: ["Documents"],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Document ID (e.g. doc_abc123)" }],
+          responses: { "200": { description: "Document file (PDF or PNG)", content: { "application/pdf": { schema: { type: "string", format: "binary" } }, "image/png": { schema: { type: "string", format: "binary" } } } }, "404": { description: "Document not found" }, "410": { description: "Document has expired" } },
+        },
+      },
+      "/v1/documents/{id}/metadata": {
+        get: {
+          summary: "Get document metadata",
+          operationId: "getDocumentMetadata",
+          tags: ["Documents"],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" }, description: "Document ID (e.g. doc_abc123)" }],
+          responses: { "200": { description: "Document metadata", content: { "application/json": { schema: { type: "object", properties: { id: { type: "string" }, format: { type: "string", enum: ["pdf", "png"] }, size: { type: "integer" }, filename: { type: "string" }, createdAt: { type: "string", format: "date-time" }, expiresAt: { type: "string", format: "date-time" }, source: { type: "object" }, sessionId: { type: "string" } }, required: ["id", "format", "size", "createdAt", "expiresAt"] } } } }, "404": { description: "Document not found" }, "410": { description: "Document has expired" } },
         },
       },
       "/v1/airtable/connect": {
@@ -552,6 +576,10 @@ console.log(`
     GET    /v1/subscriptions/:id          - Get subscription details
     DELETE /v1/subscriptions/:id          - Delete subscription
     Events: pdf.generated, template.modified
+
+  Hosted Documents (public, no auth):
+    GET  /v1/documents/:id               - Download document by ID
+    GET  /v1/documents/:id/metadata      - Get document metadata
 `);
 
 // Also export for Bun compatibility

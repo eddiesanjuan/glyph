@@ -1,30 +1,85 @@
 ---
 title: POST /v1/create - Stateless PDF Generation
-description: One API call to generate a PDF from raw data. No sessions, no templates, just data in, PDF out.
+description: One API call to generate a PDF from JSON data, raw HTML, or any URL. Data in, PDF out.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 <span class="endpoint-badge post">POST</span> `/v1/create`
 
-Generate a professional PDF from raw data in a single API call. Glyph analyzes your data structure, detects the document type, generates a layout, and returns a finished PDF or PNG.
+Generate a professional PDF in a single API call. Send JSON data with a template, raw HTML, or a URL -- Glyph handles the rest and returns a finished PDF or PNG.
 
 **One call. Beautiful document.**
 
 ## Overview
 
-The `/v1/create` endpoint is the fastest path to a PDF:
+The `/v1/create` endpoint is the fastest path to a PDF. It supports three input methods:
 
-1. Send your data as JSON
-2. Glyph analyzes the structure and detects the document type
-3. A professional layout is generated automatically
-4. You get back a PDF (or PNG) and a `sessionId` for further modifications
+1. **Data + Template** -- Send structured JSON. Glyph renders it with a built-in template or auto-detects the document type and generates a layout.
+2. **Raw HTML** -- Send an HTML string. Glyph renders it directly to PDF via Playwright.
+3. **URL Capture** -- Send a URL. Glyph navigates to the page and captures it as PDF.
 
-No template selection. No session management. Just data in, document out.
+All three paths return a PDF (or PNG) and a `sessionId` for subsequent AI-powered modifications.
 
 <Aside type="tip">
 This is the recommended starting point for most integrations. Use `/v1/preview` + `/v1/modify` + `/v1/generate` only when you need interactive editing.
 </Aside>
+
+## Input Methods
+
+### Data + Template
+
+Send structured JSON data with an optional `templateId`. If no template is specified, Glyph auto-detects the document type and generates a layout.
+
+```json
+{
+  "templateId": "invoice-clean",
+  "data": {
+    "company": { "name": "Acme Inc" },
+    "customer": { "name": "Jane Doe" },
+    "items": [{ "description": "Consulting", "total": 1500 }],
+    "total": 1500
+  }
+}
+```
+
+Without `templateId`, Glyph analyzes the data structure, detects the document type (invoice, receipt, contract, etc.), and generates a professional layout automatically:
+
+```json
+{
+  "data": {
+    "company": { "name": "Acme Inc" },
+    "items": [{ "description": "Consulting", "total": 1500 }],
+    "total": 1500
+  },
+  "intent": "professional invoice",
+  "style": "stripe-clean"
+}
+```
+
+### Raw HTML
+
+Send any HTML string and Glyph renders it directly to PDF. No template needed.
+
+```json
+{
+  "html": "<html><head><style>body { font-family: sans-serif; padding: 40px; } h1 { color: #1a1a1a; }</style></head><body><h1>Monthly Report</h1><p>Generated on 2026-01-15.</p></body></html>"
+}
+```
+
+This is useful for converting existing HTML documents, email templates, or dynamically generated markup into PDFs.
+
+### URL Capture
+
+Send a URL and Glyph navigates to the page, waits for it to render, and captures it as a PDF.
+
+```json
+{
+  "url": "https://example.com/report/2026-q1"
+}
+```
+
+The page is rendered with a full Chromium browser, so JavaScript-heavy pages, CSS layouts, and web fonts all work correctly.
 
 ## Request
 
@@ -58,11 +113,16 @@ This is the recommended starting point for most integrations. Use `/v1/preview` 
 
 ### Parameters
 
+At least one of `data`, `html`, or `url` must be provided.
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `data` | object | Yes | Your data in any JSON structure. Must have at least one key. |
-| `intent` | string | No | Natural language description of what you want (e.g., `"professional invoice"`, `"Stripe-styled proposal"`) |
-| `style` | string | No | Style preset: `stripe-clean`, `bold`, `minimal`, `corporate` |
+| `data` | object | Conditional | Your data in any JSON structure. Must have at least one key. Required unless `html` or `url` is provided. |
+| `html` | string | Conditional | Raw HTML string to convert to PDF. No template needed. Required unless `data` or `url` is provided. |
+| `url` | string | Conditional | URL to capture as PDF. The page is rendered in a full browser and converted. Required unless `data` or `html` is provided. |
+| `templateId` | string | No | Template to render `data` with (e.g., `"invoice-clean"`, `"contract-simple"`). When omitted with `data`, Glyph auto-detects the document type. Ignored when using `html` or `url`. See [GET /v1/templates](/api/templates/) for available IDs. |
+| `intent` | string | No | Natural language description of what you want (e.g., `"professional invoice"`, `"Stripe-styled proposal"`). Used with the `data` path only. |
+| `style` | string | No | Style preset: `stripe-clean`, `bold`, `minimal`, `corporate`. Used with the `data` path only. |
 | `format` | string | No | Output format: `pdf` (default) or `png` |
 | `options` | object | No | Rendering options (see below) |
 
@@ -111,11 +171,12 @@ When `Accept: application/json` is set (or the accept header does not match the 
 | `size` | number | File size in bytes |
 | `filename` | string | Suggested filename |
 | `expiresAt` | string | ISO timestamp (24 hours from generation) |
-| `analysis` | object | How Glyph interpreted your data |
+| `analysis` | object | How Glyph interpreted your data (only present when using the `data` input path) |
 | `analysis.detectedType` | string | Detected document type |
 | `analysis.confidence` | number | Detection confidence (0 to 1) |
 | `analysis.fieldsIdentified` | array | Field categories found in your data |
 | `analysis.layoutDecisions` | array | Layout choices made during generation |
+| `source` | object | Input method used: `{ type: "template", templateId }`, `{ type: "html" }`, or `{ type: "url", url }` |
 | `sessionId` | string | Session ID for subsequent `/v1/modify` and `/v1/generate` calls |
 | `_links` | object | Hypermedia links for next actions |
 
@@ -196,6 +257,30 @@ curl -X POST https://api.glyph.you/v1/create \
     }
   }' \
   --output invoice.pdf
+```
+
+### cURL (Raw HTML to PDF)
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "html": "<html><head><style>body { font-family: Helvetica, sans-serif; padding: 40px; } h1 { color: #1a1a1a; }</style></head><body><h1>Quarterly Report</h1><p>Period: Q1 2026</p><table><tr><th>Metric</th><th>Value</th></tr><tr><td>Revenue</td><td>$1.2M</td></tr></table></body></html>"
+  }' \
+  --output report.pdf
+```
+
+### cURL (URL to PDF)
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer gk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/invoice/12345"
+  }' \
+  --output captured.pdf
 ```
 
 ### JavaScript
@@ -357,6 +442,16 @@ Response:
 {
   "error": "Invalid API key",
   "code": "AUTH_ERROR"
+}
+```
+
+**502 Bad Gateway** - URL capture failed (only for the `url` input path)
+
+```json
+{
+  "error": "Failed to fetch content from the provided URL",
+  "code": "URL_FETCH_FAILED",
+  "details": "..."
 }
 ```
 
