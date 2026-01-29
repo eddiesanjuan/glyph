@@ -16,7 +16,7 @@ One call. Data in, PDF out.
 ## Features
 
 - **One API call** -- send data, get a PDF URL back. No sessions, no multi-step workflows.
-- **11 professional templates** -- invoice, contract, proposal, certificate, receipt, report, letter, shipping label, and more.
+- **15 professional templates** -- invoice, contract, proposal, certificate, receipt, report, letter, shipping label, resume, menu, event ticket, packing slip, and more.
 - **Three input paths** -- structured JSON data with templates, raw HTML strings, or any URL captured as PDF.
 - **AI document intelligence** -- auto-detects document type, chooses layout, applies professional styling.
 - **Natural language customization** -- modify any generated document by describing changes in plain English.
@@ -160,9 +160,13 @@ Built-in templates for common document types:
 | Report | `report-cover` | Cover pages, executive summaries |
 | Letter | `letter-business` | Business correspondence |
 | Shipping Label | `shipping-label` | Logistics, fulfillment |
+| Packing Slip | `packing-slip` | Order fulfillment, warehouse |
 | Quote (Modern) | `quote-modern` | Price quotes, estimates |
 | Quote (Bold) | `quote-bold` | Price quotes with bold styling |
 | Quote (Professional) | `quote-professional` | Formal price quotes |
+| Resume | `resume` | Professional resumes, CVs |
+| Menu | `menu` | Restaurant menus, food service |
+| Event Ticket | `event-ticket` | Tickets, admission passes |
 
 Browse all templates and their schemas: [docs.glyph.you/templates/overview](https://docs.glyph.you/templates/overview/)
 
