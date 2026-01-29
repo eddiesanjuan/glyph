@@ -301,10 +301,11 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
     # Run claude (track wall-clock time to detect quick exits)
     cycle_start_ts=$(date +%s)
 
-    # Remove stale nudge file
+    # Remove stale nudge file and record state file timestamp
     rm -f "$NUDGE_FILE"
+    state_mtime_before=$(stat -f %m "$STATE_FILE" 2>/dev/null || echo "0")
 
-    # Run Claude in background so we can monitor for nudge
+    # Run Claude in background so we can monitor for completion signals
     "$TIMEOUT_CMD" --kill-after=1m "$CYCLE_TIMEOUT" \
     "$CLAUDE_BIN" -p --dangerously-skip-permissions --debug-file "plans/infrastructure-debug-cycle-${cycle}.log" "$PROMPT" 2>&1 \
         | grep -v "This error originated either by throwing" \
@@ -317,9 +318,11 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
         | tee -a "$LOGFILE" &
 
     CLAUDE_PID=$!
+    state_changed_at=0
 
-    # Nudge file watcher - check every 5 seconds
+    # Watch for: manual nudge OR state file change (work done)
     while kill -0 $CLAUDE_PID 2>/dev/null; do
+        # Manual nudge
         if [ -f "$NUDGE_FILE" ]; then
             log ""
             log ">>> NUDGE received - advancing to next cycle"
@@ -327,6 +330,25 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
             kill $CLAUDE_PID 2>/dev/null
             break
         fi
+
+        # Auto-detect: state file changed = work is done
+        state_mtime_now=$(stat -f %m "$STATE_FILE" 2>/dev/null || echo "0")
+        if [ "$state_mtime_now" != "$state_mtime_before" ] && [ "$state_changed_at" = "0" ]; then
+            state_changed_at=$(date +%s)
+            log ""
+            log ">>> State file updated - work complete, waiting 60s grace period..."
+        fi
+
+        # Grace period: 60s after state change, auto-advance
+        if [ "$state_changed_at" != "0" ]; then
+            elapsed=$(($(date +%s) - state_changed_at))
+            if [ $elapsed -ge 60 ]; then
+                log ">>> Grace period done - advancing to next cycle"
+                kill $CLAUDE_PID 2>/dev/null
+                break
+            fi
+        fi
+
         sleep 5
     done
 
