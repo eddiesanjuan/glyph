@@ -301,9 +301,9 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
     # Run claude (track wall-clock time to detect quick exits)
     cycle_start_ts=$(date +%s)
 
-    # Remove stale nudge file and record state file timestamp
+    # Remove stale nudge file and record starting score
     rm -f "$NUDGE_FILE"
-    state_mtime_before=$(stat -f %m "$STATE_FILE" 2>/dev/null || echo "0")
+    score_at_start="$current_score"
 
     # Run Claude in background so we can monitor for completion signals
     "$TIMEOUT_CMD" --kill-after=1m "$CYCLE_TIMEOUT" \
@@ -318,11 +318,11 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
         | tee -a "$LOGFILE" &
 
     CLAUDE_PID=$!
-    state_changed_at=0
+    score_changed_at=0
 
-    # Watch for: manual nudge OR state file change (work done)
+    # Watch for: manual nudge OR score change (work done)
     while kill -0 $CLAUDE_PID 2>/dev/null; do
-        # Manual nudge
+        # Manual nudge - immediate advance
         if [ -f "$NUDGE_FILE" ]; then
             log ""
             log ">>> NUDGE received - advancing to next cycle"
@@ -331,17 +331,19 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
             break
         fi
 
-        # Auto-detect: state file changed = work is done
-        state_mtime_now=$(stat -f %m "$STATE_FILE" 2>/dev/null || echo "0")
-        if [ "$state_mtime_now" != "$state_mtime_before" ] && [ "$state_changed_at" = "0" ]; then
-            state_changed_at=$(date +%s)
-            log ""
-            log ">>> State file updated - work complete, waiting 60s grace period..."
+        # Auto-detect: composite score changed = cycle complete
+        if [ "$score_changed_at" = "0" ]; then
+            live_score=$(get_composite_score)
+            if [ "$live_score" != "$score_at_start" ]; then
+                score_changed_at=$(date +%s)
+                log ""
+                log ">>> Score changed ($score_at_start -> $live_score) - cycle complete, 60s grace period..."
+            fi
         fi
 
-        # Grace period: 60s after state change, auto-advance
-        if [ "$state_changed_at" != "0" ]; then
-            elapsed=$(($(date +%s) - state_changed_at))
+        # Grace period: 60s after score change, auto-advance
+        if [ "$score_changed_at" != "0" ]; then
+            elapsed=$(($(date +%s) - score_changed_at))
             if [ $elapsed -ge 60 ]; then
                 log ">>> Grace period done - advancing to next cycle"
                 kill $CLAUDE_PID 2>/dev/null
