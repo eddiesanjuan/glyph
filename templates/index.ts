@@ -9,7 +9,7 @@ export interface TemplateMetadata {
   id: string;
   name: string;
   description: string;
-  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'receipt' | 'certificate' | 'letter';
+  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'receipt' | 'certificate' | 'letter' | 'purchase-order';
   regions: string[];
   schemaUrl: string;
   previewUrl?: string;
@@ -105,6 +105,14 @@ export const templateMetadata: Record<string, TemplateMetadata> = {
     category: 'report',
     regions: ['header', 'title-block', 'meta', 'abstract'],
     schemaUrl: '/templates/report-cover/schema.json',
+  },
+  'purchase-order': {
+    id: 'purchase-order',
+    name: 'Purchase Order',
+    description: 'Professional purchase order with vendor info, buyer info, line items, shipping details, and totals.',
+    category: 'purchase-order',
+    regions: ['header', 'parties', 'shipping', 'line-items', 'totals', 'footer'],
+    schemaUrl: '/templates/purchase-order/schema.json',
   },
 };
 
@@ -251,6 +259,20 @@ export const templateLoaders = {
       css: cssModule.default,
       schema: schemaModule.default,
       metadata: templateMetadata['report-cover'],
+    };
+  },
+  'purchase-order': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./purchase-order/template.html?raw'),
+      import('./purchase-order/styles.css?raw'),
+      import('./purchase-order/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['purchase-order'],
     };
   },
 };

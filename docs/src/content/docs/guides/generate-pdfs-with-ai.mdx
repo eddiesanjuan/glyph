@@ -1,0 +1,466 @@
+---
+title: "How to Generate PDFs with AI"
+description: "Learn how to generate professional PDFs using AI and natural language. Complete guide with code examples for invoices, contracts, and more."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Generating PDFs programmatically has traditionally required complex templating engines, HTML-to-PDF converters, or proprietary document builders. With AI-powered PDF generation, you can skip the template configuration and generate professional documents from structured data in a single API call.
+
+This guide covers everything you need to know about AI PDF generation with Glyph, from basic API calls to advanced natural language customization.
+
+## Why AI PDF Generation?
+
+Traditional PDF generation approaches have significant drawbacks:
+
+- **Template complexity**: You need to design, maintain, and update templates for every document type
+- **Field mapping**: Every data source requires manual mapping to template placeholders
+- **Styling limitations**: Making visual changes requires editing CSS and HTML
+- **Rigid structure**: Adding new fields or sections means modifying templates
+
+AI PDF generation solves these problems:
+
+- **Data-first approach**: Send JSON data, receive a professionally formatted PDF
+- **Automatic detection**: The AI analyzes your data and chooses the right layout
+- **Natural language edits**: Change styles, add elements, or modify layouts by describing what you want
+- **No template maintenance**: The AI adapts to your data structure
+
+## What is Glyph?
+
+Glyph is an AI-powered PDF API that generates professional documents from JSON data. Instead of configuring templates and mapping fields, you send your data and Glyph handles the rest.
+
+Key capabilities:
+
+- **Generate PDF from JSON**: Send structured data, receive a formatted PDF
+- **AI document detection**: Glyph identifies whether your data represents an invoice, contract, receipt, or other document type
+- **Natural language customization**: Modify any aspect of the document by describing changes in plain English
+- **Multiple output formats**: Generate PDFs or PNGs with configurable page sizes and orientations
+
+## Getting Started
+
+### Prerequisites
+
+1. A Glyph API key - [get one free](https://glyph.you/dashboard)
+2. Your document data as JSON
+
+### Your First AI-Generated PDF
+
+Here's how to generate a PDF with a single API call:
+
+#### cURL
+
+```bash
+curl -X POST https://api.glyph.you/v1/create \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "company": { "name": "Acme Inc", "email": "billing@acme.com" },
+      "customer": { "name": "John Doe", "email": "john@example.com" },
+      "items": [
+        { "description": "Consulting", "hours": 10, "rate": 150, "total": 1500 },
+        { "description": "Development", "hours": 20, "rate": 125, "total": 2500 }
+      ],
+      "subtotal": 4000,
+      "tax": 320,
+      "total": 4320,
+      "invoiceNumber": "INV-2026-001",
+      "date": "2026-01-15",
+      "dueDate": "2026-02-15"
+    }
+  }' \
+  --output invoice.pdf
+```
+
+#### JavaScript
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({
+    data: {
+      company: { name: 'Acme Inc' },
+      customer: { name: 'John Doe', email: 'john@example.com' },
+      items: [
+        { description: 'Consulting', hours: 10, rate: 150, total: 1500 }
+      ],
+      subtotal: 1500,
+      tax: 120,
+      total: 1620
+    }
+  })
+});
+
+const result = await response.json();
+console.log(`Detected: ${result.analysis.detectedType}`);
+console.log(`Size: ${result.size} bytes`);
+
+// Save the PDF
+const base64Data = result.url.split(',')[1];
+const binary = atob(base64Data);
+const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+const blob = new Blob([bytes], { type: 'application/pdf' });
+
+const link = document.createElement('a');
+link.href = URL.createObjectURL(blob);
+link.download = result.filename;
+link.click();
+```
+
+#### Python
+
+```python
+import requests
+import base64
+
+response = requests.post(
+    'https://api.glyph.you/v1/create',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    json={
+        'data': {
+            'company': {'name': 'Acme Inc'},
+            'customer': {'name': 'John Doe', 'email': 'john@example.com'},
+            'items': [
+                {'description': 'Consulting', 'hours': 10, 'rate': 150, 'total': 1500}
+            ],
+            'subtotal': 1500,
+            'tax': 120,
+            'total': 1620
+        }
+    }
+)
+
+result = response.json()
+print(f"Detected: {result['analysis']['detectedType']}")
+print(f"Confidence: {result['analysis']['confidence']:.0%}")
+
+# Save the PDF
+data_url = result['url']
+base64_data = data_url.split(',')[1]
+with open('invoice.pdf', 'wb') as f:
+    f.write(base64.b64decode(base64_data))
+```
+
+<Aside type="tip">
+Notice that we did not specify a template. Glyph detected that this data represents an invoice and generated an appropriate layout automatically.
+</Aside>
+
+## Common Use Cases
+
+### Invoices and Receipts
+
+Invoices are the most common use case for AI PDF generation. Glyph detects invoice-like data by looking for fields like `items`, `total`, `tax`, `dueDate`, and `invoiceNumber`.
+
+```javascript
+const invoiceData = {
+  company: {
+    name: 'Your Company',
+    address: '123 Business St, City, ST 12345',
+    email: 'billing@yourcompany.com'
+  },
+  customer: {
+    name: 'Client Name',
+    company: 'Client Corp',
+    email: 'client@example.com'
+  },
+  items: [
+    { description: 'Monthly Subscription', quantity: 1, unitPrice: 99, total: 99 },
+    { description: 'Premium Support', quantity: 1, unitPrice: 49, total: 49 }
+  ],
+  subtotal: 148,
+  tax: 11.84,
+  total: 159.84,
+  invoiceNumber: 'INV-2026-042',
+  date: '2026-01-28',
+  dueDate: '2026-02-28',
+  paymentTerms: 'Net 30'
+};
+
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ data: invoiceData })
+});
+```
+
+### Contracts and Agreements
+
+Generate contracts with signature blocks, terms, and party information:
+
+```javascript
+const contractData = {
+  title: 'Service Agreement',
+  parties: [
+    { role: 'Provider', name: 'Acme Services LLC', address: '100 Main St' },
+    { role: 'Client', name: 'Client Corp', address: '200 Oak Ave' }
+  ],
+  terms: [
+    'Provider agrees to deliver consulting services as described in Exhibit A.',
+    'Client agrees to pay the fees outlined in the payment schedule.',
+    'This agreement is effective for 12 months from the date of signing.'
+  ],
+  effectiveDate: '2026-02-01',
+  signatures: [
+    { name: 'Jane Provider', title: 'CEO', date: '' },
+    { name: 'John Client', title: 'Director', date: '' }
+  ]
+};
+
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    data: contractData,
+    intent: 'formal business contract'
+  })
+});
+```
+
+### Reports and Certificates
+
+Generate professional reports or award certificates:
+
+```javascript
+// Report example
+const reportData = {
+  title: 'Q1 2026 Performance Report',
+  period: 'January - March 2026',
+  summary: 'Strong growth across all metrics with 23% revenue increase.',
+  metrics: [
+    { name: 'Revenue', value: '$1.2M', change: '+23%' },
+    { name: 'Customers', value: '847', change: '+15%' },
+    { name: 'Retention', value: '94%', change: '+2%' }
+  ],
+  author: 'Analytics Team',
+  date: '2026-04-01'
+};
+
+// Certificate example
+const certificateData = {
+  title: 'Certificate of Completion',
+  recipient: 'Sarah Johnson',
+  course: 'Advanced Project Management',
+  completionDate: '2026-01-28',
+  instructor: 'Dr. Michael Chen',
+  organization: 'Professional Development Institute'
+};
+```
+
+## Natural Language Customization
+
+The AI-powered aspect of Glyph goes beyond document detection. After generating a PDF, you can modify it using natural language instructions.
+
+### How It Works
+
+1. Generate a PDF using `/v1/create`
+2. Use the returned `sessionId` to call `/v1/modify`
+3. Describe your changes in plain English
+4. Call `/v1/generate` to get the updated PDF
+
+### Example: Adding a Watermark
+
+```javascript
+// Step 1: Create the initial document
+const createResponse = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    data: invoiceData
+  })
+});
+
+const { sessionId } = await createResponse.json();
+
+// Step 2: Add a watermark using natural language
+await fetch('https://api.glyph.you/v1/modify', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sessionId,
+    instruction: 'Add a diagonal watermark that says DRAFT in light gray'
+  })
+});
+
+// Step 3: Generate the updated PDF
+const pdfResponse = await fetch('https://api.glyph.you/v1/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    sessionId,
+    format: 'pdf'
+  })
+});
+```
+
+### Common Modifications
+
+Natural language modifications you can make:
+
+- **Styling**: "Make the header navy blue", "Use a more professional font"
+- **Layout**: "Make the logo larger", "Center the company name"
+- **Content**: "Add a QR code for payment", "Include a signature line"
+- **Branding**: "Apply Stripe-style minimal design", "Make it look more corporate"
+
+<Aside type="note">
+Modifications are validated by a self-checking AI to ensure the output remains professional and accurate.
+</Aside>
+
+## Choosing a Style
+
+Glyph supports several pre-defined styles that you can apply to any document:
+
+| Style | Description |
+|-------|-------------|
+| `stripe-clean` | Minimal design inspired by Stripe's aesthetic |
+| `bold` | High-impact design with dark headers |
+| `minimal` | Ultra-clean with maximum whitespace |
+| `corporate` | Traditional business style |
+
+Apply a style in your API call:
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    data: invoiceData,
+    style: 'stripe-clean'
+  })
+});
+```
+
+## Using Templates
+
+While Glyph can auto-detect document types, you can also specify a template for more control:
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    templateId: 'invoice-clean',
+    data: invoiceData
+  })
+});
+```
+
+Available templates include `invoice-clean`, `quote-modern`, `contract-simple`, `certificate-modern`, and more. See the full list in the [Templates Overview](/templates/overview/).
+
+## Batch Generation
+
+Generate multiple PDFs in a single API call for bulk operations:
+
+```javascript
+const response = await fetch('https://api.glyph.you/v1/batch/generate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    items: invoices.map(invoice => ({
+      data: invoice,
+      style: 'stripe-clean',
+      format: 'pdf'
+    }))
+  })
+});
+
+const { results, successCount, failCount } = await response.json();
+console.log(`Generated ${successCount} PDFs, ${failCount} failed`);
+```
+
+<Aside type="note">
+Batch requests support up to 10 items. Each item can have different data, styles, and modifications.
+</Aside>
+
+## Best Practices
+
+### Data Structure Tips
+
+1. **Use descriptive field names**: `customer`, `items`, `total` are recognized automatically
+2. **Include line items as arrays**: Makes table generation reliable
+3. **Add metadata**: Fields like `invoiceNumber`, `date`, `dueDate` improve detection
+4. **Use the intent parameter**: A short description helps the AI make better decisions
+
+### Performance Considerations
+
+- Use batch generation for multiple documents instead of sequential calls
+- Cache generated PDFs when the underlying data has not changed
+- Use the `ttl` parameter to control how long hosted documents remain available
+
+### Error Handling
+
+```javascript
+try {
+  const response = await fetch('https://api.glyph.you/v1/create', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ data: invoiceData })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error(`Error: ${error.code} - ${error.error}`);
+    return;
+  }
+
+  const result = await response.json();
+  // Process the PDF...
+} catch (error) {
+  console.error('Network error:', error);
+}
+```
+
+## API Reference Quick Links
+
+- [POST /v1/create](/api/create/) - Generate PDFs from data, HTML, or URLs
+- [POST /v1/modify](/api/modify/) - Apply natural language modifications
+- [POST /v1/generate](/api/generate/) - Export to PDF or PNG
+- [POST /v1/batch/generate](/api/batch/) - Bulk PDF generation
+- [Error Codes](/api/error-codes/) - Full error reference
+
+## Next Steps
+
+Ready to start generating PDFs with AI?
+
+1. **Get your API key**: [Sign up for free](https://glyph.you/dashboard)
+2. **Try the playground**: [Interactive demo](https://glyph.you) lets you experiment without code
+3. **Follow the quickstart**: [5-minute setup guide](/getting-started/quickstart/)
+4. **Explore templates**: [Browse available layouts](/templates/overview/)
+5. **Integrate with AI agents**: [MCP Server documentation](/integrations/mcp-server/)
+
+AI PDF generation removes the complexity from document creation. Instead of maintaining templates, mapping fields, and tweaking CSS, you send data and describe what you want. The result is a professional PDF, every time.

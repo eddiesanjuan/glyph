@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/purchase-order.json",
+  "title": "PurchaseOrderData",
+  "description": "Data schema for the purchase-order template. Used for creating purchase orders with vendor info, buyer info, line items, and totals.",
+  "type": "object",
+  "required": ["po_number", "date", "vendor", "buyer", "items", "totals", "branding"],
+  "properties": {
+    "po_number": {
+      "type": "string",
+      "description": "Unique purchase order identifier, e.g. PO-2024-0042"
+    },
+    "date": {
+      "type": "string",
+      "description": "Purchase order issue date, e.g. January 28, 2024"
+    },
+    "vendor": {
+      "type": "object",
+      "description": "Vendor/supplier information",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Vendor company name"
+        },
+        "address": {
+          "type": "string",
+          "description": "Vendor address (supports multi-line with \\n)"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Vendor contact email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Vendor phone number"
+        }
+      }
+    },
+    "buyer": {
+      "type": "object",
+      "description": "Buyer/ship-to information",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Buyer contact name"
+        },
+        "company": {
+          "type": "string",
+          "description": "Buyer company name"
+        },
+        "address": {
+          "type": "string",
+          "description": "Shipping address (supports multi-line with \\n)"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Buyer contact email"
+        }
+      }
+    },
+    "shipping": {
+      "type": "object",
+      "description": "Shipping details (optional)",
+      "properties": {
+        "method": {
+          "type": "string",
+          "description": "Shipping method, e.g. Ground, Air, Express"
+        },
+        "deliveryDate": {
+          "type": "string",
+          "description": "Required delivery date"
+        },
+        "terms": {
+          "type": "string",
+          "description": "Shipping terms, e.g. FOB Destination, Prepaid"
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "description": "Line items being ordered",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "quantity", "unit_price", "amount"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Item name or description"
+          },
+          "sku": {
+            "type": "string",
+            "description": "SKU or part number"
+          },
+          "quantity": {
+            "type": ["number", "string"],
+            "description": "Quantity ordered"
+          },
+          "unit_price": {
+            "type": ["number", "string"],
+            "description": "Price per unit, e.g. 125.00"
+          },
+          "amount": {
+            "type": ["number", "string"],
+            "description": "Line total (quantity x unit_price), e.g. 250.00"
+          }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "description": "Order totals",
+      "required": ["subtotal", "total"],
+      "properties": {
+        "subtotal": {
+          "type": ["number", "string"],
+          "description": "Sum of all line item amounts before shipping/tax"
+        },
+        "shipping": {
+          "type": ["number", "string"],
+          "description": "Shipping cost (optional)"
+        },
+        "tax": {
+          "type": ["number", "string"],
+          "description": "Tax amount (optional)"
+        },
+        "taxRate": {
+          "type": "number",
+          "description": "Tax rate percentage, e.g. 8.25 for 8.25%"
+        },
+        "total": {
+          "type": ["number", "string"],
+          "description": "Final order total"
+        }
+      }
+    },
+    "terms": {
+      "type": "string",
+      "description": "Payment or delivery terms (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or special instructions (optional)"
+    },
+    "branding": {
+      "type": "object",
+      "description": "Buyer company branding",
+      "required": ["companyName"],
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the company logo image"
+        },
+        "logoInitial": {
+          "type": "string",
+          "description": "Single letter fallback when no logo URL is provided"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Name of the company issuing the purchase order"
+        },
+        "companyAddress": {
+          "type": "string",
+          "description": "Company address (supports multi-line with \\n)"
+        }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "description": "Visual styling options",
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "default": "#2563eb",
+          "description": "Primary accent color as CSS value, e.g. #2563eb"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "po_number": "PO-2024-0089",
+      "date": "January 28, 2024",
+      "vendor": {
+        "name": "Industrial Supply Co.",
+        "address": "500 Commerce Drive\nUnit 12\nChicago, IL 60612",
+        "email": "orders@industrialsupply.com",
+        "phone": "(312) 555-0199"
+      },
+      "buyer": {
+        "name": "Michael Chen",
+        "company": "Apex Manufacturing Inc.",
+        "address": "1200 Factory Lane\nBuilding C\nDetroit, MI 48201",
+        "email": "mchen@apexmfg.com"
+      },
+      "shipping": {
+        "method": "Ground",
+        "deliveryDate": "February 15, 2024",
+        "terms": "FOB Destination"
+      },
+      "items": [
+        {
+          "description": "Industrial Ball Bearings (50mm)",
+          "sku": "BB-50-SS",
+          "quantity": 100,
+          "unit_price": "12.50",
+          "amount": "1,250.00"
+        },
+        {
+          "description": "Hydraulic Cylinder Seals",
+          "sku": "HCS-200",
+          "quantity": 25,
+          "unit_price": "45.00",
+          "amount": "1,125.00"
+        },
+        {
+          "description": "Precision Motor Shaft",
+          "sku": "PMS-1500",
+          "quantity": 10,
+          "unit_price": "189.00",
+          "amount": "1,890.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "4,265.00",
+        "shipping": "150.00",
+        "tax": "364.24",
+        "taxRate": 8.25,
+        "total": "4,779.24"
+      },
+      "terms": "Net 30. Payment due within 30 days of invoice date.\nAll returns subject to 15% restocking fee.",
+      "notes": "Please include packing slip with shipment. Contact receiving department upon arrival.",
+      "branding": {
+        "logoInitial": "A",
+        "companyName": "Apex Manufacturing Inc.",
+        "companyAddress": "1200 Factory Lane\nDetroit, MI 48201"
+      },
+      "styles": {
+        "accentColor": "#2563eb"
+      }
+    }
+  ]
+}

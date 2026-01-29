@@ -114,7 +114,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping" | "resume" | "menu" | "event" | "packing";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping" | "resume" | "menu" | "event" | "packing" | "purchase-order";
   sampleData: Record<string, unknown>;
 }
 
@@ -480,6 +480,53 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
       branding: { companyName: "TechStore Inc.", companyLogo: "" },
     },
   },
+  {
+    id: "purchase-order",
+    name: "Purchase Order",
+    description: "Professional purchase order with vendor info, buyer details, line items, and shipping terms.",
+    category: "purchase-order",
+    sampleData: {
+      po_number: "PO-2024-0089",
+      date: "January 28, 2024",
+      vendor: {
+        name: "Industrial Supply Co.",
+        address: "500 Commerce Drive\nUnit 12\nChicago, IL 60612",
+        email: "orders@industrialsupply.com",
+        phone: "(312) 555-0199",
+      },
+      buyer: {
+        name: "Michael Chen",
+        company: "Apex Manufacturing Inc.",
+        address: "1200 Factory Lane\nBuilding C\nDetroit, MI 48201",
+        email: "mchen@apexmfg.com",
+      },
+      shipping: {
+        method: "Ground",
+        deliveryDate: "February 15, 2024",
+        terms: "FOB Destination",
+      },
+      items: [
+        { description: "Industrial Ball Bearings (50mm)", sku: "BB-50-SS", quantity: 100, unit_price: "12.50", amount: "1,250.00" },
+        { description: "Hydraulic Cylinder Seals", sku: "HCS-200", quantity: 25, unit_price: "45.00", amount: "1,125.00" },
+        { description: "Precision Motor Shaft", sku: "PMS-1500", quantity: 10, unit_price: "189.00", amount: "1,890.00" },
+      ],
+      totals: {
+        subtotal: "4,265.00",
+        shipping: "150.00",
+        tax: "364.24",
+        taxRate: 8.25,
+        total: "4,779.24",
+      },
+      terms: "Net 30. Payment due within 30 days of invoice date.",
+      notes: "Please include packing slip with shipment.",
+      branding: {
+        logoInitial: "A",
+        companyName: "Apex Manufacturing Inc.",
+        companyAddress: "1200 Factory Lane\nDetroit, MI 48201",
+      },
+      styles: { accentColor: "#2563eb" },
+    },
+  },
 ];
 
 // =============================================================================
@@ -502,6 +549,7 @@ const templateStyleTags: Record<string, { style: string; tags: string[] }> = {
   'menu': { style: 'elegant', tags: ['elegant', 'restaurant', 'food', 'hospitality'] },
   'event-ticket': { style: 'modern', tags: ['modern', 'ticket', 'event', 'entertainment'] },
   'packing-slip': { style: 'minimal', tags: ['minimal', 'warehouse', 'logistics', 'shipping'] },
+  'purchase-order': { style: 'modern', tags: ['modern', 'professional', 'procurement', 'business'] },
 };
 
 // =============================================================================

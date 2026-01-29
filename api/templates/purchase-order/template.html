@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Order #{{po_number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --accent-color: {{styles.accentColor}};
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --bg-light: #f9fafb;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .po-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-placeholder {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .company-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .company-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      white-space: pre-line;
+    }
+
+    .po-badge {
+      text-align: right;
+    }
+
+    .po-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent-color);
+      letter-spacing: -0.02em;
+    }
+
+    .po-number {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .po-date {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
+    }
+
+    /* Parties Section */
+    [data-glyph-region="parties"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .party-block {
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-light);
+      border-radius: 8px;
+    }
+
+    .party-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .party-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .party-detail {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* Shipping Info */
+    [data-glyph-region="shipping"] {
+      margin-bottom: 2rem;
+      padding: 1rem 1.5rem;
+      background: var(--bg-light);
+      border-radius: 8px;
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .shipping-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .shipping-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .shipping-item-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .shipping-item-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-top: 0.125rem;
+    }
+
+    /* Line Items */
+    [data-glyph-region="line-items"] {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    [data-glyph-region="line-items"] thead {
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    [data-glyph-region="line-items"] th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+
+    [data-glyph-region="line-items"] th:nth-child(3),
+    [data-glyph-region="line-items"] th:nth-child(4),
+    [data-glyph-region="line-items"] th:nth-child(5) {
+      text-align: right;
+    }
+
+    [data-glyph-region="line-items"] td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    [data-glyph-region="line-items"] td:nth-child(3),
+    [data-glyph-region="line-items"] td:nth-child(4),
+    [data-glyph-region="line-items"] td:nth-child(5) {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .item-name {
+      font-weight: 500;
+    }
+
+    .item-sku {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
+    }
+
+    /* Totals */
+    [data-glyph-region="totals"] {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 2rem;
+    }
+
+    .totals-box {
+      width: 280px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .totals-row-label {
+      color: var(--text-secondary);
+    }
+
+    .totals-row-value {
+      font-weight: 500;
+    }
+
+    .totals-row-grand {
+      border-top: 2px solid var(--accent-color);
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+    }
+
+    .totals-row-grand .totals-row-label,
+    .totals-row-grand .totals-row-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Footer */
+    [data-glyph-region="footer"] {
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .terms-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .terms-text {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .notes-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .notes-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .authorization {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+    }
+
+    .signature-block {
+      padding-top: 0.5rem;
+    }
+
+    .signature-line {
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    .signature-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .po-document { padding: 0; max-width: none; min-height: auto; }
+    }
+
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+  </style>
+</head>
+<body>
+  <div class="po-document">
+    <header data-glyph-region="header">
+      <div class="header-brand">
+        {{#branding.logoUrl}}
+        <img src="{{branding.logoUrl}}" style="max-height:48px;max-width:160px;object-fit:contain;" alt="Logo" />
+        {{/branding.logoUrl}}
+        {{^branding.logoUrl}}
+        <div class="logo-placeholder">{{branding.logoInitial}}</div>
+        {{/branding.logoUrl}}
+        <div>
+          <div class="company-name">{{branding.companyName}}</div>
+          {{#branding.companyAddress}}
+          <div class="company-details">{{branding.companyAddress}}</div>
+          {{/branding.companyAddress}}
+        </div>
+      </div>
+      <div class="po-badge">
+        <div class="po-title">Purchase Order</div>
+        <div class="po-number">#{{po_number}}</div>
+        <div class="po-date">{{date}}</div>
+      </div>
+    </header>
+
+    <section data-glyph-region="parties">
+      <div class="party-block">
+        <div class="party-label">Vendor</div>
+        <div class="party-name">{{vendor.name}}</div>
+        {{#vendor.address}}
+        <div class="party-detail">{{vendor.address}}</div>
+        {{/vendor.address}}
+        {{#vendor.email}}
+        <div class="party-detail">{{vendor.email}}</div>
+        {{/vendor.email}}
+        {{#vendor.phone}}
+        <div class="party-detail">{{vendor.phone}}</div>
+        {{/vendor.phone}}
+      </div>
+      <div class="party-block">
+        <div class="party-label">Ship To</div>
+        <div class="party-name">{{buyer.name}}</div>
+        {{#buyer.company}}
+        <div class="party-detail">{{buyer.company}}</div>
+        {{/buyer.company}}
+        {{#buyer.address}}
+        <div class="party-detail">{{buyer.address}}</div>
+        {{/buyer.address}}
+        {{#buyer.email}}
+        <div class="party-detail">{{buyer.email}}</div>
+        {{/buyer.email}}
+      </div>
+    </section>
+
+    {{#shipping}}
+    <section data-glyph-region="shipping">
+      <div class="shipping-label">Shipping Information</div>
+      <div class="shipping-grid">
+        {{#shipping.method}}
+        <div>
+          <div class="shipping-item-label">Method</div>
+          <div class="shipping-item-value">{{shipping.method}}</div>
+        </div>
+        {{/shipping.method}}
+        {{#shipping.deliveryDate}}
+        <div>
+          <div class="shipping-item-label">Required By</div>
+          <div class="shipping-item-value">{{shipping.deliveryDate}}</div>
+        </div>
+        {{/shipping.deliveryDate}}
+        {{#shipping.terms}}
+        <div>
+          <div class="shipping-item-label">Terms</div>
+          <div class="shipping-item-value">{{shipping.terms}}</div>
+        </div>
+        {{/shipping.terms}}
+      </div>
+    </section>
+    {{/shipping}}
+
+    <table data-glyph-region="line-items">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>SKU</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#items}}
+        <tr>
+          <td>
+            <div class="item-name">{{description}}</div>
+          </td>
+          <td>
+            <div class="item-sku">{{sku}}</div>
+          </td>
+          <td>{{quantity}}</td>
+          <td>${{unit_price}}</td>
+          <td>${{amount}}</td>
+        </tr>
+        {{/items}}
+      </tbody>
+    </table>
+
+    <section data-glyph-region="totals">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="totals-row-label">Subtotal</span>
+          <span class="totals-row-value">${{totals.subtotal}}</span>
+        </div>
+        {{#totals.shipping}}
+        <div class="totals-row">
+          <span class="totals-row-label">Shipping</span>
+          <span class="totals-row-value">${{totals.shipping}}</span>
+        </div>
+        {{/totals.shipping}}
+        {{#totals.tax}}
+        <div class="totals-row">
+          <span class="totals-row-label">Tax ({{totals.taxRate}}%)</span>
+          <span class="totals-row-value">${{totals.tax}}</span>
+        </div>
+        {{/totals.tax}}
+        <div class="totals-row totals-row-grand">
+          <span class="totals-row-label">Total</span>
+          <span class="totals-row-value">${{totals.total}}</span>
+        </div>
+      </div>
+    </section>
+
+    <footer data-glyph-region="footer">
+      {{#terms}}
+      <div class="terms-label">Terms & Conditions</div>
+      <p class="terms-text">{{terms}}</p>
+      {{/terms}}
+      {{#notes}}
+      <div class="notes-label">Notes</div>
+      <p class="notes-text">{{notes}}</p>
+      {{/notes}}
+
+      <div class="authorization">
+        <div class="signature-block">
+          <div class="signature-line">
+            <div class="signature-label">Authorized Signature</div>
+          </div>
+        </div>
+        <div class="signature-block">
+          <div class="signature-line">
+            <div class="signature-label">Date</div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -9,7 +9,7 @@ export interface TemplateMetadata {
   id: string;
   name: string;
   description: string;
-  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report';
+  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'purchase-order';
   regions: string[];
   schemaUrl: string;
   previewUrl?: string;
@@ -50,9 +50,14 @@ export const templateMetadata: Record<string, TemplateMetadata> = {
     regions: ['header', 'meta', 'client-info', 'line-items', 'totals', 'notes', 'footer'],
     schemaUrl: '/templates/quote-bold/schema.json',
   },
-  // Future templates:
-  // 'invoice-modern': { ... },
-  // 'proposal-executive': { ... },
+  'purchase-order': {
+    id: 'purchase-order',
+    name: 'Purchase Order',
+    description: 'Professional purchase order with vendor info, buyer info, line items, shipping details, and totals.',
+    category: 'purchase-order',
+    regions: ['header', 'parties', 'shipping', 'line-items', 'totals', 'footer'],
+    schemaUrl: '/templates/purchase-order/schema.json',
+  },
 };
 
 /**
@@ -100,6 +105,20 @@ export const templateLoaders = {
       css: cssModule.default,
       schema: schemaModule.default,
       metadata: templateMetadata['quote-bold'],
+    };
+  },
+  'purchase-order': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./purchase-order/template.html?raw'),
+      import('./purchase-order/styles.css?raw'),
+      import('./purchase-order/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['purchase-order'],
     };
   },
 };
