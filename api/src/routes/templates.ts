@@ -106,7 +106,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping" | "resume" | "menu" | "event" | "packing";
   sampleData: Record<string, unknown>;
 }
 
@@ -358,6 +358,120 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
       branding: { companyColor: "#351c15" },
     },
   },
+  {
+    id: "resume",
+    name: "Professional Resume",
+    description: "Clean, ATS-friendly resume/CV template with experience, education, and skills sections.",
+    category: "resume",
+    sampleData: {
+      name: "Sarah Chen",
+      title: "Senior Software Engineer",
+      email: "sarah.chen@email.com",
+      phone: "(555) 123-4567",
+      location: "San Francisco, CA",
+      linkedin: "linkedin.com/in/sarahchen",
+      website: "sarahchen.dev",
+      summary: "Results-driven software engineer with 8+ years of experience building scalable web applications. Expert in TypeScript, React, and Node.js.",
+      experience: [
+        { company: "Tech Corp", role: "Senior Software Engineer", dates: "2020 - Present", description: "Led development of microservices architecture serving 10M+ users." },
+        { company: "StartupXYZ", role: "Software Engineer", dates: "2016 - 2020", description: "Built core product features from 0 to 1, growing user base 10x." },
+      ],
+      education: [
+        { school: "Stanford University", degree: "M.S. Computer Science", dates: "2014 - 2016" },
+        { school: "UC Berkeley", degree: "B.S. Computer Science", dates: "2010 - 2014" },
+      ],
+      skills: ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS", "Docker", "Kubernetes"],
+      styles: { accentColor: "#2563eb" },
+    },
+  },
+  {
+    id: "menu",
+    name: "Restaurant Menu",
+    description: "Elegant restaurant or cafe menu with sections, item descriptions, and dietary badges.",
+    category: "menu",
+    sampleData: {
+      restaurant_name: "The Golden Fork",
+      tagline: "Farm to Table Since 2010",
+      address: "123 Main Street, San Francisco, CA",
+      phone: "(415) 555-0123",
+      hours: "Mon-Sat 11am-10pm, Sun 10am-9pm",
+      sections: [
+        {
+          name: "Appetizers",
+          items: [
+            { name: "Bruschetta", description: "Fresh tomatoes, basil, garlic on toasted bread", price: "12", vegetarian: true },
+            { name: "Calamari Fritti", description: "Crispy fried calamari with marinara", price: "16" },
+          ],
+        },
+        {
+          name: "Main Courses",
+          items: [
+            { name: "Grilled Salmon", description: "Atlantic salmon with lemon butter sauce", price: "28", popular: true },
+            { name: "Mushroom Risotto", description: "Arborio rice with wild mushrooms", price: "22", vegetarian: true, vegan: true },
+          ],
+        },
+      ],
+      styles: { accentColor: "#8b4513" },
+    },
+  },
+  {
+    id: "event-ticket",
+    name: "Event Ticket",
+    description: "Professional event or concert ticket with seating info, barcode, and tear-off stub.",
+    category: "event",
+    sampleData: {
+      event_name: "Summer Music Festival 2024",
+      event_subtitle: "Featuring Taylor Swift",
+      date: "Saturday, August 15, 2024",
+      time: "Doors 6:00 PM | Show 7:30 PM",
+      venue: "Madison Square Garden",
+      venue_address: "4 Pennsylvania Plaza, New York, NY 10001",
+      seat_section: "Orchestra",
+      seat_row: "A",
+      seat_number: "12",
+      ticket_holder_name: "John Smith",
+      ticket_type: "VIP",
+      ticket_price: "$250.00",
+      barcode_value: "TKT-2024-SMF-001234",
+      order_number: "ORD-789456",
+      styles: { accentColor: "#7c3aed" },
+    },
+  },
+  {
+    id: "packing-slip",
+    name: "Packing Slip",
+    description: "Warehouse-friendly packing slip with item details, SKUs, and checkboxes.",
+    category: "packing",
+    sampleData: {
+      order_number: "ORD-2024-00156",
+      order_date: "January 25, 2024",
+      ship_date: "January 28, 2024",
+      ship_to: {
+        name: "John Smith",
+        company: "Acme Corp",
+        address: "123 Main Street",
+        city: "San Francisco",
+        state: "CA",
+        zip: "94105",
+      },
+      ship_from: {
+        name: "Warehouse A",
+        company: "Fulfillment Center",
+        address: "456 Industrial Blvd",
+        city: "Memphis",
+        state: "TN",
+        zip: "38118",
+      },
+      items: [
+        { name: "Wireless Headphones", sku: "WH-001", quantity: 1, location: "A-12-3" },
+        { name: "USB-C Cable (6ft)", sku: "USB-C-6", quantity: 2, location: "B-04-1" },
+        { name: "Phone Case - Black", sku: "PC-BLK-L", quantity: 1, location: "C-08-2" },
+      ],
+      tracking_number: "1Z999AA10123456784",
+      notes: "Handle with care - fragile items",
+      branding: { companyName: "TechStore Inc.", companyLogo: "" },
+    },
+  },
 ];
 
 // =============================================================================
@@ -376,6 +490,10 @@ const templateStyleTags: Record<string, { style: string; tags: string[] }> = {
   'letter-business': { style: 'traditional', tags: ['traditional', 'formal', 'business'] },
   'proposal-basic': { style: 'modern', tags: ['modern', 'professional'] },
   'shipping-label': { style: 'minimal', tags: ['minimal', 'compact', 'logistics', 'thermal'] },
+  'resume': { style: 'modern', tags: ['modern', 'clean', 'ats-friendly', 'professional'] },
+  'menu': { style: 'elegant', tags: ['elegant', 'restaurant', 'food', 'hospitality'] },
+  'event-ticket': { style: 'modern', tags: ['modern', 'ticket', 'event', 'entertainment'] },
+  'packing-slip': { style: 'minimal', tags: ['minimal', 'warehouse', 'logistics', 'shipping'] },
 };
 
 // =============================================================================
