@@ -1,5 +1,5 @@
 {
-  "name": "@glyph-pdf/sdk",
+  "name": "@glyphpdf/sdk",
   "version": "0.7.0",
   "description": "AI PDF generation web component - Embed natural language PDF editing in any app",
   "type": "module",
