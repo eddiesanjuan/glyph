@@ -21,7 +21,7 @@ unset ANTHROPIC_API_KEY
 # Ambitious defaults
 TARGET_SCORE=100
 MAX_CYCLES=40
-CYCLE_TIMEOUT="90m"
+CYCLE_TIMEOUT="45m"
 FOCUS_PRIORITY=""
 
 # Parse arguments
@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --target, -t N     Target composite score (default: 100)"
             echo "  --cycles, -c N     Max cycles to run (default: 40)"
-            echo "  --timeout N        Timeout per cycle in minutes (default: 90)"
+            echo "  --timeout N        Timeout per cycle in minutes (default: 45)"
             echo "  --priority, -p N   Focus on specific pillar (1-6)"
             echo "  --help, -h         Show this help"
             echo ""
@@ -64,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             echo "  6. SEO & Discovery (5%) - Search rankings, package descriptions"
             echo ""
             echo "Mission: Make Glyph the thing every AI uses to generate PDFs."
+            echo ""
+            echo "Manual controls:"
+            echo "  touch plans/.nudge-infrastructure   # Skip to next cycle"
+            echo "  Ctrl+\\ (backslash)                  # Stop the loop"
             exit 0
             ;;
         *)
@@ -77,6 +81,7 @@ LOGFILE="plans/infrastructure-loop.log"
 STATE_FILE=".claude/infrastructure-blitz-state.md"
 FEEDBACK_FILE=".claude/CYCLE_FEEDBACK.md"
 TIMEOUT_CMD="/opt/homebrew/opt/coreutils/libexec/gnubin/timeout"
+NUDGE_FILE="plans/.nudge-infrastructure"
 
 # Ensure plans directory exists
 mkdir -p plans
@@ -296,8 +301,12 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
     # Run claude (track wall-clock time to detect quick exits)
     cycle_start_ts=$(date +%s)
 
+    # Remove stale nudge file
+    rm -f "$NUDGE_FILE"
+
+    # Run Claude in background so we can monitor for nudge
     "$TIMEOUT_CMD" --kill-after=1m "$CYCLE_TIMEOUT" \
-    "$CLAUDE_BIN" -p --dangerously-skip-permissions "$PROMPT" 2>&1 \
+    "$CLAUDE_BIN" -p --dangerously-skip-permissions --debug-file "plans/infrastructure-debug-cycle-${cycle}.log" "$PROMPT" 2>&1 \
         | grep -v "This error originated either by throwing" \
         | grep -v "Error: No messages returned" \
         | grep -v "at hvK" \
@@ -305,9 +314,25 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
         | grep -v "at process.processTicksAndRejections" \
         | grep -v "Output blocked by content filtering" \
         | grep -v "^$" \
-        | tee -a "$LOGFILE"
+        | tee -a "$LOGFILE" &
 
-    exit_code=${PIPESTATUS[0]}
+    CLAUDE_PID=$!
+
+    # Nudge file watcher - check every 5 seconds
+    while kill -0 $CLAUDE_PID 2>/dev/null; do
+        if [ -f "$NUDGE_FILE" ]; then
+            log ""
+            log ">>> NUDGE received - advancing to next cycle"
+            rm -f "$NUDGE_FILE"
+            kill $CLAUDE_PID 2>/dev/null
+            break
+        fi
+        sleep 5
+    done
+
+    # Wait for Claude to finish and get exit code
+    wait $CLAUDE_PID 2>/dev/null
+    exit_code=$?
     cycle_end_ts=$(date +%s)
     cycle_duration=$((cycle_end_ts - cycle_start_ts))
 

@@ -9,7 +9,7 @@
 #   ./ralph-performance.sh                    # Default: target 99, max 40 cycles
 #   ./ralph-performance.sh --target 95        # Lower target
 #   ./ralph-performance.sh --cycles 20        # Fewer cycles
-#   ./ralph-performance.sh --timeout 60       # 60 min per cycle
+#   ./ralph-performance.sh --timeout 60       # 60 min per cycle (default: 90)
 #
 
 cd /Users/eddiesanjuan/Projects/glyph
@@ -18,9 +18,9 @@ cd /Users/eddiesanjuan/Projects/glyph
 unset ANTHROPIC_API_KEY
 
 # Ambitious defaults
-TARGET_SCORE=99
+TARGET_SCORE=100
 MAX_CYCLES=40
-CYCLE_TIMEOUT="45m"
+CYCLE_TIMEOUT="90m"
 FOCUS_PRIORITY=""
 
 # Parse arguments
@@ -50,23 +50,31 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --target, -t N     Target composite score (default: 99)"
             echo "  --cycles, -c N     Max cycles to run (default: 40)"
-            echo "  --timeout N        Timeout per cycle in minutes (default: 45)"
+            echo "  --timeout N        Timeout per cycle in minutes (default: 90)"
             echo "  --priority, -p N   Focus on specific dimension (1-6)"
             echo "  --help, -h         Show this help"
             echo ""
-            echo "Dimensions:"
-            echo "  1. UX (25%)"
+            echo "Legacy Dimensions (pre-Cycle 29):"
+            echo "  1. UX (25%) - now Playground/UX (10%)"
             echo "  2. Performance (15%)"
-            echo "  3. Code Quality (10%)"
-            echo "  4. Competitive (20%)"
-            echo "  5. Polish (15%)"
+            echo "  3. Code Quality (10%) - folded into API/MCP"
+            echo "  4. Competitive (20%) - now Airtable (20%)"
+            echo "  5. Polish (15%) - folded into Playground/UX"
             echo "  6. Documentation (15%)"
             echo ""
+            echo "Dimensions:"
+            echo "  1. API/MCP Excellence (25%)"
+            echo "  2. Airtable Integration (20%)"
+            echo "  3. Template Ecosystem (15%)"
+            echo "  4. Documentation (15%)"
+            echo "  5. Performance (15%)"
+            echo "  6. Playground/UX (10%)"
+            echo ""
             echo "Philosophy:"
-            echo "  - Be creative and bold"
-            echo "  - Don't break core features"
-            echo "  - Speed > fancy animations"
-            echo "  - Most users are AI/MCP anyway"
+            echo "  - AI agents are the primary user"
+            echo "  - Airtable integration is a key ecosystem play"
+            echo "  - More templates > more playground polish"
+            echo "  - Speed and reliability above all"
             exit 0
             ;;
         *)
@@ -78,8 +86,10 @@ done
 CLAUDE_BIN="/Users/eddiesanjuan/.npm-global/bin/claude"
 LOGFILE="plans/perfection-loop.log"
 STATE_FILE=".claude/perfection-state.md"
+LEGACY_STATE_FILE=".claude/performance-sprint-state.md"
 FEEDBACK_FILE=".claude/CYCLE_FEEDBACK.md"
 TIMEOUT_CMD="/opt/homebrew/opt/coreutils/libexec/gnubin/timeout"
+NUDGE_FILE="plans/.nudge-performance"
 
 # Ensure plans directory exists
 mkdir -p plans
@@ -88,14 +98,28 @@ log() {
     echo "[$(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S CST')] $1" | tee -a "$LOGFILE"
 }
 
-# Extract composite score from perfection-state.md
+# Extract composite score from perfection-state.md (primary) or performance-sprint-state.md (fallback)
 get_composite_score() {
+    # Primary: check perfection-state.md COMPOSITE table row
     if [ -f "$STATE_FILE" ]; then
-        # Look for COMPOSITE row in the scores table
-        local score=$(grep -i "COMPOSITE" "$STATE_FILE" | grep -oE '[0-9]+\.?[0-9]*' | head -1)
-        if [[ "$score" =~ ^[0-9]+\.?[0-9]*$ ]]; then
-            echo "$score"
-            return
+        local composite_line=$(grep -i "COMPOSITE" "$STATE_FILE" | head -1)
+        if [ -n "$composite_line" ]; then
+            local score=$(echo "$composite_line" | awk -F'|' '{print $3}' | grep -oE '[0-9]+\.?[0-9]*' | head -1)
+            if [[ "$score" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+                echo "$score"
+                return
+            fi
+        fi
+    fi
+    # Fallback: check performance-sprint-state.md for "Composite Score: XX/100" pattern
+    if [ -f "$LEGACY_STATE_FILE" ]; then
+        local score_line=$(grep -i "Composite Score:" "$LEGACY_STATE_FILE" | tail -1)
+        if [ -n "$score_line" ]; then
+            local score=$(echo "$score_line" | grep -oE '[0-9]+\.?[0-9]*' | head -1)
+            if [[ "$score" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+                echo "$score"
+                return
+            fi
         fi
     fi
     echo "0"
@@ -162,7 +186,7 @@ log "=============================================="
 log "RALPH PERFECTION LOOP"
 log "=============================================="
 log "Mission: Push Glyph to $TARGET_SCORE/100"
-log "Max Cycles: $MAX_CYCLES (~$((MAX_CYCLES * 45 / 60)) hours max)"
+log "Max Cycles: $MAX_CYCLES (~$((MAX_CYCLES * 90 / 60)) hours max)"
 log "Philosophy: Be creative. Be bold. Don't break things."
 log "Stop: Ctrl+\\ (backslash)"
 log ""
@@ -227,32 +251,36 @@ VIOLATION = IMMEDIATE REVERT. No exceptions.
 ## BLOCKERS FROM PREVIOUS CYCLE
 $blockers
 
-## PHILOSOPHY FOR THIS SESSION
+## STRATEGIC DIRECTION
 
-You are not here to make safe, incremental changes. You are here to make Glyph
-so good that every developer who tries it becomes an advocate.
+AI agents are the primary user. The API and MCP server ARE the product.
+Airtable integration is a key ecosystem play. The playground is marketing.
 
-BE CREATIVE:
-- Add features competitors don't have
-- Find hidden friction and eliminate it
-- Create surprise-and-delight moments
-- Think like a developer who just discovered Glyph
+AGENTS ARE THE USER:
+- Every feature must work perfectly via API/MCP
+- Schema-first: agents discover templates, fill data, get PDFs
+- Airtable power users and Omni AI should work seamlessly with Glyph
+- More templates = faster adoption = less reason to look elsewhere
 
 BE BOLD:
-- Big improvements are fine if they don't break things
-- Don't artificially constrain to small changes
-- Revolutionary features > incremental polish
+- More templates > more playground polish
+- Airtable integration depth > browser UI features
+- API reliability > animation smoothness
 
 DON'T BREAK THINGS:
-- Core demo flow must always work
-- Instant actions must stay instant (<500ms)
-- Mobile must remain usable
+- API endpoints must always work — agents depend on reliability
+- Template rendering must be consistent
 - No regressions on existing features
 
 SPEED > FANCY:
-- Fast completion beats pretty progress animations
+- Fast API responses beat pretty browser animations
 - Most users are API/MCP anyway
 - Simple progress steps are fine
+
+NO SCOPE CREEP:
+- NO visual drag-and-drop editor
+- NO design tools for designers
+- Focus: API, MCP, Airtable, templates, schemas, speed
 
 ## SUCCESS CRITERIA
 
@@ -264,17 +292,43 @@ This cycle succeeds if:
 
 After completing, output CYCLE_COMPLETE with score delta and STOP."
 
-    # Run claude
+    # Run claude (track wall-clock time to detect quick exits)
+    cycle_start_ts=$(date +%s)
+
+    # Remove stale nudge file
+    rm -f "$NUDGE_FILE"
+
+    # Run Claude in background so we can monitor for nudge
     "$TIMEOUT_CMD" --kill-after=1m "$CYCLE_TIMEOUT" \
-    "$CLAUDE_BIN" -p --dangerously-skip-permissions "$PROMPT" 2>&1 \
+    "$CLAUDE_BIN" -p --dangerously-skip-permissions --debug-file "plans/performance-debug-cycle-${cycle}.log" "$PROMPT" 2>&1 \
         | grep -v "This error originated either by throwing" \
         | grep -v "Error: No messages returned" \
         | grep -v "at hvK" \
+        | grep -v 'at \$bK' \
         | grep -v "at process.processTicksAndRejections" \
+        | grep -v "Output blocked by content filtering" \
         | grep -v "^$" \
-        | tee -a "$LOGFILE"
+        | tee -a "$LOGFILE" &
 
-    exit_code=${PIPESTATUS[0]}
+    CLAUDE_PID=$!
+
+    # Nudge file watcher - check every 5 seconds
+    while kill -0 $CLAUDE_PID 2>/dev/null; do
+        if [ -f "$NUDGE_FILE" ]; then
+            log ""
+            log ">>> NUDGE received - advancing to next cycle"
+            rm -f "$NUDGE_FILE"
+            kill $CLAUDE_PID 2>/dev/null
+            break
+        fi
+        sleep 5
+    done
+
+    # Wait for Claude to finish and get exit code
+    wait $CLAUDE_PID 2>/dev/null
+    exit_code=$?
+    cycle_end_ts=$(date +%s)
+    cycle_duration=$((cycle_end_ts - cycle_start_ts))
 
     # Handle exit codes
     if [ $exit_code -eq 124 ]; then
@@ -285,6 +339,16 @@ After completing, output CYCLE_COMPLETE with score delta and STOP."
         log ""
         log ">>> Cycle $cycle ended (exit code: $exit_code)"
         log ">>> Checking results..."
+    fi
+
+    # Detect quick exits (< 3 min) — likely a failed/empty run
+    if [ $cycle_duration -lt 180 ] && [ $exit_code -ne 124 ]; then
+        log ""
+        log ">>> Cycle $cycle finished in ${cycle_duration}s (< 3 min) — likely a failed run"
+        log ">>> NOT counting as a real cycle. Retrying in 15 seconds..."
+        cycle=$((cycle - 1))  # Don't count this cycle
+        sleep 15
+        continue
     fi
 
     # Get updated score
