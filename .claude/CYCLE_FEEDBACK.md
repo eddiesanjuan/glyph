@@ -4,64 +4,97 @@ Write your feedback below. The next cycle will read this, act on it, then clear 
 
 ---
 
-## Feedback from Eddie - 2026-01-22
+## Feedback from Eddie - 2026-01-26 21:45 CST
 
-**Priority:** P1 (strategic feature direction + UX improvement)
+**Priority:** P2 (nice-to-have, explicitly deprioritized)
 
 **Feedback:**
-1. **Streaming AI edits:** Edge cases are timing out at 60s. Could we stream the AI modifications so users see the document being edited in real-time? Like watching Claude Code edit files. This would make waiting feel engaging instead of frustrating, and massively increase the "wow factor."
+The "streaming animation" of watching the AI work is honestly pretty unsatisfying the way it is now. It looks like it just glitches pretty hard, shows a bunch of weird code if you don't know what you're looking at for the field names and whatnot, and then all of a sudden produces a very nice sharp looking document. If the result is good, the experience would honestly just be better as a bunch of screens going with a nice progress update at each stage. Unless we can make this a prettier experience where it really looks like the editing is happening nicely, I don't think we should stress too much about it. To be honest, I think that speed will be the bigger priority than anything as trends progress. People will be using this mainly through AI anyways.
 
-2. **Developer UX for template selection:** The audit cycles need to think about the end-user/developer experience more holistically:
-   - How does a developer pick which template to use (invoice vs quote vs report)?
-   - Should users choose templates, or should Glyph auto-select based on data?
-   - Should developers prompt Glyph to create the right PDF type?
-   - These are the real DX questions that make or break adoption.
-
-**Context:**
-Current AI modifications use a request/response pattern with 60s timeout. The API uses Claude for modifications (`api/src/services/ai.ts`). Streaming would require SSE or WebSocket changes to both API and SDK. Template selection is currently hardcoded in demos - no intelligent routing exists.
-
-**Suggested Focus:**
-- Investigate feasibility of streaming AI responses to the preview (would need API + SDK changes)
-- Add "template selection UX" as a key developer journey question in audits
-- Consider: What makes a developer's USERS delighted, not just the developer?
+**Status:** ACKNOWLEDGED - Streaming visual polish deprioritized per Eddie's direction. Speed > fancy.
 
 ---
 
-## Feedback from Eddie - 2026-01-22 20:43 CST
+## Feedback from Eddie - 2026-01-27 08:00 CST
 
-**Priority:** P0 (GIMMICKY ANIMATION - VIOLATES USER_DECISIONS)
+**Priority:** P1
 
 **Feedback:**
-"What is that stupid celebration time glowing animation on this PDF?"
-
-Screenshot shows the live preview with a glowing banner at the top reading "🎉🎊 CELEBRATION TIME 🎊🎉" - this is EXACTLY the kind of gimmicky animation that is FORBIDDEN in USER_DECISIONS.md.
+Any time I change from a document type of "quote" in the playground, it gets a big yellow banner across the top that says "Demo mode - API not available."
 
 **Context:**
-This appears to be an AI modification result that added a tacky celebration banner to the document. The guardrails should have blocked this as it degrades the professional appearance of the PDF. This is the same category of violation as confetti - gimmicky, unprofessional elements that hurt the product's credibility.
+The playground has a template type switcher (added in Performance Sprint Cycle 8) that lets users switch between Quote, Invoice, Receipt, and Report Cover templates. When switching away from "quote" (the default demo template), the app is likely hitting a code path that tries to create a new preview session with a different template but fails because the demo API key (`gk_demo_playground_2024`) or the session logic doesn't support non-quote templates properly. The yellow "Demo mode" banner suggests the preview endpoint is returning an error or the session is falling back to a demo/offline mode.
 
 **Suggested Focus:**
-- IMMEDIATELY investigate how this got added and remove it
-- Check if guardrails are properly blocking unprofessional modifications
-- This is a P0 trust destroyer - the AI should never make documents look tacky
+- Investigate the template switcher's preview logic — does switching templates call `/v1/preview` with the new template ID, and does the demo tier support all 6 templates?
+- Check `www/index.html` or `www/js/main.js` for the template switch handler and where the "Demo mode" banner gets triggered
+
+**Status:** FIXED - Performance Sprint Cycle 24 (2026-01-27). Three root causes found and fixed:
+1. Zod schema in preview.ts was hardcoded for quote data structure — relaxed to `z.record(z.unknown())`
+2. Non-quote template files (invoice-clean, receipt-minimal, report-cover) missing from `api/templates/` — copied from top-level `templates/`
+3. Frontend sample data field names didn't match Mustache template placeholders — aligned all three templates
+Verified on production: all 4 template types render correctly with no demo mode banner.
 
 ---
 
-## Feedback from Eddie - 2026-01-22 20:47 CST
+## Feedback from Eddie - 2026-01-28 10:15 CST
 
-**Priority:** P1 (docs dark mode bug - broken UX)
+**Priority:** P1
+**System:** Infrastructure Blitz
 
 **Feedback:**
-"In the docs page on Dark Mode, when you've clicked on an item on the side menu, you can't see what you've clicked. It just goes all white."
+NPM account created for SDK publishing.
+- Username: EddieSJ
+- Password: 3dd13SJ22!
+- 2FA Code: 02819928
 
-Screenshot shows docs.glyph.you/integrations/mcp-server/ - in the left sidebar under "Integrations", there's a menu item that appears as a solid white/light rectangle with no visible text. The active/selected state has white text on white background, making it unreadable.
+If the 2FA code doesn't work, leave the login screen up so Eddie can log in manually, then it shouldn't be a problem anymore.
 
 **Context:**
-The docs site is at docs.glyph.you. This is a CSS issue with the sidebar's active link state in dark mode - the text color likely matches or is too close to the background color when selected. The docs are built with a documentation framework (possibly Mintlify or similar).
+Infrastructure Blitz is working on distribution channels. NPM publishing for the `@glyph/sdk` package is a key deliverable. This account enables publishing the SDK to npm registry.
 
-**Suggested Focus:**
-- Fix the sidebar active state CSS in docs to have visible text contrast in dark mode
-- Test all sidebar states: hover, active, focus in dark mode
-- Quick CSS fix, but important for professional appearance
+**Status:** COMPLETE ✅ - npm publishing done manually on 2026-01-29. See below.
 
 ---
 
+## Feedback from Eddie - 2026-01-28 10:25 CST
+
+**Priority:** P2
+**System:** Infrastructure Blitz
+
+**Feedback:**
+Check out this awesome presentation document made by Superagent (new Airtable affiliated product): https://superagent.com/website/55098584-6a65-459b-a9e6-6cd5500fa254_stored_entities
+
+**Context:**
+Superagent is an AI research platform that creates polished presentations and reports. Eddie used it to generate a presentation about Glyph's "AI Superpower" positioning. Could be useful for pitch materials or strategic reference.
+
+**Status:** PENDING
+
+---
+
+## npm Publishing COMPLETE - 2026-01-29 06:25 CST
+
+**Priority:** INFO
+**System:** Infrastructure Blitz
+
+**What was done:**
+Eddie manually logged into npm as `eddiesj` and set up an automation token. Both packages were published:
+
+- `@glyphpdf/sdk@0.7.0` - https://www.npmjs.com/package/@glyphpdf/sdk
+- `@glyphpdf/mcp-server@0.3.0` - https://www.npmjs.com/package/@glyphpdf/mcp-server
+
+**Important:** Organization is `@glyphpdf` (no hyphen), NOT `@glyph-pdf`. Update any docs/references accordingly.
+
+**Impact:**
+- SDK Distribution: 35 -> 70 (+35)
+- Agent Frameworks: 75 -> 85 (+10)
+- Composite score: 78.5 -> 87.75 (+9.25)
+
+**Next steps for future cycles:**
+1. PyPI publishing (Python SDK)
+2. MCP directory submissions (smithery.ai, mcp.so)
+3. Update docs to reference `@glyphpdf` package names
+
+**Status:** COMPLETE ✅
+
+---
