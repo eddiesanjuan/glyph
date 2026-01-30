@@ -38,6 +38,7 @@ import subscriptions from "./routes/subscriptions.js";
 import batch from "./routes/batch.js";
 import notificationWebhooks from "./routes/notification-webhooks.js";
 import documents from "./routes/documents.js";
+import brandTemplates from "./routes/brandTemplates.js";
 
 const app = new Hono();
 
@@ -424,6 +425,8 @@ app.route("/v1/airtable", airtable);
 app.route("/v1/templates/saved", savedTemplates);
 // AI-powered template generation
 app.route("/v1/templates", templates);
+// Brand-to-template generation (extracts brand from PDF/image/URL)
+app.route("/v1/templates", brandTemplates);
 // Webhook automation
 app.route("/v1/webhooks", webhooks);
 // Schema detection and auto-preview
