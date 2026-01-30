@@ -9974,3 +9974,100 @@
   margin-top: -12px;
   font-size: 13px;
 }
+
+/* ============================================
+   Editing Banner - Displayed when editing a saved template
+   ============================================ */
+.editing-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  color: #F8FAFC;
+  font-size: 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  animation: editing-banner-appear 0.3s ease-out;
+}
+
+@keyframes editing-banner-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.editing-banner__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #A78BFA;
+}
+
+.editing-banner__text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editing-banner__text strong {
+  font-weight: 600;
+  color: #E0E7FF;
+}
+
+.editing-banner__source {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(34, 197, 94, 0.2);
+  color: #86EFAC;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.editing-banner__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.editing-banner__close:hover {
+  color: #F8FAFC;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+  .editing-banner {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .editing-banner__text {
+    gap: 4px;
+  }
+
+  .editing-banner__source {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+}

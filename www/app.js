@@ -147,6 +147,330 @@
     })();
 
     // ============================================
+    // URL Parameter Template Loading (Dashboard Edit)
+    // ============================================
+    // Track if we're loading from URL parameters (templateId/sourceId)
+    let isLoadingFromUrl = false;
+    let currentEditingTemplate = null; // { id, name, sourceId } when editing a saved template
+
+    /**
+     * Check URL parameters for templateId/sourceId to load saved template
+     * Called from DOMContentLoaded before initializePreview
+     * @returns {boolean} true if loading from URL params
+     */
+    function checkUrlTemplateParameters() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const templateId = params.get('templateId');
+        const sourceId = params.get('sourceId');
+
+        if (templateId) {
+          isLoadingFromUrl = true;
+          // Defer loading until after DOM is ready
+          setTimeout(() => {
+            loadSavedTemplateWithSource(templateId, sourceId);
+          }, 100);
+          return true;
+        }
+      } catch (e) {
+        console.warn('[Glyph] Error checking URL template parameters:', e);
+      }
+      return false;
+    }
+
+    /**
+     * Load a saved template and optionally source data for editing
+     */
+    async function loadSavedTemplateWithSource(templateId, sourceId) {
+      // Get API key (user's key from dashboard auth, or demo key)
+      const apiKey = getUserApiKey();
+
+      // Check if we have a real API key (not demo)
+      if (apiKey === DEMO_API_KEY) {
+        showToast('Sign in with your API key to edit saved templates', 'warning', 5000);
+        isLoadingFromUrl = false;
+        // Fall back to normal initialization
+        initializePreview();
+        return;
+      }
+
+      // Show loading state
+      showInitialLoadingSkeleton();
+      setStatus('Loading template...');
+      updateSkeletonStage('connecting');
+
+      try {
+        // 1. Fetch the saved template
+        console.log('[Glyph] Loading saved template:', templateId);
+        const templateRes = await fetch(`${API_URL}/v1/templates/saved/${templateId}`, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!templateRes.ok) {
+          if (templateRes.status === 404) {
+            throw new Error('Template not found. It may have been deleted.');
+          }
+          if (templateRes.status === 403) {
+            throw new Error('You do not have access to this template.');
+          }
+          const errData = await templateRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to load template');
+        }
+
+        const templateData = await templateRes.json();
+        const template = templateData.template;
+
+        console.log('[Glyph] Template loaded:', template.name);
+
+        // Store template info for save functionality
+        currentEditingTemplate = {
+          id: template.id,
+          name: template.name,
+          sourceId: sourceId
+        };
+
+        // 2. Get sample data - from source if provided, or template's sample_data
+        let sampleData = template.sampleData || template.sample_data || {};
+
+        if (sourceId) {
+          updateSkeletonStage('loading');
+          setStatus('Loading source data...');
+
+          try {
+            // Fetch one record from the source
+            const recordsRes = await fetch(
+              `${API_URL}/v1/sources/${sourceId}/records?limit=1`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            if (recordsRes.ok) {
+              const recordsData = await recordsRes.json();
+              if (recordsData.records && recordsData.records.length > 0) {
+                const record = recordsData.records[0];
+
+                // Check if there's a mapping to apply
+                try {
+                  const mappingsRes = await fetch(
+                    `${API_URL}/v1/mappings?template_id=${templateId}&source_id=${sourceId}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                      }
+                    }
+                  );
+
+                  if (mappingsRes.ok) {
+                    const mappingsData = await mappingsRes.json();
+                    if (mappingsData.mappings && mappingsData.mappings.length > 0) {
+                      // Apply field mappings
+                      const mapping = mappingsData.mappings[0];
+                      sampleData = applyFieldMappings(record, mapping.field_mappings);
+                      console.log('[Glyph] Applied field mappings from mapping:', mapping.id);
+                    } else {
+                      // No mapping, use raw record (handle Airtable structure)
+                      sampleData = record.fields || record;
+                      console.log('[Glyph] No mapping found, using raw record');
+                    }
+                  } else {
+                    sampleData = record.fields || record;
+                  }
+                } catch (mappingErr) {
+                  console.warn('[Glyph] Could not load mappings:', mappingErr);
+                  sampleData = record.fields || record;
+                }
+              }
+            } else {
+              console.warn('[Glyph] Could not load source records:', recordsRes.status);
+            }
+          } catch (sourceError) {
+            console.warn('[Glyph] Could not load source data:', sourceError);
+            // Continue with template's sample data
+          }
+        }
+
+        updateSkeletonStage('loading');
+        setStatus('Creating preview...');
+
+        // 3. Create a preview session with the saved template
+        // Use savedTemplateId to load directly from the saved templates table
+        const previewRes = await fetch(`${API_URL}/v1/preview`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            savedTemplateId: templateId,
+            data: sampleData
+          })
+        });
+
+        if (!previewRes.ok) {
+          const errData = await previewRes.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to create preview session');
+        }
+
+        const previewData = await previewRes.json();
+
+        // 4. Update the UI
+        currentHtml = previewData.html;
+        sessionId = previewData.sessionId;
+
+        // Render preview
+        renderPreview(currentHtml);
+
+        // Show editing mode banner
+        showEditingBanner(template.name, !!sourceId);
+
+        // Hide skeleton
+        hideInitialLoadingSkeleton();
+        setStatus('Ready');
+
+        // Start session timer
+        startSessionTimer();
+
+        // Show the Save Template button
+        showSaveTemplateButton();
+
+        // Auto-enable zoom on mobile
+        if (window.innerWidth <= 480) {
+          const previewContainer = document.getElementById('preview-container');
+          if (previewContainer) {
+            previewContainer.classList.add('zoomed-in');
+          }
+        }
+
+        // Scroll to playground section
+        const playgroundSection = document.getElementById('playground') || document.querySelector('.playground');
+        if (playgroundSection) {
+          setTimeout(() => {
+            playgroundSection.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
+        }
+
+        // Show success toast
+        showToast(`Loaded "${template.name}"`, 'success', 3000);
+
+        console.log('[Glyph] Template loaded successfully, session:', sessionId);
+
+      } catch (error) {
+        console.error('[Glyph] Load template error:', error);
+        hideInitialLoadingSkeleton();
+        showToast(error.message || 'Failed to load template', 'error', 5000);
+
+        // Fall back to normal initialization
+        isLoadingFromUrl = false;
+        initializePreview();
+      } finally {
+        isLoadingFromUrl = false;
+      }
+    }
+
+    /**
+     * Apply field mappings from source record to template format
+     */
+    function applyFieldMappings(record, fieldMappings) {
+      if (!fieldMappings || typeof fieldMappings !== 'object') {
+        return record.fields || record;
+      }
+
+      const result = {};
+
+      for (const [templateField, sourceField] of Object.entries(fieldMappings)) {
+        // Handle nested paths like "fields.Total"
+        const value = getNestedValue(record, sourceField);
+        if (value !== undefined) {
+          setNestedValue(result, templateField, value);
+        }
+      }
+
+      return result;
+    }
+
+    function getNestedValue(obj, path) {
+      if (!path || !obj) return undefined;
+      const parts = path.split('.');
+      let current = obj;
+      for (const part of parts) {
+        if (current === null || current === undefined) return undefined;
+        current = current[part];
+      }
+      return current;
+    }
+
+    function setNestedValue(obj, path, value) {
+      if (!path) return;
+      const parts = path.split('.');
+      let current = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = value;
+    }
+
+    /**
+     * Show banner indicating we're editing a saved template
+     */
+    function showEditingBanner(templateName, hasSource) {
+      // Remove any existing banner
+      const existingBanner = document.querySelector('.editing-banner');
+      if (existingBanner) existingBanner.remove();
+
+      const banner = document.createElement('div');
+      banner.className = 'editing-banner';
+      banner.innerHTML = `
+        <span class="editing-banner__icon">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </span>
+        <span class="editing-banner__text">
+          Editing: <strong>${escapeHtmlForBanner(templateName)}</strong>
+          ${hasSource ? '<span class="editing-banner__source">with live data</span>' : ''}
+        </span>
+        <button class="editing-banner__close" onclick="this.parentElement.remove()" title="Dismiss">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      `;
+
+      // Insert at top of playground area
+      const playground = document.querySelector('.playground__main') ||
+                         document.querySelector('.playground__content') ||
+                         document.querySelector('.playground');
+      if (playground) {
+        playground.insertBefore(banner, playground.firstChild);
+      }
+    }
+
+    function escapeHtmlForBanner(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /**
+     * Remove editing banner when switching templates or resetting
+     */
+    function removeEditingBanner() {
+      const banner = document.querySelector('.editing-banner');
+      if (banner) banner.remove();
+      currentEditingTemplate = null;
+    }
+
+    // ============================================
     // Auth UI State Management
     // ============================================
     function isUserLoggedIn() {
@@ -6339,6 +6663,7 @@ print(result['html'])  # Updated HTML`;
         currentTemplate = tab.dataset.template;
         sessionId = null; // Reset session for new template
         clearUndoHistory(); // Clear undo history when switching templates
+        removeEditingBanner(); // Clear editing mode when switching templates
 
         // Load new template (this will render the new preview)
         await initializePreview();
@@ -6381,6 +6706,7 @@ print(result['html'])  # Updated HTML`;
         currentTemplate = config.variants[0].id;
         sessionId = null;
         clearUndoHistory();
+        removeEditingBanner(); // Clear editing mode when switching templates
         await initializePreview();
 
         if (frameWrapper) frameWrapper.classList.remove('template-switching');
@@ -6401,6 +6727,7 @@ print(result['html'])  # Updated HTML`;
           currentTemplate = tab.dataset.template;
           sessionId = null;
           clearUndoHistory();
+          removeEditingBanner(); // Clear editing mode when switching templates
           await initializePreview();
           if (frameWrapper) frameWrapper.classList.remove('template-switching');
         });
@@ -6589,10 +6916,19 @@ print(result['html'])  # Updated HTML`;
 
       setupDemoModeBanner();
 
-      initializePreview();
+      // Check if loading from URL parameters (templateId/sourceId from dashboard)
+      // If so, skip default preview initialization
+      const loadingFromUrlParams = checkUrlTemplateParameters();
 
-      // Check for shared customization URL
-      handleSharedUrl();
+      if (!loadingFromUrlParams) {
+        // Normal initialization - load default demo
+        initializePreview();
+      }
+
+      // Check for shared customization URL (only if not loading from URL params)
+      if (!loadingFromUrlParams) {
+        handleSharedUrl();
+      }
     });
 
     // ============================================
@@ -8442,6 +8778,22 @@ print(result['html'])  # Updated HTML`;
           els.errorEl.textContent = '';
           els.errorEl.classList.remove('visible');
         }
+
+        // Pre-fill name if editing an existing template
+        if (currentEditingTemplate && currentEditingTemplate.name && els.nameInput) {
+          els.nameInput.value = currentEditingTemplate.name;
+        }
+
+        // Update modal title/button text for edit mode
+        const modalTitle = els.modal.querySelector('.save-template-modal__title, h3');
+        const confirmBtnText = els.confirmBtn?.querySelector('.btn-text');
+        if (currentEditingTemplate && currentEditingTemplate.id) {
+          if (modalTitle) modalTitle.textContent = 'Update Template';
+          if (confirmBtnText) confirmBtnText.textContent = 'Update Template';
+        } else {
+          if (modalTitle) modalTitle.textContent = 'Save Template';
+          if (confirmBtnText) confirmBtnText.textContent = 'Save Template';
+        }
       }
 
       // Show modal
@@ -8504,6 +8856,9 @@ print(result['html'])  # Updated HTML`;
       const description = els.descriptionInput?.value.trim() || undefined;
       const isDefault = els.defaultCheckbox?.checked || false;
 
+      // Check if we're editing an existing template
+      const isEditing = currentEditingTemplate && currentEditingTemplate.id;
+
       // Validate name
       if (!name) {
         showSaveTemplateError('Please enter a template name.');
@@ -8529,20 +8884,41 @@ print(result['html'])  # Updated HTML`;
       hideSaveTemplateError();
 
       try {
-        const response = await fetch(`${API_URL}/v1/templates/saved`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            name: name,
-            type: type || undefined,
-            description: description || undefined,
-            html: currentHtml,
-            isDefault: isDefault
-          })
-        });
+        let response;
+
+        if (isEditing) {
+          // UPDATE existing template
+          response = await fetch(`${API_URL}/v1/templates/saved/${currentEditingTemplate.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              name: name,
+              type: type || undefined,
+              description: description || undefined,
+              html: currentHtml,
+              isDefault: isDefault
+            })
+          });
+        } else {
+          // CREATE new template
+          response = await fetch(`${API_URL}/v1/templates/saved`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              name: name,
+              type: type || undefined,
+              description: description || undefined,
+              html: currentHtml,
+              isDefault: isDefault
+            })
+          });
+        }
 
         const data = await response.json();
 
@@ -8552,13 +8928,31 @@ print(result['html'])  # Updated HTML`;
 
         // Success!
         closeSaveTemplateModal();
-        showToast(`Template saved! ID: ${data.template.id}`, 'success', 4000);
+
+        if (isEditing) {
+          showToast(`Template "${name}" updated!`, 'success', 4000);
+          // Update the editing state with new name
+          currentEditingTemplate.name = data.template.name;
+          // Update the banner
+          showEditingBanner(data.template.name, !!currentEditingTemplate.sourceId);
+        } else {
+          showToast(`Template saved! ID: ${data.template.id}`, 'success', 4000);
+          // Set as current editing template so subsequent saves update it
+          currentEditingTemplate = {
+            id: data.template.id,
+            name: data.template.name,
+            sourceId: null
+          };
+          // Show editing banner for the new template
+          showEditingBanner(data.template.name, false);
+        }
 
         // Log for developer reference
         console.log('[Glyph] Template saved:', {
           id: data.template.id,
           name: data.template.name,
           type: data.template.type,
+          action: isEditing ? 'updated' : 'created',
           apiUsage: `Use with API: POST /v1/create with templateId: "${data.template.id}"`
         });
 

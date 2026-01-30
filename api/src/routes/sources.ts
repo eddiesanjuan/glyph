@@ -26,6 +26,7 @@ import type {
   DiscoveredSchema,
 } from "../types/data-sources.js";
 import { createConnector, isSourceTypeSupported } from "../services/connectors/index.js";
+import { findMatchingTemplates, type MatchResult } from "../services/autoMatcher.js";
 
 const sources = new Hono();
 
@@ -315,10 +316,26 @@ sources.post("/", async (c) => {
       return c.json(error, 500);
     }
 
+    // Auto-match templates if schema was discovered
+    let matchSuggestions: MatchResult[] = [];
+    if (discoveredSchema && apiKeyId) {
+      try {
+        matchSuggestions = await findMatchingTemplates(
+          discoveredSchema,
+          apiKeyId,
+          { maxResults: 3 }
+        );
+      } catch (err) {
+        console.warn('[AutoMatcher] Failed to find matches:', err);
+        // Non-fatal, continue without suggestions
+      }
+    }
+
     return c.json(
       {
         success: true,
         source: formatSourceResponse(source as DataSource),
+        matchSuggestions,
       },
       201
     );
