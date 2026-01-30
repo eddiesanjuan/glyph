@@ -136,7 +136,7 @@ const API_URL = import.meta.env.DEV
   : 'https://api.glyph.you'
 
 // Page type for routing
-type Page = 'login' | 'signup' | 'request-access' | 'activate' | 'dashboard' | 'admin'
+type Page = 'login' | 'signup' | 'request-access' | 'activate' | 'dashboard' | 'playground' | 'admin'
 
 // Icons as inline SVGs for zero dependencies
 const Icons = {
@@ -401,6 +401,21 @@ export function App() {
   const [generatedPdf, setGeneratedPdf] = useState<GeneratedPdf | null>(null)
   const [batchJob, setBatchJob] = useState<BatchJob | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
+
+  // Playground state
+  const [playgroundTemplate, setPlaygroundTemplate] = useState('quote-modern')
+  const [playgroundHtml, setPlaygroundHtml] = useState('')
+  const [playgroundSessionId, setPlaygroundSessionId] = useState<string | null>(null)
+  const [playgroundLoading, setPlaygroundLoading] = useState(false)
+  const [playgroundError, setPlaygroundError] = useState<string | null>(null)
+  const [playgroundPrompt, setPlaygroundPrompt] = useState('')
+  const [playgroundModifying, setPlaygroundModifying] = useState(false)
+  const [playgroundUndoStack, setPlaygroundUndoStack] = useState<string[]>([])
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
+  const [saveTemplateName, setSaveTemplateName] = useState('')
+  const [saveTemplateType, setSaveTemplateType] = useState('')
+  const [saveTemplateDescription, setSaveTemplateDescription] = useState('')
+  const [savingPlaygroundTemplate, setSavingPlaygroundTemplate] = useState(false)
 
   // Check for activation code in URL
   useEffect(() => {
@@ -1354,6 +1369,291 @@ export function App() {
     setGenerateError(null)
   }
 
+  // ==================== PLAYGROUND FUNCTIONS ====================
+
+  // Sample data for templates
+  const sampleQuoteData = {
+    company: { name: 'Acme Corp', address: '123 Main St, San Francisco, CA 94102' },
+    quote_number: 'Q-2024-0042',
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    customer: { name: 'Jane Smith', email: 'jane@example.com', company: 'Smith Enterprises' },
+    items: [
+      { description: 'Enterprise License', quantity: 1, unit_price: 2400, total: 2400 },
+      { description: 'Premium Support (12 mo)', quantity: 12, unit_price: 100, total: 1200 }
+    ],
+    subtotal: 3600,
+    tax: 0,
+    total: 3600
+  }
+
+  // Initialize playground session
+  const initPlaygroundSession = useCallback(async (template: string = playgroundTemplate) => {
+    if (!apiKey) return
+
+    setPlaygroundLoading(true)
+    setPlaygroundError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/v1/preview`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          template,
+          data: sampleQuoteData
+        })
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Failed to load preview')
+      }
+
+      const result = await response.json()
+      setPlaygroundHtml(result.html)
+      setPlaygroundSessionId(result.sessionId)
+      setPlaygroundUndoStack([])
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'Failed to load preview')
+    } finally {
+      setPlaygroundLoading(false)
+    }
+  }, [apiKey, playgroundTemplate])
+
+  // Check if prompt is an instant action (no AI needed)
+  const isInstantAction = (prompt: string): boolean => {
+    const lowPrompt = prompt.toLowerCase()
+    const instantPatterns = [
+      /qr\s*code/i,
+      /watermark/i,
+      /group.*by.*category/i,
+      /payment\s*terms/i,
+      /net\s*\d+/i,
+      /bold.*header/i,
+      /larger.*header/i,
+      /add.*date/i,
+      /add.*border/i,
+      /thank.*you.*note/i,
+      /add.*signature/i
+    ]
+    return instantPatterns.some(pattern => pattern.test(lowPrompt))
+  }
+
+  // Apply instant action locally (no AI)
+  const applyInstantAction = (prompt: string, html: string): string => {
+    const lowPrompt = prompt.toLowerCase()
+    let modifiedHtml = html
+
+    // QR Code
+    if (/qr\s*code/i.test(lowPrompt)) {
+      const qrHtml = `
+        <div style="position: absolute; bottom: 20px; right: 20px; text-align: center;">
+          <svg viewBox="0 0 100 100" width="60" height="60" fill="none" stroke="#1E3A5F" stroke-width="3">
+            <rect x="10" y="10" width="25" height="25"/><rect x="15" y="15" width="15" height="15" fill="#1E3A5F"/>
+            <rect x="65" y="10" width="25" height="25"/><rect x="70" y="15" width="15" height="15" fill="#1E3A5F"/>
+            <rect x="10" y="65" width="25" height="25"/><rect x="15" y="70" width="15" height="15" fill="#1E3A5F"/>
+            <rect x="40" y="40" width="20" height="20" fill="#1E3A5F"/>
+          </svg>
+          <div style="font-size: 8px; color: #64748B; margin-top: 4px;">Scan to Pay</div>
+        </div>`
+      if (html.includes('</body>')) {
+        modifiedHtml = html.replace('</body>', qrHtml + '</body>')
+      }
+    }
+
+    // Watermark
+    if (/watermark/i.test(lowPrompt)) {
+      const watermarkHtml = `
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 72px; color: rgba(30, 58, 95, 0.1); font-weight: bold; pointer-events: none; z-index: 1000;">DRAFT</div>`
+      if (html.includes('</body>')) {
+        modifiedHtml = html.replace('</body>', watermarkHtml + '</body>')
+      }
+    }
+
+    // Payment terms
+    if (/payment\s*terms/i.test(lowPrompt) || /net\s*\d+/i.test(lowPrompt)) {
+      const termsHtml = `
+        <div style="margin-top: 24px; padding: 16px; background: #F8FAFC; border-radius: 8px; border-left: 4px solid #1E3A5F;">
+          <div style="font-weight: 600; color: #1E3A5F; margin-bottom: 4px;">Payment Terms</div>
+          <div style="color: #64748B; font-size: 14px;">Net 30 days from invoice date. 2% discount for payment within 10 days.</div>
+        </div>`
+      if (html.includes('</body>')) {
+        modifiedHtml = html.replace('</body>', termsHtml + '</body>')
+      }
+    }
+
+    // Add signature
+    if (/signature/i.test(lowPrompt)) {
+      const signatureHtml = `
+        <div style="margin-top: 40px; display: flex; gap: 40px;">
+          <div style="flex: 1;">
+            <div style="border-bottom: 1px solid #CBD5E1; margin-bottom: 8px; height: 40px;"></div>
+            <div style="color: #64748B; font-size: 12px;">Client Signature</div>
+          </div>
+          <div style="width: 120px;">
+            <div style="border-bottom: 1px solid #CBD5E1; margin-bottom: 8px; height: 40px;"></div>
+            <div style="color: #64748B; font-size: 12px;">Date</div>
+          </div>
+        </div>`
+      if (html.includes('</body>')) {
+        modifiedHtml = html.replace('</body>', signatureHtml + '</body>')
+      }
+    }
+
+    return modifiedHtml
+  }
+
+  // Apply modifications to playground
+  const applyPlaygroundModification = async (prompt: string) => {
+    if (!prompt.trim() || !playgroundHtml) return
+
+    setPlaygroundModifying(true)
+    setPlaygroundError(null)
+
+    // Save current state to undo stack
+    setPlaygroundUndoStack(prev => [...prev.slice(-9), playgroundHtml])
+
+    try {
+      // Check if instant action
+      if (isInstantAction(prompt)) {
+        const modifiedHtml = applyInstantAction(prompt, playgroundHtml)
+        setPlaygroundHtml(modifiedHtml)
+        setPlaygroundPrompt('')
+        setPlaygroundModifying(false)
+        return
+      }
+
+      // AI modification
+      const response = await fetch(`${API_URL}/v1/modify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          sessionId: playgroundSessionId,
+          prompt,
+          html: playgroundHtml
+        })
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Modification failed')
+      }
+
+      const result = await response.json()
+      setPlaygroundHtml(result.html)
+      setPlaygroundPrompt('')
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'Modification failed')
+      // Restore from undo stack on error
+      setPlaygroundUndoStack(prev => {
+        if (prev.length > 0) {
+          return prev.slice(0, -1)
+        }
+        return prev
+      })
+    } finally {
+      setPlaygroundModifying(false)
+    }
+  }
+
+  // Undo last modification
+  const undoPlaygroundModification = () => {
+    if (playgroundUndoStack.length === 0) return
+    const previousHtml = playgroundUndoStack[playgroundUndoStack.length - 1]
+    setPlaygroundHtml(previousHtml)
+    setPlaygroundUndoStack(prev => prev.slice(0, -1))
+  }
+
+  // Download PDF from playground
+  const downloadPlaygroundPdf = async () => {
+    if (!playgroundHtml) return
+
+    setPlaygroundLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/v1/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          html: playgroundHtml,
+          format: 'pdf'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('PDF generation failed')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `glyph-${Date.now()}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'PDF download failed')
+    } finally {
+      setPlaygroundLoading(false)
+    }
+  }
+
+  // Save template from playground
+  const savePlaygroundTemplate = async () => {
+    if (!playgroundHtml || !saveTemplateName.trim()) return
+
+    setSavingPlaygroundTemplate(true)
+    setPlaygroundError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/v1/templates/saved`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          name: saveTemplateName.trim(),
+          type: saveTemplateType || undefined,
+          description: saveTemplateDescription || undefined,
+          html: playgroundHtml
+        })
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Failed to save template')
+      }
+
+      // Success - close modal and refresh templates
+      setShowSaveTemplateModal(false)
+      setSaveTemplateName('')
+      setSaveTemplateType('')
+      setSaveTemplateDescription('')
+      await fetchTemplates()
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'Failed to save template')
+    } finally {
+      setSavingPlaygroundTemplate(false)
+    }
+  }
+
+  // Switch playground template
+  const switchPlaygroundTemplate = (template: string) => {
+    setPlaygroundTemplate(template)
+    initPlaygroundSession(template)
+  }
+
   // Fetch templates when dashboard data loads
   useEffect(() => {
     if (data && apiKey) {
@@ -1412,12 +1712,27 @@ export function App() {
             <span class="logo-text">Glyph</span>
           </a>
           <nav class="nav-links">
-            <a href={getPlaygroundUrl()} class="nav-link">Home</a>
+            {data && (
+              <>
+                <button
+                  class={`nav-link ${page === 'dashboard' ? 'nav-link--active' : ''}`}
+                  onClick={() => setPage('dashboard')}
+                >
+                  Dashboard
+                </button>
+                <button
+                  class={`nav-link ${page === 'playground' ? 'nav-link--active' : ''}`}
+                  onClick={() => { setPage('playground'); if (!playgroundHtml) initPlaygroundSession(); }}
+                >
+                  Playground
+                </button>
+              </>
+            )}
             <a href="https://docs.glyph.you" target="_blank" class="docs-link">
               {Icons.docs}
               <span>Docs</span>
             </a>
-            {page === 'dashboard' && data && (
+            {(page === 'dashboard' || page === 'playground') && data && (
               <button class="nav-link" onClick={handleSignOut}>Sign Out</button>
             )}
           </nav>
@@ -2356,8 +2671,267 @@ export function App() {
               </button>
             </div>
           )}
+
+          {/* ==================== PLAYGROUND PAGE ==================== */}
+          {page === 'playground' && data && (
+            <div class="playground-page animate-in">
+              <div class="playground-header">
+                <h1>Playground</h1>
+                <p class="playground-subtitle">Customize your PDF template with natural language commands</p>
+              </div>
+
+              {/* Template Selector */}
+              <div class="playground-toolbar">
+                <div class="playground-template-select">
+                  <label>Template:</label>
+                  <select
+                    class="api-input"
+                    value={playgroundTemplate}
+                    onChange={(e) => switchPlaygroundTemplate((e.target as HTMLSelectElement).value)}
+                  >
+                    <option value="quote-modern">Quote - Modern</option>
+                    <option value="quote-professional">Quote - Professional</option>
+                    <option value="quote-bold">Quote - Bold</option>
+                    <option value="invoice-modern">Invoice - Modern</option>
+                    <option value="receipt-modern">Receipt - Modern</option>
+                  </select>
+                </div>
+                <div class="playground-actions-right">
+                  <button
+                    class="btn btn-secondary"
+                    onClick={downloadPlaygroundPdf}
+                    disabled={playgroundLoading || !playgroundHtml}
+                    title="Download PDF"
+                  >
+                    {Icons.file}
+                    <span>Download PDF</span>
+                  </button>
+                  <button
+                    class="btn btn-primary"
+                    onClick={() => setShowSaveTemplateModal(true)}
+                    disabled={!playgroundHtml}
+                    title="Save as template"
+                  >
+                    {Icons.star}
+                    <span>Save Template</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="playground-content">
+                {/* Input Area */}
+                <div class="playground-input-panel">
+                  <div class="playground-quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-action-buttons">
+                      <button
+                        class="quick-action-btn"
+                        onClick={() => applyPlaygroundModification('Add a diagonal watermark that says DRAFT across the page')}
+                        disabled={playgroundModifying || !playgroundHtml}
+                      >
+                        Add Watermark
+                        <span class="quick-action-badge">instant</span>
+                      </button>
+                      <button
+                        class="quick-action-btn"
+                        onClick={() => applyPlaygroundModification('Add a QR code in the corner for quick mobile payment')}
+                        disabled={playgroundModifying || !playgroundHtml}
+                      >
+                        Add QR Code
+                        <span class="quick-action-badge">instant</span>
+                      </button>
+                      <button
+                        class="quick-action-btn"
+                        onClick={() => applyPlaygroundModification('Add payment terms: Net 30 with 2% early payment discount')}
+                        disabled={playgroundModifying || !playgroundHtml}
+                      >
+                        Add Terms
+                        <span class="quick-action-badge">instant</span>
+                      </button>
+                      <button
+                        class="quick-action-btn"
+                        onClick={() => applyPlaygroundModification('Add a signature line with date field')}
+                        disabled={playgroundModifying || !playgroundHtml}
+                      >
+                        Add Signature
+                        <span class="quick-action-badge">instant</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="playground-prompt-section">
+                    <h3>Custom Changes</h3>
+                    <p class="playground-prompt-hint">Describe any change you want to make to the document</p>
+                    <textarea
+                      class="playground-prompt-input"
+                      value={playgroundPrompt}
+                      onInput={(e) => setPlaygroundPrompt((e.target as HTMLTextAreaElement).value)}
+                      placeholder="e.g., Make the header blue, add a thank you note at the bottom, change the font to serif..."
+                      rows={3}
+                      disabled={playgroundModifying}
+                    />
+                    <div class="playground-prompt-actions">
+                      <button
+                        class="btn btn-primary"
+                        onClick={() => applyPlaygroundModification(playgroundPrompt)}
+                        disabled={playgroundModifying || !playgroundPrompt.trim() || !playgroundHtml}
+                      >
+                        {playgroundModifying ? 'Applying...' : 'Apply Changes'}
+                      </button>
+                      <button
+                        class="btn btn-secondary"
+                        onClick={undoPlaygroundModification}
+                        disabled={playgroundUndoStack.length === 0 || playgroundModifying}
+                        title="Undo last change"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 10h10a5 5 0 015 5v0a5 5 0 01-5 5H8m-5-10l4-4m-4 4l4 4"/>
+                        </svg>
+                        Undo
+                      </button>
+                    </div>
+                  </div>
+
+                  {playgroundError && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{playgroundError}</span>
+                      <button class="btn btn-icon" onClick={() => setPlaygroundError(null)}>
+                        {Icons.x}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview Area */}
+                <div class="playground-preview-panel">
+                  <div class="playground-preview-header">
+                    <span class="playground-preview-label">Live Preview</span>
+                    <span class={`playground-preview-status ${playgroundLoading || playgroundModifying ? 'loading' : 'ready'}`}>
+                      {playgroundLoading || playgroundModifying ? 'Processing...' : 'Ready'}
+                    </span>
+                  </div>
+                  <div class="playground-preview-container">
+                    {playgroundLoading ? (
+                      <div class="playground-loading">
+                        <div class="playground-loading-spinner" />
+                        <span>Loading preview...</span>
+                      </div>
+                    ) : playgroundHtml ? (
+                      <iframe
+                        class="playground-preview-frame"
+                        srcDoc={playgroundHtml}
+                        title="Document Preview"
+                        sandbox="allow-same-origin"
+                      />
+                    ) : (
+                      <div class="playground-empty">
+                        <p>Select a template to get started</p>
+                        <button class="btn btn-primary" onClick={() => initPlaygroundSession()}>
+                          Load Template
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Save Template Modal */}
+      {showSaveTemplateModal && (
+        <div class="modal-overlay" onClick={() => setShowSaveTemplateModal(false)}>
+          <div class="modal modal-save-template" onClick={(e) => e.stopPropagation()}>
+            <h3>Save Template</h3>
+            <p class="modal-subtitle">Save your customized template for reuse</p>
+
+            <form
+              class="save-template-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                savePlaygroundTemplate()
+              }}
+            >
+              <div class="form-group">
+                <label htmlFor="save-template-name">Template Name *</label>
+                <input
+                  id="save-template-name"
+                  type="text"
+                  class="api-input"
+                  value={saveTemplateName}
+                  onInput={(e) => setSaveTemplateName((e.target as HTMLInputElement).value)}
+                  placeholder="My Custom Quote"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div class="form-group">
+                <label htmlFor="save-template-type">Type</label>
+                <select
+                  id="save-template-type"
+                  class="api-input"
+                  value={saveTemplateType}
+                  onChange={(e) => setSaveTemplateType((e.target as HTMLSelectElement).value)}
+                >
+                  <option value="">None</option>
+                  <option value="invoice">Invoice</option>
+                  <option value="quote">Quote</option>
+                  <option value="report">Report</option>
+                  <option value="certificate">Certificate</option>
+                  <option value="letter">Letter</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="contract">Contract</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label htmlFor="save-template-description">Description</label>
+                <textarea
+                  id="save-template-description"
+                  class="api-input textarea"
+                  value={saveTemplateDescription}
+                  onInput={(e) => setSaveTemplateDescription((e.target as HTMLTextAreaElement).value)}
+                  placeholder="Optional description of your template..."
+                  rows={2}
+                />
+              </div>
+
+              {playgroundError && (
+                <div class="error-banner">
+                  {Icons.warning}
+                  <span>{playgroundError}</span>
+                </div>
+              )}
+
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  onClick={() => {
+                    setShowSaveTemplateModal(false)
+                    setSaveTemplateName('')
+                    setSaveTemplateType('')
+                    setSaveTemplateDescription('')
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={savingPlaygroundTemplate || !saveTemplateName.trim()}
+                >
+                  {savingPlaygroundTemplate ? 'Saving...' : 'Save Template'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Regenerate Confirmation Modal */}
       {showConfirm && (
