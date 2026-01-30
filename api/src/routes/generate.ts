@@ -10,6 +10,35 @@ import type { ApiError } from "../lib/types.js";
 import { triggerEventSubscriptions } from "./subscriptions.js";
 import { fireNotificationWebhooks } from "../services/notificationWebhooks.js";
 import { storeDocument } from "../lib/documentStore.js";
+import { supabase, getSupabase } from "../lib/supabase.js";
+
+/**
+ * Track usage for a generate request (fire and forget)
+ */
+function trackGenerateUsage(
+  apiKeyId: string | undefined,
+  tier: string | undefined,
+  format: string
+): void {
+  // Only track for non-demo tiers with valid API key ID and Supabase configured
+  if (!apiKeyId || tier === "demo" || !supabase) {
+    return;
+  }
+
+  getSupabase()
+    .from("usage")
+    .insert({
+      api_key_id: apiKeyId,
+      endpoint: "generate",
+      template: format,
+      pdf_generated: format === "pdf",
+    })
+    .then(({ error }) => {
+      if (error) {
+        console.error("[Generate] Usage tracking error:", error);
+      }
+    });
+}
 
 const generate = new Hono();
 
@@ -68,6 +97,10 @@ generate.post("/", async (c) => {
 
     const { html, format, options, returnUrl, ttl } = parsed.data;
 
+    // Extract auth context for usage tracking
+    const apiKeyId = c.get("apiKeyId") as string | undefined;
+    const tier = c.get("tier") as string | undefined;
+
     // Generate document
     let buffer: Buffer;
     let contentType: string;
@@ -118,6 +151,9 @@ generate.post("/", async (c) => {
 
     // TODO(P2): Upload to Supabase Storage instead of returning raw buffer
     // Currently returns inline buffer which works but limits file size to ~10MB
+
+    // Track usage (fire and forget)
+    trackGenerateUsage(apiKeyId, tier, format);
 
     // Trigger event subscriptions (fire and forget)
     triggerEventSubscriptions("pdf.generated", {

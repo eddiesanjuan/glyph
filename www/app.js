@@ -116,6 +116,220 @@
     }
 
     // ============================================
+    // URL Parameter Auth (Cross-Domain Login)
+    // ============================================
+    // Check for API key in URL parameter (from dashboard redirect)
+    (function handleUrlApiKey() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const apiKeyParam = params.get('apiKey');
+        if (apiKeyParam && apiKeyParam.startsWith('gk_') && apiKeyParam !== DEMO_API_KEY) {
+          // Save to localStorage
+          localStorage.setItem('glyph_user_api_key', apiKeyParam);
+          console.log('[Glyph] API key received from URL parameter');
+
+          // Remove from URL to hide key in browser history
+          params.delete('apiKey');
+          const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+          history.replaceState({}, '', newUrl);
+
+          // Update auth UI after DOM loads
+          setTimeout(() => {
+            updateAuthUI();
+            if (typeof showToast === 'function') {
+              showToast('Signed in successfully', 'success', 3000);
+            }
+          }, 500);
+        }
+      } catch (e) {
+        console.warn('[Glyph] Error handling URL API key:', e);
+      }
+    })();
+
+    // ============================================
+    // Auth UI State Management
+    // ============================================
+    function isUserLoggedIn() {
+      try {
+        const userApiKey = localStorage.getItem('glyph_user_api_key');
+        return userApiKey && userApiKey !== DEMO_API_KEY && userApiKey.startsWith('gk_');
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function updateAuthUI() {
+      const authBtn = document.getElementById('auth-settings-btn');
+      const authIndicator = document.getElementById('auth-indicator');
+      if (!authBtn) return;
+
+      const loggedIn = isUserLoggedIn();
+      authBtn.classList.toggle('logged-in', loggedIn);
+      if (authIndicator) {
+        authIndicator.style.display = loggedIn ? 'block' : 'none';
+      }
+    }
+
+    function logoutUser() {
+      try {
+        localStorage.removeItem('glyph_user_api_key');
+        updateAuthUI();
+        if (typeof showToast === 'function') {
+          showToast('Signed out', 'info', 2000);
+        }
+      } catch (e) {
+        console.warn('[Glyph] Error during logout:', e);
+      }
+    }
+
+    function loginWithApiKey(apiKey) {
+      if (!apiKey || !apiKey.startsWith('gk_')) {
+        if (typeof showToast === 'function') {
+          showToast('Invalid API key format', 'error', 3000);
+        }
+        return false;
+      }
+      if (apiKey === DEMO_API_KEY) {
+        if (typeof showToast === 'function') {
+          showToast('Cannot use demo API key', 'error', 3000);
+        }
+        return false;
+      }
+      try {
+        localStorage.setItem('glyph_user_api_key', apiKey);
+        updateAuthUI();
+        if (typeof showToast === 'function') {
+          showToast('Signed in successfully', 'success', 3000);
+        }
+        return true;
+      } catch (e) {
+        if (typeof showToast === 'function') {
+          showToast('Failed to save API key', 'error', 3000);
+        }
+        return false;
+      }
+    }
+
+    // ============================================
+    // Auth Modal Event Handlers
+    // ============================================
+    function initAuthModal() {
+      const authBtn = document.getElementById('auth-settings-btn');
+      const authModal = document.getElementById('auth-modal');
+      const authCloseBtn = document.getElementById('auth-modal-close');
+      const authLoginBtn = document.getElementById('auth-login-btn');
+      const authLogoutBtn = document.getElementById('auth-logout-btn');
+      const authInput = document.getElementById('auth-api-key-input');
+      const authError = document.getElementById('auth-error');
+      const stateLoggedOut = document.getElementById('auth-state-logged-out');
+      const stateLoggedIn = document.getElementById('auth-state-logged-in');
+      const keyPreview = document.getElementById('auth-key-preview');
+      const modalTitle = document.getElementById('auth-modal-title');
+
+      if (!authBtn || !authModal) return;
+
+      function showModal() {
+        const loggedIn = isUserLoggedIn();
+
+        // Update modal state
+        if (loggedIn) {
+          stateLoggedOut.style.display = 'none';
+          stateLoggedIn.style.display = 'block';
+          modalTitle.textContent = 'Account';
+
+          // Show key preview (first 10 chars + ...)
+          try {
+            const key = localStorage.getItem('glyph_user_api_key');
+            if (key) {
+              keyPreview.textContent = key.substring(0, 10) + '...';
+            }
+          } catch (e) {}
+        } else {
+          stateLoggedOut.style.display = 'block';
+          stateLoggedIn.style.display = 'none';
+          modalTitle.textContent = 'Sign In';
+          authInput.value = '';
+          authError.style.display = 'none';
+        }
+
+        authModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        if (!loggedIn) {
+          setTimeout(() => authInput.focus(), 100);
+        }
+      }
+
+      function hideModal() {
+        authModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      // Open modal
+      authBtn.addEventListener('click', showModal);
+
+      // Close modal
+      authCloseBtn.addEventListener('click', hideModal);
+      authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) hideModal();
+      });
+
+      // Login
+      authLoginBtn.addEventListener('click', () => {
+        const apiKey = authInput.value.trim();
+        if (!apiKey) {
+          authError.textContent = 'Please enter an API key';
+          authError.style.display = 'block';
+          return;
+        }
+        if (!apiKey.startsWith('gk_')) {
+          authError.textContent = 'API key must start with gk_';
+          authError.style.display = 'block';
+          return;
+        }
+        if (apiKey === DEMO_API_KEY) {
+          authError.textContent = 'Cannot use demo API key';
+          authError.style.display = 'block';
+          return;
+        }
+
+        if (loginWithApiKey(apiKey)) {
+          hideModal();
+        }
+      });
+
+      // Enter key to submit
+      authInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          authLoginBtn.click();
+        }
+      });
+
+      // Logout
+      authLogoutBtn.addEventListener('click', () => {
+        logoutUser();
+        hideModal();
+      });
+
+      // Escape to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && authModal.classList.contains('active')) {
+          hideModal();
+        }
+      });
+
+      // Initialize UI state
+      updateAuthUI();
+    }
+
+    // Initialize on DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAuthModal);
+    } else {
+      initAuthModal();
+    }
+
+    // ============================================
     // Demo PDF Generation (Issue #1 - Cycle 7)
     // ============================================
     const MAX_DEMO_DOWNLOADS = 3;

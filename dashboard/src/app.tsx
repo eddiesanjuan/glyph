@@ -1311,6 +1311,14 @@ export function App() {
 
   const maskedKey = apiKey ? `${apiKey.slice(0, 11)}${'*'.repeat(16)}` : ''
 
+  // Generate playground URL with API key for cross-domain auth
+  const getPlaygroundUrl = (hash = '') => {
+    if (apiKey && apiKey.startsWith('gk_') && apiKey !== 'gk_demo_playground_2024') {
+      return `https://glyph.you${hash}?apiKey=${encodeURIComponent(apiKey)}`
+    }
+    return `https://glyph.you${hash}`
+  }
+
   const handleSignOut = () => {
     setData(null)
     setApiKey('')
@@ -1330,7 +1338,7 @@ export function App() {
       {/* Header */}
       <header class="header">
         <div class="header-content">
-          <a href="https://glyph.you" class="logo">
+          <a href={getPlaygroundUrl()} class="logo">
             {/* G lettermark logo - matches landing page */}
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M16 2C8.268 2 2 8.268 2 16C2 23.732 8.268 30 16 30C23.732 30 30 23.732 30 16V14H16V18H25.5C24.5 22.5 20.6 26 16 26C10.477 26 6 21.523 6 16C6 10.477 10.477 6 16 6C19.5 6 22.6 7.8 24.5 10.5L28 8C25.3 4.3 21 2 16 2Z" fill="#1E3A5F"/>
@@ -1338,7 +1346,7 @@ export function App() {
             <span class="logo-text">Glyph</span>
           </a>
           <nav class="nav-links">
-            <a href="https://glyph.you" class="nav-link">Home</a>
+            <a href={getPlaygroundUrl()} class="nav-link">Home</a>
             <a href="https://docs.glyph.you" target="_blank" class="docs-link">
               {Icons.docs}
               <span>Docs</span>
@@ -2055,6 +2063,12 @@ export function App() {
                     <div class="empty-icon">{Icons.file}</div>
                     <p class="empty-title">No templates yet</p>
                     <p class="empty-description">Save templates from the playground to manage them here</p>
+                    <a href={getPlaygroundUrl('#playground')} class="empty-cta">
+                      Open Playground
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                      </svg>
+                    </a>
                   </div>
                 ) : (
                   <div class="templates-list">
@@ -3200,7 +3214,7 @@ export function App() {
         <span class="footer-sep">|</span>
         <a href="https://docs.glyph.you">Documentation</a>
         <span class="footer-sep">|</span>
-        <a href="https://glyph.you">glyph.you</a>
+        <a href={getPlaygroundUrl()}>Playground</a>
       </footer>
     </div>
   )

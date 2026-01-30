@@ -232,6 +232,12 @@
         </svg>
         <span id="cmd-k-label"></span>
       </button>
+      <button class="nav__auth-btn" id="auth-settings-btn" title="API Key Settings" aria-label="API Key Settings">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+        <span class="nav__auth-indicator" id="auth-indicator" style="display: none;"></span>
+      </button>
       <a href="https://dashboard.glyph.you" class="nav__cta">
         Get API Key
         <svg class="btn__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2413,6 +2419,67 @@
         </svg>
         <div class="history-panel__empty-title">No changes yet</div>
         <div class="history-panel__empty-text">Apply some changes to see your edit history here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Settings Modal (API Key Management) -->
+  <div class="auth-modal-overlay" id="auth-modal">
+    <div class="auth-modal">
+      <div class="auth-modal__header">
+        <div class="auth-modal__icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+        </div>
+        <div class="auth-modal__title" id="auth-modal-title">API Key</div>
+        <button class="auth-modal__close" id="auth-modal-close" aria-label="Close">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Logged out state -->
+      <div class="auth-modal__state auth-modal__state--logged-out" id="auth-state-logged-out">
+        <p class="auth-modal__description">Enter your API key to save templates and access premium features.</p>
+        <div class="auth-modal__field">
+          <label class="auth-modal__label" for="auth-api-key-input">API Key</label>
+          <input type="password" class="auth-modal__input" id="auth-api-key-input" placeholder="gk_..." autocomplete="off">
+        </div>
+        <div class="auth-modal__error" id="auth-error" style="display: none;"></div>
+        <div class="auth-modal__actions">
+          <a href="https://dashboard.glyph.you" class="auth-modal__btn auth-modal__btn--secondary" target="_blank">
+            Get Free API Key
+          </a>
+          <button type="button" class="auth-modal__btn auth-modal__btn--primary" id="auth-login-btn">
+            Sign In
+          </button>
+        </div>
+      </div>
+
+      <!-- Logged in state -->
+      <div class="auth-modal__state auth-modal__state--logged-in" id="auth-state-logged-in" style="display: none;">
+        <div class="auth-modal__user-info">
+          <div class="auth-modal__check-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="auth-modal__status">Signed in</p>
+            <p class="auth-modal__key-preview" id="auth-key-preview">gk_...</p>
+          </div>
+        </div>
+        <p class="auth-modal__description">You can save templates and they'll sync to your dashboard.</p>
+        <div class="auth-modal__actions">
+          <a href="https://dashboard.glyph.you" class="auth-modal__btn auth-modal__btn--secondary" target="_blank">
+            Go to Dashboard
+          </a>
+          <button type="button" class="auth-modal__btn auth-modal__btn--danger" id="auth-logout-btn">
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   </div>

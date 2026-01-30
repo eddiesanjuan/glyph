@@ -30,7 +30,38 @@ import {
   getCustomTemplate,
   isCustomTemplateId,
 } from "../lib/customTemplates.js";
+import { supabase, getSupabase } from "../lib/supabase.js";
 import Mustache from "mustache";
+
+/**
+ * Track usage for a create request (fire and forget)
+ */
+function trackCreateUsage(
+  apiKeyId: string | undefined,
+  tier: string | undefined,
+  source: "data" | "html" | "url",
+  templateId?: string,
+  format?: string
+): void {
+  // Only track for non-demo tiers with valid API key ID and Supabase configured
+  if (!apiKeyId || tier === "demo" || !supabase) {
+    return;
+  }
+
+  getSupabase()
+    .from("usage")
+    .insert({
+      api_key_id: apiKeyId,
+      endpoint: "create",
+      template: templateId || `${source}-${format || "pdf"}`,
+      pdf_generated: true,
+    })
+    .then(({ error }) => {
+      if (error) {
+        console.error("[Create] Usage tracking error:", error);
+      }
+    });
+}
 
 const create = new Hono();
 
@@ -177,6 +208,10 @@ create.post("/", async (c) => {
 
     const { data, html, url, templateId, intent, style, format, options, ttl } = parsed.data;
 
+    // Extract auth context for usage tracking
+    const apiKeyId = c.get("apiKeyId") as string | undefined;
+    const tier = c.get("tier") as string | undefined;
+
     // Shared PDF/PNG options
     const pdfOptions: PDFOptions = {
       format: options?.pageSize === "A4" ? "a4" : "letter",
@@ -254,6 +289,9 @@ create.post("/", async (c) => {
 
       const baseUrl = getBaseUrl(c);
       const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
+
+      // Track usage (fire and forget)
+      trackCreateUsage(apiKeyId, tier, "url", undefined, format);
 
       const accept = c.req.header("Accept");
       if (accept?.includes("application/json") || !accept?.includes(contentType)) {
@@ -352,6 +390,9 @@ create.post("/", async (c) => {
 
       const baseUrl = getBaseUrl(c);
       const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
+
+      // Track usage (fire and forget)
+      trackCreateUsage(apiKeyId, tier, "html", undefined, format);
 
       const accept = c.req.header("Accept");
       if (accept?.includes("application/json") || !accept?.includes(contentType)) {
@@ -534,6 +575,9 @@ create.post("/", async (c) => {
         const baseUrl = getBaseUrl(c);
         const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
 
+        // Track usage (fire and forget)
+        trackCreateUsage(apiKeyId, tier, "data", templateId, format);
+
         const accept = c.req.header("Accept");
         if (accept?.includes("application/json") || !accept?.includes(contentType)) {
           return c.json({
@@ -680,6 +724,9 @@ create.post("/", async (c) => {
 
     const baseUrl = getBaseUrl(c);
     const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
+
+    // Track usage (fire and forget)
+    trackCreateUsage(apiKeyId, tier, "data", `generated-${analysis.documentType}`, format);
 
     // Determine response format based on Accept header
     const accept = c.req.header("Accept");
