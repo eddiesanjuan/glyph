@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Order - {{work_order_number}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --border-color: #d0d0d0;
+      --accent-color: #0d6efd;
+      --bg-highlight: #f8f9fa;
+      --priority-normal: #28a745;
+      --priority-urgent: #ffc107;
+      --priority-emergency: #dc3545;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .work-order-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in 0.75in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 3px solid var(--accent-color);
+    }
+
+    .header-left h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .wo-number {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .wo-date {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .priority-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.5rem;
+    }
+
+    .priority-normal { background: var(--priority-normal); color: white; }
+    .priority-urgent { background: var(--priority-urgent); color: #1a1a1a; }
+    .priority-emergency { background: var(--priority-emergency); color: white; }
+
+    /* Customer Info */
+    [data-glyph-region="customer"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-highlight);
+      border-radius: 4px;
+    }
+
+    .info-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .info-value-address {
+      white-space: pre-line;
+      font-size: 0.9rem;
+    }
+
+    /* Work Description */
+    [data-glyph-region="description"] {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-heading {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .description-content {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      padding: 0.75rem;
+      background: var(--bg-highlight);
+      border-left: 3px solid var(--accent-color);
+      white-space: pre-line;
+    }
+
+    /* Materials Table */
+    [data-glyph-region="materials"] {
+      margin-bottom: 1.5rem;
+    }
+
+    .materials-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .materials-table th {
+      background: var(--accent-color);
+      color: white;
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .materials-table th:last-child,
+    .materials-table td:last-child {
+      text-align: right;
+    }
+
+    .materials-table td {
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .materials-table tr:nth-child(even) td {
+      background: var(--bg-highlight);
+    }
+
+    /* Labor & Totals */
+    [data-glyph-region="totals"] {
+      margin-bottom: 1.5rem;
+    }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      max-width: 350px;
+      margin-left: auto;
+      font-size: 0.9rem;
+    }
+
+    .totals-label {
+      color: var(--text-secondary);
+    }
+
+    .totals-value {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    .totals-divider {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--border-color);
+      margin: 0.25rem 0;
+    }
+
+    .totals-total {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent-color);
+    }
+
+    /* Technician & Schedule */
+    [data-glyph-region="assignment"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: var(--bg-highlight);
+      border-radius: 4px;
+    }
+
+    /* Signatures */
+    [data-glyph-region="signatures"] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-top: 2rem;
+      padding-top: 1rem;
+    }
+
+    .signature-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .signature-line {
+      border-top: 1px solid var(--text-primary);
+      margin-bottom: 0.3rem;
+      margin-top: 2rem;
+    }
+
+    .signature-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .date-line {
+      border-top: 1px solid var(--border-color);
+      margin-top: 1rem;
+      margin-bottom: 0.3rem;
+      width: 60%;
+    }
+
+    /* Footer Notes */
+    .footer-notes {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--border-color);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    @media print {
+      .work-order-document { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="work-order-document">
+    <div data-glyph-region="header">
+      <div class="header-left">
+        <h1>Work Order</h1>
+      </div>
+      <div class="header-right">
+        <div class="wo-number">#{{work_order_number}}</div>
+        <div class="wo-date">{{scheduled_date}}</div>
+        <div class="priority-badge priority-{{priority}}">{{priority}}</div>
+      </div>
+    </div>
+
+    <div data-glyph-region="customer">
+      <div class="info-group">
+        <span class="info-label">Customer Name</span>
+        <span class="info-value">{{customer_name}}</span>
+      </div>
+      <div class="info-group">
+        <span class="info-label">Contact Phone</span>
+        <span class="info-value">{{contact_phone}}</span>
+      </div>
+      <div class="info-group" style="grid-column: 1 / -1;">
+        <span class="info-label">Service Address</span>
+        <span class="info-value info-value-address">{{customer_address}}</span>
+      </div>
+    </div>
+
+    <div data-glyph-region="description">
+      <div class="section-heading">Work Description</div>
+      <div class="description-content">{{work_description}}</div>
+    </div>
+
+    <div data-glyph-region="materials">
+      <div class="section-heading">Materials</div>
+      <table class="materials-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#materials}}
+          <tr>
+            <td>{{item}}</td>
+            <td>{{quantity}}</td>
+            <td>${{unit_price}}</td>
+            <td>${{line_total}}</td>
+          </tr>
+          {{/materials}}
+        </tbody>
+      </table>
+    </div>
+
+    <div data-glyph-region="totals">
+      <div class="totals-grid">
+        <span class="totals-label">Materials Subtotal</span>
+        <span class="totals-value">${{materials_subtotal}}</span>
+
+        <span class="totals-label">Labor ({{labor_hours}} hrs @ ${{labor_rate}}/hr)</span>
+        <span class="totals-value">${{labor_total}}</span>
+
+        <div class="totals-divider"></div>
+
+        <span class="totals-label totals-total">Total</span>
+        <span class="totals-value totals-total">${{grand_total}}</span>
+      </div>
+    </div>
+
+    <div data-glyph-region="assignment">
+      <div class="info-group">
+        <span class="info-label">Assigned Technician</span>
+        <span class="info-value">{{technician_name}}</span>
+      </div>
+      <div class="info-group">
+        <span class="info-label">Scheduled Date</span>
+        <span class="info-value">{{scheduled_date}}</span>
+      </div>
+    </div>
+
+    <div data-glyph-region="signatures">
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">Customer Signature</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">Technician Signature</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+    </div>
+
+    <div class="footer-notes">
+      Customer acknowledges receipt of services and materials listed above. Payment is due upon completion unless otherwise agreed in writing.
+    </div>
+  </div>
+</body>
+</html>

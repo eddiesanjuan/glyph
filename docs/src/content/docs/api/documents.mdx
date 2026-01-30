@@ -21,6 +21,10 @@ When you generate a PDF via `/v1/create`, the response includes a document ID (e
 Document URLs are shareable. You can send the URL directly to customers, partners, or embed it in emails without exposing your API key.
 </Aside>
 
+<Aside type="caution" title="In-Memory Storage">
+By default, generated documents are stored in-memory and will be lost when the server restarts. Documents also expire after their configured TTL (default 24 hours). For production deployments requiring persistent storage, configure an S3 or R2 storage adapter. See [Deployment Guide](/guides/deployment) for details.
+</Aside>
+
 ## GET /v1/documents/:id
 
 Retrieve a generated PDF by its document ID.
@@ -195,6 +199,18 @@ Documents are automatically deleted after their TTL expires. You can configure t
 ```
 
 See [POST /v1/create](/api/create) for full TTL documentation.
+
+### Storage Behavior
+
+<Aside type="caution" title="In-Memory Storage Warning">
+The default document store uses in-memory storage. This means:
+
+- **Documents are lost on server restart** - Any cached documents will be unavailable after a deployment or restart
+- **TTL expiration still applies** - Documents expire after their configured TTL regardless of storage backend
+- **Not suitable for critical documents** - If document availability is critical, configure persistent storage
+
+For production deployments, configure an S3 or Cloudflare R2 storage adapter to ensure documents persist across restarts. See [Deployment Guide](/guides/deployment) for configuration details.
+</Aside>
 
 ### Workflow Example
 

@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/nda.json",
+  "title": "NDAData",
+  "description": "Data schema for the Non-Disclosure Agreement (NDA) template - a legal contract protecting confidential information shared between parties",
+  "type": "object",
+  "required": [
+    "party_a_name",
+    "party_a_address",
+    "party_b_name",
+    "party_b_address",
+    "effective_date",
+    "confidential_info_description",
+    "term_years",
+    "governing_law",
+    "signature_date"
+  ],
+  "properties": {
+    "party_a_name": {
+      "type": "string",
+      "description": "The full legal name of the disclosing party (Party A) - typically the company sharing confidential information",
+      "example": "Innovate Technologies Inc."
+    },
+    "party_a_address": {
+      "type": "string",
+      "description": "The complete mailing address of Party A, including street, city, state, and ZIP code. Use newline characters (\\n) for multi-line formatting",
+      "example": "500 Innovation Boulevard\nSan Francisco, CA 94107"
+    },
+    "party_b_name": {
+      "type": "string",
+      "description": "The full legal name of the receiving party (Party B) - the entity receiving confidential information",
+      "example": "Strategic Partners LLC"
+    },
+    "party_b_address": {
+      "type": "string",
+      "description": "The complete mailing address of Party B, including street, city, state, and ZIP code. Use newline characters (\\n) for multi-line formatting",
+      "example": "200 Business Center Drive\nAustin, TX 78701"
+    },
+    "effective_date": {
+      "type": "string",
+      "description": "The date when the NDA becomes legally binding and effective",
+      "example": "January 15, 2024"
+    },
+    "confidential_info_description": {
+      "type": "string",
+      "description": "A detailed description of the types of confidential information covered by this agreement. Be specific about trade secrets, technical data, business information, etc.",
+      "example": "Technical specifications, software source code, algorithms, product roadmaps, business strategies, customer lists, pricing information, financial data, and any other proprietary information related to the parties' technology and business operations."
+    },
+    "term_years": {
+      "type": "number",
+      "description": "The duration of the confidentiality obligations in years. Common values are 2, 3, or 5 years",
+      "example": 3
+    },
+    "governing_law": {
+      "type": "string",
+      "description": "The state or jurisdiction whose laws will govern the interpretation and enforcement of this agreement",
+      "example": "State of California"
+    },
+    "signature_date": {
+      "type": "string",
+      "description": "The date when the NDA is signed by both parties",
+      "example": "January 15, 2024"
+    }
+  },
+  "examples": [
+    {
+      "party_a_name": "Innovate Technologies Inc.",
+      "party_a_address": "500 Innovation Boulevard\nSan Francisco, CA 94107",
+      "party_b_name": "Strategic Partners LLC",
+      "party_b_address": "200 Business Center Drive\nAustin, TX 78701",
+      "effective_date": "January 15, 2024",
+      "confidential_info_description": "Technical specifications, software source code, algorithms, product roadmaps, business strategies, customer lists, pricing information, financial data, marketing plans, and any other proprietary information related to the parties' technology and business operations.",
+      "term_years": 3,
+      "governing_law": "State of California",
+      "signature_date": "January 15, 2024"
+    }
+  ]
+}

@@ -1,109 +1,74 @@
 # Infrastructure Blitz State
 
 ## Current Cycle
-- Cycle: 6 (npm Publishing Unblocked)
+- Cycle: 8
 - Status: SUCCESS
-- Last Run: 2026-01-29 06:25 CST
-- Commit: f097933
+- Last Run: 2026-01-29 19:45 CST
+- Commit: 740d931
 
 ## Pillar Scores
 
 | Pillar | Score | Previous | Change | Weight | Weighted |
 |--------|-------|----------|--------|--------|----------|
 | One-Call API | 100 | 100 | 0 | 30% | 30.0 |
-| SDK Distribution | 70 | 35 | +35 | 20% | 14.0 |
-| Agent Frameworks | 85 | 75 | +10 | 20% | 17.0 |
-| Template Network | 90 | 90 | 0 | 15% | 13.5 |
+| SDK Distribution | 75 | 75 | 0 | 20% | 15.0 |
+| Agent Frameworks | 85 | 85 | 0 | 20% | 17.0 |
+| Template Network | 92 | 90 | +2 | 15% | 13.8 |
 | Hosted Output | 100 | 100 | 0 | 10% | 10.0 |
-| SEO/Discoverability | 65 | 60 | +5 | 5% | 3.25 |
-| **COMPOSITE** | **87.75** | **78.5** | **+9.25** | | |
+| SEO/Discoverability | 75 | 70 | +5 | 5% | 3.75 |
+| **COMPOSITE** | **89.55** | **89.0** | **+0.55** | | |
 
-### npm Publishing COMPLETE ✅ (2026-01-29)
-Eddie manually completed npm login and packages were published:
+### What Changed This Cycle
+
+**JSON-LD Structured Data (+5 points SEO)**
+- Added SoftwareApplication schema to all docs pages
+- Added Organization schema to all docs pages
+- Added FAQPage schema to troubleshooting guide
+- Enables rich snippets in Google search results
+
+**Template Documentation Consistency (+2 points Template Network)**
+- Updated template count from "11" to "16" in docs
+- Added purchase-order to templates API reference
+- All 16 templates now documented consistently
+
+**PyPI Publishing Guide (unblocks future +15 points)**
+- Created comprehensive PUBLISHING.md for Python SDK
+- Package verified ready for publishing
+- Awaiting PyPI credentials from Eddie
+
+## npm Publishing Status ✅
+
+Published packages (2026-01-29):
 - `@glyphpdf/sdk@0.7.0` - https://www.npmjs.com/package/@glyphpdf/sdk
 - `@glyphpdf/mcp-server@0.3.0` - https://www.npmjs.com/package/@glyphpdf/mcp-server
 
-Note: Organization is `@glyphpdf` (no hyphen), not `@glyph-pdf`.
+Note: Organization is `@glyphpdf` (no hyphen).
 
-### Score Changes (Cycle 5 Final)
+## What's Next (Prioritized)
 
-**One-Call API: 92 -> 100 (+8)**
-- Fresh auditor confirmed ALL criteria met
-- Raw HTML, URL-to-PDF, configurable TTL all working
-- Full documentation with examples
+### Priority 1: PyPI Publishing (+15 points SDK Distribution)
+The Python SDK is READY for publishing. Awaiting:
+1. PyPI account from Eddie
+2. TestPyPI verification
+3. Production upload: `twine upload dist/*`
+See: `packages/python/PUBLISHING.md`
 
-**Hosted Output: 95 -> 100 (+5)**
-- Fresh auditor confirmed ALL criteria met
-- Document IDs, metadata endpoint, TTL, expiry handling all working
+### Priority 2: MCP Directory Listings (+10 points Agent Frameworks)
+MCP server needs to be listed on:
+1. https://smithery.ai - Submit `@glyphpdf/mcp-server`
+2. https://mcp.so - Submit listing
+3. awesome-mcp-servers GitHub repo
 
-**Template Network: Expected improvement after deployment**
-- Added `POST /v1/templates` API documentation (+5)
-- Added purchase-order template (16th template) (+5)
-- Now covers: invoice, contract, proposal, certificate, receipt, report, letter, shipping-label, resume, menu, event-ticket, packing-slip, quote (x3), purchase-order
-
-**SEO/Discoverability: Expected improvement after deployment**
-- Added SEO guide "Generate PDFs with AI" targeting search queries (+5)
-- Keywords: "AI PDF generation", "PDF API", "generate PDF from JSON"
-
-**SDK Distribution: 35 -> 70 (+35) UNBLOCKED ✅**
-- npm publishing completed manually by Eddie on 2026-01-29
-- Published `@glyphpdf/sdk@0.7.0` and `@glyphpdf/mcp-server@0.3.0`
-- Still needs PyPI publishing for full score
-
-## What Was Built This Cycle
-
-### Improvement 1: POST /v1/templates API Documentation
-- **Files:** `docs/src/content/docs/api/templates.mdx`
-- **Content:** 807 lines documenting all template endpoints
-  - GET /v1/templates (list with filters)
-  - POST /v1/templates (create custom)
-  - GET /v1/templates/:id (details)
-  - GET /v1/templates/:id/schema
-  - GET /v1/templates/:id/preview
-  - POST /v1/templates/:id/validate
-
-### Improvement 2: Purchase-Order Template
-- **Files:** `templates/purchase-order/`, `api/templates/purchase-order/`
-- **Schema:** Full JSON Schema with vendor, buyer, items, shipping, totals
-- **Coverage:** Fills the missing "Purchase Order" use case
-- **Total templates:** Now 16
-
-### Improvement 3: SEO Guide "Generate PDFs with AI"
-- **Files:** `docs/src/content/docs/guides/generate-pdfs-with-ai.mdx`
-- **Content:** ~1750 words targeting search queries
-- **Keywords:** AI PDF generation, PDF API, generate PDF from JSON
-- **Sections:** Why AI PDF, Getting Started, Use Cases, Customization
-
-## What Was Unblocked (Cycle 6)
-
-**npm Publishing - RESOLVED ✅**
-- Eddie logged in manually with `eddiesj` account
-- Set up automation token to bypass 2FA for publishing
-- Created `@glyphpdf` organization on npm
-- Published both packages successfully
-
-## What's Next (For Future Cycles)
-
-### Priority 1: PyPI Publishing (Unlocks +15 points)
-1. Create PyPI account
-2. Publish `glyph-pdf` Python package (SDK Distribution +15)
-
-### Priority 2: PyPI Publishing (Unlocks +15 points)
-1. Create PyPI account
-2. Publish `glyph-pdf` package (SDK Distribution +15)
-
-### Priority 3: MCP Directory Listings (Unlocks +10 points)
-1. Submit to smithery.ai
-2. Submit to mcp.so
-3. Add to awesome-mcp-servers
+### Priority 3: Create @glyphpdf/integrations npm package (+5 points)
+Framework integrations exist as copy-paste files. Could be published as installable package.
 
 ## Dependencies Map
 - One-Call API --> [COMPLETE at 100] ✅
 - Hosted Output --> [COMPLETE at 100] ✅
-- Template Network --> [90] - POST /v1/templates docs added
-- Agent Frameworks --> [85] - MCP server published to npm ✅
-- SDK Distribution --> [70] - npm published, needs PyPI
-- SEO --> [65] - npm packages discoverable now
+- Template Network --> [92] - 16 templates, full API, docs consistent
+- Agent Frameworks --> [85] - MCP on npm, needs directory listings
+- SDK Distribution --> [75] - npm published, needs PyPI
+- SEO --> [75] - JSON-LD added, npm discoverable
 
 ## Cycle History
 
@@ -131,41 +96,51 @@ Note: Organization is `@glyphpdf` (no hyphen), not `@glyph-pdf`.
 - Key Learning: Ceiling hit without npm/PyPI publishing access.
 - Commit: 73aa402
 
-### Cycle 5 (Previous) - 2026-01-28
-- Composite: 73.15 -> 75.4 (+2.25)
-- Improvements: POST /v1/templates endpoint
-- Key Learning: npm requires OTP or manual captcha completion.
-- Commit: 1c5fff5
-
-### Cycle 5 (Final) - 2026-01-28
+### Cycle 5 - 2026-01-28
 - Composite: 75.4 -> 78.5 (+3.1)
 - Improvements: Templates API docs, purchase-order template, SEO guide
-- Key Learning: npm login requires human intervention (captcha or OTP to different email). SDK Distribution capped at 35 until resolved.
+- Key Learning: npm login requires human intervention (captcha or OTP).
 - Commit: caeb563
 
 ### Cycle 6 - 2026-01-29
 - Composite: 78.5 -> 87.75 (+9.25)
-- Improvements: npm publishing unblocked, both packages live on npm
+- Improvements: npm publishing unblocked by Eddie, both packages live on npm
 - Packages: `@glyphpdf/sdk@0.7.0`, `@glyphpdf/mcp-server@0.3.0`
 - Key Learning: Human intervention was required for npm (2FA/captcha). Once unblocked, publishing was straightforward.
 - Commit: f097933
 
-## Infrastructure Blitz Summary (6 Cycles)
+### Cycle 7 - 2026-01-29
+- Composite: 87.75 -> 89.0 (+1.25)
+- Improvements: Fixed all docs to use correct @glyphpdf package names
+- Key Learning: Package name consistency matters - docs showed wrong names that would cause install failures.
+- Commit: c569a7b
+
+### Cycle 8 - 2026-01-29
+- Composite: 89.0 -> 89.55 (+0.55)
+- Improvements: JSON-LD structured data (SEO), template count fix (docs consistency), PyPI publishing guide
+- Key Learning: SEO improvements are low effort but require deployment to measure impact. PyPI still blocked on credentials.
+- Commit: 740d931
+
+## Infrastructure Blitz Summary (8 Cycles)
 
 **Starting Composite:** 17.05
-**Final Composite:** 87.75
-**Total Improvement:** +70.7 points
+**Current Composite:** 89.55
+**Total Improvement:** +72.5 points
 
 **Pillars at 100:**
 - One-Call API ✅
 - Hosted Output ✅
 
 **Pillars Near Complete:**
-- Template Network: 90/100 (16 templates, full API)
-- Agent Frameworks: 85/100 (MCP server on npm) ✅
-- SDK Distribution: 70/100 (npm published, needs PyPI)
-- SEO/Discoverability: 65/100 (npm packages discoverable)
+- Template Network: 92/100 (16 templates, full API, docs consistent)
+- Agent Frameworks: 85/100 (MCP server on npm, needs directory listings)
+- SDK Distribution: 75/100 (npm published, needs PyPI)
+- SEO/Discoverability: 75/100 (JSON-LD added, npm packages discoverable)
 
-**Remaining Gap:** 12.25 points
-- PyPI publishing would add ~10-15 points
-- MCP directory listings (smithery.ai, mcp.so) would add ~5 points
+**Remaining Gap:** 10.45 points
+- PyPI publishing would add ~10-15 points to SDK Distribution
+- MCP directory listings would add ~5-10 points to Agent Frameworks
+
+**Blockers:**
+1. PyPI credentials needed from Eddie
+2. MCP directory submission is manual process

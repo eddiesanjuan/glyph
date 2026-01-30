@@ -9,7 +9,7 @@ export interface TemplateMetadata {
   id: string;
   name: string;
   description: string;
-  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'purchase-order';
+  category: 'quote' | 'invoice' | 'proposal' | 'contract' | 'report' | 'purchase-order' | 'legal' | 'service';
   regions: string[];
   schemaUrl: string;
   previewUrl?: string;
@@ -57,6 +57,30 @@ export const templateMetadata: Record<string, TemplateMetadata> = {
     category: 'purchase-order',
     regions: ['header', 'parties', 'shipping', 'line-items', 'totals', 'footer'],
     schemaUrl: '/templates/purchase-order/schema.json',
+  },
+  'statement-of-work': {
+    id: 'statement-of-work',
+    name: 'Statement of Work',
+    description: 'Formal SOW document defining project scope, deliverables, timeline, and payment terms between client and contractor.',
+    category: 'contract',
+    regions: ['header', 'parties', 'scope', 'timeline', 'deliverables', 'payment', 'signatures'],
+    schemaUrl: '/templates/statement-of-work/schema.json',
+  },
+  'nda': {
+    id: 'nda',
+    name: 'Non-Disclosure Agreement',
+    description: 'Mutual confidentiality agreement protecting sensitive information shared between parties.',
+    category: 'legal',
+    regions: ['header', 'parties', 'key-terms', 'terms', 'jurisdiction', 'signatures'],
+    schemaUrl: '/templates/nda/schema.json',
+  },
+  'work-order': {
+    id: 'work-order',
+    name: 'Work Order',
+    description: 'Field service work order with customer info, work description, materials, labor, and pricing.',
+    category: 'service',
+    regions: ['header', 'customer', 'description', 'materials', 'totals', 'assignment', 'signatures'],
+    schemaUrl: '/templates/work-order/schema.json',
   },
 };
 
@@ -119,6 +143,48 @@ export const templateLoaders = {
       css: cssModule.default,
       schema: schemaModule.default,
       metadata: templateMetadata['purchase-order'],
+    };
+  },
+  'statement-of-work': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./statement-of-work/template.html?raw'),
+      import('./statement-of-work/styles.css?raw'),
+      import('./statement-of-work/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['statement-of-work'],
+    };
+  },
+  'nda': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./nda/template.html?raw'),
+      import('./nda/styles.css?raw'),
+      import('./nda/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['nda'],
+    };
+  },
+  'work-order': async (): Promise<Template> => {
+    const [htmlModule, cssModule, schemaModule] = await Promise.all([
+      import('./work-order/template.html?raw'),
+      import('./work-order/styles.css?raw'),
+      import('./work-order/schema.json'),
+    ]);
+
+    return {
+      html: htmlModule.default,
+      css: cssModule.default,
+      schema: schemaModule.default,
+      metadata: templateMetadata['work-order'],
     };
   },
 };
@@ -195,6 +261,58 @@ export const regionDefinitions: Record<string, { label: string; description: str
   footer: {
     label: 'Footer',
     description: 'Terms, conditions, and signature areas',
+  },
+  parties: {
+    label: 'Parties',
+    description: 'Contracting parties, client and contractor information',
+  },
+  scope: {
+    label: 'Scope of Work',
+    description: 'Detailed description of work to be performed',
+  },
+  timeline: {
+    label: 'Timeline',
+    description: 'Project start date, end date, and milestones',
+  },
+  deliverables: {
+    label: 'Deliverables',
+    description: 'List of deliverables with due dates',
+  },
+  payment: {
+    label: 'Payment',
+    description: 'Payment terms, amounts, and schedule',
+  },
+  signatures: {
+    label: 'Signatures',
+    description: 'Signature blocks for all parties',
+  },
+  'key-terms': {
+    label: 'Key Terms',
+    description: 'Summary of key agreement terms and conditions',
+  },
+  terms: {
+    label: 'Terms & Conditions',
+    description: 'Legal terms, obligations, and clauses',
+  },
+  jurisdiction: {
+    label: 'Jurisdiction',
+    description: 'Governing law and jurisdiction clause',
+  },
+  customer: {
+    label: 'Customer Info',
+    description: 'Customer name, address, and contact details',
+  },
+  description: {
+    label: 'Work Description',
+    description: 'Detailed description of work to be performed',
+  },
+  materials: {
+    label: 'Materials',
+    description: 'Parts, materials, and supplies with pricing',
+  },
+  assignment: {
+    label: 'Assignment',
+    description: 'Technician assignment and scheduling information',
   },
 };
 

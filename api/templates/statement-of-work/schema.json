@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/statement-of-work.json",
+  "title": "StatementOfWorkData",
+  "description": "Data schema for the Statement of Work (SOW) template - a formal document defining project scope, deliverables, and terms between a client and contractor",
+  "type": "object",
+  "required": [
+    "project_name",
+    "client_name",
+    "contractor_name",
+    "scope_of_work",
+    "deliverables",
+    "timeline_start",
+    "timeline_end",
+    "payment_terms",
+    "total_amount",
+    "signature_date"
+  ],
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "description": "The name or title of the project being undertaken",
+      "example": "E-Commerce Platform Redesign"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "The full legal name of the client organization or individual commissioning the work",
+      "example": "Northwind Traders LLC"
+    },
+    "contractor_name": {
+      "type": "string",
+      "description": "The full legal name of the contractor or service provider performing the work",
+      "example": "Apex Development Inc."
+    },
+    "scope_of_work": {
+      "type": "string",
+      "description": "Detailed multi-line description of the work to be performed, including objectives, tasks, and boundaries",
+      "example": "Design and develop a modern e-commerce platform including:\n- User authentication and account management\n- Product catalog with search and filtering\n- Shopping cart and checkout flow\n- Payment gateway integration\n- Admin dashboard for inventory management"
+    },
+    "deliverables": {
+      "type": "array",
+      "description": "List of specific deliverables with their due dates",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "due_date"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name or description of the deliverable",
+            "example": "UI/UX Design Mockups"
+          },
+          "due_date": {
+            "type": "string",
+            "description": "Target completion date for this deliverable",
+            "example": "March 15, 2024"
+          }
+        }
+      },
+      "example": [
+        { "name": "Project Requirements Document", "due_date": "February 1, 2024" },
+        { "name": "UI/UX Design Mockups", "due_date": "March 1, 2024" },
+        { "name": "Development Phase 1 - Core Features", "due_date": "April 15, 2024" },
+        { "name": "Development Phase 2 - Integrations", "due_date": "May 30, 2024" },
+        { "name": "Final Delivery & Documentation", "due_date": "June 15, 2024" }
+      ]
+    },
+    "timeline_start": {
+      "type": "string",
+      "description": "The official start date of the project",
+      "example": "January 15, 2024"
+    },
+    "timeline_end": {
+      "type": "string",
+      "description": "The expected end date or deadline for project completion",
+      "example": "June 30, 2024"
+    },
+    "payment_terms": {
+      "type": "string",
+      "description": "Description of payment schedule and conditions",
+      "example": "50% upon signing, 25% at midpoint delivery, 25% upon final acceptance. Net 30 payment terms."
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Total contract value in dollars (displayed with $ prefix)",
+      "example": 75000
+    },
+    "signature_date": {
+      "type": "string",
+      "description": "The date the Statement of Work is signed by both parties",
+      "example": "January 10, 2024"
+    }
+  },
+  "examples": [
+    {
+      "project_name": "E-Commerce Platform Redesign",
+      "client_name": "Northwind Traders LLC",
+      "contractor_name": "Apex Development Inc.",
+      "scope_of_work": "Design and develop a modern e-commerce platform including:\n- User authentication and account management\n- Product catalog with search and filtering\n- Shopping cart and checkout flow\n- Payment gateway integration (Stripe)\n- Admin dashboard for inventory management\n- Mobile-responsive design\n- Performance optimization for SEO",
+      "deliverables": [
+        { "name": "Project Requirements Document", "due_date": "February 1, 2024" },
+        { "name": "UI/UX Design Mockups", "due_date": "March 1, 2024" },
+        { "name": "Development Phase 1 - Core Features", "due_date": "April 15, 2024" },
+        { "name": "Development Phase 2 - Integrations", "due_date": "May 30, 2024" },
+        { "name": "Final Delivery & Documentation", "due_date": "June 15, 2024" }
+      ],
+      "timeline_start": "January 15, 2024",
+      "timeline_end": "June 30, 2024",
+      "payment_terms": "50% upon signing ($37,500), 25% at midpoint delivery ($18,750), 25% upon final acceptance ($18,750). Net 30 payment terms apply to all invoices.",
+      "total_amount": 75000,
+      "signature_date": "January 10, 2024"
+    }
+  ]
+}

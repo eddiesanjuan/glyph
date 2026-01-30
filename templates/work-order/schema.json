@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://glyph.you/schemas/work-order.json",
+  "title": "WorkOrderData",
+  "description": "Data schema for the Work Order template - a service document detailing work to be performed, materials used, and labor costs for field service operations",
+  "type": "object",
+  "required": [
+    "work_order_number",
+    "customer_name",
+    "customer_address",
+    "contact_phone",
+    "work_description",
+    "materials",
+    "labor_hours",
+    "labor_rate",
+    "scheduled_date",
+    "technician_name",
+    "priority"
+  ],
+  "properties": {
+    "work_order_number": {
+      "type": "string",
+      "description": "Unique identifier for the work order, typically alphanumeric",
+      "example": "WO-2024-00157"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Full name of the customer or business receiving the service",
+      "example": "Johnson Residence"
+    },
+    "customer_address": {
+      "type": "string",
+      "description": "Complete service address where the work will be performed. Use newline characters (\\n) for multi-line formatting",
+      "example": "1842 Oak Street\nSpringfield, IL 62701"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Primary phone number to reach the customer",
+      "example": "(555) 123-4567"
+    },
+    "work_description": {
+      "type": "string",
+      "description": "Detailed description of the work to be performed, including problem diagnosis and planned solutions",
+      "example": "HVAC system inspection and repair. Customer reports AC unit not cooling properly. Inspect refrigerant levels, check compressor, clean condenser coils, and replace air filter."
+    },
+    "materials": {
+      "type": "array",
+      "description": "List of materials/parts to be used for the job with quantities and pricing",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["item", "quantity", "unit_price"],
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Name or description of the material or part",
+            "example": "R-410A Refrigerant (lb)"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Number of units needed",
+            "example": 2
+          },
+          "unit_price": {
+            "type": "number",
+            "description": "Price per unit in dollars",
+            "example": 45.00
+          },
+          "line_total": {
+            "type": "number",
+            "description": "Calculated total for this line item (quantity x unit_price)",
+            "example": 90.00
+          }
+        }
+      },
+      "example": [
+        { "item": "R-410A Refrigerant (lb)", "quantity": 2, "unit_price": 45.00, "line_total": 90.00 },
+        { "item": "Air Filter 20x25x1", "quantity": 1, "unit_price": 18.00, "line_total": 18.00 },
+        { "item": "Capacitor 45/5 MFD", "quantity": 1, "unit_price": 35.00, "line_total": 35.00 }
+      ]
+    },
+    "labor_hours": {
+      "type": "number",
+      "description": "Estimated or actual hours of labor for the job",
+      "example": 2.5
+    },
+    "labor_rate": {
+      "type": "number",
+      "description": "Hourly labor rate in dollars",
+      "example": 85.00
+    },
+    "labor_total": {
+      "type": "number",
+      "description": "Calculated total labor cost (labor_hours x labor_rate)",
+      "example": 212.50
+    },
+    "materials_subtotal": {
+      "type": "number",
+      "description": "Sum of all materials line totals",
+      "example": 143.00
+    },
+    "grand_total": {
+      "type": "number",
+      "description": "Total cost including materials and labor",
+      "example": 355.50
+    },
+    "scheduled_date": {
+      "type": "string",
+      "description": "Date when the work is scheduled to be performed",
+      "example": "March 15, 2024"
+    },
+    "technician_name": {
+      "type": "string",
+      "description": "Name of the technician assigned to perform the work",
+      "example": "Mike Rodriguez"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["normal", "urgent", "emergency"],
+      "description": "Priority level of the work order: normal (standard scheduling), urgent (same-day if possible), or emergency (immediate response required)",
+      "example": "normal"
+    }
+  },
+  "examples": [
+    {
+      "work_order_number": "WO-2024-00157",
+      "customer_name": "Johnson Residence",
+      "customer_address": "1842 Oak Street\nSpringfield, IL 62701",
+      "contact_phone": "(555) 123-4567",
+      "work_description": "HVAC system inspection and repair. Customer reports AC unit not cooling properly. Inspect refrigerant levels, check compressor, clean condenser coils, and replace air filter.",
+      "materials": [
+        { "item": "R-410A Refrigerant (lb)", "quantity": 2, "unit_price": 45.00, "line_total": 90.00 },
+        { "item": "Air Filter 20x25x1", "quantity": 1, "unit_price": 18.00, "line_total": 18.00 },
+        { "item": "Capacitor 45/5 MFD", "quantity": 1, "unit_price": 35.00, "line_total": 35.00 }
+      ],
+      "labor_hours": 2.5,
+      "labor_rate": 85.00,
+      "labor_total": 212.50,
+      "materials_subtotal": 143.00,
+      "grand_total": 355.50,
+      "scheduled_date": "March 15, 2024",
+      "technician_name": "Mike Rodriguez",
+      "priority": "normal"
+    }
+  ]
+}

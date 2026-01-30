@@ -25,6 +25,10 @@ All three paths return a PDF (or PNG) and a `sessionId` for subsequent AI-powere
 This is the recommended starting point for most integrations. Use `/v1/preview` + `/v1/modify` + `/v1/generate` only when you need interactive editing.
 </Aside>
 
+<Aside type="caution" title="In-Memory Storage">
+By default, generated documents are stored in-memory and will be lost when the server restarts. Documents also expire after their configured TTL (default 24 hours). For production deployments requiring persistent storage, configure an S3 or R2 storage adapter. See [Deployment Guide](/guides/deployment) for details.
+</Aside>
+
 ## Input Methods
 
 ### Data + Template

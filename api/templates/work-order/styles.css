@@ -1,0 +1,12 @@
+/* work-order template styles */
+/* Embedded in template.html; this file is for reference and overrides */
+
+.work-order-document {
+  max-width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  padding: 0.5in 0.75in;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #1a1a1a;
+  line-height: 1.5;
+}

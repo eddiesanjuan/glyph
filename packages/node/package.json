@@ -1,6 +1,6 @@
 {
-  "name": "@glyph-pdf/node",
-  "version": "0.1.0",
+  "name": "@glyphpdf/sdk",
+  "version": "0.7.0",
   "description": "AI PDF generation SDK - Create documents from templates with natural language customization",
   "type": "module",
   "main": "./dist/index.cjs",

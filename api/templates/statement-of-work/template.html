@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statement of Work - {{project_name}}</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --text-primary: #1a1a1a;
+      --text-secondary: #555555;
+      --border-color: #d0d0d0;
+      --accent-color: #1e3a5f;
+      --bg-highlight: #f7f9fc;
+    }
+
+    html {
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      color: var(--text-primary);
+      background: white;
+    }
+
+    .sow-document {
+      max-width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.75in 1in;
+      background: white;
+    }
+
+    /* Header */
+    [data-glyph-region="header"] {
+      text-align: center;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 3px solid var(--accent-color);
+    }
+
+    [data-glyph-region="header"] h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+
+    .project-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .sow-date {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Parties */
+    [data-glyph-region="parties"] {
+      display: flex;
+      justify-content: space-between;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding: 1.25rem;
+      background: var(--bg-highlight);
+      border-radius: 4px;
+    }
+
+    .party {
+      flex: 1;
+    }
+
+    .party-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .party-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 1.75rem;
+    }
+
+    .section-heading {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-content {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      white-space: pre-line;
+    }
+
+    /* Timeline */
+    [data-glyph-region="timeline"] {
+      margin-bottom: 1.75rem;
+    }
+
+    .timeline-box {
+      display: flex;
+      gap: 2rem;
+      padding: 1rem;
+      background: var(--bg-highlight);
+      border-left: 3px solid var(--accent-color);
+    }
+
+    .timeline-item {
+      flex: 1;
+    }
+
+    .timeline-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .timeline-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Deliverables */
+    [data-glyph-region="deliverables"] {
+      margin-bottom: 1.75rem;
+    }
+
+    .deliverables-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .deliverables-table th {
+      background: var(--accent-color);
+      color: white;
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .deliverables-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .deliverables-table tr:nth-child(even) td {
+      background: var(--bg-highlight);
+    }
+
+    /* Payment */
+    [data-glyph-region="payment"] {
+      margin-bottom: 2rem;
+      padding: 1.25rem;
+      background: var(--bg-highlight);
+      border-radius: 4px;
+    }
+
+    .payment-total {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .payment-terms {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Signatures */
+    [data-glyph-region="signatures"] {
+      display: flex;
+      justify-content: space-between;
+      gap: 3rem;
+      margin-top: 3rem;
+      padding-top: 1rem;
+    }
+
+    .signature-block {
+      flex: 1;
+    }
+
+    .signature-line {
+      border-top: 1px solid var(--text-primary);
+      margin-bottom: 0.4rem;
+      margin-top: 3rem;
+    }
+
+    .signature-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .date-line {
+      border-top: 1px solid var(--border-color);
+      margin-top: 1.5rem;
+      margin-bottom: 0.4rem;
+      width: 60%;
+    }
+
+    @media print {
+      .sow-document { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sow-document">
+    <div data-glyph-region="header">
+      <h1>Statement of Work</h1>
+      <div class="project-title">{{project_name}}</div>
+      <div class="sow-date">Date: {{signature_date}}</div>
+    </div>
+
+    <div data-glyph-region="parties">
+      <div class="party">
+        <div class="party-label">Client</div>
+        <div class="party-name">{{client_name}}</div>
+      </div>
+      <div class="party">
+        <div class="party-label">Contractor</div>
+        <div class="party-name">{{contractor_name}}</div>
+      </div>
+    </div>
+
+    <div data-glyph-region="scope" class="section">
+      <div class="section-heading">Scope of Work</div>
+      <div class="section-content">{{scope_of_work}}</div>
+    </div>
+
+    <div data-glyph-region="timeline">
+      <div class="section-heading">Project Timeline</div>
+      <div class="timeline-box">
+        <div class="timeline-item">
+          <div class="timeline-label">Start Date</div>
+          <div class="timeline-value">{{timeline_start}}</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">End Date</div>
+          <div class="timeline-value">{{timeline_end}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div data-glyph-region="deliverables">
+      <div class="section-heading">Deliverables</div>
+      <table class="deliverables-table">
+        <thead>
+          <tr>
+            <th>Deliverable</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#deliverables}}
+          <tr>
+            <td>{{name}}</td>
+            <td>{{due_date}}</td>
+          </tr>
+          {{/deliverables}}
+        </tbody>
+      </table>
+    </div>
+
+    <div data-glyph-region="payment">
+      <div class="section-heading">Payment Terms</div>
+      <div class="payment-total">${{total_amount}}</div>
+      <div class="payment-terms">{{payment_terms}}</div>
+    </div>
+
+    <div data-glyph-region="signatures">
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">{{client_name}}</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+      <div class="signature-block">
+        <div class="signature-line"></div>
+        <div class="signature-label">{{contractor_name}}</div>
+        <div class="date-line"></div>
+        <div class="signature-label">Date</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

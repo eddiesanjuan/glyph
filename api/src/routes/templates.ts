@@ -114,7 +114,7 @@ interface TemplateCatalogEntry {
   id: string;
   name: string;
   description: string;
-  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping" | "resume" | "menu" | "event" | "packing" | "purchase-order";
+  category: "quote" | "invoice" | "receipt" | "report" | "letter" | "contract" | "certificate" | "proposal" | "shipping" | "other" | "purchase-order" | "legal" | "service";
   sampleData: Record<string, unknown>;
 }
 
@@ -370,7 +370,7 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     id: "resume",
     name: "Professional Resume",
     description: "Clean, ATS-friendly resume/CV template with experience, education, and skills sections.",
-    category: "resume",
+    category: "other",
     sampleData: {
       name: "Sarah Chen",
       title: "Senior Software Engineer",
@@ -396,7 +396,7 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     id: "menu",
     name: "Restaurant Menu",
     description: "Elegant restaurant or cafe menu with sections, item descriptions, and dietary badges.",
-    category: "menu",
+    category: "other",
     sampleData: {
       restaurant_name: "The Golden Fork",
       tagline: "Farm to Table Since 2010",
@@ -426,7 +426,7 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     id: "event-ticket",
     name: "Event Ticket",
     description: "Professional event or concert ticket with seating info, barcode, and tear-off stub.",
-    category: "event",
+    category: "other",
     sampleData: {
       event_name: "Summer Music Festival 2024",
       event_subtitle: "Featuring Taylor Swift",
@@ -449,7 +449,7 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
     id: "packing-slip",
     name: "Packing Slip",
     description: "Warehouse-friendly packing slip with item details, SKUs, and checkboxes.",
-    category: "packing",
+    category: "shipping",
     sampleData: {
       order_number: "ORD-2024-00156",
       order_date: "January 25, 2024",
@@ -527,6 +527,73 @@ const TEMPLATE_CATALOG: TemplateCatalogEntry[] = [
       styles: { accentColor: "#2563eb" },
     },
   },
+  {
+    id: "statement-of-work",
+    name: "Statement of Work",
+    description: "Professional SOW document defining project scope, deliverables, timeline, and payment terms between client and contractor.",
+    category: "legal",
+    sampleData: {
+      project_name: "E-Commerce Platform Redesign",
+      client_name: "Northwind Traders LLC",
+      contractor_name: "Apex Development Inc.",
+      scope_of_work: "Design and develop a modern e-commerce platform including:\n- User authentication and account management\n- Product catalog with search and filtering\n- Shopping cart and checkout flow\n- Payment gateway integration (Stripe)\n- Admin dashboard for inventory management\n- Mobile-responsive design\n- Performance optimization for SEO",
+      deliverables: [
+        { name: "Project Requirements Document", due_date: "February 1, 2024" },
+        { name: "UI/UX Design Mockups", due_date: "March 1, 2024" },
+        { name: "Development Phase 1 - Core Features", due_date: "April 15, 2024" },
+        { name: "Development Phase 2 - Integrations", due_date: "May 30, 2024" },
+        { name: "Final Delivery & Documentation", due_date: "June 15, 2024" },
+      ],
+      timeline_start: "January 15, 2024",
+      timeline_end: "June 30, 2024",
+      payment_terms: "50% upon signing ($37,500), 25% at midpoint delivery ($18,750), 25% upon final acceptance ($18,750). Net 30 payment terms apply to all invoices.",
+      total_amount: 75000,
+      signature_date: "January 10, 2024",
+    },
+  },
+  {
+    id: "nda",
+    name: "Non-Disclosure Agreement",
+    description: "Standard mutual NDA protecting confidential information shared between two parties with customizable terms and jurisdiction.",
+    category: "legal",
+    sampleData: {
+      party_a_name: "Innovate Technologies Inc.",
+      party_a_address: "500 Innovation Boulevard\nSan Francisco, CA 94107",
+      party_b_name: "Strategic Partners LLC",
+      party_b_address: "200 Business Center Drive\nAustin, TX 78701",
+      effective_date: "January 15, 2024",
+      confidential_info_description: "Technical specifications, software source code, algorithms, product roadmaps, business strategies, customer lists, pricing information, financial data, marketing plans, and any other proprietary information related to the parties' technology and business operations.",
+      term_years: 3,
+      governing_law: "State of California",
+      signature_date: "January 15, 2024",
+    },
+  },
+  {
+    id: "work-order",
+    name: "Work Order",
+    description: "Field service work order with customer info, work description, materials list, labor costs, and priority levels for technician dispatch.",
+    category: "service",
+    sampleData: {
+      work_order_number: "WO-2024-00157",
+      customer_name: "Johnson Residence",
+      customer_address: "1842 Oak Street\nSpringfield, IL 62701",
+      contact_phone: "(555) 123-4567",
+      work_description: "HVAC system inspection and repair. Customer reports AC unit not cooling properly. Inspect refrigerant levels, check compressor, clean condenser coils, and replace air filter.",
+      materials: [
+        { item: "R-410A Refrigerant (lb)", quantity: 2, unit_price: 45.00, line_total: 90.00 },
+        { item: "Air Filter 20x25x1", quantity: 1, unit_price: 18.00, line_total: 18.00 },
+        { item: "Capacitor 45/5 MFD", quantity: 1, unit_price: 35.00, line_total: 35.00 },
+      ],
+      labor_hours: 2.5,
+      labor_rate: 85.00,
+      labor_total: 212.50,
+      materials_subtotal: 143.00,
+      grand_total: 355.50,
+      scheduled_date: "March 15, 2024",
+      technician_name: "Mike Rodriguez",
+      priority: "normal",
+    },
+  },
 ];
 
 // =============================================================================
@@ -550,6 +617,9 @@ const templateStyleTags: Record<string, { style: string; tags: string[] }> = {
   'event-ticket': { style: 'modern', tags: ['modern', 'ticket', 'event', 'entertainment'] },
   'packing-slip': { style: 'minimal', tags: ['minimal', 'warehouse', 'logistics', 'shipping'] },
   'purchase-order': { style: 'modern', tags: ['modern', 'professional', 'procurement', 'business'] },
+  'statement-of-work': { style: 'traditional', tags: ['traditional', 'formal', 'legal', 'contract', 'project'] },
+  'nda': { style: 'traditional', tags: ['traditional', 'formal', 'legal', 'confidential', 'contract'] },
+  'work-order': { style: 'modern', tags: ['modern', 'service', 'field-service', 'technician', 'maintenance'] },
 };
 
 // =============================================================================
