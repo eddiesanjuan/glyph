@@ -124,6 +124,49 @@ export default defineConfig({
 						type: 'image/svg+xml',
 					},
 				},
+				{
+					tag: 'script',
+					attrs: {
+						type: 'application/ld+json',
+					},
+					content: JSON.stringify({
+						"@context": "https://schema.org",
+						"@type": "SoftwareApplication",
+						"name": "Glyph",
+						"description": "AI-powered PDF generation API. Generate PDFs with natural language.",
+						"applicationCategory": "DeveloperApplication",
+						"operatingSystem": "Any",
+						"offers": {
+							"@type": "Offer",
+							"price": "0",
+							"priceCurrency": "USD"
+						},
+						"url": "https://glyph.you",
+						"author": {
+							"@type": "Organization",
+							"name": "Glyph",
+							"url": "https://glyph.you"
+						}
+					}),
+				},
+				{
+					tag: 'script',
+					attrs: {
+						type: 'application/ld+json',
+					},
+					content: JSON.stringify({
+						"@context": "https://schema.org",
+						"@type": "Organization",
+						"name": "Glyph",
+						"url": "https://glyph.you",
+						"logo": "https://glyph.you/logo.svg",
+						"description": "AI-powered PDF generation for developers",
+						"sameAs": [
+							"https://github.com/glyph-so/glyph",
+							"https://x.com/glyph_so"
+						]
+					}),
+				},
 			],
 			editLink: {
 				baseUrl: 'https://github.com/glyph-so/glyph/edit/main/docs/',

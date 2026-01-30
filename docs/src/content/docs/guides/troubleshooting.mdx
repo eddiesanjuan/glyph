@@ -280,3 +280,58 @@ Combine multiple modifications into a single prompt when they apply to the same 
 - **Documentation:** [docs.glyph.you](https://docs.glyph.you)
 - **Support:** support@glyph.you
 - **Community:** [GitHub Discussions](https://github.com/glyph-so/glyph/discussions)
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why am I getting a 401 Unauthorized error with Glyph?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your API key is missing, malformed, or revoked. Confirm the Authorization header uses the Bearer scheme, verify the key in your Dashboard, and check for trailing whitespace or newline characters."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is my Glyph session returning 404 Not Found?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sessions expire after 1 hour of inactivity. Create a new session using POST /v1/preview with your template and data to get a fresh sessionId."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I handle rate limiting (429 errors) with Glyph?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Honor the Retry-After header before retrying, implement exponential backoff, use the batch endpoint to combine multiple PDF generations, or upgrade your plan for higher limits."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why isn't my AI modification working in Glyph?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The AI works best with specific, actionable instructions. Instead of vague prompts like 'make it better', use specific ones like 'increase the font size of the header to 24px and change its color to navy blue'."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I fix CORS errors with the Glyph SDK?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Glyph API allows requests from any origin for SDK usage. Confirm you are hitting https://api.glyph.you and not a localhost URL in production, and check that your request includes the correct Content-Type: application/json header."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is PDF generation timing out?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Complex documents may exceed the default timeout. Simplify the HTML by reducing large inline images or deeply nested elements, split long documents using the batch endpoint, and ensure custom fonts load from fast CDNs."
+      }
+    }
+  ]
+})} />
