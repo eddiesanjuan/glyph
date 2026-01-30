@@ -1371,20 +1371,34 @@ export function App() {
 
   // ==================== PLAYGROUND FUNCTIONS ====================
 
-  // Sample data for templates
+  // Sample data for templates - matches quote-modern schema
   const sampleQuoteData = {
-    company: { name: 'Acme Corp', address: '123 Main St, San Francisco, CA 94102' },
-    quote_number: 'Q-2024-0042',
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    customer: { name: 'Jane Smith', email: 'jane@example.com', company: 'Smith Enterprises' },
-    items: [
-      { description: 'Enterprise License', quantity: 1, unit_price: 2400, total: 2400 },
-      { description: 'Premium Support (12 mo)', quantity: 12, unit_price: 100, total: 1200 }
+    meta: {
+      quoteNumber: 'Q-2024-0042',
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      notes: 'Thank you for your business!',
+      terms: 'Payment due within 30 days of invoice date.\nAll prices in USD.'
+    },
+    client: {
+      name: 'Jane Smith',
+      company: 'Smith Enterprises',
+      address: '123 Main Street\nSuite 400\nNew York, NY 10001',
+      email: 'jane@example.com'
+    },
+    lineItems: [
+      { description: 'Enterprise License', quantity: 1, unitPrice: '$2,400.00', total: '$2,400.00' },
+      { description: 'Premium Support (12 mo)', quantity: 12, unitPrice: '$100.00', total: '$1,200.00' }
     ],
-    subtotal: 3600,
-    tax: 0,
-    total: 3600
+    totals: {
+      subtotal: '$3,600.00',
+      tax: '$0.00',
+      total: '$3,600.00'
+    },
+    branding: {
+      companyName: 'Acme Corp',
+      companyAddress: '456 Tech Blvd\nSan Francisco, CA 94102'
+    }
   }
 
   // Initialize playground session
