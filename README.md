@@ -29,11 +29,11 @@ One call. Data in, PDF out.
 ### Node.js
 
 ```bash
-npm install @glyph-pdf/sdk
+npm install @glyphpdf/sdk
 ```
 
 ```javascript
-import { Glyph } from '@glyph-pdf/sdk';
+import { Glyph } from '@glyphpdf/sdk';
 
 const glyph = new Glyph({ apiKey: 'gk_your_api_key' });
 

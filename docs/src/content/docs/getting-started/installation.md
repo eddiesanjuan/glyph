@@ -36,13 +36,13 @@ customElements.whenDefined('glyph-editor').then(() => {
 For modern JavaScript projects with a build step:
 
 ```bash
-npm install @glyph/sdk
+npm install @glyphpdf/sdk
 ```
 
 ### ES Modules
 
 ```javascript
-import { GlyphEditor, GlyphAPI } from '@glyph/sdk';
+import { GlyphEditor, GlyphAPI } from '@glyphpdf/sdk';
 
 // The web component is auto-registered
 // You can also use the API client directly
@@ -52,7 +52,7 @@ const api = new GlyphAPI('gk_your_key_here');
 ### CommonJS
 
 ```javascript
-const { GlyphEditor, GlyphAPI } = require('@glyph/sdk');
+const { GlyphEditor, GlyphAPI } = require('@glyphpdf/sdk');
 ```
 
 ## Framework-Specific Setup
@@ -60,7 +60,7 @@ const { GlyphEditor, GlyphAPI } = require('@glyph/sdk');
 ### React
 
 ```jsx
-import '@glyph/sdk';
+import '@glyphpdf/sdk';
 
 function QuoteEditor({ quoteData }) {
   return (
@@ -107,7 +107,7 @@ declare namespace JSX {
 </template>
 
 <script setup>
-import '@glyph/sdk';
+import '@glyphpdf/sdk';
 
 const apiKey = 'gk_your_key_here';
 const quoteData = { /* ... */ };
@@ -142,7 +142,7 @@ export default defineConfig({
 
 ```svelte
 <script>
-  import '@glyph/sdk';
+  import '@glyphpdf/sdk';
 
   export let quoteData;
 
@@ -164,7 +164,7 @@ export default defineConfig({
 If you don't need the visual editor, you can use the API directly:
 
 ```javascript
-import { GlyphAPI } from '@glyph/sdk';
+import { GlyphAPI } from '@glyphpdf/sdk';
 
 const api = new GlyphAPI('gk_your_key_here');
 

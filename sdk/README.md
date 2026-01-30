@@ -1,17 +1,17 @@
-# @glyph-pdf/sdk
+# @glyphpdf/sdk
 
 Embeddable PDF editor SDK with AI-powered document generation. Add professional PDF editing to any web app with a single web component.
 
 ## Installation
 
 ```bash
-npm install @glyph-pdf/sdk
+npm install @glyphpdf/sdk
 ```
 
 Or via CDN:
 
 ```html
-<script src="https://unpkg.com/@glyph-pdf/sdk"></script>
+<script src="https://unpkg.com/@glyphpdf/sdk"></script>
 ```
 
 ## Quick Start
@@ -19,7 +19,7 @@ Or via CDN:
 ### ES Modules (Recommended)
 
 ```javascript
-import { GlyphEditor, GlyphAPI } from '@glyph-pdf/sdk';
+import { GlyphEditor, GlyphAPI } from '@glyphpdf/sdk';
 
 // The GlyphEditor web component is automatically registered
 // Just use it in your HTML:
@@ -34,7 +34,7 @@ document.body.appendChild(editor);
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://unpkg.com/@glyph-pdf/sdk"></script>
+  <script src="https://unpkg.com/@glyphpdf/sdk"></script>
 </head>
 <body>
   <glyph-editor api-key="your-api-key"></glyph-editor>
@@ -59,7 +59,7 @@ document.body.appendChild(editor);
 
 ```jsx
 import { useEffect, useRef } from 'react';
-import '@glyph-pdf/sdk';
+import '@glyphpdf/sdk';
 
 function PdfEditor({ apiKey, data }) {
   const editorRef = useRef(null);
@@ -98,7 +98,7 @@ function PdfEditor({ apiKey, data }) {
 </template>
 
 <script setup>
-import '@glyph-pdf/sdk';
+import '@glyphpdf/sdk';
 
 const props = defineProps(['apiKey', 'data']);
 
@@ -169,7 +169,7 @@ AI chat interface for document generation.
 For programmatic access without UI components:
 
 ```javascript
-import { GlyphAPI, createApiClient } from '@glyph-pdf/sdk';
+import { GlyphAPI, createApiClient } from '@glyphpdf/sdk';
 
 // Using the singleton
 GlyphAPI.configure({ apiKey: 'your-api-key' });
@@ -223,7 +223,7 @@ import {
   GeneratePdfOptions,
   QuoteData,
   QuoteLineItem
-} from '@glyph-pdf/sdk';
+} from '@glyphpdf/sdk';
 
 const quoteData: QuoteData = {
   companyName: 'Acme Corp',
@@ -243,7 +243,7 @@ const options: GeneratePdfOptions = {
 For building custom form interfaces:
 
 ```javascript
-import { FieldAutocomplete, autocompleteStyles } from '@glyph-pdf/sdk';
+import { FieldAutocomplete, autocompleteStyles } from '@glyphpdf/sdk';
 
 // Inject styles into shadow DOM or document
 const styleEl = document.createElement('style');

@@ -1,4 +1,4 @@
-# @glyph-pdf/mcp-server
+# @glyphpdf/mcp-server
 
 AI-native PDF generation for Claude Code, Cursor, Windsurf, and other AI coding tools.
 
@@ -22,7 +22,7 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }
@@ -40,7 +40,7 @@ Add to `.cursor/mcp.json`:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }
@@ -58,7 +58,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }

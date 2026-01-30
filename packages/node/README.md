@@ -1,15 +1,15 @@
-# @glyph-pdf/node
+# @glyphpdf/sdk
 
 Generate PDFs with AI. One function call to create professional PDFs from data or HTML.
 
 ```
-npm install @glyph-pdf/node
+npm install @glyphpdf/sdk
 ```
 
 ## Quick Start
 
 ```js
-const glyph = require("@glyph-pdf/node")("gk_your_api_key");
+const glyph = require("@glyphpdf/sdk")("gk_your_api_key");
 
 const result = await glyph.create({
   data: { company: "Acme Corp", invoice_number: "INV-001", total: "$1,250.00" },
@@ -22,11 +22,11 @@ Three lines. Data in, PDF out.
 ## Installation
 
 ```bash
-npm install @glyph-pdf/node
+npm install @glyphpdf/sdk
 # or
-yarn add @glyph-pdf/node
+yarn add @glyphpdf/sdk
 # or
-pnpm add @glyph-pdf/node
+pnpm add @glyphpdf/sdk
 ```
 
 Requires Node.js 18+ (uses native `fetch`). Also works in Bun and Deno.
@@ -37,10 +37,10 @@ Requires Node.js 18+ (uses native `fetch`). Also works in Bun and Deno.
 
 ```js
 // Simple — just pass your API key
-const glyph = require("@glyph-pdf/node")("gk_your_api_key");
+const glyph = require("@glyphpdf/sdk")("gk_your_api_key");
 
 // With options
-const glyph = require("@glyph-pdf/node")({
+const glyph = require("@glyphpdf/sdk")({
   apiKey: "gk_your_api_key",
   baseUrl: "https://api.glyph.you", // optional, this is the default
 });
@@ -113,7 +113,7 @@ const result = await glyph.create({
 Full type definitions are included. No additional `@types/` package needed.
 
 ```typescript
-import glyph, { Glyph, GlyphError, CreateOptions, CreateResult, TemplateInfo } from "@glyph-pdf/node";
+import glyph, { Glyph, GlyphError, CreateOptions, CreateResult, TemplateInfo } from "@glyphpdf/sdk";
 
 const client: Glyph = glyph({ apiKey: "gk_your_api_key" });
 

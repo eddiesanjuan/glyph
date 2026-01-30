@@ -26,7 +26,7 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }
@@ -44,7 +44,7 @@ Add to `.cursor/mcp.json` in your project root:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }
@@ -62,7 +62,7 @@ Add to your Windsurf MCP configuration:
   "mcpServers": {
     "glyph": {
       "command": "npx",
-      "args": ["@glyph-pdf/mcp-server"],
+      "args": ["@glyphpdf/mcp-server"],
       "env": {
         "GLYPH_API_KEY": "your-api-key"
       }

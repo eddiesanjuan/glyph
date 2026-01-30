@@ -119,7 +119,7 @@ Response:
 
 While you can use the API directly, we provide SDKs for easier integration:
 
-- **JavaScript/TypeScript**: `@glyph/sdk` - Includes the `<glyph-editor>` web component
+- **JavaScript/TypeScript**: `@glyphpdf/sdk` - Includes the `<glyph-editor>` web component
 - **Python**: Interested? Let us know at hello@glyph.you
 - **Ruby**: Interested? Let us know at hello@glyph.you
 
