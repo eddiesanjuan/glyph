@@ -559,6 +559,159 @@ Trigger PDF generation when a record enters a view:
 3. Use the script above, replacing `input.recordAsync()` with the trigger's record ID
 4. Optionally add a **"Send email"** action to deliver the PDF
 
+### Airtable Automations - Email with PDF Attachment
+
+Getting a generated PDF to appear as an email attachment in Airtable requires a specific two-automation pattern. This is because Airtable's email action can only attach files from attachment fields, not from script outputs.
+
+<Aside type="caution">
+A single automation with "Run script" followed by "Send email" will **not work** for PDF attachments. The email action cannot use script `output.set()` values as attachment sources.
+</Aside>
+
+**Why a single automation fails:**
+- Script `output.set()` creates text values, not attachment-compatible sources
+- Using "Find records" between script and email doesn't help
+- The email action's Attachment field only recognizes actual attachment field values
+
+**The Two-Automation Pattern:**
+
+<Steps>
+
+1. **Automation 1: Generate PDF and Save URL**
+
+   - **Trigger:** When record is created (or enters a specific view)
+   - **Action:** Run a script that generates the PDF and writes the URL to an attachment field
+
+2. **Automation 2: Send Email with Attachment**
+
+   - **Trigger:** When "Generated PDF" field is not empty
+   - **Action:** Send email with the attachment field included
+
+</Steps>
+
+This works because the second automation only fires after the attachment field is properly populated by the first automation.
+
+**Setting Up the Attachment Field:**
+
+In your Airtable table, create a field called "Generated PDF" with type **Attachment**. This field will store the PDF URL that Airtable converts into a downloadable attachment.
+
+**Automation 1: Complete Script**
+
+Use this script in your first automation's "Run a script" action:
+
+```javascript
+// Airtable Automation Script - Generate PDF with Glyph
+// This uses /v1/create which returns a hosted URL (required for attachments)
+
+const config = input.config();
+const recordId = config.recordId;
+
+const GLYPH_API_KEY = "gk_your_api_key";
+const API = "https://api.glyph.you";
+
+// Get the table and record
+const table = base.getTable("Invoices");
+const record = await table.selectRecordAsync(recordId);
+
+if (!record) {
+  throw new Error(`Record ${recordId} not found`);
+}
+
+// Build the data payload from your record fields
+const data = {
+  invoice: {
+    number: record.getCellValue("Invoice Number"),
+    date: record.getCellValue("Date"),
+  },
+  client: {
+    name: record.getCellValue("Client Name"),
+    email: record.getCellValue("Client Email"),
+    address: record.getCellValue("Address"),
+  },
+  items: record.getCellValue("Line Items") || [],
+  total: record.getCellValue("Total"),
+};
+
+// Call Glyph /v1/create - this returns a hosted PDF URL
+const response = await fetch(`${API}/v1/create`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${GLYPH_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ data }),
+});
+
+if (!response.ok) {
+  const error = await response.text();
+  throw new Error(`Glyph API error: ${error}`);
+}
+
+const result = await response.json();
+const pdfUrl = result.url;
+
+// IMPORTANT: Update the attachment field with the correct format
+// Airtable attachment fields require an array of objects with 'url' property
+await table.updateRecordAsync(recordId, {
+  "Generated PDF": [{ url: pdfUrl }]
+});
+
+console.log(`PDF generated and saved: ${pdfUrl}`);
+```
+
+<Aside type="tip">
+The `/v1/create` endpoint is recommended for automations because it returns a hosted URL. The `/v1/generate` endpoint returns binary data, which is harder to work with in Airtable scripts.
+</Aside>
+
+**Automation 1 Setup:**
+
+1. Create a new automation
+2. Set trigger to "When record is created" (or "When record matches conditions")
+3. Add input configuration: Add a field called `recordId` and map it to the triggering record's ID
+4. Add "Run a script" action with the script above
+5. Replace `"gk_your_api_key"` with your actual Glyph API key
+6. Adjust field names to match your table schema
+
+**Automation 2 Setup:**
+
+1. Create a second automation
+2. Set trigger to "When record matches conditions"
+3. Set condition: **Generated PDF** → **is not empty**
+4. Add "Send email" action
+5. Configure recipient, subject, and body
+6. In the Attachments field, select your "Generated PDF" field
+
+**Common Gotchas:**
+
+<Aside type="caution" title="Attachment Field Format">
+The attachment field update **must** use an array with url objects:
+
+```javascript
+// CORRECT - array with url object
+await table.updateRecordAsync(recordId, {
+  "Generated PDF": [{ url: pdfUrl }]
+});
+
+// WRONG - just the URL string (will cause schema error)
+await table.updateRecordAsync(recordId, {
+  "Generated PDF": pdfUrl
+});
+
+// WRONG - object without array (will cause schema error)
+await table.updateRecordAsync(recordId, {
+  "Generated PDF": { url: pdfUrl }
+});
+```
+</Aside>
+
+**Troubleshooting:**
+
+| Issue | Solution |
+|-------|----------|
+| "Field 'Generated PDF' cannot accept the provided value" | Ensure you're passing `[{ url: pdfUrl }]` (array format) |
+| Email sends but has no attachment | Check that Automation 2 trigger fires *after* the field is populated |
+| Script timeout | Large PDFs may take longer; consider increasing timeout or using simpler templates |
+| "Record not found" | Verify `recordId` is correctly mapped in automation input config |
+
 ---
 
 ## Example: Invoice from Airtable (curl)
