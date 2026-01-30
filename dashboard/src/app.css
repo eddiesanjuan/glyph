@@ -3396,6 +3396,7 @@ select.api-input:focus {
 
 /* Paper document wrapper - 8.5x11 aspect ratio */
 .playground-preview-paper {
+  /* Explicit dimensions matching scaled iframe (850*0.4 x 1100*0.4) */
   width: 340px;
   height: 440px;
   background: white;
@@ -3406,6 +3407,8 @@ select.api-input:focus {
     0 8px 40px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   position: relative;
+  /* Ensure proper centering */
+  flex-shrink: 0;
 }
 
 .playground-preview-frame {
@@ -3415,6 +3418,10 @@ select.api-input:focus {
   transform-origin: top left;
   border: none;
   background: #fff;
+  /* Prevent layout overflow - absolute positioning within parent */
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .playground-loading {
@@ -3474,6 +3481,7 @@ select.api-input:focus {
   .playground-preview-paper,
   .playground-loading,
   .playground-empty {
+    /* 850*0.33 = 280.5, 1100*0.33 = 363 */
     width: 280px;
     height: 363px;
   }
@@ -3492,8 +3500,9 @@ select.api-input:focus {
   .playground-preview-paper,
   .playground-loading,
   .playground-empty {
-    width: 240px;
-    height: 311px;
+    /* 850*0.28 = 238, 1100*0.28 = 308 - slightly adjusted */
+    width: 238px;
+    height: 308px;
   }
 
   .playground-preview-frame {

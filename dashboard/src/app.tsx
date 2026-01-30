@@ -59,6 +59,15 @@ interface SavedTemplate {
   updatedAt: string
 }
 
+interface BuiltInTemplate {
+  id: string
+  name: string
+  description: string
+  category: string
+  style?: string
+  tags?: string[]
+}
+
 interface DataSource {
   id: string
   name: string
@@ -354,6 +363,7 @@ export function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [copiedTemplateId, setCopiedTemplateId] = useState<string | null>(null)
   const [templateSaving, setTemplateSaving] = useState(false)
+  const [builtInTemplates, setBuiltInTemplates] = useState<BuiltInTemplate[]>([])
 
   // Data Sources state
   const [sources, setSources] = useState<DataSource[]>([])
@@ -805,6 +815,18 @@ export function App() {
   }
 
   // Template functions
+  const fetchBuiltInTemplates = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/v1/templates`)
+      const data = await res.json()
+      if (data.templates) {
+        setBuiltInTemplates(data.templates)
+      }
+    } catch (err) {
+      console.error('Failed to fetch built-in templates:', err)
+    }
+  }, [])
+
   const fetchTemplates = useCallback(async () => {
     if (!apiKey) return
     setTemplatesLoading(true)
@@ -1424,16 +1446,29 @@ export function App() {
     setPlaygroundError(null)
 
     try {
+      // Check if this is a saved template (prefixed with "saved:")
+      const isSavedTemplate = template.startsWith('saved:')
+      const templateId = isSavedTemplate ? template.replace('saved:', '') : template
+
+      const requestBody: Record<string, unknown> = {
+        data: sampleQuoteData
+      }
+
+      if (isSavedTemplate) {
+        // Use savedTemplateId for user's saved templates
+        requestBody.savedTemplateId = templateId
+      } else {
+        // Use template for built-in templates
+        requestBody.template = templateId
+      }
+
       const response = await fetch(`${API_URL}/v1/preview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-          template,
-          data: sampleQuoteData
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -1683,7 +1718,12 @@ export function App() {
     initPlaygroundSession(template)
   }
 
-  // Fetch templates when dashboard data loads
+  // Fetch built-in templates on mount (no auth required)
+  useEffect(() => {
+    fetchBuiltInTemplates()
+  }, [fetchBuiltInTemplates])
+
+  // Fetch user templates when dashboard data loads
   useEffect(() => {
     if (data && apiKey) {
       fetchTemplates()
@@ -2724,11 +2764,23 @@ export function App() {
                     value={playgroundTemplate}
                     onChange={(e) => switchPlaygroundTemplate((e.target as HTMLSelectElement).value)}
                   >
-                    <option value="quote-modern">Quote - Modern</option>
-                    <option value="quote-professional">Quote - Professional</option>
-                    <option value="quote-bold">Quote - Bold</option>
-                    <option value="invoice-modern">Invoice - Modern</option>
-                    <option value="receipt-modern">Receipt - Modern</option>
+                    {builtInTemplates.length > 0 && (
+                      <optgroup label="Default Templates">
+                        {builtInTemplates.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {templates.length > 0 && (
+                      <optgroup label="Your Templates">
+                        {templates.map(t => (
+                          <option key={t.id} value={`saved:${t.id}`}>{t.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {builtInTemplates.length === 0 && templates.length === 0 && (
+                      <option value="quote-modern">Quote - Modern</option>
+                    )}
                   </select>
                 </div>
                 <div class="playground-actions-right">
@@ -2743,7 +2795,27 @@ export function App() {
                   </button>
                   <button
                     class="btn btn-primary"
-                    onClick={() => setShowSaveTemplateModal(true)}
+                    onClick={() => {
+                      // Pre-fill template name based on current template
+                      const templateNames: Record<string, string> = {
+                        'quote-modern': 'Quote - Modern',
+                        'quote-professional': 'Quote - Professional',
+                        'quote-bold': 'Quote - Bold',
+                        'invoice-modern': 'Invoice - Modern',
+                        'receipt-modern': 'Receipt - Modern',
+                      }
+                      const templateTypes: Record<string, string> = {
+                        'quote-modern': 'quote',
+                        'quote-professional': 'quote',
+                        'quote-bold': 'quote',
+                        'invoice-modern': 'invoice',
+                        'receipt-modern': 'receipt',
+                      }
+                      const baseName = templateNames[playgroundTemplate] || playgroundTemplate
+                      setSaveTemplateName(`${baseName} (Modified)`)
+                      setSaveTemplateType(templateTypes[playgroundTemplate] || '')
+                      setShowSaveTemplateModal(true)
+                    }}
                     disabled={!playgroundHtml}
                     title="Save as template"
                   >
