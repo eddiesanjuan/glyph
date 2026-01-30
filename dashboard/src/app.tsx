@@ -315,6 +315,13 @@ export function App() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
 
+  // Key recovery state
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+  const [recovering, setRecovering] = useState(false)
+  const [recoveredKey, setRecoveredKey] = useState<string | null>(null)
+  const [recoverySuccess, setRecoverySuccess] = useState(false)
+
   // Beta request state
   const [requestEmail, setRequestEmail] = useState('')
   const [requestName, setRequestName] = useState('')
@@ -563,6 +570,65 @@ export function App() {
     } finally {
       setActivating(false)
     }
+  }
+
+  // Handle key recovery by email
+  const handleRecoverKey = async (e: Event) => {
+    e.preventDefault()
+    if (!recoveryEmail.trim() || !recoveryEmail.includes('@')) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    setRecovering(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`${API_URL}/v1/auth/recover-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: recoveryEmail.trim().toLowerCase(),
+        }),
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        throw new Error(result.message || result.error || 'Failed to recover key')
+      }
+
+      setRecoveredKey(result.newApiKey)
+      setRecoverySuccess(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to recover key')
+    } finally {
+      setRecovering(false)
+    }
+  }
+
+  // Handle using recovered key
+  const handleUseRecoveredKey = () => {
+    if (recoveredKey) {
+      setApiKey(recoveredKey)
+      localStorage.setItem('glyph_api_key', recoveredKey)
+      setShowRecoveryModal(false)
+      setRecoverySuccess(false)
+      setRecoveryEmail('')
+      setRecoveredKey(null)
+      fetchDashboard(recoveredKey)
+    }
+  }
+
+  // Close recovery modal and reset state
+  const closeRecoveryModal = () => {
+    setShowRecoveryModal(false)
+    setRecoverySuccess(false)
+    setRecoveryEmail('')
+    setRecoveredKey(null)
+    setError(null)
   }
 
   // Admin functions
@@ -1436,6 +1502,14 @@ export function App() {
                 {!apiKey.trim() && !loading && (
                   <p class="input-hint">Enter your API key above to continue</p>
                 )}
+
+                <button
+                  type="button"
+                  class="btn-link forgot-key-link"
+                  onClick={() => { setShowRecoveryModal(true); setError(null); }}
+                >
+                  Forgot your API key?
+                </button>
               </form>
 
               {error && (
@@ -2306,6 +2380,104 @@ export function App() {
                 {regenerating ? 'Regenerating...' : 'Regenerate Key'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Key Recovery Modal */}
+      {showRecoveryModal && (
+        <div class="modal-overlay" onClick={closeRecoveryModal}>
+          <div class="modal modal-recovery" onClick={(e) => e.stopPropagation()}>
+            {!recoverySuccess ? (
+              <>
+                <h3>
+                  {Icons.mail}
+                  <span>Recover API Key</span>
+                </h3>
+                <p class="modal-description">
+                  Enter the email address associated with your API key.
+                  This will generate a new key and invalidate your old one.
+                </p>
+
+                <form onSubmit={handleRecoverKey} class="recovery-form">
+                  <div class="input-group">
+                    <input
+                      type="email"
+                      value={recoveryEmail}
+                      onInput={(e) => setRecoveryEmail((e.target as HTMLInputElement).value)}
+                      placeholder="you@example.com"
+                      class="api-input"
+                      autoComplete="email"
+                      autoFocus
+                      required
+                    />
+                  </div>
+
+                  {error && (
+                    <div class="error-banner">
+                      {Icons.warning}
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" onClick={closeRecoveryModal}>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      disabled={recovering || !recoveryEmail.trim()}
+                    >
+                      {recovering ? 'Recovering...' : 'Recover Key'}
+                    </button>
+                  </div>
+                </form>
+
+                <p class="recovery-warning">
+                  {Icons.shield}
+                  <span>For security, this will generate a new key. Your old key will stop working immediately.</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <div class="success-icon">
+                  {Icons.checkCircle}
+                </div>
+                <h3>Key Recovered!</h3>
+                <p class="modal-description">
+                  Your new API key has been generated. Copy it now - it won't be shown again.
+                </p>
+
+                <div class="new-key-display">
+                  <code class="mono">{recoveredKey}</code>
+                  <button
+                    type="button"
+                    class="btn btn-icon"
+                    onClick={() => {
+                      if (recoveredKey) {
+                        navigator.clipboard.writeText(recoveredKey)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      }
+                    }}
+                    aria-label="Copy key"
+                  >
+                    {copied ? Icons.check : Icons.copy}
+                  </button>
+                </div>
+
+                <div class="modal-actions">
+                  <button class="btn btn-primary" onClick={handleUseRecoveredKey}>
+                    Use This Key
+                  </button>
+                </div>
+
+                <p class="recovery-note">
+                  This key has been saved. Click "Use This Key" to sign in automatically.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

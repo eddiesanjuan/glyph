@@ -1,35 +1,47 @@
 # Glyph Rapid State
 
 ## Current Cycle
-- Started: 2026-01-30T12:00:00
-- Phase: 5 (Deployed - Awaiting Verification)
-- Issues: 3 total, 3 fixed, 0 pending
-- Commit: 56588ce
+- Started: 2026-01-30T12:30:00
+- Phase: 5 (Deployed - Railway auto-building)
+- Issues: 2 total, 2 fixed, 0 pending
+- Commit: 941fdd7
 
-## Parsed Issues from Nick's Feedback (Jan 29, 2026)
+## Issues Fixed (Nick's Follow-up Feedback)
 
 | # | Type | Issue | Priority | Status |
 |---|------|-------|----------|--------|
-| 1 | feature | Add `returnUrl: true` to `/v1/generate` for hosted URL | P0 | FIXED |
-| 2 | docs | Add Airtable Automation attachment pattern guide | P1 | FIXED |
-| 3 | docs | Clarify `/v1/create` vs `/v1/generate` usage | P1 | FIXED |
+| 1 | bug | Dashboard→Playground auth broken (cross-domain localStorage) | P0 | FIXED |
+| 2 | bug | Usage stats not recording for /v1/create and /v1/generate | P1 | FIXED |
 
-## Changes Deployed
+## Root Causes Found
 
-1. **API: `/v1/generate` now supports `returnUrl: true`**
-   - When set, returns `{ success: true, url: "https://..." }` instead of binary
-   - Perfect for Airtable scripts that can't parse binary responses
+### Issue 1: Auth Flow Broken
+- Dashboard stored key as `glyph_api_key` at dashboard.glyph.you
+- Playground looked for `glyph_user_api_key` at glyph.you
+- **localStorage is domain-scoped** - these can never share data!
 
-2. **Docs: Airtable Automation Email Attachment Guide**
-   - Documents the two-automation pattern Nick discovered
-   - Includes complete working script code
-   - Covers the attachment field format gotcha
+**Fix:** URL parameter auth + auth modal
+- Dashboard passes `?apiKey=gk_xxx` when linking to playground
+- Playground saves to correct localStorage key and removes from URL
+- Added settings icon (key) for manual API key entry
+- Visual indicator when logged in
 
-3. **Docs: API Endpoint Comparison**
-   - Clear table showing when to use `/v1/create` vs `/v1/generate`
-   - Recommends `/v1/create` for integrations (returns hosted URL by default)
+### Issue 2: Usage Stats Missing
+- `/v1/create` and `/v1/generate` had NO usage tracking code
+- Only `/v1/preview` and `/v1/modify` were tracked
+- Nick called create/generate multiple times → none recorded
 
-## Recent Cycles
+**Fix:** Added `trackCreateUsage()` and `trackGenerateUsage()` functions
+- Fire-and-forget pattern (doesn't block response)
+- Demo tier intentionally excluded
+- Records endpoint, template, format
+
+## Previous Cycle (Earlier Today)
 | Cycle | Issues | Fixed | Deployed | Verified |
 |-------|--------|-------|----------|----------|
-| 2026-01-30 | 3 | 3 | ✓ | pending |
+| 2026-01-30 AM | 3 | 3 | ✓ | ✓ |
+
+Changes shipped:
+- `returnUrl: true` param for /v1/generate
+- Airtable automation attachment docs
+- API endpoint comparison docs

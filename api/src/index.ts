@@ -30,6 +30,7 @@ import webhooks from "./routes/webhooks.js";
 import analyze from "./routes/analyze.js";
 import { templateEngine } from "./services/template.js";
 import beta from "./routes/beta.js";
+import auth from "./routes/auth.js";
 import sources from "./routes/sources.js";
 import mappings from "./routes/mappings.js";
 import generateSmart from "./routes/generate-smart.js";
@@ -142,6 +143,9 @@ app.route("/v1/webhooks", webhooksPublic);
 // These endpoints don't require API key authentication
 app.route("/v1/beta", beta);
 
+// Auth routes - public (key recovery by email)
+app.route("/v1/auth", auth);
+
 // Hosted document retrieval (public, uses unguessable IDs as security model)
 app.route("/v1/documents", documents);
 
@@ -224,6 +228,8 @@ app.get("/", (c) => {
       betaApprove: "POST /v1/beta/approve/:id (admin)",
       betaInvites: "GET /v1/beta/invites (admin)",
       betaStats: "GET /v1/beta/stats (admin)",
+      // Authentication (public)
+      authRecoverKey: "POST /v1/auth/recover-key",
       // Data sources
       sourcesList: "GET /v1/sources",
       sourcesCreate: "POST /v1/sources",
