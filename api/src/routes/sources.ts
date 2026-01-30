@@ -41,9 +41,11 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 const airtableConfigSchema = z.object({
   personal_access_token: z.string().min(1, "Personal access token is required"),
-  base_id: z.string().regex(/^app[a-zA-Z0-9]+$/, "Invalid Airtable base ID format"),
-  table_id: z.string().regex(/^tbl[a-zA-Z0-9]+$/, "Invalid Airtable table ID format"),
-  view_id: z.string().regex(/^viw[a-zA-Z0-9]+$/).optional(),
+  // Airtable IDs: prefix + alphanumeric characters (typically 14 chars, but allow flexibility)
+  // Using loose pattern to accept all valid Airtable formats without being overly restrictive
+  base_id: z.string().regex(/^app[a-zA-Z0-9]{5,25}$/, "Invalid Airtable base ID format. Expected format: appXXXXXXXXXXXXXX"),
+  table_id: z.string().regex(/^tbl[a-zA-Z0-9]{5,25}$/, "Invalid Airtable table ID format. Expected format: tblXXXXXXXXXXXXXX"),
+  view_id: z.string().regex(/^viw[a-zA-Z0-9]{5,25}$/, "Invalid Airtable view ID format. Expected format: viwXXXXXXXXXXXXXX").optional(),
   filter_formula: z.string().optional(),
 });
 
