@@ -136,7 +136,7 @@ const API_URL = import.meta.env.DEV
   : 'https://api.glyph.you'
 
 // Page type for routing
-type Page = 'login' | 'signup' | 'request-access' | 'activate' | 'dashboard' | 'playground' | 'admin'
+type Page = 'login' | 'signup' | 'request-access' | 'activate' | 'dashboard' | 'playground' | 'my-templates' | 'admin'
 
 // Icons as inline SVGs for zero dependencies
 const Icons = {
@@ -787,6 +787,21 @@ export function App() {
       hour: 'numeric',
       minute: '2-digit',
     })
+  }
+
+  const formatRelativeTime = (dateStr: string): string => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
   }
 
   // Template functions
@@ -1740,13 +1755,19 @@ export function App() {
                 >
                   Playground
                 </button>
+                <button
+                  class={`nav-link ${page === 'my-templates' ? 'nav-link--active' : ''}`}
+                  onClick={() => setPage('my-templates')}
+                >
+                  My Templates
+                </button>
               </>
             )}
             <a href="https://docs.glyph.you" target="_blank" class="docs-link">
               {Icons.docs}
               <span>Docs</span>
             </a>
-            {(page === 'dashboard' || page === 'playground') && data && (
+            {(page === 'dashboard' || page === 'playground' || page === 'my-templates') && data && (
               <button class="nav-link" onClick={handleSignOut}>Sign Out</button>
             )}
           </nav>
@@ -2466,12 +2487,12 @@ export function App() {
                     <div class="empty-icon">{Icons.file}</div>
                     <p class="empty-title">No templates yet</p>
                     <p class="empty-description">Save templates from the playground to manage them here</p>
-                    <a href={getPlaygroundUrl('#playground')} class="empty-cta">
+                    <button onClick={() => setPage('playground')} class="empty-cta">
                       Open Playground
                       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                       </svg>
-                    </a>
+                    </button>
                   </div>
                 ) : (
                   <div class="templates-list">
@@ -2832,12 +2853,14 @@ export function App() {
                         <span>Loading preview...</span>
                       </div>
                     ) : playgroundHtml ? (
-                      <iframe
-                        class="playground-preview-frame"
-                        srcDoc={playgroundHtml}
-                        title="Document Preview"
-                        sandbox="allow-same-origin"
-                      />
+                      <div class="playground-preview-paper">
+                        <iframe
+                          class="playground-preview-frame"
+                          srcDoc={playgroundHtml}
+                          title="Document Preview"
+                          sandbox="allow-same-origin"
+                        />
+                      </div>
                     ) : (
                       <div class="playground-empty">
                         <p>Select a template to get started</p>
@@ -2849,6 +2872,129 @@ export function App() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ==================== MY TEMPLATES PAGE ==================== */}
+          {page === 'my-templates' && data && (
+            <div class="my-templates-page animate-in">
+              <div class="my-templates-header">
+                <h1>My Templates</h1>
+                <p class="my-templates-subtitle">Templates linked to your data sources</p>
+              </div>
+
+              {templatesLoading ? (
+                <div class="my-templates-loading">
+                  <div class="my-templates-spinner" />
+                  <p>Loading your templates...</p>
+                </div>
+              ) : templates.length === 0 ? (
+                <div class="my-templates-empty-state">
+                  <div class="empty-icon-large">{Icons.file}</div>
+                  <h2>No templates yet</h2>
+                  <p>Connect a data source to get started with auto-matched templates</p>
+
+                  <div class="empty-actions">
+                    <button
+                      class="btn btn-primary"
+                      onClick={() => { setPage('playground'); if (!playgroundHtml) initPlaygroundSession(); }}
+                    >
+                      Go to Playground
+                    </button>
+                  </div>
+
+                  <div class="quick-start-tips">
+                    <h4>Quick Start</h4>
+                    <ol>
+                      <li>Connect your Airtable or REST API</li>
+                      <li>We'll auto-match the best template</li>
+                      <li>Customize it in the playground</li>
+                      <li>Generate PDFs with one API call</li>
+                    </ol>
+                  </div>
+                </div>
+              ) : (
+                <div class="my-templates-grid">
+                  {templates.map(template => {
+                    const templateMappings = getTemplateMappings(template.id)
+                    const defaultMapping = templateMappings.find(m => m.is_default)
+                    const linkedSource = defaultMapping
+                      ? sources.find(s => s.id === defaultMapping.source_id)
+                      : null
+
+                    return (
+                      <div key={template.id} class="my-template-card">
+                        <div class="my-template-card-header">
+                          <h3>{template.name}</h3>
+                          {template.type && <span class="my-template-type-badge">{template.type}</span>}
+                        </div>
+
+                        {template.description && (
+                          <p class="my-template-description">{template.description}</p>
+                        )}
+
+                        {linkedSource ? (
+                          <div class="my-linked-source-info">
+                            <span class="my-source-icon">
+                              {linkedSource.source_type === 'airtable' ? Icons.airtable :
+                               linkedSource.source_type === 'rest_api' ? Icons.api : Icons.database}
+                            </span>
+                            <span class="my-source-name">{linkedSource.name}</span>
+                            {linkedSource.last_sync_record_count !== null && (
+                              <span class="my-record-count">
+                                {linkedSource.last_sync_record_count} records
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div class="my-no-source-info">
+                            <span class="my-no-source-text">No data source linked</span>
+                            <button
+                              class="btn btn-sm btn-outline"
+                              onClick={() => openLinkSource(template)}
+                            >
+                              + Link Source
+                            </button>
+                          </div>
+                        )}
+
+                        <div class="my-template-card-meta">
+                          <span class="my-last-updated">
+                            Updated {formatRelativeTime(template.updatedAt)}
+                          </span>
+                          {template.style && (
+                            <span class="my-style-badge">{template.style}</span>
+                          )}
+                        </div>
+
+                        <div class="my-template-card-actions">
+                          <button
+                            class="btn btn-edit"
+                            onClick={() => {
+                              const params = new URLSearchParams()
+                              params.set('templateId', template.id)
+                              if (linkedSource) {
+                                params.set('sourceId', linkedSource.id)
+                              }
+                              window.open(`https://glyph.you?${params.toString()}`, '_blank')
+                            }}
+                          >
+                            Edit Template
+                          </button>
+                          {linkedSource && defaultMapping && (
+                            <button
+                              class="btn btn-generate"
+                              onClick={() => openGenerateModal(template, defaultMapping)}
+                            >
+                              Generate PDF
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -3974,7 +4120,7 @@ export function App() {
         <span class="footer-sep">|</span>
         <a href="https://docs.glyph.you">Documentation</a>
         <span class="footer-sep">|</span>
-        <a href={getPlaygroundUrl()}>Playground</a>
+        <button onClick={() => setPage('playground')} class="footer-link">Playground</button>
       </footer>
     </div>
   )
