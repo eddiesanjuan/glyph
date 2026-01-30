@@ -31,10 +31,11 @@ export async function authMiddleware(c: Context, next: Next) {
 
   // Skip auth for public template catalog endpoints (GET only)
   // Agents and developers need to discover templates without an API key
+  // IMPORTANT: Exclude /v1/templates/saved which requires auth for user-specific templates
   if ((c.req.method === "GET" || c.req.method === "HEAD") && (
     c.req.path === "/v1/templates" ||
     c.req.path === "/v1/templates/styles" ||
-    c.req.path.match(/^\/v1\/templates\/[^/]+$/) ||
+    (c.req.path.match(/^\/v1\/templates\/[^/]+$/) && !c.req.path.startsWith("/v1/templates/saved")) ||
     c.req.path.match(/^\/v1\/templates\/[^/]+\/preview$/) ||
     c.req.path.match(/^\/v1\/templates\/[^/]+\/schema$/)
   )) {
