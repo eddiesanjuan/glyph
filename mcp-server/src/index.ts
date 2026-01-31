@@ -42,7 +42,7 @@ import { RESOURCE_TEMPLATES, handleResource, listResources } from "./resources.j
 // Server metadata
 const SERVER_INFO = {
   name: "glyph-mcp",
-  version: "0.3.0",
+  version: "0.4.0",
   description: "AI-native PDF generation with Glyph",
 };
 
@@ -146,6 +146,7 @@ async function main() {
   console.error("Tools: glyph_preview, glyph_modify, glyph_generate, glyph_schema, glyph_templates, glyph_suggest, glyph_create, glyph_analyze");
   console.error("Saved Templates: glyph_templates_list, glyph_template_save, glyph_template_get, glyph_template_update, glyph_template_delete");
   console.error("Data Sources: glyph_create_source, glyph_list_sources, glyph_generate_from_source, glyph_suggest_mappings, glyph_link_template");
+  console.error("Data-First: glyph_clone_template, glyph_create_session_from_mapping, glyph_save_template_from_session");
   console.error("Resources: glyph://templates, glyph://session/{id}/preview");
 }
 

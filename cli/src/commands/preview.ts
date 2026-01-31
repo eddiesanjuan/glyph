@@ -19,6 +19,10 @@ interface PreviewOptions {
   apiKey?: string;
   apiUrl?: string;
   open?: boolean;
+  // Source-first options
+  source?: string;
+  mapping?: string;
+  record?: string;
 }
 
 interface PreviewState {
@@ -166,9 +170,34 @@ function generatePreviewPage(html: string): string {
 </html>`;
 }
 
+/**
+ * Fetch from API with authorization
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  apiKey: string,
+  baseUrl: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${baseUrl}${endpoint}`;
+  const headers = new Headers(options.headers);
+  headers.set('Authorization', `Bearer ${apiKey}`);
+  headers.set('Content-Type', 'application/json');
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({})) as Record<string, unknown>;
+    throw new Error((errorData.error as string) || `Request failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export async function preview(options: PreviewOptions = {}): Promise<void> {
   const port = options.port || 3847;
   const apiKey = options.apiKey || process.env.GLYPH_API_KEY;
+  const baseUrl = (options.apiUrl || 'https://api.glyph.you').replace(/\/$/, '');
 
   console.log();
   console.log(chalk.bold('  Glyph Preview Server'));
@@ -238,10 +267,63 @@ export async function preview(options: PreviewOptions = {}): Promise<void> {
   // Initial preview generation
   const previewSpinner = ora('Generating initial preview...').start();
   try {
-    const result = await api.preview(state.template, state.data);
-    state.html = result.html;
-    state.sessionId = result.sessionId;
-    previewSpinner.succeed('Preview generated');
+    // Source-first workflow: use mapping + record
+    if (options.mapping || options.source) {
+      let mappingId = options.mapping;
+
+      // If only source provided, find the mapping for it
+      if (!mappingId && options.source) {
+        interface MappingResponse {
+          success: boolean;
+          mappings: Array<{ id: string }>;
+          error?: string;
+        }
+        const mappingsRes = await apiRequest<MappingResponse>(
+          `/v1/mappings?source_id=${options.source}`,
+          apiKey,
+          baseUrl
+        );
+        mappingId = mappingsRes.mappings?.[0]?.id;
+        if (!mappingId) {
+          throw new Error('No mapping found for this source. Create a mapping first with glyph_link_template.');
+        }
+      }
+
+      // Create session from mapping
+      interface SessionResponse {
+        success: boolean;
+        sessionId: string;
+        preview: { html: string; record_id: string };
+        template: { id: string; name: string };
+        source: { id: string; name: string };
+        error?: string;
+      }
+      const sessionRes = await apiRequest<SessionResponse>(
+        '/v1/sessions/from-mapping',
+        apiKey,
+        baseUrl,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            mapping_id: mappingId,
+            record_id: options.record,
+          }),
+        }
+      );
+
+      state.html = sessionRes.preview.html;
+      state.sessionId = sessionRes.sessionId;
+      state.template = sessionRes.template.name;
+      previewSpinner.succeed(
+        `Preview generated from ${chalk.cyan(sessionRes.source.name)} (record: ${sessionRes.preview.record_id})`
+      );
+    } else {
+      // Traditional template + data workflow
+      const result = await api.preview(state.template, state.data);
+      state.html = result.html;
+      state.sessionId = result.sessionId;
+      previewSpinner.succeed('Preview generated');
+    }
   } catch (error) {
     previewSpinner.fail(error instanceof Error ? error.message : 'Failed to generate preview');
     // Use placeholder HTML

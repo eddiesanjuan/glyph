@@ -287,6 +287,61 @@ export interface GenerateFromSourceResult {
   }>;
 }
 
+// =============================================================================
+// Data-First Workflow Types
+// =============================================================================
+
+export interface CloneTemplateParams {
+  builtInTemplateId: string;
+  name?: string;
+  linkToSource?: string;
+}
+
+export interface CloneTemplateResult {
+  success: boolean;
+  template: SavedTemplate;
+  mapping?: {
+    id: string;
+    templateId: string;
+    sourceId: string;
+  };
+}
+
+export interface CreateSessionFromMappingParams {
+  mappingId: string;
+  recordId?: string;
+}
+
+export interface CreateSessionFromMappingResult {
+  success: boolean;
+  sessionId: string;
+  preview: {
+    html: string;
+    record_id: string;
+  };
+  template: {
+    id: string;
+    name: string;
+  };
+  source: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface SaveTemplateFromSessionParams {
+  sessionId: string;
+  saveAs?: "update" | "variant";
+  variantName?: string;
+}
+
+export interface SaveTemplateFromSessionResult {
+  success: boolean;
+  template: SavedTemplate;
+  placeholdersPreserved: number;
+  warnings?: string[];
+}
+
 export class GlyphApiError extends Error {
   code: string;
   details?: unknown;
@@ -581,6 +636,59 @@ export class GlyphApiClient {
       method: "POST",
       body: JSON.stringify(params),
     });
+  }
+
+  // ===========================================================================
+  // Data-First Workflow API
+  // ===========================================================================
+
+  /**
+   * Clone a built-in template to saved templates
+   */
+  async cloneTemplate(params: CloneTemplateParams): Promise<CloneTemplateResult> {
+    return this.request<CloneTemplateResult>("/v1/templates/clone", {
+      method: "POST",
+      body: JSON.stringify({
+        builtInTemplateId: params.builtInTemplateId,
+        name: params.name,
+        linkToSource: params.linkToSource,
+      }),
+    });
+  }
+
+  /**
+   * Create an editable session from a template-source mapping
+   */
+  async createSessionFromMapping(
+    params: CreateSessionFromMappingParams
+  ): Promise<CreateSessionFromMappingResult> {
+    return this.request<CreateSessionFromMappingResult>("/v1/sessions/from-mapping", {
+      method: "POST",
+      body: JSON.stringify({
+        mapping_id: params.mappingId,
+        record_id: params.recordId,
+      }),
+    });
+  }
+
+  /**
+   * Save a template from an editing session, preserving Mustache placeholders
+   */
+  async saveTemplateFromSession(
+    templateId: string,
+    params: SaveTemplateFromSessionParams
+  ): Promise<SaveTemplateFromSessionResult> {
+    return this.request<SaveTemplateFromSessionResult>(
+      `/v1/templates/saved/${templateId}/save-from-session`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          sessionId: params.sessionId,
+          saveAs: params.saveAs,
+          variantName: params.variantName,
+        }),
+      }
+    );
   }
 
   /**

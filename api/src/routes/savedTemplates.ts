@@ -13,6 +13,12 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { getSupabase, supabase } from "../lib/supabase.js";
 import type { ApiError } from "../lib/types.js";
+import {
+  extractMustachePlaceholders,
+  validateMustacheSyntax,
+  hasMustachePlaceholders,
+} from "../lib/mustacheUtils.js";
+import { getDevSession } from "../lib/devSessions.js";
 
 const savedTemplates = new Hono();
 
@@ -66,6 +72,7 @@ const createTemplateSchema = z.object({
     .optional(),
   style: z.enum(VALID_STYLES).optional(),
   isDefault: z.boolean().optional().default(false),
+  sampleData: z.record(z.unknown()).optional(), // Optional sample data for template
 });
 
 const updateTemplateSchema = z.object({
@@ -278,6 +285,9 @@ savedTemplates.post("/", async (c) => {
         .eq("is_default", true);
     }
 
+    // Auto-extract required_fields from Mustache placeholders in HTML
+    const requiredFields = extractMustachePlaceholders(body.html);
+
     // Insert new template
     const { data: template, error } = await getSupabase()
       .from("templates")
@@ -290,6 +300,8 @@ savedTemplates.post("/", async (c) => {
         schema: body.schema || {},
         style: body.style || null,
         is_default: body.isDefault || false,
+        required_fields: requiredFields, // Auto-populated from Mustache placeholders
+        sample_data: body.sampleData || null, // Optional sample data
       })
       .select()
       .single();
@@ -513,6 +525,245 @@ savedTemplates.delete("/:id", async (c) => {
     return c.json({
       success: true,
       deleted: id,
+    });
+  } catch (err) {
+    return handleError(c, err);
+  }
+});
+
+// =============================================================================
+// Save From Session Schema
+// =============================================================================
+
+const saveFromSessionSchema = z.object({
+  sessionId: z.string().min(1, "Session ID is required"),
+  saveAs: z.enum(["update", "variant"]).optional().default("update"),
+  variantName: z.string().min(1).max(255).optional(),
+  setAsDefault: z.boolean().optional().default(false),
+});
+
+/**
+ * POST /:id/save-from-session
+ * Save template modifications from a session back to a saved template.
+ *
+ * CRITICAL: This endpoint extracts template_html (with Mustache placeholders),
+ * NOT current_html (rendered). This preserves the ability to re-render with different data.
+ *
+ * Modes:
+ * - update: Updates the existing template in place
+ * - variant: Creates a new template with parent_template_id link
+ */
+savedTemplates.post("/:id/save-from-session", async (c) => {
+  try {
+    const apiKeyId = requireDatabaseAccess(c);
+    const { id } = c.req.param();
+
+    // Validate UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      const error: ApiError = {
+        error: "Template not found",
+        code: "TEMPLATE_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    // Parse and validate body
+    const rawBody = await c.req.json();
+    const parseResult = saveFromSessionSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      const error: ApiError = {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: parseResult.error.issues,
+      };
+      return c.json(error, 400);
+    }
+
+    const { sessionId, saveAs, variantName, setAsDefault } = parseResult.data;
+
+    // Validate variant mode requires name
+    if (saveAs === "variant" && !variantName) {
+      const error: ApiError = {
+        error: "variantName is required when saveAs is 'variant'",
+        code: "VALIDATION_ERROR",
+      };
+      return c.json(error, 400);
+    }
+
+    // Verify the template exists and belongs to this user
+    const { data: existingTemplate, error: fetchError } = await getSupabase()
+      .from("templates")
+      .select("id, name, type, version")
+      .eq("id", id)
+      .eq("api_key_id", apiKeyId)
+      .single();
+
+    if (fetchError || !existingTemplate) {
+      const error: ApiError = {
+        error: "Template not found",
+        code: "TEMPLATE_NOT_FOUND",
+      };
+      return c.json(error, 404);
+    }
+
+    // Get session - try database first, then dev sessions
+    let templateHtml: string;
+    let sessionData: Record<string, unknown> = {};
+
+    // Check if it's a dev session
+    if (sessionId.startsWith("dev_")) {
+      const devSession = getDevSession(sessionId);
+      if (!devSession) {
+        const error: ApiError = {
+          error: "Session not found or expired",
+          code: "SESSION_NOT_FOUND",
+        };
+        return c.json(error, 404);
+      }
+      // CRITICAL: Use template_html, not current_html!
+      templateHtml = devSession.template_html;
+      sessionData = devSession.data;
+    } else {
+      // Fetch from database
+      const { data: session, error: sessionError } = await getSupabase()
+        .from("sessions")
+        .select("template_html, data, api_key_id")
+        .eq("id", sessionId)
+        .single();
+
+      if (sessionError || !session) {
+        const error: ApiError = {
+          error: "Session not found or expired",
+          code: "SESSION_NOT_FOUND",
+        };
+        return c.json(error, 404);
+      }
+
+      // Verify session belongs to this user
+      if (session.api_key_id !== apiKeyId) {
+        const error: ApiError = {
+          error: "Session not found",
+          code: "SESSION_NOT_FOUND",
+        };
+        return c.json(error, 404);
+      }
+
+      // CRITICAL: Use template_html, not current_html!
+      templateHtml = session.template_html;
+      sessionData = session.data as Record<string, unknown> || {};
+    }
+
+    // Validate Mustache syntax is intact
+    const mustacheValidation = validateMustacheSyntax(templateHtml);
+    if (!mustacheValidation.valid) {
+      const error: ApiError = {
+        error: "Template HTML has invalid Mustache syntax",
+        code: "INVALID_MUSTACHE",
+        details: mustacheValidation.errors,
+      };
+      return c.json(error, 400);
+    }
+
+    // Check that Mustache placeholders still exist
+    const mustachePreserved = hasMustachePlaceholders(templateHtml);
+
+    // Extract required fields from template
+    const requiredFields = extractMustachePlaceholders(templateHtml);
+
+    let resultTemplate: Record<string, unknown>;
+    let linkedSource: { source_id: string; is_default: boolean } | undefined;
+
+    if (saveAs === "update") {
+      // Update existing template
+      const { data: template, error: updateError } = await getSupabase()
+        .from("templates")
+        .update({
+          html_template: templateHtml,
+          required_fields: requiredFields,
+          sample_data: sessionData,
+          version: existingTemplate.version + 1,
+        })
+        .eq("id", id)
+        .eq("api_key_id", apiKeyId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Update template error:", updateError);
+        const error: ApiError = {
+          error: "Failed to update template",
+          code: "DATABASE_ERROR",
+        };
+        return c.json(error, 500);
+      }
+
+      resultTemplate = formatTemplateResponse(template as DbTemplate, true);
+
+      // If setAsDefault, update any existing mapping to be default
+      if (setAsDefault) {
+        // Find mappings for this template and set the first one as default
+        const { data: mappings } = await getSupabase()
+          .from("template_source_mappings")
+          .select("id, source_id, is_default")
+          .eq("template_id", id)
+          .limit(1);
+
+        if (mappings && mappings.length > 0) {
+          await getSupabase()
+            .from("template_source_mappings")
+            .update({ is_default: true })
+            .eq("id", mappings[0].id);
+
+          linkedSource = {
+            source_id: mappings[0].source_id,
+            is_default: true,
+          };
+        }
+      }
+    } else {
+      // Create variant (new template with parent link)
+      const { data: template, error: insertError } = await getSupabase()
+        .from("templates")
+        .insert({
+          api_key_id: apiKeyId,
+          name: variantName!,
+          type: existingTemplate.type,
+          description: `Variant of ${existingTemplate.name}`,
+          html_template: templateHtml,
+          schema: {},
+          style: null,
+          is_default: false,
+          required_fields: requiredFields,
+          sample_data: sessionData,
+          parent_template_id: id, // Link to parent
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Create variant error:", insertError);
+        const error: ApiError = {
+          error: "Failed to create template variant",
+          code: "DATABASE_ERROR",
+        };
+        return c.json(error, 500);
+      }
+
+      resultTemplate = formatTemplateResponse(template as DbTemplate, true);
+    }
+
+    return c.json({
+      success: true,
+      template: resultTemplate,
+      extracted: {
+        required_fields: requiredFields,
+        sample_data: sessionData,
+        mustache_preserved: mustachePreserved,
+      },
+      linkedSource,
     });
   } catch (err) {
     return handleError(c, err);

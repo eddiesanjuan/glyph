@@ -40,6 +40,7 @@ import batch from "./routes/batch.js";
 import notificationWebhooks from "./routes/notification-webhooks.js";
 import documents from "./routes/documents.js";
 import brandTemplates from "./routes/brandTemplates.js";
+import sessionsRoute from "./routes/sessions.js";
 
 const app = new Hono();
 
@@ -246,6 +247,12 @@ app.get("/", (c) => {
       mappingsUpdate: "PUT /v1/mappings/:id",
       mappingsDelete: "DELETE /v1/mappings/:id",
       mappingsPreview: "GET /v1/mappings/:id/preview",
+      // Session creation from mappings
+      sessionFromMapping: "POST /v1/sessions/from-mapping",
+      // Template cloning
+      templateClone: "POST /v1/templates/clone",
+      // Save template from session
+      templateSaveFromSession: "POST /v1/templates/saved/:id/save-from-session",
       // Batch generation
       batchGenerate: "POST /v1/batch/generate",
       // Smart generation
@@ -440,6 +447,7 @@ app.route("/v1/analyze", analyze);
 // Data sources and intelligent templates
 app.route("/v1/sources", sources);
 app.route("/v1/mappings", mappings);
+app.route("/v1/sessions", sessionsRoute);
 app.route("/v1/generate/smart", generateSmart);
 app.route("/v1/ai", aiAssist);
 // Event subscriptions (Zapier/Make integration)

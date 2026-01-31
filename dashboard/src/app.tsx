@@ -427,6 +427,16 @@ export function App() {
   const [saveTemplateDescription, setSaveTemplateDescription] = useState('')
   const [savingPlaygroundTemplate, setSavingPlaygroundTemplate] = useState(false)
 
+  // Source-first playground state
+  const [playgroundSourceId, setPlaygroundSourceId] = useState<string | null>(null)
+  const [playgroundMappingId, setPlaygroundMappingId] = useState<string | null>(null)
+  const [playgroundSavedTemplateId, setPlaygroundSavedTemplateId] = useState<string | null>(null)
+  const [playgroundRecords, setPlaygroundRecords] = useState<any[]>([])
+  const [playgroundRecordIndex, setPlaygroundRecordIndex] = useState(0)
+  const [playgroundRecordId, setPlaygroundRecordId] = useState<string | null>(null)
+  const [playgroundSourceLoading, setPlaygroundSourceLoading] = useState(false)
+  const [playgroundTemplateHtml, setPlaygroundTemplateHtml] = useState<string>('')
+
   // Check for activation code in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1680,23 +1690,44 @@ export function App() {
     setPlaygroundError(null)
 
     try {
-      const response = await fetch(`${API_URL}/v1/templates/saved`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          name: saveTemplateName.trim(),
-          type: saveTemplateType || undefined,
-          description: saveTemplateDescription || undefined,
-          html: playgroundHtml
+      // If we have a saved template and session (source-first workflow), use Mustache-safe endpoint
+      if (playgroundSavedTemplateId && playgroundSessionId) {
+        const response = await fetch(`${API_URL}/v1/templates/saved/${playgroundSavedTemplateId}/save-from-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            sessionId: playgroundSessionId,
+            saveAs: 'update'
+          })
         })
-      })
 
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Failed to save template')
+        if (!response.ok) {
+          const err = await response.json()
+          throw new Error(err.error || 'Failed to save template')
+        }
+      } else {
+        // Original save path for new templates (non-source workflow)
+        const response = await fetch(`${API_URL}/v1/templates/saved`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            name: saveTemplateName.trim(),
+            type: saveTemplateType || undefined,
+            description: saveTemplateDescription || undefined,
+            html: playgroundTemplateHtml || playgroundHtml // Prefer template_html if available
+          })
+        })
+
+        if (!response.ok) {
+          const err = await response.json()
+          throw new Error(err.error || 'Failed to save template')
+        }
       }
 
       // Success - close modal and refresh templates
@@ -1715,7 +1746,142 @@ export function App() {
   // Switch playground template
   const switchPlaygroundTemplate = (template: string) => {
     setPlaygroundTemplate(template)
+    // Reset source-first state when switching templates
+    setPlaygroundSourceId(null)
+    setPlaygroundMappingId(null)
+    setPlaygroundSavedTemplateId(null)
+    setPlaygroundRecords([])
+    setPlaygroundRecordIndex(0)
+    setPlaygroundRecordId(null)
+    setPlaygroundTemplateHtml('')
     initPlaygroundSession(template)
+  }
+
+  // Handle source selection for source-first playground
+  const handleSourceSelect = async (sourceId: string) => {
+    if (!sourceId) {
+      // Reset to sample data mode
+      setPlaygroundSourceId(null)
+      setPlaygroundMappingId(null)
+      setPlaygroundSavedTemplateId(null)
+      setPlaygroundRecords([])
+      setPlaygroundRecordIndex(0)
+      setPlaygroundRecordId(null)
+      setPlaygroundTemplateHtml('')
+      initPlaygroundSession(playgroundTemplate)
+      return
+    }
+
+    setPlaygroundSourceId(sourceId)
+    setPlaygroundSourceLoading(true)
+    setPlaygroundError(null)
+
+    try {
+      // 1. Find or create mapping for this source
+      const mappingsRes = await fetch(`${API_URL}/v1/mappings?source_id=${sourceId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const mappingsData = await mappingsRes.json()
+
+      let mappingId: string
+
+      if (mappingsData.mappings?.length > 0) {
+        // Use existing mapping
+        mappingId = mappingsData.mappings[0].id
+        setPlaygroundMappingId(mappingId)
+        setPlaygroundSavedTemplateId(mappingsData.mappings[0].template_id)
+      } else {
+        // No mapping - prompt user to create one or clone a template
+        setPlaygroundError('No template linked to this source. Link a template first in My Templates.')
+        setPlaygroundSourceLoading(false)
+        return
+      }
+
+      // 2. Fetch records for navigation
+      const recordsRes = await fetch(`${API_URL}/v1/sources/${sourceId}/records?limit=100`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      const recordsData = await recordsRes.json()
+      setPlaygroundRecords(recordsData.records || [])
+
+      if (!recordsData.records?.length) {
+        setPlaygroundError('No records found in this data source.')
+        setPlaygroundSourceLoading(false)
+        return
+      }
+
+      // 3. Create session from mapping
+      const sessionRes = await fetch(`${API_URL}/v1/sessions/from-mapping`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          mapping_id: mappingId,
+          record_id: recordsData.records[0]?.id
+        })
+      })
+      const sessionData = await sessionRes.json()
+
+      if (!sessionData.success) {
+        throw new Error(sessionData.error || 'Failed to create session')
+      }
+
+      setPlaygroundHtml(sessionData.preview.html)
+      setPlaygroundSessionId(sessionData.sessionId)
+      setPlaygroundTemplateHtml(sessionData.template?.template_html || '')
+      setPlaygroundRecordId(sessionData.preview.record_id || recordsData.records[0]?.id)
+      setPlaygroundRecordIndex(0)
+      setPlaygroundUndoStack([])
+
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'Failed to load source')
+    } finally {
+      setPlaygroundSourceLoading(false)
+    }
+  }
+
+  // Navigate between records in source-first playground
+  const navigateRecord = async (direction: number) => {
+    const newIndex = playgroundRecordIndex + direction
+    if (newIndex < 0 || newIndex >= playgroundRecords.length) return
+    if (!playgroundMappingId) return
+
+    setPlaygroundSourceLoading(true)
+    setPlaygroundRecordIndex(newIndex)
+
+    try {
+      const recordId = playgroundRecords[newIndex].id
+
+      // Create new session with different record
+      const sessionRes = await fetch(`${API_URL}/v1/sessions/from-mapping`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          mapping_id: playgroundMappingId,
+          record_id: recordId
+        })
+      })
+      const sessionData = await sessionRes.json()
+
+      if (!sessionData.success) {
+        throw new Error(sessionData.error || 'Failed to load record')
+      }
+
+      setPlaygroundHtml(sessionData.preview.html)
+      setPlaygroundSessionId(sessionData.sessionId)
+      setPlaygroundTemplateHtml(sessionData.template?.template_html || '')
+      setPlaygroundRecordId(recordId)
+      setPlaygroundUndoStack([])
+    } catch (err) {
+      setPlaygroundError(err instanceof Error ? err.message : 'Failed to navigate')
+    } finally {
+      setPlaygroundSourceLoading(false)
+    }
   }
 
   // Fetch built-in templates on mount (no auth required)
@@ -2824,6 +2990,63 @@ export function App() {
                   </button>
                 </div>
               </div>
+
+              {/* Data Source Selector - show when user has sources */}
+              {sources.length > 0 && (
+                <div class="playground-source-selector">
+                  <label class="playground-source-selector__label">Data Source:</label>
+                  <select
+                    class="api-input playground-source-selector__dropdown"
+                    value={playgroundSourceId || ''}
+                    onChange={(e) => handleSourceSelect((e.target as HTMLSelectElement).value)}
+                    disabled={playgroundSourceLoading}
+                  >
+                    <option value="">Use sample data</option>
+                    {sources.map(source => (
+                      <option value={source.id} key={source.id}>
+                        {source.name} ({source.source_type})
+                      </option>
+                    ))}
+                  </select>
+                  {playgroundSourceId && playgroundRecords.length > 0 && (
+                    <span class="playground-source-selector__badge">
+                      {playgroundRecords.length} records
+                    </span>
+                  )}
+                  {playgroundSourceLoading && (
+                    <span class="playground-source-selector__loading">Loading...</span>
+                  )}
+                </div>
+              )}
+
+              {/* Record Navigator - show when source is selected with multiple records */}
+              {playgroundSourceId && playgroundRecords.length > 1 && (
+                <div class="record-navigator">
+                  <button
+                    class="record-navigator__btn"
+                    onClick={() => navigateRecord(-1)}
+                    disabled={playgroundRecordIndex === 0 || playgroundSourceLoading}
+                    title="Previous record"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                  </button>
+                  <span class="record-navigator__count" title={playgroundRecordId || undefined}>
+                    Record {playgroundRecordIndex + 1} of {playgroundRecords.length}
+                  </span>
+                  <button
+                    class="record-navigator__btn"
+                    onClick={() => navigateRecord(1)}
+                    disabled={playgroundRecordIndex >= playgroundRecords.length - 1 || playgroundSourceLoading}
+                    title="Next record"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               <div class="playground-content">
                 {/* Input Area */}

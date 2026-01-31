@@ -48,6 +48,9 @@ import {
   getCustomTemplate,
   isCustomTemplateId,
 } from "../lib/customTemplates.js";
+import { getSupabase, supabase } from "../lib/supabase.js";
+import { extractMustachePlaceholders } from "../lib/mustacheUtils.js";
+import { suggestMappings } from "../services/fieldMapper.js";
 
 // In-memory cache for template preview thumbnails
 const thumbnailCache = new Map<string, Buffer>();
@@ -769,6 +772,226 @@ templates.post(
     }
   }
 );
+
+// =============================================================================
+// Clone Template Schema
+// =============================================================================
+
+const cloneTemplateSchema = z.object({
+  builtInTemplateId: z.string().min(1, "Built-in template ID is required"),
+  name: z.string().min(1).max(255).optional(),
+  linkToSource: z.string().uuid().optional(), // Optional source_id to auto-create mapping
+});
+
+/**
+ * POST /clone
+ * Clone a built-in template to user's saved templates.
+ *
+ * This endpoint:
+ * 1. Loads the built-in template HTML and schema
+ * 2. Extracts required_fields from Mustache placeholders
+ * 3. Creates a new saved template owned by the user
+ * 4. Optionally creates a mapping if linkToSource is provided
+ */
+templates.post("/clone", async (c) => {
+  try {
+    // Parse and validate body
+    const rawBody = await c.req.json();
+    const parseResult = cloneTemplateSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      const error: ApiError = {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: parseResult.error.issues,
+      };
+      return c.json(error, 400);
+    }
+
+    const { builtInTemplateId, name: providedName, linkToSource } = parseResult.data;
+
+    // Get API key ID from context
+    const apiKeyId = c.get("apiKeyId") as string | undefined;
+    const tier = c.get("tier") as string | undefined;
+
+    // Require authentication for cloning (not demo tier)
+    if (!apiKeyId || tier === "demo") {
+      const error: ApiError = {
+        error: "Template cloning requires a registered API key. Please sign up to clone templates.",
+        code: "DEMO_TIER_LIMITATION",
+      };
+      return c.json(error, 403);
+    }
+
+    // Check if Supabase is configured
+    if (!supabase) {
+      const error: ApiError = {
+        error: "Database not configured",
+        code: "DATABASE_NOT_CONFIGURED",
+      };
+      return c.json(error, 503);
+    }
+
+    // Find the built-in template in catalog
+    const catalogEntry = TEMPLATE_CATALOG.find((t) => t.id === builtInTemplateId);
+    if (!catalogEntry) {
+      const error: ApiError = {
+        error: `Built-in template '${builtInTemplateId}' not found`,
+        code: "TEMPLATE_NOT_FOUND",
+        details: {
+          builtInTemplateId,
+          availableTemplates: TEMPLATE_CATALOG.map((t) => t.id),
+        },
+      };
+      return c.json(error, 404);
+    }
+
+    // Load the template HTML
+    let templateHtml: string;
+    try {
+      templateHtml = await templateEngine.getTemplateHtml(builtInTemplateId);
+    } catch (loadErr) {
+      console.error(`Failed to load template HTML for '${builtInTemplateId}':`, loadErr);
+      const error: ApiError = {
+        error: "Failed to load template HTML",
+        code: "TEMPLATE_LOAD_ERROR",
+      };
+      return c.json(error, 500);
+    }
+
+    // Load schema.json for sample data
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const templatesDir = resolve(currentDir, "..", "..", "..", "templates");
+    const schemaPath = join(templatesDir, builtInTemplateId, "schema.json");
+
+    let schema: Record<string, unknown> = {};
+    let sampleData: Record<string, unknown> = catalogEntry.sampleData;
+
+    try {
+      const { readFile } = await import("fs/promises");
+      const raw = await readFile(schemaPath, "utf-8");
+      schema = JSON.parse(raw);
+      if (Array.isArray((schema as any).examples) && (schema as any).examples.length > 0) {
+        sampleData = (schema as any).examples[0];
+      }
+    } catch (schemaErr) {
+      console.warn(`Could not load schema for '${builtInTemplateId}':`, schemaErr);
+      // Continue with catalog sample data
+    }
+
+    // Extract required fields from Mustache placeholders
+    const requiredFields = extractMustachePlaceholders(templateHtml);
+
+    // Determine template name
+    const templateName = providedName || `${catalogEntry.name} (Clone)`;
+
+    // Insert into database
+    const { data: template, error: insertError } = await getSupabase()
+      .from("templates")
+      .insert({
+        api_key_id: apiKeyId,
+        name: templateName,
+        type: catalogEntry.category,
+        description: catalogEntry.description,
+        html_template: templateHtml,
+        schema: schema,
+        style: templateStyleTags[builtInTemplateId]?.style || null,
+        is_default: false,
+        required_fields: requiredFields,
+        sample_data: sampleData,
+        cloned_from_builtin: builtInTemplateId,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Clone template insert error:", insertError);
+      const error: ApiError = {
+        error: "Failed to save cloned template",
+        code: "DATABASE_ERROR",
+      };
+      return c.json(error, 500);
+    }
+
+    // If linkToSource is provided, auto-create mapping with AI suggestions
+    let linkedMapping: { id: string; field_mappings: Record<string, string> } | undefined;
+    if (linkToSource) {
+      try {
+        // Verify source exists and belongs to user
+        const { data: source, error: sourceError } = await getSupabase()
+          .from("data_sources")
+          .select("id, name, discovered_schema")
+          .eq("id", linkToSource)
+          .eq("api_key_id", apiKeyId)
+          .is("deleted_at", null)
+          .single();
+
+        if (!sourceError && source && source.discovered_schema) {
+          // Generate suggested mappings
+          const sourceFields = (source.discovered_schema as any).fields?.map((f: any) => ({
+            name: f.name,
+            path: f.path,
+          })) || [];
+
+          const suggestedMappings = suggestMappings(requiredFields, sourceFields);
+
+          // Create the mapping
+          const { data: mapping, error: mappingError } = await getSupabase()
+            .from("template_source_mappings")
+            .insert({
+              template_id: template.id,
+              source_id: linkToSource,
+              field_mappings: suggestedMappings,
+              transformations: {},
+              is_default: true,
+              validation_status: "pending",
+            })
+            .select("id, field_mappings")
+            .single();
+
+          if (!mappingError && mapping) {
+            linkedMapping = {
+              id: mapping.id,
+              field_mappings: mapping.field_mappings as Record<string, string>,
+            };
+          }
+        }
+      } catch (linkErr) {
+        console.warn("Auto-link to source failed:", linkErr);
+        // Non-fatal, continue without mapping
+      }
+    }
+
+    return c.json(
+      {
+        success: true,
+        template: {
+          id: template.id,
+          name: template.name,
+          type: template.type,
+          description: template.description,
+          style: template.style,
+          required_fields: requiredFields,
+          sample_data: sampleData,
+          createdAt: template.created_at,
+        },
+        clonedFrom: {
+          builtInTemplateId,
+          category: catalogEntry.category,
+        },
+        linkedMapping,
+      },
+      201
+    );
+  } catch (err) {
+    console.error("Template clone error:", err);
+    const error: ApiError = {
+      error: err instanceof Error ? err.message : "Unknown error",
+      code: "CLONE_ERROR",
+    };
+    return c.json(error, 500);
+  }
+});
 
 /**
  * GET /:id/preview

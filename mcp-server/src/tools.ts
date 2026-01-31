@@ -18,6 +18,9 @@ import {
   type CreateSourceParams,
   type GenerateFromSourceParams,
   type LinkTemplateParams,
+  type CloneTemplateParams,
+  type CreateSessionFromMappingParams,
+  type SaveTemplateFromSessionParams,
 } from "./api.js";
 
 // Template detection patterns for auto-template feature
@@ -780,6 +783,120 @@ Set isDefault=true to make this source the default for this template.`,
         },
       },
       required: ["templateId", "sourceId", "fieldMappings"],
+    },
+  },
+
+  // ===========================================================================
+  // Data-First Workflow Tools
+  // ===========================================================================
+
+  {
+    name: "glyph_clone_template",
+    description: `Clone a built-in template to your saved templates. This creates a copy you can customize.
+
+Use this as the first step in a data-first workflow:
+1. Clone a built-in template (this tool)
+2. Create a mapping to your data source (glyph_link_template)
+3. Create an editing session (glyph_create_session_from_mapping)
+4. Make AI-powered modifications (glyph_modify)
+5. Save your customized template (glyph_save_template_from_session)
+
+You can optionally link to a data source in the same call by providing linkToSource.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        builtInTemplateId: {
+          type: "string",
+          description: "The built-in template ID to clone (e.g., 'quote-modern', 'invoice-clean')",
+        },
+        name: {
+          type: "string",
+          description: "Optional custom name for the cloned template",
+        },
+        linkToSource: {
+          type: "string",
+          description: "Optional source ID to automatically create a mapping",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["builtInTemplateId"],
+    },
+  },
+  {
+    name: "glyph_create_session_from_mapping",
+    description: `Create an editable session from a template-source mapping.
+
+Returns a sessionId that can be used with glyph_modify to make AI-powered changes while preserving template placeholders.
+
+This is the key tool for data-first editing:
+- Pulls real data from your source to preview
+- Maintains Mustache placeholders in the HTML
+- Allows AI modifications without breaking data binding
+
+The session can be used with:
+- glyph_modify: Make AI-powered changes
+- glyph_generate: Generate a PDF
+- glyph_save_template_from_session: Save back as a template`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        mappingId: {
+          type: "string",
+          description: "The mapping ID (links a template to a source)",
+        },
+        recordId: {
+          type: "string",
+          description: "Optional specific record ID. If omitted, uses the first record.",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["mappingId"],
+    },
+  },
+  {
+    name: "glyph_save_template_from_session",
+    description: `Save a template from an editing session, preserving Mustache placeholders.
+
+Use this after making modifications with glyph_modify to save your customized template.
+The AI-modified HTML is processed to restore Mustache placeholders ({{field.name}}).
+
+Save options:
+- "update": Replace the existing template with the modified version
+- "variant": Create a new linked version (keeps history, useful for A/B testing)
+
+This completes the data-first workflow - your template is now ready to generate PDFs from any record in your data source.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        templateId: {
+          type: "string",
+          description: "The saved template ID to update",
+        },
+        sessionId: {
+          type: "string",
+          description: "The session ID containing modifications",
+        },
+        saveAs: {
+          type: "string",
+          enum: ["update", "variant"],
+          description: "How to save: 'update' replaces the template, 'variant' creates a new linked version",
+        },
+        variantName: {
+          type: "string",
+          description: "Name for the variant (required if saveAs is 'variant')",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["templateId", "sessionId"],
     },
   },
 ];
@@ -1861,6 +1978,183 @@ export async function handleGlyphLinkTemplate(args: {
 }
 
 // =============================================================================
+// Data-First Workflow Tool Handlers
+// =============================================================================
+
+export async function handleGlyphCloneTemplate(args: {
+  builtInTemplateId: string;
+  name?: string;
+  linkToSource?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.cloneTemplate({
+      builtInTemplateId: args.builtInTemplateId,
+      name: args.name,
+      linkToSource: args.linkToSource,
+    });
+
+    const nextSteps = [
+      `Use glyph_template_get with id "${result.template.id}" to view the template`,
+    ];
+
+    if (result.mapping) {
+      nextSteps.push(
+        `Use glyph_create_session_from_mapping with mappingId "${result.mapping.id}" to start editing`
+      );
+    } else {
+      nextSteps.push(
+        `Use glyph_link_template to connect this template to a data source`
+      );
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+                type: result.template.type,
+                style: result.template.style,
+                version: result.template.version,
+                createdAt: result.template.createdAt,
+              },
+              mapping: result.mapping
+                ? {
+                    id: result.mapping.id,
+                    templateId: result.mapping.templateId,
+                    sourceId: result.mapping.sourceId,
+                  }
+                : null,
+              message: `Template "${args.builtInTemplateId}" cloned as "${result.template.name}"${result.mapping ? " and linked to source" : ""}`,
+              nextSteps,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphCreateSessionFromMapping(args: {
+  mappingId: string;
+  recordId?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.createSessionFromMapping({
+      mappingId: args.mappingId,
+      recordId: args.recordId,
+    });
+
+    // Store session locally for resource access and glyph_generate
+    storeSession(
+      result.sessionId,
+      result.preview.html,
+      result.template.name,
+      {} // Data is managed server-side for mapping sessions
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              sessionId: result.sessionId,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+              },
+              source: {
+                id: result.source.id,
+                name: result.source.name,
+              },
+              recordId: result.preview.record_id,
+              htmlPreview:
+                result.preview.html.substring(0, 500) +
+                (result.preview.html.length > 500 ? "..." : ""),
+              message: `Session created from mapping. Using record "${result.preview.record_id}" from "${result.source.name}"`,
+              nextSteps: [
+                `Use glyph_modify with sessionId "${result.sessionId}" to make AI-powered changes`,
+                `Use glyph_generate with sessionId "${result.sessionId}" to generate a PDF`,
+                `Use glyph_save_template_from_session to save your modifications as a reusable template`,
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphSaveTemplateFromSession(args: {
+  templateId: string;
+  sessionId: string;
+  saveAs?: "update" | "variant";
+  variantName?: string;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.saveTemplateFromSession(args.templateId, {
+      sessionId: args.sessionId,
+      saveAs: args.saveAs,
+      variantName: args.variantName,
+    });
+
+    const saveAction = args.saveAs === "variant" ? "Created variant" : "Updated";
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              template: {
+                id: result.template.id,
+                name: result.template.name,
+                version: result.template.version,
+                updatedAt: result.template.updatedAt,
+              },
+              placeholdersPreserved: result.placeholdersPreserved,
+              warnings: result.warnings || [],
+              message: `${saveAction} template "${result.template.name}" (v${result.template.version}). ${result.placeholdersPreserved} placeholders preserved.`,
+              nextSteps: [
+                `Use glyph_generate_from_source with templateId "${result.template.id}" to generate PDFs from your data source`,
+                result.warnings?.length
+                  ? "Review warnings above - some placeholders may need attention"
+                  : "All placeholders successfully preserved - template is ready for production",
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -2077,6 +2371,19 @@ export async function handleTool(
     case "glyph_link_template":
       return handleGlyphLinkTemplate(
         args as Parameters<typeof handleGlyphLinkTemplate>[0]
+      );
+    // Data-First Workflow tools
+    case "glyph_clone_template":
+      return handleGlyphCloneTemplate(
+        args as Parameters<typeof handleGlyphCloneTemplate>[0]
+      );
+    case "glyph_create_session_from_mapping":
+      return handleGlyphCreateSessionFromMapping(
+        args as Parameters<typeof handleGlyphCreateSessionFromMapping>[0]
+      );
+    case "glyph_save_template_from_session":
+      return handleGlyphSaveTemplateFromSession(
+        args as Parameters<typeof handleGlyphSaveTemplateFromSession>[0]
       );
     default:
       return {
