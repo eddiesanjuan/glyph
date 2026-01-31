@@ -412,6 +412,19 @@ export function App() {
   const [batchJob, setBatchJob] = useState<BatchJob | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
 
+  // Magic preview state (shown after source connection)
+  const [showMagicPreview, setShowMagicPreview] = useState(false)
+  const [magicPreviewData, setMagicPreviewData] = useState<{
+    html: string
+    templateUsed: { id: string; name: string; confidence: number; reasoning: string }
+    mappings: { applied: Record<string, string>; unmapped: string[]; coverage: number }
+    sourceId: string
+    needsConfirmation?: boolean
+    suggestions?: Array<{ id: string; name: string; confidence: number; reasoning: string }>
+  } | null>(null)
+  const [magicPreviewLoading, setMagicPreviewLoading] = useState(false)
+  const [magicPreviewError, setMagicPreviewError] = useState<string | null>(null)
+
   // Playground state
   const [playgroundTemplate, setPlaygroundTemplate] = useState('quote-modern')
   const [playgroundHtml, setPlaygroundHtml] = useState('')
@@ -986,14 +999,22 @@ export function App() {
         throw new Error(testData.error || 'Failed to create source')
       }
 
+      // Capture created source ID for magic preview
+      const createdSourceId = testData.source?.id
+
       setAddSourceSchema(testData.source?.discovered_schema || null)
       setAddSourceStep(3)
 
       await fetchSources()
 
+      // Close the wizard and trigger magic preview
       setTimeout(() => {
         resetAddSourceWizard()
-      }, 2000)
+        // Trigger magic preview with the new source
+        if (createdSourceId) {
+          fetchMagicPreview(createdSourceId)
+        }
+      }, 1500) // Slightly shorter delay before showing magic preview
 
     } catch (err) {
       setAddSourceError(err instanceof Error ? err.message : 'Failed to create source')
@@ -1024,6 +1045,64 @@ export function App() {
     setAddSourceConfig({})
     setAddSourceError(null)
     setAddSourceSchema(null)
+  }
+
+  // Call auto-generate API to get magic preview after source connection
+  const fetchMagicPreview = async (sourceId: string) => {
+    setMagicPreviewLoading(true)
+    setMagicPreviewError(null)
+    setMagicPreviewData(null)
+    setShowMagicPreview(true)
+
+    try {
+      const response = await fetch(`${API_URL}/v1/auto-generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sourceId,
+          format: 'preview',
+          confidenceThreshold: 0.5,
+          autoAcceptAboveThreshold: true
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMagicPreviewData({
+          html: data.preview?.html || '',
+          templateUsed: data.templateUsed || { id: '', name: 'Unknown', confidence: 0, reasoning: '' },
+          mappings: data.mappings || { applied: {}, unmapped: [], coverage: 0 },
+          sourceId
+        })
+      } else if (data.code === 'LOW_CONFIDENCE') {
+        // Still show preview but with warning
+        setMagicPreviewData({
+          html: '', // No preview yet
+          templateUsed: data.suggestedTemplates?.[0] || { id: '', name: 'Unknown', confidence: 0, reasoning: '' },
+          mappings: { applied: {}, unmapped: [], coverage: 0 },
+          sourceId,
+          needsConfirmation: true,
+          suggestions: data.suggestedTemplates
+        })
+      } else {
+        setMagicPreviewError(data.error || 'Failed to generate preview')
+      }
+    } catch (err) {
+      setMagicPreviewError('Failed to connect to API')
+    } finally {
+      setMagicPreviewLoading(false)
+    }
+  }
+
+  const resetMagicPreview = () => {
+    setShowMagicPreview(false)
+    setMagicPreviewData(null)
+    setMagicPreviewError(null)
+    setMagicPreviewLoading(false)
   }
 
   // Mapping functions
@@ -4442,6 +4521,110 @@ export function App() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Magic Preview Modal */}
+      {showMagicPreview && (
+        <div class="modal-overlay" onClick={resetMagicPreview}>
+          <div class="modal modal-magic-preview" onClick={e => e.stopPropagation()}>
+            <button class="btn btn-icon modal-close-btn" onClick={resetMagicPreview}>
+              {Icons.x}
+            </button>
+
+            {magicPreviewLoading ? (
+              <div class="magic-loading">
+                <div class="spinner spinner-lg" />
+                <h3>Analyzing your data...</h3>
+                <p>Finding the best template and mapping fields</p>
+              </div>
+            ) : magicPreviewError ? (
+              <div class="magic-error">
+                <div class="error-icon">
+                  {Icons.warning}
+                </div>
+                <h3>Couldn't auto-generate preview</h3>
+                <p>{magicPreviewError}</p>
+                <div class="magic-actions">
+                  <button class="btn btn-secondary" onClick={resetMagicPreview}>Close</button>
+                </div>
+              </div>
+            ) : magicPreviewData ? (
+              <div class="magic-content">
+                <div class="magic-header">
+                  <div class="magic-header-icon">
+                    {Icons.checkCircle}
+                  </div>
+                  <h2>Here's your document!</h2>
+                  <p class="magic-summary">
+                    Matched <strong>{Object.keys(magicPreviewData.mappings.applied).length}</strong> fields
+                    ({Math.round(magicPreviewData.mappings.coverage * 100)}% coverage)
+                    using <strong>{magicPreviewData.templateUsed.name}</strong>
+                  </p>
+                  {magicPreviewData.templateUsed.confidence < 0.8 && (
+                    <div class="confidence-warning">
+                      <span class="confidence-badge">
+                        {Math.round(magicPreviewData.templateUsed.confidence * 100)}% confidence
+                      </span>
+                      <span>Please verify the preview looks correct</span>
+                    </div>
+                  )}
+                </div>
+
+                {magicPreviewData.html ? (
+                  <div class="magic-preview-frame">
+                    <iframe
+                      srcDoc={magicPreviewData.html}
+                      title="Document Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                ) : (
+                  <div class="magic-no-preview">
+                    <p>Preview not available - select a template to generate</p>
+                  </div>
+                )}
+
+                {magicPreviewData.mappings.unmapped.length > 0 && (
+                  <div class="unmapped-fields">
+                    <p><strong>Fields that couldn't be mapped:</strong></p>
+                    <ul>
+                      {magicPreviewData.mappings.unmapped.slice(0, 5).map(f => (
+                        <li key={f}>{f}</li>
+                      ))}
+                      {magicPreviewData.mappings.unmapped.length > 5 && (
+                        <li class="more-fields">+{magicPreviewData.mappings.unmapped.length - 5} more</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                <div class="magic-actions">
+                  <button
+                    class="btn btn-ghost"
+                    onClick={() => {
+                      // Open playground for editing
+                      resetMagicPreview()
+                      setPage('playground')
+                    }}
+                  >
+                    Edit in Playground
+                  </button>
+                  <button
+                    class="btn btn-primary"
+                    onClick={() => {
+                      // Accept and close
+                      resetMagicPreview()
+                      // Navigate to my templates to see the connected source
+                      setPage('my-templates')
+                    }}
+                  >
+                    Looks Good!
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

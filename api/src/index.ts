@@ -41,6 +41,7 @@ import notificationWebhooks from "./routes/notification-webhooks.js";
 import documents from "./routes/documents.js";
 import brandTemplates from "./routes/brandTemplates.js";
 import sessionsRoute from "./routes/sessions.js";
+import autoGenerate from "./routes/auto-generate.js";
 
 const app = new Hono();
 
@@ -272,6 +273,8 @@ app.get("/", (c) => {
       // Hosted document retrieval (public)
       documentGet: "GET /v1/documents/:id",
       documentMetadata: "GET /v1/documents/:id/metadata",
+      // Auto-generate (one-call magic)
+      autoGenerate: "POST /v1/auto-generate",
     },
   });
 });
@@ -454,6 +457,8 @@ app.route("/v1/ai", aiAssist);
 app.route("/v1/subscriptions", subscriptions);
 // Notification webhooks (user-registered callback URLs)
 app.route("/v1/notification-webhooks", notificationWebhooks);
+// Auto-generate (one-call magic endpoint)
+app.route("/v1/auto-generate", autoGenerate);
 
 // 404 handler
 app.notFound((c) => {
@@ -544,6 +549,9 @@ console.log(`
   One-Shot PDF Creation (THE STAR!):
     POST /v1/create           - Data in, beautiful PDF out
     POST /v1/create/analyze   - Analysis-only (no PDF generation)
+
+  Auto-Generate (MAGIC ENDPOINT!):
+    POST /v1/auto-generate    - Data in, auto-match template, preview out
 
   Schema Detection:
     POST /v1/analyze              - Analyze data structure and detect document type

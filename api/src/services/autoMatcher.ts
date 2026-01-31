@@ -267,7 +267,7 @@ export async function findMatchingTemplates(
 /**
  * Detect document type from schema field names
  */
-function detectDocumentType(schema: DiscoveredSchema): { type: string; confidence: number } {
+export function detectDocumentType(schema: DiscoveredSchema): { type: string; confidence: number } {
   const fieldNames = schema.fields.map((f) => f.name.toLowerCase()).join(' ');
 
   const patterns: Array<{ type: string; keywords: string[]; weight: number }> = [
@@ -370,7 +370,7 @@ function scoreTemplate(
  * Build human-readable reasoning for a match
  */
 function buildReasoning(
-  template: TemplateInfo,
+  _template: TemplateInfo,
   docType: { type: string; confidence: number },
   fieldCoverage: number,
   categoryMatch: number,
@@ -395,40 +395,269 @@ function buildReasoning(
   return parts.length > 0 ? parts.join('. ') : 'Basic match based on template type';
 }
 
+// =============================================================================
+// Domain-Specific Synonym Groups for Field Matching
+// =============================================================================
+
 /**
- * Check if two field names are semantically related
+ * Expanded synonym groups for domain-specific field matching.
+ * These cover common variations found in business documents, especially
+ * for service businesses like E.F. San Juan (HVAC, plumbing, etc.)
  */
-function areFieldsSemanticallyRelated(field1: string, field2: string): boolean {
-  const synonymGroups = [
-    ['customer', 'client', 'buyer', 'purchaser'],
-    ['vendor', 'seller', 'supplier', 'merchant'],
-    ['total', 'amount', 'sum', 'grand_total'],
-    ['date', 'created', 'timestamp', 'created_at', 'created_date'],
-    ['name', 'full_name', 'title', 'label'],
-    ['company', 'business', 'organization', 'firm'],
-    ['address', 'location', 'street', 'addr'],
-    ['phone', 'telephone', 'mobile', 'cell'],
-    ['email', 'mail', 'e_mail'],
-    ['items', 'line_items', 'products', 'services', 'entries'],
-    ['description', 'desc', 'details', 'notes'],
-    ['number', 'num', 'no', 'id', 'ref', 'reference'],
-    ['price', 'rate', 'cost', 'unit_price'],
-    ['quantity', 'qty', 'count', 'amount'],
-  ];
+const DOMAIN_SYNONYMS: Record<string, string[]> = {
+  // Work order / Job specific
+  workOrderNumber: [
+    'work_order_number', 'wo_number', 'job_number', 'job', 'job_no', 'job_#', 'wo',
+    'work_order', 'order_number', 'ticket', 'ticket_number', 'service_order',
+    'service_ticket', 'job_id', 'wo_id', 'work_order_id', 'order_no', 'order_id'
+  ],
 
-  const f1 = field1.toLowerCase().replace(/[_\s-]/g, '');
-  const f2 = field2.toLowerCase().replace(/[_\s-]/g, '');
+  // Customer/Client
+  customerName: [
+    'customer_name', 'customer', 'client', 'client_name', 'account', 'account_name',
+    'buyer', 'purchaser', 'contact', 'contact_name', 'bill_to', 'bill_to_name',
+    'customer_contact', 'client_contact', 'account_holder'
+  ],
 
-  for (const group of synonymGroups) {
-    const normalizedGroup = group.map((s) => s.replace(/[_\s-]/g, ''));
-    if (normalizedGroup.some((s) => f1.includes(s) || s.includes(f1))) {
-      if (normalizedGroup.some((s) => f2.includes(s) || s.includes(f2))) {
-        return true;
-      }
+  // Address variations
+  address: [
+    'address', 'customer_address', 'site_address', 'service_address', 'location',
+    'street', 'street_address', 'site', 'job_site', 'work_location', 'job_location',
+    'service_location', 'property_address', 'shipping_address', 'billing_address',
+    'ship_to', 'bill_to_address', 'delivery_address', 'install_address'
+  ],
+
+  // Phone variations
+  phone: [
+    'phone', 'contact_phone', 'phone_number', 'tel', 'telephone', 'mobile', 'cell',
+    'cell_phone', 'mobile_phone', 'contact_number', 'primary_phone', 'main_phone',
+    'work_phone', 'home_phone', 'phone_no', 'phone_#'
+  ],
+
+  // Email variations
+  email: [
+    'email', 'e_mail', 'email_address', 'contact_email', 'customer_email',
+    'client_email', 'mail', 'e-mail'
+  ],
+
+  // Description/Scope of work
+  description: [
+    'description', 'work_description', 'scope', 'details', 'notes', 'job_description',
+    'work_details', 'summary', 'scope_of_work', 'job_notes', 'service_description',
+    'task_description', 'work_summary', 'project_description', 'job_details',
+    'service_notes', 'work_notes', 'comments', 'remarks'
+  ],
+
+  // People/Assignment - Technicians
+  technician: [
+    'technician', 'technician_name', 'tech', 'assigned_tech', 'assigned_to',
+    'worker', 'employee', 'staff', 'installer', 'service_tech', 'field_tech',
+    'tech_name', 'assigned_technician', 'service_technician', 'crew', 'crew_member',
+    'installer_name', 'mechanic', 'specialist', 'engineer', 'rep', 'representative'
+  ],
+
+  // Date variations
+  scheduledDate: [
+    'scheduled_date', 'date', 'job_date', 'service_date', 'appointment',
+    'appointment_date', 'scheduled', 'due_date', 'target_date', 'work_date',
+    'schedule_date', 'planned_date', 'start_date', 'completion_date', 'install_date'
+  ],
+
+  // Date - created/issued
+  createdDate: [
+    'date', 'created', 'timestamp', 'created_at', 'created_date', 'issued_date',
+    'issue_date', 'document_date', 'order_date', 'invoice_date', 'quote_date'
+  ],
+
+  // Priority/Status
+  priority: [
+    'priority', 'urgency', 'importance', 'level', 'priority_level', 'job_priority',
+    'service_priority', 'rush', 'urgent'
+  ],
+
+  status: [
+    'status', 'job_status', 'work_status', 'order_status', 'state', 'current_status',
+    'completion_status', 'progress', 'stage'
+  ],
+
+  // Materials/Items/Parts
+  materials: [
+    'materials', 'parts', 'items', 'line_items', 'products', 'materials_needed',
+    'parts_list', 'inventory', 'equipment', 'supplies', 'components', 'material_list',
+    'parts_needed', 'materials_list', 'bill_of_materials', 'bom'
+  ],
+
+  // Money - Total
+  total: [
+    'total', 'grand_total', 'amount', 'total_amount', 'sum', 'price', 'cost',
+    'value', 'total_cost', 'total_price', 'invoice_total', 'order_total',
+    'final_total', 'amount_due', 'balance_due', 'net_total'
+  ],
+
+  // Money - Subtotal
+  subtotal: [
+    'subtotal', 'sub_total', 'materials_subtotal', 'parts_subtotal', 'subtotal_amount',
+    'net_amount', 'pre_tax_total', 'before_tax'
+  ],
+
+  // Labor costs
+  laborTotal: [
+    'labor_total', 'labor_cost', 'labor', 'labor_amount', 'service_charge',
+    'labor_charge', 'service_cost', 'labor_fee', 'installation_cost', 'install_cost'
+  ],
+
+  // Labor hours
+  laborHours: [
+    'labor_hours', 'hours', 'time', 'duration', 'work_hours', 'estimated_hours',
+    'actual_hours', 'total_hours', 'service_hours', 'billable_hours', 'time_spent'
+  ],
+
+  // Labor rate
+  laborRate: [
+    'labor_rate', 'rate', 'hourly_rate', 'rate_per_hour', 'hour_rate',
+    'billing_rate', 'service_rate', 'rate_hour'
+  ],
+
+  // Proposal/Quote specific
+  proposalNumber: [
+    'proposal_number', 'proposal_#', 'proposal', 'quote_number', 'estimate_number',
+    'bid_number', 'quotation_number', 'quote_#', 'estimate_#', 'quote_no',
+    'proposal_no', 'estimate_no', 'bid_no', 'rfq_number'
+  ],
+
+  projectTitle: [
+    'project_title', 'project', 'title', 'project_name', 'job_title', 'job_name',
+    'work_title', 'service_title', 'project_description'
+  ],
+
+  validUntil: [
+    'valid_until', 'expires', 'expiration', 'expiry_date', 'offer_expires',
+    'quote_valid', 'valid_through', 'expiration_date', 'good_until',
+    'quote_expiry', 'validity', 'valid_date', 'expires_on'
+  ],
+
+  preparedBy: [
+    'prepared_by', 'author', 'created_by', 'salesperson', 'rep', 'sales_rep',
+    'account_rep', 'representative', 'estimator', 'issued_by', 'quoted_by',
+    'account_manager', 'contact_person'
+  ],
+
+  // Company/Business
+  company: [
+    'company', 'company_name', 'business', 'business_name', 'organization',
+    'firm', 'enterprise', 'vendor', 'seller', 'supplier', 'merchant'
+  ],
+
+  // Invoice specific
+  invoiceNumber: [
+    'invoice_number', 'invoice_no', 'invoice_#', 'inv_number', 'inv_no',
+    'invoice_id', 'bill_number', 'bill_no', 'statement_number'
+  ],
+
+  dueDate: [
+    'due_date', 'payment_due', 'due', 'pay_by', 'payment_date', 'due_by'
+  ],
+
+  // Tax
+  tax: [
+    'tax', 'tax_amount', 'sales_tax', 'vat', 'gst', 'hst', 'tax_total',
+    'tax_rate', 'taxes'
+  ],
+
+  // Quantity
+  quantity: [
+    'quantity', 'qty', 'count', 'amount', 'units', 'num', 'number_of', 'qty_ordered'
+  ],
+
+  // Unit price
+  unitPrice: [
+    'unit_price', 'price', 'rate', 'cost', 'unit_cost', 'price_each',
+    'each', 'per_unit', 'item_price'
+  ],
+
+  // Terms
+  terms: [
+    'terms', 'payment_terms', 'conditions', 'terms_conditions', 'terms_and_conditions',
+    'notes', 'fine_print', 'disclaimer'
+  ],
+
+  // Purchase Order
+  poNumber: [
+    'po_number', 'purchase_order', 'purchase_order_number', 'po', 'po_#', 'po_no',
+    'purchase_order_#', 'customer_po', 'po_reference'
+  ],
+
+  // Tracking/Reference
+  trackingNumber: [
+    'tracking_number', 'tracking', 'tracking_no', 'tracking_#', 'shipment_tracking',
+    'carrier_tracking', 'reference', 'ref_number', 'reference_number'
+  ],
+};
+
+/**
+ * Normalize a field name for comparison
+ * Removes separators, converts to lowercase, handles common variations
+ */
+function normalizeFieldName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[_\-\s#.]+/g, '')  // Remove separators: underscores, hyphens, spaces, #, dots
+    .replace(/s$/, '');           // Remove trailing 's' for simple plural handling
+}
+
+/**
+ * Get the confidence score for matching two field names
+ * Returns a value between 0 and 1 indicating match confidence
+ */
+export function getFieldMatchConfidence(sourceField: string, templateField: string): number {
+  const normalizedSource = normalizeFieldName(sourceField);
+  const normalizedTemplate = normalizeFieldName(templateField);
+
+  // Exact match after normalization - very high confidence
+  if (normalizedSource === normalizedTemplate) {
+    return 0.98;
+  }
+
+  // Check domain-specific synonym groups
+  for (const synonyms of Object.values(DOMAIN_SYNONYMS)) {
+    const normalizedSynonyms = synonyms.map(s => normalizeFieldName(s));
+
+    const sourceInGroup = normalizedSynonyms.some(s =>
+      normalizedSource.includes(s) || s.includes(normalizedSource)
+    );
+    const templateInGroup = normalizedSynonyms.some(s =>
+      normalizedTemplate.includes(s) || s.includes(normalizedTemplate)
+    );
+
+    if (sourceInGroup && templateInGroup) {
+      return 0.85; // High confidence - same semantic concept
     }
   }
 
-  return false;
+  // Contains match - one field name contains the other
+  if (normalizedSource.includes(normalizedTemplate) || normalizedTemplate.includes(normalizedSource)) {
+    // Scale by how much overlap there is
+    const overlap = Math.min(normalizedSource.length, normalizedTemplate.length) /
+                   Math.max(normalizedSource.length, normalizedTemplate.length);
+    return Math.max(0.6, overlap * 0.75);
+  }
+
+  // Levenshtein similarity for typos/variations
+  const similarity = levenshteinSimilarity(normalizedSource, normalizedTemplate);
+  if (similarity > 0.7) {
+    return similarity * 0.8; // Scale down slightly to prefer exact/semantic matches
+  }
+
+  // No match
+  return 0;
+}
+
+/**
+ * Check if two field names are semantically related (legacy boolean version)
+ * Now delegates to getFieldMatchConfidence for consistency
+ */
+function areFieldsSemanticallyRelated(field1: string, field2: string): boolean {
+  return getFieldMatchConfidence(field1, field2) >= 0.6;
 }
 
 /**
@@ -495,4 +724,50 @@ function extractFieldsFromSchema(schema: unknown): string[] {
   return [];
 }
 
-export type { MatchResult, AutoMatcherOptions, DiscoveredSchema };
+/**
+ * Generate suggested field mappings between template and source fields
+ * Uses domain-specific synonyms, semantic analysis, and fuzzy matching
+ * to find the best matches with confidence scores.
+ */
+export function generateSuggestedMappings(
+  templateFields: string[],
+  sourceFields: string[]
+): Array<{ templateField: string; sourceField: string; confidence: number }> {
+  const suggestions: Array<{ templateField: string; sourceField: string; confidence: number }> = [];
+
+  for (const tField of templateFields) {
+    let bestMatch = { sourceField: '', confidence: 0 };
+
+    for (const sField of sourceFields) {
+      // Use the new confidence-based matching
+      const confidence = getFieldMatchConfidence(sField, tField);
+
+      if (confidence > bestMatch.confidence) {
+        bestMatch = { sourceField: sField, confidence };
+
+        // If we found a very high confidence match, stop searching
+        if (confidence >= 0.95) {
+          break;
+        }
+      }
+    }
+
+    suggestions.push({
+      templateField: tField,
+      sourceField: bestMatch.sourceField,
+      confidence: bestMatch.confidence,
+    });
+  }
+
+  return suggestions;
+}
+
+/**
+ * Get list of built-in templates with their expected fields
+ * Exposed for use by auto-generate endpoint
+ */
+export function getBuiltInTemplates(): TemplateInfo[] {
+  return getBuiltInTemplateList();
+}
+
+export type { MatchResult, AutoMatcherOptions, DiscoveredSchema, TemplateInfo };
