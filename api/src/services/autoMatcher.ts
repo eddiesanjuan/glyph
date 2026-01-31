@@ -409,7 +409,8 @@ const DOMAIN_SYNONYMS: Record<string, string[]> = {
   workOrderNumber: [
     'work_order_number', 'wo_number', 'job_number', 'job', 'job_no', 'job_#', 'wo',
     'work_order', 'order_number', 'ticket', 'ticket_number', 'service_order',
-    'service_ticket', 'job_id', 'wo_id', 'work_order_id', 'order_no', 'order_id'
+    'service_ticket', 'job_id', 'wo_id', 'work_order_id', 'order_no', 'order_id',
+    'fwo', 'fwo_#', 'fwo_number', 'field_work_order'  // E.F. San Juan specific
   ],
 
   // Customer/Client
@@ -424,7 +425,8 @@ const DOMAIN_SYNONYMS: Record<string, string[]> = {
     'address', 'customer_address', 'site_address', 'service_address', 'location',
     'street', 'street_address', 'site', 'job_site', 'work_location', 'job_location',
     'service_location', 'property_address', 'shipping_address', 'billing_address',
-    'ship_to', 'bill_to_address', 'delivery_address', 'install_address'
+    'ship_to', 'bill_to_address', 'delivery_address', 'install_address',
+    'site_location'  // E.F. San Juan specific
   ],
 
   // Phone variations
@@ -445,7 +447,8 @@ const DOMAIN_SYNONYMS: Record<string, string[]> = {
     'description', 'work_description', 'scope', 'details', 'notes', 'job_description',
     'work_details', 'summary', 'scope_of_work', 'job_notes', 'service_description',
     'task_description', 'work_summary', 'project_description', 'job_details',
-    'service_notes', 'work_notes', 'comments', 'remarks'
+    'service_notes', 'work_notes', 'comments', 'remarks',
+    'scope_of_work'  // Ensure exact match
   ],
 
   // People/Assignment - Technicians
@@ -619,18 +622,52 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
   }
 
   // Check domain-specific synonym groups
-  for (const synonyms of Object.values(DOMAIN_SYNONYMS)) {
+  for (const [groupName, synonyms] of Object.entries(DOMAIN_SYNONYMS)) {
     const normalizedSynonyms = synonyms.map(s => normalizeFieldName(s));
 
+    // Check if source field matches this synonym group
     const sourceInGroup = normalizedSynonyms.some(s =>
-      normalizedSource.includes(s) || s.includes(normalizedSource)
+      normalizedSource === s ||
+      normalizedSource.includes(s) ||
+      s.includes(normalizedSource)
     );
+
+    // Check if template field matches this synonym group
     const templateInGroup = normalizedSynonyms.some(s =>
-      normalizedTemplate.includes(s) || s.includes(normalizedTemplate)
+      normalizedTemplate === s ||
+      normalizedTemplate.includes(s) ||
+      s.includes(normalizedTemplate)
     );
 
     if (sourceInGroup && templateInGroup) {
       return 0.85; // High confidence - same semantic concept
+    }
+
+    // Special handling for common field patterns
+    // e.g., "customer_address" template should match "address" synonym group
+    // even when source is "Site Location"
+    if (groupName === 'address') {
+      const sourceHasAddress = normalizedSource.includes('location') ||
+                               normalizedSource.includes('site') ||
+                               normalizedSource.includes('address');
+      const templateHasAddress = normalizedTemplate.includes('address') ||
+                                 normalizedTemplate.includes('location');
+      if (sourceHasAddress && templateHasAddress) {
+        return 0.82;
+      }
+    }
+
+    if (groupName === 'description') {
+      const sourceHasDesc = normalizedSource.includes('scope') ||
+                            normalizedSource.includes('description') ||
+                            normalizedSource.includes('work') ||
+                            normalizedSource.includes('detail');
+      const templateHasDesc = normalizedTemplate.includes('description') ||
+                              normalizedTemplate.includes('scope') ||
+                              normalizedTemplate.includes('detail');
+      if (sourceHasDesc && templateHasDesc) {
+        return 0.82;
+      }
     }
   }
 
@@ -728,38 +765,55 @@ function extractFieldsFromSchema(schema: unknown): string[] {
  * Generate suggested field mappings between template and source fields
  * Uses domain-specific synonyms, semantic analysis, and fuzzy matching
  * to find the best matches with confidence scores.
+ *
+ * IMPORTANT: Each source field can only be mapped to ONE template field.
+ * Uses a greedy algorithm: highest confidence matches are assigned first.
  */
 export function generateSuggestedMappings(
   templateFields: string[],
   sourceFields: string[]
 ): Array<{ templateField: string; sourceField: string; confidence: number }> {
-  const suggestions: Array<{ templateField: string; sourceField: string; confidence: number }> = [];
+  // Build a matrix of all possible matches with confidence scores
+  const allMatches: Array<{
+    templateField: string;
+    sourceField: string;
+    confidence: number;
+  }> = [];
 
   for (const tField of templateFields) {
-    let bestMatch = { sourceField: '', confidence: 0 };
-
     for (const sField of sourceFields) {
-      // Use the new confidence-based matching
       const confidence = getFieldMatchConfidence(sField, tField);
-
-      if (confidence > bestMatch.confidence) {
-        bestMatch = { sourceField: sField, confidence };
-
-        // If we found a very high confidence match, stop searching
-        if (confidence >= 0.95) {
-          break;
-        }
+      if (confidence > 0.3) {  // Only consider matches above threshold
+        allMatches.push({ templateField: tField, sourceField: sField, confidence });
       }
     }
-
-    suggestions.push({
-      templateField: tField,
-      sourceField: bestMatch.sourceField,
-      confidence: bestMatch.confidence,
-    });
   }
 
-  return suggestions;
+  // Sort by confidence (highest first)
+  allMatches.sort((a, b) => b.confidence - a.confidence);
+
+  // Greedy assignment: assign highest confidence matches first
+  // Each source field and template field can only be used once
+  const usedSourceFields = new Set<string>();
+  const usedTemplateFields = new Set<string>();
+  const finalMappings: Array<{ templateField: string; sourceField: string; confidence: number }> = [];
+
+  for (const match of allMatches) {
+    if (!usedSourceFields.has(match.sourceField) && !usedTemplateFields.has(match.templateField)) {
+      finalMappings.push(match);
+      usedSourceFields.add(match.sourceField);
+      usedTemplateFields.add(match.templateField);
+    }
+  }
+
+  // Add unmapped template fields with empty source
+  for (const tField of templateFields) {
+    if (!usedTemplateFields.has(tField)) {
+      finalMappings.push({ templateField: tField, sourceField: '', confidence: 0 });
+    }
+  }
+
+  return finalMappings;
 }
 
 /**
