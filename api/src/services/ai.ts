@@ -1096,10 +1096,10 @@ CRITICAL INSTRUCTIONS:
 
     // BRAND STYLING PATTERNS - for "Make this look like X" requests
     {
-      pattern: /look\s*like\s*(a\s+)?stripe|stripe\s*(style|invoice|aesthetic|design)|stripe's?\s*(look|style|design)/i,
-      intent: "brand_style_stripe",
-      enhancement: `Apply Stripe's signature design aesthetic with these SPECIFIC CSS changes:
-1. PRIMARY COLOR: Change all accent colors to Stripe's purple (#635bff or #6366f1)
+      pattern: /professional\s*clean|clean\s*professional|fintech\s*(style|design|look)/i,
+      intent: "brand_style_professional_clean",
+      enhancement: `Apply professional clean design aesthetic with these SPECIFIC CSS changes:
+1. PRIMARY COLOR: Change all accent colors to a clean purple (#635bff or #6366f1)
 2. HEADER: Clean white background with subtle bottom border, remove heavy colored headers
 3. TYPOGRAPHY: Use system fonts (-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)
 4. SPACING: Increase whitespace - use padding: 24px-32px for sections
@@ -1108,7 +1108,7 @@ CRITICAL INSTRUCTIONS:
 7. TABLE: Minimal borders, use background alternating rows or none
 8. OVERALL: Clean, minimal, professional - less is more
 
-CRITICAL: You MUST actually modify the <style> block to replace existing colors with #635bff (Stripe purple).
+CRITICAL: You MUST actually modify the <style> block to replace existing colors with #635bff.
 Replace any {{styles.accentColor}} with the actual color value #635bff.
 Remove or lighten dark header backgrounds. Add more padding for breathing room.`
     },
@@ -1238,7 +1238,7 @@ SPECIAL PATTERNS:
  * - Sonnet: ~4-10 seconds
  *
  * Be aggressive about using Haiku. Only use Sonnet for:
- * 1. Brand styling (Stripe, Apple, etc.) - needs deep CSS knowledge
+ * 1. Brand styling (Apple, Shopify, etc.) - needs deep CSS knowledge
  * 2. Complex layout restructuring
  * 3. Multi-part requests that need coordination
  */
@@ -1249,8 +1249,8 @@ function isSimpleModification(prompt: string): boolean {
   // These require deep understanding and comprehensive changes
   const complexPatterns = [
     // Brand styling - needs holistic CSS overhaul
-    /look\s*like\s*(a\s+)?(stripe|apple|shopify|airbnb|notion)/i,
-    /stripe\s*(style|look|aesthetic|design|invoice)/i,
+    /look\s*like\s*(a\s+)?(apple|shopify|airbnb|notion)/i,
+    /professional\s*clean|clean\s*professional/i,
     /apple\s*(style|look|aesthetic|design)/i,
     /shopify\s*(style|look|aesthetic|design)/i,
     /(brand|corporate)\s*styl/i,

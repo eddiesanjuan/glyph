@@ -14,7 +14,7 @@ import { DataAnalysis, FieldInfo, FieldType, DocumentType } from "./dataAnalyzer
 // ============================================================================
 
 export interface LayoutOptions {
-  style: "stripe-clean" | "bold" | "minimal" | "corporate";
+  style: "professional-clean" | "bold" | "minimal" | "corporate";
   pageSize: "A4" | "letter" | "legal";
   orientation: "portrait" | "landscape";
   userInstructions?: string; // Natural language customization
@@ -52,7 +52,7 @@ interface StylePreset {
 // ============================================================================
 
 const STYLE_PRESETS: Record<LayoutOptions["style"], StylePreset> = {
-  "stripe-clean": {
+  "professional-clean": {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     primaryColor: "#0a2540",
     accentColor: "#635bff",
@@ -714,8 +714,8 @@ function getAnthropic(): Anthropic {
  */
 function describeStylePreset(style: LayoutOptions["style"]): string {
   const descriptions: Record<LayoutOptions["style"], string> = {
-    "stripe-clean":
-      "Clean, modern design inspired by Stripe. Uses system fonts, subtle purple accent color, minimal borders on tables, rounded corners. Professional and trustworthy aesthetic.",
+    "professional-clean":
+      "Clean, modern design. Uses system fonts, subtle purple accent color, minimal borders on tables, rounded corners. Professional and trustworthy aesthetic.",
     bold:
       "Bold, impactful design with strong visual hierarchy. Uses Helvetica, orange accent color, thick black borders, no rounded corners. High-contrast and attention-grabbing.",
     minimal:

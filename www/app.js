@@ -4144,8 +4144,8 @@
     }
 
     // ============================================
-    // First Win Celebration - The Addiction Hook!
-    // Confetti + special message on first successful modification
+    // First Win Celebration
+    // Special message on first successful modification
     // ============================================
     const FIRST_WIN_KEY = 'glyph_first_win';
 
@@ -4168,7 +4168,6 @@
     // ============================================
     // First Instant Win Celebration
     // Subtle glow + special message on first instant action
-    // Keeps it tasteful - no looping confetti, just a brief moment
     // ============================================
     function celebrateFirstInstantWin() {
       if (hasShownFirstInstantWin) return;
@@ -4592,7 +4591,6 @@ print(result['html'])  # Updated HTML`;
       if (isFirst) {
         if (titleEl) titleEl.textContent = 'You just customized your first PDF!';
         if (detailEl) detailEl.textContent = 'That was all you. Try another change!';
-        // Mark first win complete (no confetti - user preference)
         markFirstWinComplete();
       } else if (isInstant) {
         if (titleEl) titleEl.textContent = 'Changes applied instantly!';
@@ -6390,7 +6388,7 @@ print(result['html'])  # Updated HTML`;
       // Detect and apply color changes
       if (lowPrompt.includes('blue')) {
         modifiedHtml = changeAccentColor(modifiedHtml, '#3B82F6');
-      } else if (lowPrompt.includes('purple') || lowPrompt.includes('stripe')) {
+      } else if (lowPrompt.includes('purple') || lowPrompt.includes('professional clean')) {
         modifiedHtml = changeAccentColor(modifiedHtml, '#635BFF');
       } else if (lowPrompt.includes('red')) {
         modifiedHtml = changeAccentColor(modifiedHtml, '#EF4444');
@@ -6421,7 +6419,7 @@ print(result['html'])  # Updated HTML`;
 
     // Generate enhanced HTML with impressive features
     function generateEnhancedHtml(data, accentColor, extras) {
-      const isStripe = extras.style === 'stripe';
+      const isProfessionalClean = extras.style === 'professional-clean';
       const isApple = extras.style === 'apple';
 
       const watermarkHtml = extras.watermark ? `
@@ -6497,8 +6495,8 @@ print(result['html'])  # Updated HTML`;
         </div>
       ` : '';
 
-      // Stripe-specific styling
-      const stripeStyles = isStripe ? `
+      // Professional clean styling
+      const professionalCleanStyles = isProfessionalClean ? `
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .header { border-bottom: none; padding-bottom: 0; margin-bottom: 32px; }
         .company { font-size: 14px; font-weight: 500; color: #1a1a1a; letter-spacing: -0.01em; }
@@ -6557,7 +6555,7 @@ print(result['html'])  # Updated HTML`;
   .totals-label { color: #666; }
   .totals-value { font-weight: 500; }
   .totals-row.total .totals-label, .totals-row.total .totals-value { font-weight: 700; color: ${accentColor}; }
-  ${stripeStyles}
+  ${professionalCleanStyles}
   ${appleStyles}
 </style>
 </head>
@@ -6569,7 +6567,7 @@ print(result['html'])  # Updated HTML`;
       <div class="company">${data.branding.companyName}</div>
       <div class="company-address">${data.branding.companyAddress}</div>
     </div>
-    <div class="title">${isStripe ? 'Invoice' : 'Quote'}</div>
+    <div class="title">${isProfessionalClean ? 'Invoice' : 'Quote'}</div>
   </div>
 
   <div class="meta">

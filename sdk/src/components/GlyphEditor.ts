@@ -38,8 +38,6 @@ export class GlyphEditor extends HTMLElement {
   private activeToasts: Set<string> = new Set();
   private readonly maxToasts: number = 3;
 
-  // First edit celebration tracking
-  private static readonly CELEBRATION_KEY = 'glyph-first-edit-celebrated';
 
   // Template storage key
   private static readonly TEMPLATES_KEY = 'glyph_templates';
@@ -944,36 +942,6 @@ export class GlyphEditor extends HTMLElement {
 
         .glyph-toast-close:hover {
           color: white;
-        }
-
-        /* Confetti celebration animation */
-        .glyph-confetti-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          pointer-events: none;
-          overflow: hidden;
-          z-index: 1000;
-        }
-
-        .glyph-confetti {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          animation: glyph-confetti-fall 2s ease-out forwards;
-        }
-
-        @keyframes glyph-confetti-fall {
-          0% {
-            transform: translateY(-20px) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh) rotate(720deg);
-            opacity: 0;
-          }
         }
 
         /* Change highlight animation for modified areas */
@@ -2014,9 +1982,6 @@ export class GlyphEditor extends HTMLElement {
 
       // Show validation success toast
       this.showValidationToast(true);
-
-      // Celebrate first successful edit with confetti (one-time)
-      this.celebrateFirstEdit();
 
       // Enable save button after successful modification
       this.hasModifications = true;
@@ -3160,59 +3125,6 @@ export class GlyphEditor extends HTMLElement {
         this.removeToast(toast, toastId);
       }, 2500);
     }, 500);
-  }
-
-  /**
-   * Celebrate first successful edit with confetti
-   */
-  private celebrateFirstEdit() {
-    // Skip if already celebrated or reduced motion preferred
-    if (this.prefersReducedMotion) return;
-
-    try {
-      if (localStorage.getItem(GlyphEditor.CELEBRATION_KEY)) return;
-      localStorage.setItem(GlyphEditor.CELEBRATION_KEY, 'true');
-    } catch {
-      // localStorage not available, skip celebration
-      return;
-    }
-
-    const container = this.shadow.querySelector('.glyph-preview-area');
-    if (!container) return;
-
-    // Create confetti container
-    const confettiContainer = document.createElement('div');
-    confettiContainer.className = 'glyph-confetti-container';
-    confettiContainer.setAttribute('aria-hidden', 'true');
-
-    // Generate confetti pieces
-    const colors = ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#8b5cf6'];
-
-    for (let i = 0; i < 50; i++) {
-      const confetti = document.createElement('div');
-      confetti.className = 'glyph-confetti';
-      confetti.style.left = `${Math.random() * 100}%`;
-      confetti.style.top = '-20px';
-      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      confetti.style.animationDelay = `${Math.random() * 0.5}s`;
-      confetti.style.animationDuration = `${1.5 + Math.random()}s`;
-
-      // Random shapes
-      if (Math.random() > 0.5) {
-        confetti.style.borderRadius = '50%';
-      } else {
-        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-      }
-
-      confettiContainer.appendChild(confetti);
-    }
-
-    container.appendChild(confettiContainer);
-
-    // Remove confetti after animation
-    setTimeout(() => {
-      confettiContainer.remove();
-    }, 2500);
   }
 
   /**

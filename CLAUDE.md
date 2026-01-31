@@ -219,7 +219,7 @@ agent-browser close
 
 ### Testing the Demo
 1. Go to `https://glyph-www-production-69d7.up.railway.app`
-2. Try quick actions: "Stripe styling", "Add signature"
+2. Try quick actions: "Add watermark", "Add signature"
 3. Check browser console - should see `[Glyph] Self-check passed`
 4. No localhost:3000 errors should appear
 

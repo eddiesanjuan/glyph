@@ -1434,13 +1434,13 @@ export function App() {
       email: 'jane@example.com'
     },
     lineItems: [
-      { description: 'Enterprise License', quantity: 1, unitPrice: '$2,400.00', total: '$2,400.00' },
-      { description: 'Premium Support (12 mo)', quantity: 12, unitPrice: '$100.00', total: '$1,200.00' }
+      { description: 'Enterprise License', quantity: 1, unitPrice: '2,400.00', total: '2,400.00' },
+      { description: 'Premium Support (12 mo)', quantity: 12, unitPrice: '100.00', total: '1,200.00' }
     ],
     totals: {
-      subtotal: '$3,600.00',
-      tax: '$0.00',
-      total: '$3,600.00'
+      subtotal: '3,600.00',
+      tax: '0.00',
+      total: '3,600.00'
     },
     branding: {
       companyName: 'Acme Corp',
@@ -3584,7 +3584,6 @@ export function App() {
                   defaultValue={editingTemplate.style || ''}
                 >
                   <option value="">None</option>
-                  <option value="stripe-clean">Stripe Clean</option>
                   <option value="professional">Professional</option>
                   <option value="minimal">Minimal</option>
                   <option value="bold">Bold</option>

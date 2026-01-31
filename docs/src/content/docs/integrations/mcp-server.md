@@ -104,8 +104,8 @@ The MCP server exposes 18 tools organized into four categories:
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `data` | object | Yes | Your data in any structure |
-| `intent` | string | No | Natural language description (e.g., "professional invoice", "Stripe-styled proposal") |
-| `style` | string | No | Style preset: `stripe-clean`, `bold`, `minimal`, `corporate`, `quote-modern` (default) |
+| `intent` | string | No | Natural language description (e.g., "professional invoice", "modern proposal") |
+| `style` | string | No | Style preset: `professional-clean`, `bold`, `minimal`, `corporate`, `quote-modern` (default) |
 | `format` | string | No | Output format: `pdf` (default), `png`, `html` |
 | `outputPath` | string | No | File path to save the output |
 
@@ -121,8 +121,8 @@ glyph_create({
     tax: 592,
     total: 7992
   },
-  intent: "professional invoice with Stripe styling",
-  style: "stripe-clean",
+  intent: "professional invoice with clean styling",
+  style: "professional-clean",
   outputPath: "./invoice-acme.pdf"
 })
 ```
@@ -321,7 +321,7 @@ Save a template for reuse.
 | `html` | string | Yes | Full HTML with Mustache placeholders (e.g., `{{client.name}}`) |
 | `type` | string | No | Template type for organization |
 | `description` | string | No | Description |
-| `style` | string | No | Style preset: `stripe-clean`, `professional`, `minimal`, `bold`, `classic`, `corporate`, `modern`, `vibrant` |
+| `style` | string | No | Style preset: `professional-clean`, `professional`, `minimal`, `bold`, `classic`, `corporate`, `modern`, `vibrant` |
 | `isDefault` | boolean | No | Make this the default for its type |
 
 ```typescript
@@ -329,7 +329,7 @@ glyph_template_save({
   name: "Invoice v2",
   html: "<html>...{{client.name}}...</html>",
   type: "invoice",
-  style: "stripe-clean",
+  style: "professional-clean",
   isDefault: true
 })
 // Returns: { template: { id: "tmpl_xxx", name: "Invoice v2", version: 1 } }
@@ -558,10 +558,10 @@ AI:  [glyph_create] -> Detects invoice, generates PDF
 
 ```text
 You: Use the quote-modern template for a proposal to Jane Smith.
-     Make it look like Stripe's design. Add a QR code.
+     Make it look clean and professional. Add a QR code.
 
 AI:  [glyph_preview]  -> Creates session with quote-modern template
-     [glyph_modify]   -> "Apply Stripe-inspired clean design"
+     [glyph_modify]   -> "Apply clean, professional design"
      [glyph_modify]   -> "Add a QR code for payment in the footer"
      [glyph_generate] -> Exports final PDF
 ```

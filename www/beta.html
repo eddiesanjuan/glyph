@@ -750,56 +750,6 @@
       position: relative;
     }
 
-    /* Confetti Container */
-    .confetti-container {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      height: 200px;
-      overflow: visible;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .confetti {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      opacity: 0;
-    }
-
-    .confetti.active {
-      animation: confettiFall 3s ease-out forwards;
-    }
-
-    .confetti:nth-child(odd) {
-      background: var(--brand-teal);
-      border-radius: 50%;
-    }
-
-    .confetti:nth-child(even) {
-      background: var(--airtable-yellow);
-      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-    }
-
-    .confetti:nth-child(3n) {
-      background: var(--brand-blue);
-      border-radius: 2px;
-    }
-
-    @keyframes confettiFall {
-      0% {
-        opacity: 1;
-        transform: translateY(0) translateX(0) rotate(0deg) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(300px) translateX(var(--drift, 50px)) rotate(720deg) scale(0.5);
-      }
-    }
-
     /* Staggered Reveal Animations */
     .success-state.revealing .success-icon {
       animation: revealBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -2413,11 +2363,6 @@
         padding: 10px 16px;
       }
 
-      /* Confetti - reduce particle count on mobile */
-      .confetti-container {
-        height: 150px;
-      }
-
       /* Activation Section Mobile */
       .activation-card {
         padding: 20px 16px;
@@ -2961,9 +2906,8 @@
         animation-duration: 40s !important;
       }
 
-      /* Reduce sparkle/confetti counts */
-      .sparkle:nth-child(n+16),
-      .confetti:nth-child(n+16) {
+      /* Reduce sparkle counts */
+      .sparkle:nth-child(n+16) {
         display: none;
       }
     }
@@ -3070,10 +3014,6 @@
         animation: none !important;
       }
 
-      .confetti {
-        display: none !important;
-      }
-
       .sparkle {
         display: none !important;
       }
@@ -3152,7 +3092,7 @@
         <h1>Turn Airtable into a <span class="gradient-text">PDF powerhouse</span></h1>
         <p class="subheadline">Connect your bases. Describe your document. Generate beautiful PDFs in seconds. No export chains. No code.</p>
         <ul class="value-props">
-          <li>Native Airtable integration - connect your bases in 30 seconds</li>
+          <li>Native Airtable integration - connect your bases in minutes</li>
           <li>AI-powered templates - describe what you need, we build it</li>
           <li>One API call to PDF - invoices, quotes, reports, anything</li>
           <li>Built for developers who live in Airtable</li>
@@ -3297,7 +3237,6 @@
           </div>
 
           <div id="request-success" class="success-state hidden">
-            <div class="confetti-container" id="confetti-container"></div>
             <div class="success-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M20 6L9 17l-5-5"/>
@@ -3340,7 +3279,6 @@
           <div id="activation-success" class="activation-success hidden">
             <!-- Sparkle Particles Container -->
             <div class="sparkle-container" id="sparkle-container"></div>
-            <div class="confetti-container" id="activation-confetti-container"></div>
 
             <!-- Success Icon with Morphing Animation -->
             <div class="success-icon">
@@ -3567,7 +3505,6 @@
     const requestError = document.getElementById('request-error');
     const requestErrorText = document.getElementById('request-error-text');
     const queuePosition = document.getElementById('queue-position');
-    const confettiContainer = document.getElementById('confetti-container');
 
     const inviteCodeInput = document.getElementById('invite-code');
     const activateBtn = document.getElementById('activate-btn');
@@ -3704,46 +3641,6 @@
     });
 
     // ============================================
-    // Confetti Effect
-    // ============================================
-    function createConfetti() {
-      const colors = ['var(--brand-teal)', 'var(--airtable-yellow)', 'var(--brand-blue)', 'var(--success-green)'];
-      const confettiCount = 30;
-
-      for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.classList.add('confetti');
-
-        // Random starting position
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.top = '-10px';
-
-        // Random animation delay
-        confetti.style.animationDelay = Math.random() * 0.5 + 's';
-
-        // Random size
-        const size = Math.random() * 8 + 6;
-        confetti.style.width = size + 'px';
-        confetti.style.height = size + 'px';
-
-        // Random horizontal drift
-        const drift = (Math.random() - 0.5) * 200;
-        confetti.style.setProperty('--drift', drift + 'px');
-
-        // Apply random color directly (override CSS)
-        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-        confettiContainer.appendChild(confetti);
-
-        // Trigger animation
-        setTimeout(() => confetti.classList.add('active'), 10);
-
-        // Clean up after animation
-        setTimeout(() => confetti.remove(), 3500);
-      }
-    }
-
-    // ============================================
     // Invite Code Formatting
     // ============================================
     inviteCodeInput.addEventListener('input', (e) => {
@@ -3826,9 +3723,6 @@
           // Trigger reveal animations
           requestSuccess.classList.add('revealing');
 
-          // Trigger confetti
-          setTimeout(createConfetti, 200);
-
           if (result.position) {
             queuePosition.textContent = `#${result.position} in queue`;
             queuePosition.classList.remove('hidden');
@@ -3872,40 +3766,12 @@
       return res.json();
     }
 
-    const activationConfettiContainer = document.getElementById('activation-confetti-container');
     const sparkleContainer = document.getElementById('sparkle-container');
     const apiKeyBox = document.getElementById('api-key-box');
     const copySuccess = document.getElementById('copy-success');
     const stepCopy = document.getElementById('step-copy');
     const copyIcon = document.getElementById('copy-icon');
     const checkIcon = document.getElementById('check-icon');
-
-    function createActivationConfetti() {
-      const colors = ['var(--brand-teal)', 'var(--airtable-yellow)', 'var(--brand-blue)', 'var(--success-green)'];
-      const confettiCount = 40;
-
-      for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.classList.add('confetti');
-
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.top = '-10px';
-        confetti.style.animationDelay = Math.random() * 0.5 + 's';
-
-        const size = Math.random() * 10 + 6;
-        confetti.style.width = size + 'px';
-        confetti.style.height = size + 'px';
-
-        const drift = (Math.random() - 0.5) * 200;
-        confetti.style.setProperty('--drift', drift + 'px');
-        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-        activationConfettiContainer.appendChild(confetti);
-
-        setTimeout(() => confetti.classList.add('active'), 10);
-        setTimeout(() => confetti.remove(), 3500);
-      }
-    }
 
     // ============================================
     // Sparkle Effect (Premium Particles)
@@ -3991,7 +3857,6 @@
 
     // Combined celebration effect
     function createCelebration() {
-      createActivationConfetti();
       createSparkles();
       setTimeout(createStars, 100);
     }
