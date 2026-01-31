@@ -646,6 +646,7 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
     // Special handling for common field patterns
     // e.g., "customer_address" template should match "address" synonym group
     // even when source is "Site Location"
+    // Special handling for address fields
     if (groupName === 'address') {
       const sourceHasAddress = normalizedSource.includes('location') ||
                                normalizedSource.includes('site') ||
@@ -657,6 +658,7 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
       }
     }
 
+    // Special handling for description fields
     if (groupName === 'description') {
       const sourceHasDesc = normalizedSource.includes('scope') ||
                             normalizedSource.includes('description') ||
@@ -668,6 +670,30 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
       if (sourceHasDesc && templateHasDesc) {
         return 0.82;
       }
+    }
+
+    // Special handling for phone fields
+    if (groupName === 'phone') {
+      const sourceHasPhone = normalizedSource.includes('phone') ||
+                             normalizedSource.includes('tel') ||
+                             normalizedSource.includes('mobile') ||
+                             normalizedSource.includes('cell');
+      const templateHasPhone = normalizedTemplate.includes('phone') ||
+                               normalizedTemplate.includes('tel') ||
+                               normalizedTemplate.includes('contact');
+      if (sourceHasPhone && templateHasPhone) {
+        return 0.82;
+      }
+    }
+  }
+
+  // Explicit negative matches - prevent wrong associations
+  // "Site Location" should NOT match "contact_phone"
+  if ((normalizedSource.includes('site') || normalizedSource.includes('location')) &&
+      (normalizedTemplate.includes('phone') || normalizedTemplate.includes('contact'))) {
+    // Don't let location fields match phone fields
+    if (!normalizedSource.includes('phone')) {
+      return 0; // Explicit no match
     }
   }
 
