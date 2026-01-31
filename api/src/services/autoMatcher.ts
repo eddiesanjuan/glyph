@@ -609,12 +609,42 @@ function normalizeFieldName(name: string): string {
 }
 
 /**
+ * Check if a substring match is meaningful (not just coincidental)
+ * Requires the matched portion to be at least 40% of the longer string
+ * to avoid false positives like "sitelocation" matching "tel"
+ */
+function isSignificantMatch(container: string, substring: string): boolean {
+  if (!container.includes(substring)) return false;
+  // Require the substring to be at least 40% of the container's length
+  return substring.length >= container.length * 0.4;
+}
+
+/**
  * Get the confidence score for matching two field names
  * Returns a value between 0 and 1 indicating match confidence
  */
 export function getFieldMatchConfidence(sourceField: string, templateField: string): number {
   const normalizedSource = normalizeFieldName(sourceField);
   const normalizedTemplate = normalizeFieldName(templateField);
+
+  // FIRST: Explicit negative matches - prevent known wrong associations
+  // These must be checked before any other matching to avoid false positives
+  // "Site Location" should NOT match "contact_phone" or similar phone fields
+  if ((normalizedSource.includes('site') || normalizedSource.includes('location')) &&
+      !normalizedSource.includes('phone')) {
+    if (normalizedTemplate.includes('phone') ||
+        normalizedTemplate.includes('tel') ||
+        normalizedTemplate.includes('mobile') ||
+        normalizedTemplate.includes('cell')) {
+      return 0; // Explicit no match - location fields don't map to phone fields
+    }
+  }
+
+  // "Client" should NOT match "contact_phone" - it should match "customer_name"
+  if (normalizedSource === 'client' &&
+      (normalizedTemplate.includes('phone') || normalizedTemplate.includes('tel'))) {
+    return 0; // Client is a person/company, not a phone number
+  }
 
   // Exact match after normalization - very high confidence
   if (normalizedSource === normalizedTemplate) {
@@ -626,17 +656,18 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
     const normalizedSynonyms = synonyms.map(s => normalizeFieldName(s));
 
     // Check if source field matches this synonym group
+    // Use strict matching: exact match, or SIGNIFICANT substring overlap
     const sourceInGroup = normalizedSynonyms.some(s =>
       normalizedSource === s ||
-      normalizedSource.includes(s) ||
-      s.includes(normalizedSource)
+      isSignificantMatch(normalizedSource, s) ||
+      isSignificantMatch(s, normalizedSource)
     );
 
     // Check if template field matches this synonym group
     const templateInGroup = normalizedSynonyms.some(s =>
       normalizedTemplate === s ||
-      normalizedTemplate.includes(s) ||
-      s.includes(normalizedTemplate)
+      isSignificantMatch(normalizedTemplate, s) ||
+      isSignificantMatch(s, normalizedTemplate)
     );
 
     if (sourceInGroup && templateInGroup) {
@@ -673,13 +704,20 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
     }
 
     // Special handling for phone fields
+    // Note: 'tel' must match at start/end to avoid false positives like "sitelocation"
     if (groupName === 'phone') {
       const sourceHasPhone = normalizedSource.includes('phone') ||
-                             normalizedSource.includes('tel') ||
+                             normalizedSource.startsWith('tel') ||
+                             normalizedSource.endsWith('tel') ||
+                             normalizedSource === 'tel' ||
+                             normalizedSource.includes('telephone') ||
                              normalizedSource.includes('mobile') ||
                              normalizedSource.includes('cell');
       const templateHasPhone = normalizedTemplate.includes('phone') ||
-                               normalizedTemplate.includes('tel') ||
+                               normalizedTemplate.startsWith('tel') ||
+                               normalizedTemplate.endsWith('tel') ||
+                               normalizedTemplate === 'tel' ||
+                               normalizedTemplate.includes('telephone') ||
                                normalizedTemplate.includes('contact');
       if (sourceHasPhone && templateHasPhone) {
         return 0.82;
@@ -687,18 +725,9 @@ export function getFieldMatchConfidence(sourceField: string, templateField: stri
     }
   }
 
-  // Explicit negative matches - prevent wrong associations
-  // "Site Location" should NOT match "contact_phone"
-  if ((normalizedSource.includes('site') || normalizedSource.includes('location')) &&
-      (normalizedTemplate.includes('phone') || normalizedTemplate.includes('contact'))) {
-    // Don't let location fields match phone fields
-    if (!normalizedSource.includes('phone')) {
-      return 0; // Explicit no match
-    }
-  }
-
-  // Contains match - one field name contains the other
-  if (normalizedSource.includes(normalizedTemplate) || normalizedTemplate.includes(normalizedSource)) {
+  // Contains match - one field name contains the other (must be significant overlap)
+  if (isSignificantMatch(normalizedSource, normalizedTemplate) ||
+      isSignificantMatch(normalizedTemplate, normalizedSource)) {
     // Scale by how much overlap there is
     const overlap = Math.min(normalizedSource.length, normalizedTemplate.length) /
                    Math.max(normalizedSource.length, normalizedTemplate.length);
