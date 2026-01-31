@@ -275,6 +275,7 @@ app.get("/", (c) => {
       documentMetadata: "GET /v1/documents/:id/metadata",
       // Auto-generate (one-call magic)
       autoGenerate: "POST /v1/auto-generate",
+      autoGenerateAccept: "POST /v1/auto-generate/accept",
     },
   });
 });
@@ -551,7 +552,8 @@ console.log(`
     POST /v1/create/analyze   - Analysis-only (no PDF generation)
 
   Auto-Generate (MAGIC ENDPOINT!):
-    POST /v1/auto-generate    - Data in, auto-match template, preview out
+    POST /v1/auto-generate         - Data in, auto-match template, preview out
+    POST /v1/auto-generate/accept  - Persist template + mapping for reuse
 
   Schema Detection:
     POST /v1/analyze              - Analyze data structure and detect document type

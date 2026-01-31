@@ -298,6 +298,16 @@ const Icons = {
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
     </svg>
   ),
+  chevronDown: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  ),
+  chevronUp: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polyline points="18 15 12 9 6 15"/>
+    </svg>
+  ),
 }
 
 // Tier badge colors - matching landing page navy blue palette
@@ -416,14 +426,25 @@ export function App() {
   const [showMagicPreview, setShowMagicPreview] = useState(false)
   const [magicPreviewData, setMagicPreviewData] = useState<{
     html: string
-    templateUsed: { id: string; name: string; confidence: number; reasoning: string }
-    mappings: { applied: Record<string, string>; unmapped: string[]; coverage: number }
+    templateUsed: { id: string; name: string; confidence: number; reasoning: string; isBuiltIn?: boolean }
+    mappings: {
+      applied: Record<string, string>
+      unmapped: string[]
+      coverage: number
+      suggestions?: Array<{ templateField: string; possibleSourceFields: string[] }>
+    }
     sourceId: string
+    sessionId?: string
     needsConfirmation?: boolean
     suggestions?: Array<{ id: string; name: string; confidence: number; reasoning: string }>
   } | null>(null)
   const [magicPreviewLoading, setMagicPreviewLoading] = useState(false)
   const [magicPreviewError, setMagicPreviewError] = useState<string | null>(null)
+  const [magicMappingOverrides, setMagicMappingOverrides] = useState<Record<string, string>>({})
+  const [magicExpandedField, setMagicExpandedField] = useState<string | null>(null)
+  const [magicAccepting, setMagicAccepting] = useState(false)
+  const [magicSwitchingTemplate, setMagicSwitchingTemplate] = useState(false)
+  const [showMagicTemplatePicker, setShowMagicTemplatePicker] = useState(false)
 
   // Playground state
   const [playgroundTemplate, setPlaygroundTemplate] = useState('quote-modern')
@@ -1048,25 +1069,37 @@ export function App() {
   }
 
   // Call auto-generate API to get magic preview after source connection
-  const fetchMagicPreview = async (sourceId: string) => {
+  const fetchMagicPreview = async (sourceId: string, templateIdOverride?: string, mappingOverrides?: Record<string, string>) => {
     setMagicPreviewLoading(true)
     setMagicPreviewError(null)
-    setMagicPreviewData(null)
+    if (!templateIdOverride && !mappingOverrides) {
+      setMagicPreviewData(null)
+      setMagicMappingOverrides({})
+      setMagicExpandedField(null)
+    }
     setShowMagicPreview(true)
 
     try {
+      const body: Record<string, unknown> = {
+        sourceId,
+        format: 'preview',
+        confidenceThreshold: 0.5,
+        autoAcceptAboveThreshold: true
+      }
+      if (templateIdOverride) {
+        body.templateId = templateIdOverride
+      }
+      if (mappingOverrides && Object.keys(mappingOverrides).length > 0) {
+        body.mappingOverrides = mappingOverrides
+      }
+
       const response = await fetch(`${API_URL}/v1/auto-generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          sourceId,
-          format: 'preview',
-          confidenceThreshold: 0.5,
-          autoAcceptAboveThreshold: true
-        })
+        body: JSON.stringify(body)
       })
 
       const data = await response.json()
@@ -1076,15 +1109,21 @@ export function App() {
           html: data.preview?.html || '',
           templateUsed: data.templateUsed || { id: '', name: 'Unknown', confidence: 0, reasoning: '' },
           mappings: data.mappings || { applied: {}, unmapped: [], coverage: 0 },
-          sourceId
+          sourceId,
+          sessionId: data.sessionId
         })
+        // Keep accumulated overrides
+        if (mappingOverrides) {
+          setMagicMappingOverrides(mappingOverrides)
+        }
       } else if (data.code === 'LOW_CONFIDENCE') {
         // Still show preview but with warning
         setMagicPreviewData({
-          html: '', // No preview yet
+          html: data.preview?.html || '', // May have partial preview
           templateUsed: data.suggestedTemplates?.[0] || { id: '', name: 'Unknown', confidence: 0, reasoning: '' },
-          mappings: { applied: {}, unmapped: [], coverage: 0 },
+          mappings: data.mappings || { applied: {}, unmapped: [], coverage: 0 },
           sourceId,
+          sessionId: data.sessionId,
           needsConfirmation: true,
           suggestions: data.suggestedTemplates
         })
@@ -1095,7 +1134,85 @@ export function App() {
       setMagicPreviewError('Failed to connect to API')
     } finally {
       setMagicPreviewLoading(false)
+      setMagicSwitchingTemplate(false)
     }
+  }
+
+  // Switch template in magic preview
+  const handleMagicTemplateSwitch = async (templateId: string) => {
+    if (!magicPreviewData) return
+    setMagicSwitchingTemplate(true)
+    setShowMagicTemplatePicker(false)
+    await fetchMagicPreview(magicPreviewData.sourceId, templateId, magicMappingOverrides)
+  }
+
+  // Fix a mapping in magic preview
+  const handleMagicMappingFix = async (templateField: string, sourceField: string) => {
+    if (!magicPreviewData) return
+    const newOverrides = { ...magicMappingOverrides, [templateField]: sourceField }
+    setMagicMappingOverrides(newOverrides)
+    setMagicExpandedField(null)
+    await fetchMagicPreview(magicPreviewData.sourceId, magicPreviewData.templateUsed.id, newOverrides)
+  }
+
+  // Accept the magic preview and save template/mapping
+  const handleMagicAccept = async (setAsDefault: boolean = true) => {
+    if (!magicPreviewData?.sessionId) {
+      setMagicPreviewError('No session available. Please try again.')
+      return
+    }
+
+    setMagicAccepting(true)
+
+    try {
+      const response = await fetch(`${API_URL}/v1/auto-generate/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: magicPreviewData.sessionId,
+          setAsDefault,
+          mappingOverrides: Object.keys(magicMappingOverrides).length > 0 ? magicMappingOverrides : undefined
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Success! Show toast and close modal
+        resetMagicPreview()
+        setPage('my-templates')
+        // Refresh templates and mappings
+        fetchTemplates()
+        fetchMappings()
+        // Show success feedback (could add a toast here)
+        alert(`Template "${data.savedTemplate.name}" saved successfully!${data.defaultSet ? ' Set as default for this source.' : ''}`)
+      } else if (data.code === 'DEMO_TIER_LIMITATION') {
+        // Demo tier - show helpful upgrade message
+        setMagicPreviewError(
+          'Template saving requires a registered API key. You can still generate a one-time PDF by clicking "Edit in Playground".'
+        )
+      } else {
+        setMagicPreviewError(data.error || 'Failed to save template')
+      }
+    } catch (err) {
+      setMagicPreviewError('Failed to connect to API')
+    } finally {
+      setMagicAccepting(false)
+    }
+  }
+
+  // Open playground with the current magic preview session
+  const handleMagicEditInPlayground = () => {
+    if (magicPreviewData?.sessionId) {
+      setPlaygroundSessionId(magicPreviewData.sessionId)
+      setPlaygroundHtml(magicPreviewData.html)
+      setPlaygroundSourceId(magicPreviewData.sourceId)
+    }
+    resetMagicPreview()
+    setPage('playground')
   }
 
   const resetMagicPreview = () => {
@@ -1103,6 +1220,11 @@ export function App() {
     setMagicPreviewData(null)
     setMagicPreviewError(null)
     setMagicPreviewLoading(false)
+    setMagicMappingOverrides({})
+    setMagicExpandedField(null)
+    setMagicAccepting(false)
+    setMagicSwitchingTemplate(false)
+    setShowMagicTemplatePicker(false)
   }
 
   // Mapping functions
@@ -4529,11 +4651,11 @@ export function App() {
       {showMagicPreview && (
         <div class="modal-overlay" onClick={resetMagicPreview}>
           <div class="modal modal-magic-preview" onClick={e => e.stopPropagation()}>
-            <button class="btn btn-icon modal-close-btn" onClick={resetMagicPreview}>
+            <button class="btn btn-icon modal-close-btn" onClick={resetMagicPreview} disabled={magicAccepting}>
               {Icons.x}
             </button>
 
-            {magicPreviewLoading ? (
+            {magicPreviewLoading && !magicSwitchingTemplate ? (
               <div class="magic-loading">
                 <div class="spinner spinner-lg" />
                 <h3>Analyzing your data...</h3>
@@ -4547,6 +4669,9 @@ export function App() {
                 <h3>Couldn't auto-generate preview</h3>
                 <p>{magicPreviewError}</p>
                 <div class="magic-actions">
+                  <button class="btn btn-ghost" onClick={handleMagicEditInPlayground}>
+                    Edit in Playground
+                  </button>
                   <button class="btn btn-secondary" onClick={resetMagicPreview}>Close</button>
                 </div>
               </div>
@@ -4554,75 +4679,200 @@ export function App() {
               <div class="magic-content">
                 <div class="magic-header">
                   <div class="magic-header-icon">
-                    {Icons.checkCircle}
+                    {magicPreviewData.templateUsed.confidence >= 0.8 ? Icons.checkCircle : Icons.warning}
                   </div>
                   <h2>Here's your document!</h2>
+
+                  {/* Template Switcher - always visible when suggestions exist */}
+                  <div class="magic-template-selector">
+                    <button
+                      class="magic-template-btn"
+                      onClick={() => setShowMagicTemplatePicker(!showMagicTemplatePicker)}
+                      disabled={magicSwitchingTemplate || magicAccepting}
+                    >
+                      <span class="template-name">{magicPreviewData.templateUsed.name}</span>
+                      <span class={`confidence-pill ${magicPreviewData.templateUsed.confidence >= 0.8 ? 'high' : magicPreviewData.templateUsed.confidence >= 0.5 ? 'medium' : 'low'}`}>
+                        {Math.round(magicPreviewData.templateUsed.confidence * 100)}%
+                      </span>
+                      {magicPreviewData.suggestions && magicPreviewData.suggestions.length > 1 && (
+                        <span class="dropdown-arrow">{showMagicTemplatePicker ? Icons.chevronUp : Icons.chevronDown}</span>
+                      )}
+                    </button>
+
+                    {/* Template alternatives dropdown */}
+                    {showMagicTemplatePicker && magicPreviewData.suggestions && magicPreviewData.suggestions.length > 1 && (
+                      <div class="magic-template-dropdown">
+                        <p class="dropdown-hint">Try a different template:</p>
+                        {magicPreviewData.suggestions.map(template => (
+                          <button
+                            key={template.id}
+                            class={`template-option ${template.id === magicPreviewData.templateUsed.id ? 'current' : ''}`}
+                            onClick={() => handleMagicTemplateSwitch(template.id)}
+                            disabled={magicSwitchingTemplate}
+                          >
+                            <span class="option-name">{template.name}</span>
+                            <span class={`confidence-pill ${template.confidence >= 0.8 ? 'high' : template.confidence >= 0.5 ? 'medium' : 'low'}`}>
+                              {Math.round(template.confidence * 100)}%
+                            </span>
+                            {template.id === magicPreviewData.templateUsed.id && <span class="current-badge">current</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <p class="magic-summary">
                     Matched <strong>{Object.keys(magicPreviewData.mappings.applied).length}</strong> fields
                     ({Math.round(magicPreviewData.mappings.coverage * 100)}% coverage)
-                    using <strong>{magicPreviewData.templateUsed.name}</strong>
                   </p>
-                  {magicPreviewData.templateUsed.confidence < 0.8 && (
+
+                  {magicPreviewData.templateUsed.confidence < 0.7 && (
                     <div class="confidence-warning">
-                      <span class="confidence-badge">
-                        {Math.round(magicPreviewData.templateUsed.confidence * 100)}% confidence
-                      </span>
                       <span>Please verify the preview looks correct</span>
                     </div>
                   )}
                 </div>
 
-                {magicPreviewData.html ? (
-                  <div class="magic-preview-frame">
-                    <iframe
-                      srcDoc={magicPreviewData.html}
-                      title="Document Preview"
-                      sandbox="allow-same-origin"
-                    />
-                  </div>
-                ) : (
-                  <div class="magic-no-preview">
-                    <p>Preview not available - select a template to generate</p>
-                  </div>
-                )}
+                {/* Preview with loading overlay when switching */}
+                <div class={`magic-preview-wrapper ${magicSwitchingTemplate || magicPreviewLoading ? 'loading' : ''}`}>
+                  {(magicSwitchingTemplate || magicPreviewLoading) && (
+                    <div class="preview-loading-overlay">
+                      <div class="spinner" />
+                      <span>Updating preview...</span>
+                    </div>
+                  )}
+                  {magicPreviewData.html ? (
+                    <div class="magic-preview-frame">
+                      <iframe
+                        srcDoc={magicPreviewData.html}
+                        title="Document Preview"
+                        sandbox="allow-same-origin"
+                      />
+                    </div>
+                  ) : (
+                    <div class="magic-no-preview">
+                      <p>Preview not available - select a template to generate</p>
+                    </div>
+                  )}
+                </div>
 
+                {/* Interactive unmapped fields */}
                 {magicPreviewData.mappings.unmapped.length > 0 && (
-                  <div class="unmapped-fields">
-                    <p><strong>Fields that couldn't be mapped:</strong></p>
-                    <ul>
-                      {magicPreviewData.mappings.unmapped.slice(0, 5).map(f => (
-                        <li key={f}>{f}</li>
-                      ))}
-                      {magicPreviewData.mappings.unmapped.length > 5 && (
-                        <li class="more-fields">+{magicPreviewData.mappings.unmapped.length - 5} more</li>
+                  <div class="unmapped-fields-interactive">
+                    <p class="unmapped-header">
+                      <strong>Fix {magicPreviewData.mappings.unmapped.length} unmapped field{magicPreviewData.mappings.unmapped.length > 1 ? 's' : ''}:</strong>
+                      <span class="optional-hint">(optional)</span>
+                    </p>
+                    <div class="unmapped-list">
+                      {magicPreviewData.mappings.unmapped.slice(0, 8).map(field => {
+                        const suggestion = magicPreviewData.mappings.suggestions?.find(s => s.templateField === field)
+                        const source = sources.find(s => s.id === magicPreviewData.sourceId)
+                        const sourceFieldsList = source?.discovered_schema?.fields || []
+                        const isExpanded = magicExpandedField === field
+
+                        return (
+                          <div key={field} class={`unmapped-field-card ${isExpanded ? 'expanded' : ''}`}>
+                            <button
+                              class="field-header"
+                              onClick={() => setMagicExpandedField(isExpanded ? null : field)}
+                              disabled={magicSwitchingTemplate || magicAccepting}
+                            >
+                              <span class="field-name">{field}</span>
+                              <span class="field-expand">{isExpanded ? Icons.chevronUp : Icons.chevronDown}</span>
+                            </button>
+
+                            {isExpanded && (
+                              <div class="field-options">
+                                {suggestion?.possibleSourceFields && suggestion.possibleSourceFields.length > 0 ? (
+                                  <>
+                                    <p class="options-hint">Did you mean:</p>
+                                    <div class="source-field-chips">
+                                      {suggestion.possibleSourceFields.map(sf => (
+                                        <button
+                                          key={sf}
+                                          class="source-chip"
+                                          onClick={() => handleMagicMappingFix(field, sf)}
+                                          disabled={magicPreviewLoading}
+                                        >
+                                          {sf}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                ) : sourceFieldsList.length > 0 ? (
+                                  <>
+                                    <p class="options-hint">Available source fields:</p>
+                                    <div class="source-field-chips">
+                                      {sourceFieldsList.slice(0, 6).map(sf => (
+                                        <button
+                                          key={sf.path}
+                                          class="source-chip"
+                                          onClick={() => handleMagicMappingFix(field, sf.path)}
+                                          disabled={magicPreviewLoading}
+                                        >
+                                          {sf.name}
+                                        </button>
+                                      ))}
+                                      {sourceFieldsList.length > 6 && (
+                                        <span class="more-fields-hint">+{sourceFieldsList.length - 6} more</span>
+                                      )}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <p class="no-suggestions">No similar fields found</p>
+                                )}
+                                <button
+                                  class="skip-field-btn"
+                                  onClick={() => setMagicExpandedField(null)}
+                                >
+                                  Skip this field
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {magicPreviewData.mappings.unmapped.length > 8 && (
+                        <p class="more-fields">+{magicPreviewData.mappings.unmapped.length - 8} more fields</p>
                       )}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
+                {/* Action buttons */}
                 <div class="magic-actions">
                   <button
                     class="btn btn-ghost"
-                    onClick={() => {
-                      // Open playground for editing
-                      resetMagicPreview()
-                      setPage('playground')
-                    }}
+                    onClick={handleMagicEditInPlayground}
+                    disabled={magicAccepting}
                   >
                     Edit in Playground
                   </button>
                   <button
-                    class="btn btn-primary"
-                    onClick={() => {
-                      // Accept and close
-                      resetMagicPreview()
-                      // Navigate to my templates to see the connected source
-                      setPage('my-templates')
-                    }}
+                    class="btn btn-primary magic-accept-btn"
+                    onClick={() => handleMagicAccept(true)}
+                    disabled={magicAccepting || magicSwitchingTemplate || !magicPreviewData.sessionId}
                   >
-                    Looks Good!
+                    {magicAccepting ? (
+                      <>
+                        <span class="spinner spinner-sm" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        {Icons.checkCircle}
+                        Make This My Default
+                      </>
+                    )}
                   </button>
                 </div>
+
+                {/* Demo tier hint */}
+                {!apiKey.startsWith('gk_') && (
+                  <p class="demo-hint">
+                    Using demo mode. Sign up for an API key to save templates.
+                  </p>
+                )}
               </div>
             ) : null}
           </div>

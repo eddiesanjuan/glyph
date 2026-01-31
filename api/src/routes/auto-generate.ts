@@ -3,11 +3,12 @@
  * The "magic" endpoint - connect data, get PDF in ONE call
  *
  * POST /v1/auto-generate - Complete auto-generation from source or raw data
+ * POST /v1/auto-generate/accept - Persist auto-generated template + mapping
  */
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { getSupabase } from "../lib/supabase.js";
+import { getSupabase, supabase } from "../lib/supabase.js";
 import {
   findMatchingTemplates,
   detectDocumentType,
@@ -16,17 +17,135 @@ import {
 } from "../services/autoMatcher.js";
 import { createConnector } from "../services/connectors/index.js";
 import { templateEngine } from "../services/template.js";
-import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
+import { createDevSession, generateDevSessionId, getDevSession, isDevSessionId } from "../lib/devSessions.js";
 import { generatePDF, generatePNG } from "../services/pdf.js";
 import { storeDocument } from "../lib/documentStore.js";
+import { extractMustachePlaceholders } from "../lib/mustacheUtils.js";
 import Mustache from "mustache";
 import type { Context } from "hono";
+
+// Monthly PDF generation limits by tier (imported from rateLimit.ts pattern)
+const MONTHLY_LIMITS: Record<string, number> = {
+  demo: 10,
+  free: 100,
+  starter: 1000,
+  pro: 10000,
+  enterprise: 100000,
+};
 
 // Helper to get base URL for hosted documents
 function getBaseUrl(c: Context): string {
   const host = c.req.header("host") || "api.glyph.you";
   const proto = c.req.header("x-forwarded-proto") || "https";
   return `${proto}://${host}`;
+}
+
+/**
+ * Check monthly PDF quota for an API key
+ * Returns whether generation is allowed and usage details
+ */
+async function checkPdfQuota(
+  apiKeyId: string | null,
+  tier: string
+): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+  resetsAt: string;
+}> {
+  const monthlyLimit = MONTHLY_LIMITS[tier] || MONTHLY_LIMITS.free;
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  // Demo tier with no apiKeyId always allowed (in-memory only)
+  if (!apiKeyId || tier === "demo") {
+    return {
+      allowed: true,
+      used: 0,
+      limit: monthlyLimit,
+      resetsAt: nextMonth.toISOString(),
+    };
+  }
+
+  // Enterprise has unlimited
+  if (monthlyLimit >= 100000) {
+    return {
+      allowed: true,
+      used: 0,
+      limit: monthlyLimit,
+      resetsAt: nextMonth.toISOString(),
+    };
+  }
+
+  if (!supabase) {
+    // No database, allow but log warning
+    console.warn("[Auto-Generate] Supabase not configured, skipping quota check");
+    return {
+      allowed: true,
+      used: 0,
+      limit: monthlyLimit,
+      resetsAt: nextMonth.toISOString(),
+    };
+  }
+
+  try {
+    // Count current month's PDF generations
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const { count } = await getSupabase()
+      .from("usage")
+      .select("*", { count: "exact", head: true })
+      .eq("api_key_id", apiKeyId)
+      .eq("pdf_generated", true)
+      .gte("created_at", startOfMonth.toISOString());
+
+    const used = count || 0;
+
+    return {
+      allowed: used < monthlyLimit,
+      used,
+      limit: monthlyLimit,
+      resetsAt: nextMonth.toISOString(),
+    };
+  } catch (error) {
+    console.error("[Auto-Generate] Quota check failed:", error);
+    // On error, allow but log
+    return {
+      allowed: true,
+      used: 0,
+      limit: monthlyLimit,
+      resetsAt: nextMonth.toISOString(),
+    };
+  }
+}
+
+/**
+ * Track PDF generation usage (fire and forget)
+ */
+function trackPdfUsage(
+  apiKeyId: string | null,
+  tier: string,
+  format: string,
+  templateId: string
+): void {
+  // Only track for non-demo tiers with valid API key ID and Supabase configured
+  if (!apiKeyId || tier === "demo" || !supabase) {
+    return;
+  }
+
+  getSupabase()
+    .from("usage")
+    .insert({
+      api_key_id: apiKeyId,
+      endpoint: "auto-generate",
+      template: templateId,
+      pdf_generated: format === "pdf" || format === "png",
+    })
+    .then(({ error }) => {
+      if (error) {
+        console.error("[Auto-Generate] Usage tracking error:", error);
+      }
+    });
 }
 
 const autoGenerate = new Hono();
@@ -443,8 +562,60 @@ autoGenerate.post("/", async (c: Context) => {
     }
 
     // STEP 7: Create session for subsequent operations
-    const sessionId = generateDevSessionId();
-    createDevSession(sessionId, selectedTemplate.id, renderedHtml, selectedTemplate.html_template, mappedData);
+    // For real API keys, persist to Supabase; for demo tier, use in-memory dev session
+    let sessionId: string;
+    let sessionSourceId: string | null = sourceId || null;
+
+    if (apiKeyId && supabase) {
+      // Real API key - persist to database for later /accept
+      try {
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        const { data: session, error } = await getSupabase()
+          .from("sessions")
+          .insert({
+            api_key_id: apiKeyId,
+            template: selectedTemplate.id,
+            current_html: renderedHtml,
+            original_html: renderedHtml,
+            template_html: selectedTemplate.html_template,
+            data: {
+              mappedData,
+              sourceId: sessionSourceId,
+              fieldMappings,
+              templateUsed: {
+                id: selectedTemplate.id,
+                name: selectedTemplate.name,
+                isBuiltIn,
+              },
+            },
+            modifications: [],
+            expires_at: expiresAt.toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (error || !session) {
+          console.warn("[Auto-Generate] DB session creation failed, falling back to dev session:", error);
+          // Fallback to dev session on DB error
+          sessionId = generateDevSessionId();
+          createDevSession(sessionId, selectedTemplate.id, renderedHtml, selectedTemplate.html_template, mappedData);
+        } else {
+          sessionId = session.id;
+          console.info(`[Auto-Generate] Created DB session: ${sessionId} for api_key: ${apiKeyId}`);
+        }
+      } catch (dbError) {
+        console.error("[Auto-Generate] DB session creation threw:", dbError);
+        // Fallback to dev session
+        sessionId = generateDevSessionId();
+        createDevSession(sessionId, selectedTemplate.id, renderedHtml, selectedTemplate.html_template, mappedData);
+      }
+    } else {
+      // Demo tier or no Supabase - in-memory session
+      sessionId = generateDevSessionId();
+      createDevSession(sessionId, selectedTemplate.id, renderedHtml, selectedTemplate.html_template, mappedData);
+      console.info(`[Auto-Generate] Created dev session: ${sessionId}`);
+    }
 
     // Build result object
     const result = {
@@ -495,7 +666,28 @@ autoGenerate.post("/", async (c: Context) => {
       return c.json(result);
     }
 
-    // STEP 8: Generate PDF/PNG if requested
+    // STEP 8: Check quota BEFORE PDF generation (P0.2)
+    const tier = (c.get("tier") as string) || "demo";
+    const quotaCheck = await checkPdfQuota(apiKeyId, tier);
+
+    if (!quotaCheck.allowed) {
+      return c.json(
+        {
+          ...result,
+          output: {
+            error: "Monthly PDF generation limit exceeded",
+            code: "QUOTA_EXCEEDED",
+            limit: quotaCheck.limit,
+            used: quotaCheck.used,
+            resetsAt: quotaCheck.resetsAt,
+            upgrade: "https://glyph.you/pricing",
+          },
+        },
+        429
+      );
+    }
+
+    // STEP 9: Generate PDF/PNG if requested
     try {
       let outputBuffer: Buffer;
       let filename: string;
@@ -520,6 +712,9 @@ autoGenerate.post("/", async (c: Context) => {
 
       const baseUrl = getBaseUrl(c);
       const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
+
+      // Track usage AFTER successful generation
+      trackPdfUsage(apiKeyId, tier, format, selectedTemplate.id);
 
       return c.json({
         ...result,
@@ -594,5 +789,387 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
   }
   current[parts[parts.length - 1]] = value;
 }
+
+// =============================================================================
+// POST /v1/auto-generate/accept - Persist auto-generated template + mapping
+// =============================================================================
+
+const acceptSchema = z.object({
+  sessionId: z.string().min(1, "Session ID is required"),
+  templateName: z.string().min(1).max(255).optional(),
+  setAsDefault: z.boolean().optional().default(true),
+  mappingOverrides: z.record(z.string()).optional(),
+});
+
+interface SessionData {
+  mappedData: Record<string, unknown>;
+  sourceId: string | null;
+  fieldMappings: Record<string, string>;
+  templateUsed: {
+    id: string;
+    name: string;
+    isBuiltIn: boolean;
+  };
+}
+
+autoGenerate.post("/accept", async (c: Context) => {
+  const apiKeyId = c.get("apiKeyId") as string | null;
+
+  // P0.3: Demo tier cannot persist
+  if (!apiKeyId) {
+    return c.json(
+      {
+        success: false,
+        error: "Template persistence requires a registered API key. Sign up at https://glyph.you to save templates.",
+        code: "DEMO_TIER_LIMITATION",
+        previewStillAvailable: true,
+        message: "You can still generate a one-time PDF using POST /v1/generate with sessionId",
+      },
+      403
+    );
+  }
+
+  if (!supabase) {
+    return c.json(
+      {
+        success: false,
+        error: "Database is not configured",
+        code: "DATABASE_NOT_CONFIGURED",
+      },
+      503
+    );
+  }
+
+  // Parse and validate request
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(
+      {
+        success: false,
+        error: "Invalid JSON body",
+        code: "INVALID_JSON",
+      },
+      400
+    );
+  }
+
+  const validation = acceptSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json(
+      {
+        success: false,
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: validation.error.issues,
+      },
+      400
+    );
+  }
+
+  const { sessionId, templateName, setAsDefault, mappingOverrides } = validation.data;
+
+  try {
+    // STEP 1: Fetch session - check for dev session vs DB session
+    let session: {
+      id: string;
+      template_html: string;
+      data: SessionData;
+      api_key_id: string | null;
+      template: string;
+    } | null = null;
+
+    if (isDevSessionId(sessionId)) {
+      // Demo session - cannot persist
+      const devSession = getDevSession(sessionId);
+      if (!devSession) {
+        return c.json(
+          {
+            success: false,
+            error: "Session not found or expired",
+            code: "SESSION_NOT_FOUND",
+          },
+          404
+        );
+      }
+
+      // Dev sessions cannot be accepted (demo tier limitation)
+      return c.json(
+        {
+          success: false,
+          error: "Template persistence requires a registered API key. This session was created in demo mode.",
+          code: "DEMO_TIER_LIMITATION",
+          previewStillAvailable: true,
+          sessionId,
+          message: "You can still generate a one-time PDF using POST /v1/generate with sessionId",
+        },
+        403
+      );
+    }
+
+    // Fetch from database
+    const { data: dbSession, error: sessionError } = await getSupabase()
+      .from("sessions")
+      .select("id, template_html, data, api_key_id, template, expires_at")
+      .eq("id", sessionId)
+      .single();
+
+    if (sessionError || !dbSession) {
+      return c.json(
+        {
+          success: false,
+          error: "Session not found or expired",
+          code: "SESSION_NOT_FOUND",
+        },
+        404
+      );
+    }
+
+    // Check expiration
+    if (new Date(dbSession.expires_at) < new Date()) {
+      return c.json(
+        {
+          success: false,
+          error: "Session has expired",
+          code: "SESSION_EXPIRED",
+        },
+        410
+      );
+    }
+
+    // SECURITY: Verify session belongs to this API key (tenant isolation)
+    if (dbSession.api_key_id !== apiKeyId) {
+      return c.json(
+        {
+          success: false,
+          error: "Session not found",
+          code: "SESSION_NOT_FOUND",
+        },
+        404
+      );
+    }
+
+    session = {
+      id: dbSession.id,
+      template_html: dbSession.template_html,
+      data: dbSession.data as SessionData,
+      api_key_id: dbSession.api_key_id,
+      template: dbSession.template,
+    };
+
+    // STEP 2: Extract session metadata
+    const sessionData = session.data;
+    const templateUsed = sessionData?.templateUsed;
+    const fieldMappings = sessionData?.fieldMappings || {};
+    const sourceId = sessionData?.sourceId;
+
+    if (!templateUsed || !session.template_html) {
+      return c.json(
+        {
+          success: false,
+          error: "Session is missing required template data. Please re-run auto-generate.",
+          code: "INVALID_SESSION_DATA",
+        },
+        400
+      );
+    }
+
+    // STEP 3: Merge mapping overrides
+    const finalMappings = mappingOverrides
+      ? { ...fieldMappings, ...mappingOverrides }
+      : fieldMappings;
+
+    // STEP 4: Clone or create template
+    let savedTemplateId: string;
+    let savedTemplateName: string;
+    let isClone = false;
+    let clonedFrom: string | null = null;
+
+    const finalTemplateName = templateName || `${templateUsed.name} - Auto Generated`;
+
+    // Extract required fields from template HTML
+    const requiredFields = extractMustachePlaceholders(session.template_html);
+
+    if (templateUsed.isBuiltIn) {
+      // Clone built-in template to user's saved templates
+      const { data: newTemplate, error: insertError } = await getSupabase()
+        .from("templates")
+        .insert({
+          api_key_id: apiKeyId,
+          name: finalTemplateName,
+          type: "auto-generated",
+          description: `Auto-generated from ${templateUsed.name}`,
+          html_template: session.template_html,
+          schema: {},
+          style: null,
+          is_default: false,
+          required_fields: requiredFields,
+          sample_data: sessionData?.mappedData || {},
+          ai_metadata: {
+            source: "auto-generate",
+            cloned_from: templateUsed.id,
+            created_at: new Date().toISOString(),
+          },
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !newTemplate) {
+        console.error("[Auto-Generate] Template clone failed:", insertError);
+        return c.json(
+          {
+            success: false,
+            error: "Failed to save template",
+            code: "DATABASE_ERROR",
+            details: insertError?.message,
+          },
+          500
+        );
+      }
+
+      savedTemplateId = newTemplate.id;
+      savedTemplateName = finalTemplateName;
+      isClone = true;
+      clonedFrom = templateUsed.id;
+      console.info(`[Auto-Generate] Cloned built-in template ${templateUsed.id} to ${savedTemplateId}`);
+    } else {
+      // Use existing saved template (update sample_data if provided)
+      savedTemplateId = templateUsed.id;
+      savedTemplateName = templateUsed.name;
+
+      // Optionally update sample_data on existing template
+      if (sessionData?.mappedData) {
+        await getSupabase()
+          .from("templates")
+          .update({ sample_data: sessionData.mappedData })
+          .eq("id", savedTemplateId)
+          .eq("api_key_id", apiKeyId);
+      }
+    }
+
+    // STEP 5: Create or update template_source_mapping
+    let mappingId: string | null = null;
+
+    if (sourceId) {
+      // Verify source belongs to this API key
+      const { data: source, error: sourceError } = await getSupabase()
+        .from("data_sources")
+        .select("id")
+        .eq("id", sourceId)
+        .eq("api_key_id", apiKeyId)
+        .is("deleted_at", null)
+        .single();
+
+      if (sourceError || !source) {
+        console.warn("[Auto-Generate] Source not found or not owned:", sourceId);
+        // Continue without creating mapping - template is still saved
+      } else {
+        // Check for existing mapping
+        const { data: existingMapping } = await getSupabase()
+          .from("template_source_mappings")
+          .select("id")
+          .eq("template_id", savedTemplateId)
+          .eq("source_id", sourceId)
+          .single();
+
+        if (existingMapping) {
+          // Update existing mapping
+          const { error: updateError } = await getSupabase()
+            .from("template_source_mappings")
+            .update({
+              field_mappings: finalMappings,
+              is_default: setAsDefault,
+              validation_status: "valid",
+              last_validated_at: new Date().toISOString(),
+            })
+            .eq("id", existingMapping.id);
+
+          if (updateError) {
+            console.error("[Auto-Generate] Mapping update failed:", updateError);
+          } else {
+            mappingId = existingMapping.id;
+          }
+        } else {
+          // Create new mapping
+          const { data: newMapping, error: mappingError } = await getSupabase()
+            .from("template_source_mappings")
+            .insert({
+              template_id: savedTemplateId,
+              source_id: sourceId,
+              field_mappings: finalMappings,
+              transformations: {},
+              is_default: setAsDefault,
+              validation_status: "valid",
+              last_validated_at: new Date().toISOString(),
+            })
+            .select("id")
+            .single();
+
+          if (mappingError || !newMapping) {
+            console.error("[Auto-Generate] Mapping creation failed:", mappingError);
+          } else {
+            mappingId = newMapping.id;
+            console.info(`[Auto-Generate] Created mapping ${mappingId} for template ${savedTemplateId} -> source ${sourceId}`);
+          }
+        }
+
+        // STEP 6: If setAsDefault, update template's default_source_id
+        if (setAsDefault) {
+          await getSupabase()
+            .from("templates")
+            .update({ default_source_id: sourceId })
+            .eq("id", savedTemplateId)
+            .eq("api_key_id", apiKeyId);
+        }
+      }
+    }
+
+    // STEP 7: Return comprehensive response
+    return c.json(
+      {
+        success: true,
+        savedTemplate: {
+          id: savedTemplateId,
+          name: savedTemplateName,
+          type: "auto-generated",
+          version: 1,
+          isClone,
+          clonedFrom,
+        },
+        mapping: mappingId
+          ? {
+              id: mappingId,
+              templateId: savedTemplateId,
+              sourceId,
+              fieldMappings: finalMappings,
+              isDefault: setAsDefault,
+            }
+          : null,
+        defaultSet: setAsDefault && mappingId !== null,
+        message: mappingId
+          ? `Template saved and ${setAsDefault ? "set as default" : "linked"} for this source. Generate PDFs with POST /v1/generate/smart`
+          : "Template saved. Connect a data source to generate PDFs automatically.",
+        _actions: {
+          generateSingle: "POST /v1/generate/smart { sourceId, recordId }",
+          generateBatch: "POST /v1/generate/smart/batch { sourceId }",
+          editMapping: mappingId ? `PUT /v1/mappings/${mappingId}` : null,
+          editTemplate: `PUT /v1/templates/saved/${savedTemplateId}`,
+        },
+      },
+      201
+    );
+  } catch (error) {
+    console.error("[Auto-Generate] Accept error:", error);
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to accept template",
+        code: "ACCEPT_ERROR",
+      },
+      500
+    );
+  }
+});
 
 export default autoGenerate;

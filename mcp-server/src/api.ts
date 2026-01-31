@@ -342,6 +342,102 @@ export interface SaveTemplateFromSessionResult {
   warnings?: string[];
 }
 
+// =============================================================================
+// Auto-Generate Types (One-Call Magic)
+// =============================================================================
+
+export interface AutoGenerateParams {
+  sourceId?: string;
+  rawData?: Record<string, unknown>;
+  recordId?: string;
+  templateId?: string;
+  mappingOverrides?: Record<string, string>;
+  format?: "preview" | "html" | "pdf" | "png";
+  confidenceThreshold?: number;
+  autoAcceptAboveThreshold?: boolean;
+}
+
+export interface AutoGenerateResult {
+  success: boolean;
+  sessionId: string;
+  preview: {
+    html: string;
+    templateHtml: string;
+  };
+  templateUsed: {
+    id: string;
+    name: string;
+    confidence: number;
+    reasoning: string;
+    isBuiltIn: boolean;
+  };
+  documentType: {
+    detected: string;
+    confidence: number;
+  };
+  mappings: {
+    applied: Record<string, string>;
+    unmapped: string[];
+    coverage: number;
+    suggestions: Array<{
+      templateField: string;
+      possibleSourceFields: string[];
+    }>;
+  };
+  source: {
+    name: string;
+    recordCount: number;
+    sourceId: string | null;
+  };
+  output?: {
+    format?: string;
+    url?: string;
+    size?: number;
+    filename?: string;
+    expiresAt?: string;
+    error?: string;
+    details?: string;
+  };
+  _links: {
+    modify: string;
+    generate: string;
+  };
+}
+
+export interface AcceptPreviewParams {
+  sessionId: string;
+  templateName?: string;
+  setAsDefault?: boolean;
+  mappingOverrides?: Record<string, string>;
+}
+
+export interface AcceptPreviewResult {
+  success: boolean;
+  savedTemplate: {
+    id: string;
+    name: string;
+    type: string;
+    version: number;
+    isClone: boolean;
+    clonedFrom: string | null;
+  };
+  mapping: {
+    id: string;
+    templateId: string;
+    sourceId: string;
+    fieldMappings: Record<string, string>;
+    isDefault: boolean;
+  } | null;
+  defaultSet: boolean;
+  message: string;
+  _actions: {
+    generateSingle: string;
+    generateBatch: string;
+    editMapping: string | null;
+    editTemplate: string;
+  };
+}
+
 export class GlyphApiError extends Error {
   code: string;
   details?: unknown;
@@ -689,6 +785,36 @@ export class GlyphApiClient {
         }),
       }
     );
+  }
+
+  // ===========================================================================
+  // Auto-Generate API (One-Call Magic)
+  // ===========================================================================
+
+  /**
+   * Auto-generate a PDF from a data source in one call.
+   * Automatically detects document type, selects template, maps fields.
+   */
+  async autoGenerate(
+    params: AutoGenerateParams
+  ): Promise<AutoGenerateResult> {
+    return this.request<AutoGenerateResult>("/v1/auto-generate", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * Accept/persist an auto-generated preview as a saved template.
+   * After accepting, you can generate PDFs with just sourceId + recordId.
+   */
+  async acceptPreview(
+    params: AcceptPreviewParams
+  ): Promise<AcceptPreviewResult> {
+    return this.request<AcceptPreviewResult>("/v1/auto-generate/accept", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
   }
 
   /**

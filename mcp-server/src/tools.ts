@@ -21,6 +21,10 @@ import {
   type CloneTemplateParams,
   type CreateSessionFromMappingParams,
   type SaveTemplateFromSessionParams,
+  type AutoGenerateParams,
+  type AutoGenerateResult,
+  type AcceptPreviewParams,
+  type AcceptPreviewResult,
 } from "./api.js";
 
 // Template detection patterns for auto-template feature
@@ -897,6 +901,129 @@ This completes the data-first workflow - your template is now ready to generate 
         },
       },
       required: ["templateId", "sessionId"],
+    },
+  },
+
+  // ===========================================================================
+  // Auto-Generate Tools (One-Call Magic)
+  // ===========================================================================
+
+  {
+    name: "glyph_auto_generate",
+    description: `Generate a PDF from your data source in one call. Automatically:
+- Detects document type (invoice, quote, receipt, etc.)
+- Selects best matching template
+- Maps fields from your source to template
+- Generates a preview or PDF
+
+This is the fastest way to generate PDFs from connected data sources:
+1. Connect a data source with glyph_create_source (or pass rawData directly)
+2. Call glyph_auto_generate with the sourceId
+3. Review the preview and field mappings
+4. Call glyph_accept_preview to save the configuration for future use
+
+For production use, call glyph_accept_preview to persist the template and mapping.
+After that, you can generate PDFs with just sourceId + recordId.
+
+Example workflow:
+1. glyph_auto_generate({ sourceId: "src_123", format: "preview" })
+2. Review the mappings, make adjustments if needed
+3. glyph_accept_preview({ sessionId: "...", setAsDefault: true })
+4. Now generate PDFs: glyph_generate_from_source({ templateId: "...", recordId: "rec_456" })`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        sourceId: {
+          type: "string",
+          description: "ID of connected data source (from glyph_create_source). Either sourceId or rawData is required.",
+        },
+        rawData: {
+          type: "object",
+          description: "Raw data object to generate PDF from. Use this for one-off generations without a saved source.",
+          additionalProperties: true,
+        },
+        recordId: {
+          type: "string",
+          description: "Optional specific record ID from the data source. If omitted, uses the first record.",
+        },
+        templateId: {
+          type: "string",
+          description: "Optional template override (skip auto-selection). Can be a built-in template ID (e.g., 'quote-modern') or a saved template UUID.",
+        },
+        mappingOverrides: {
+          type: "object",
+          description: "Optional field mapping overrides. Format: { templateField: sourceField }",
+          additionalProperties: {
+            type: "string",
+          },
+        },
+        format: {
+          type: "string",
+          enum: ["preview", "html", "pdf", "png"],
+          default: "preview",
+          description: "Output format. Use 'preview' to review before generating PDF.",
+        },
+        confidenceThreshold: {
+          type: "number",
+          minimum: 0,
+          maximum: 1,
+          default: 0.7,
+          description: "Minimum confidence to proceed with auto-selected template (0-1, default 0.7).",
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "glyph_accept_preview",
+    description: `Save an auto-generated preview as your default template for a data source.
+After accepting, you can generate PDFs with just sourceId + recordId.
+
+This persists:
+- The template (cloned from built-in if needed)
+- The field mappings between your source and template
+- Optionally sets this as the default for the source
+
+Use this after glyph_auto_generate to lock in your configuration.
+
+Example:
+1. Call glyph_auto_generate to get a preview
+2. Review the mappings and preview
+3. Call glyph_accept_preview with the sessionId
+4. Now use glyph_generate_from_source for fast PDF generation`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Session ID from glyph_auto_generate response",
+        },
+        templateName: {
+          type: "string",
+          description: "Optional custom name for the saved template. Defaults to '[TemplateName] - Auto Generated'.",
+        },
+        setAsDefault: {
+          type: "boolean",
+          default: true,
+          description: "Set this template as the default for the data source. Default is true.",
+        },
+        mappingOverrides: {
+          type: "object",
+          description: "Optional field mapping overrides to apply before saving.",
+          additionalProperties: {
+            type: "string",
+          },
+        },
+        apiKey: {
+          type: "string",
+          description: "Glyph API key. Uses GLYPH_API_KEY env var if not provided.",
+        },
+      },
+      required: ["sessionId"],
     },
   },
 ];
@@ -2155,6 +2282,252 @@ export async function handleGlyphSaveTemplateFromSession(args: {
 }
 
 // =============================================================================
+// Auto-Generate Tool Handlers (One-Call Magic)
+// =============================================================================
+
+export async function handleGlyphAutoGenerate(args: {
+  sourceId?: string;
+  rawData?: Record<string, unknown>;
+  recordId?: string;
+  templateId?: string;
+  mappingOverrides?: Record<string, string>;
+  format?: "preview" | "html" | "pdf" | "png";
+  confidenceThreshold?: number;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    // Validate that either sourceId or rawData is provided
+    if (!args.sourceId && !args.rawData) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                error: "Either sourceId or rawData is required",
+                code: "VALIDATION_ERROR",
+                usage: {
+                  withSource: 'glyph_auto_generate({ sourceId: "src_123" })',
+                  withRawData: 'glyph_auto_generate({ rawData: { customer: {...}, items: [...] } })',
+                },
+              },
+              null,
+              2
+            ),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const client = getClient(args.apiKey);
+    const result = await client.autoGenerate({
+      sourceId: args.sourceId,
+      rawData: args.rawData,
+      recordId: args.recordId,
+      templateId: args.templateId,
+      mappingOverrides: args.mappingOverrides,
+      format: args.format || "preview",
+      confidenceThreshold: args.confidenceThreshold,
+    });
+
+    // Store session locally for subsequent glyph_modify and glyph_generate calls
+    if (result.sessionId && result.preview?.html) {
+      storeSession(
+        result.sessionId,
+        result.preview.html,
+        result.templateUsed.id,
+        args.rawData || {}
+      );
+    }
+
+    // Build response based on format
+    const response: Record<string, unknown> = {
+      success: true,
+      sessionId: result.sessionId,
+      templateUsed: {
+        id: result.templateUsed.id,
+        name: result.templateUsed.name,
+        confidence: `${Math.round(result.templateUsed.confidence * 100)}%`,
+        reasoning: result.templateUsed.reasoning,
+        isBuiltIn: result.templateUsed.isBuiltIn,
+      },
+      documentType: {
+        detected: result.documentType.detected,
+        confidence: `${Math.round(result.documentType.confidence * 100)}%`,
+      },
+      mappings: {
+        applied: result.mappings.applied,
+        unmapped: result.mappings.unmapped,
+        coverage: `${Math.round(result.mappings.coverage * 100)}%`,
+        suggestions: result.mappings.suggestions,
+      },
+      source: result.source,
+      htmlPreview:
+        result.preview.html.substring(0, 500) +
+        (result.preview.html.length > 500 ? "..." : ""),
+    };
+
+    // Add output if PDF/PNG was generated
+    if (result.output) {
+      if (result.output.error) {
+        response.outputError = {
+          error: result.output.error,
+          details: result.output.details,
+          fallback: `Use glyph_generate with sessionId: ${result.sessionId}`,
+        };
+      } else {
+        response.output = {
+          format: result.output.format,
+          url: result.output.url,
+          size: formatBytes(result.output.size || 0),
+          filename: result.output.filename,
+          expiresAt: result.output.expiresAt,
+        };
+      }
+    }
+
+    // Determine next steps based on result
+    const nextSteps: string[] = [];
+
+    if (result.mappings.unmapped.length > 0) {
+      nextSteps.push(
+        `${result.mappings.unmapped.length} unmapped field(s). Consider providing mappingOverrides for: ${result.mappings.unmapped.slice(0, 3).join(", ")}`
+      );
+    }
+
+    if (args.format === "preview" || !args.format) {
+      nextSteps.push(
+        `Use glyph_accept_preview with sessionId "${result.sessionId}" to save this configuration`
+      );
+      nextSteps.push(
+        `Use glyph_modify with sessionId "${result.sessionId}" to customize the document`
+      );
+      nextSteps.push(
+        `Use glyph_generate with sessionId "${result.sessionId}" to generate the final PDF`
+      );
+    } else if (result.output?.url) {
+      nextSteps.push(
+        `PDF generated successfully. Use glyph_accept_preview to save this configuration for future use.`
+      );
+    }
+
+    response.nextSteps = nextSteps;
+    response.message = `Auto-generated ${result.documentType.detected} document using "${result.templateUsed.name}" (${Math.round(result.templateUsed.confidence * 100)}% match). ${Object.keys(result.mappings.applied).length} field(s) mapped.`;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    return formatError(error);
+  }
+}
+
+export async function handleGlyphAcceptPreview(args: {
+  sessionId: string;
+  templateName?: string;
+  setAsDefault?: boolean;
+  mappingOverrides?: Record<string, string>;
+  apiKey?: string;
+}): Promise<ToolResult> {
+  try {
+    const client = getClient(args.apiKey);
+    const result = await client.acceptPreview({
+      sessionId: args.sessionId,
+      templateName: args.templateName,
+      setAsDefault: args.setAsDefault ?? true,
+      mappingOverrides: args.mappingOverrides,
+    });
+
+    const response: Record<string, unknown> = {
+      success: true,
+      savedTemplate: {
+        id: result.savedTemplate.id,
+        name: result.savedTemplate.name,
+        type: result.savedTemplate.type,
+        version: result.savedTemplate.version,
+        isClone: result.savedTemplate.isClone,
+        clonedFrom: result.savedTemplate.clonedFrom,
+      },
+      message: result.message,
+    };
+
+    if (result.mapping) {
+      response.mapping = {
+        id: result.mapping.id,
+        templateId: result.mapping.templateId,
+        sourceId: result.mapping.sourceId,
+        fieldCount: Object.keys(result.mapping.fieldMappings).length,
+        isDefault: result.mapping.isDefault,
+      };
+    }
+
+    // Build next steps
+    const nextSteps: string[] = [];
+
+    if (result.mapping) {
+      nextSteps.push(
+        `Generate PDFs: glyph_generate_from_source({ templateId: "${result.savedTemplate.id}", recordId: "your_record_id" })`
+      );
+      if (result.defaultSet) {
+        nextSteps.push(
+          "This template is now the default for this source - sourceId is optional in future calls"
+        );
+      }
+    } else {
+      nextSteps.push(
+        `Connect a data source with glyph_create_source, then use glyph_link_template to enable smart generation`
+      );
+    }
+
+    nextSteps.push(
+      `Edit template: glyph_template_get({ id: "${result.savedTemplate.id}" })`
+    );
+
+    response.nextSteps = nextSteps;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    // Handle specific error cases
+    if (error instanceof GlyphApiError) {
+      if (error.code === "DEMO_TIER_LIMITATION") {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  error: error.message,
+                  code: error.code,
+                  suggestion: "Sign up for a free API key at https://glyph.you to persist templates",
+                  alternative: `You can still generate a one-time PDF using glyph_generate with sessionId: "${args.sessionId}"`,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+    return formatError(error);
+  }
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -2384,6 +2757,15 @@ export async function handleTool(
     case "glyph_save_template_from_session":
       return handleGlyphSaveTemplateFromSession(
         args as Parameters<typeof handleGlyphSaveTemplateFromSession>[0]
+      );
+    // Auto-Generate tools (One-Call Magic)
+    case "glyph_auto_generate":
+      return handleGlyphAutoGenerate(
+        args as Parameters<typeof handleGlyphAutoGenerate>[0]
+      );
+    case "glyph_accept_preview":
+      return handleGlyphAcceptPreview(
+        args as Parameters<typeof handleGlyphAcceptPreview>[0]
       );
     default:
       return {
