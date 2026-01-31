@@ -1448,6 +1448,41 @@ export function App() {
     }
   }
 
+  // Sample data for work-order template
+  const sampleWorkOrderData = {
+    work_order_number: 'WO-2024-00157',
+    customer_name: 'Johnson Residence',
+    customer_address: '1842 Oak Street\nSpringfield, IL 62701',
+    contact_phone: '(555) 123-4567',
+    work_description: 'HVAC system inspection and repair. Customer reports AC unit not cooling properly. Inspect refrigerant levels, check compressor, clean condenser coils, and replace air filter.',
+    materials: [
+      { item: 'R-410A Refrigerant (lb)', quantity: 2, unit_price: 45.00, line_total: 90.00 },
+      { item: 'Air Filter 20x25x1', quantity: 1, unit_price: 18.00, line_total: 18.00 },
+      { item: 'Capacitor 45/5 MFD', quantity: 1, unit_price: 35.00, line_total: 35.00 }
+    ],
+    labor_hours: 2.5,
+    labor_rate: 85.00,
+    labor_total: 212.50,
+    materials_subtotal: 143.00,
+    grand_total: 355.50,
+    scheduled_date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    technician_name: 'Mike Rodriguez',
+    priority: 'normal'
+  }
+
+  // Get appropriate sample data for a template
+  const getSampleDataForTemplate = (template: string): Record<string, unknown> => {
+    // Extract template name from saved: prefix if present
+    const templateName = template.startsWith('saved:') ? template.replace('saved:', '') : template
+
+    switch (templateName) {
+      case 'work-order':
+        return sampleWorkOrderData
+      default:
+        return sampleQuoteData
+    }
+  }
+
   // Initialize playground session
   const initPlaygroundSession = useCallback(async (template: string = playgroundTemplate) => {
     if (!apiKey) return
@@ -1460,8 +1495,11 @@ export function App() {
       const isSavedTemplate = template.startsWith('saved:')
       const templateId = isSavedTemplate ? template.replace('saved:', '') : template
 
+      // Use appropriate sample data based on template
+      const sampleData = getSampleDataForTemplate(template)
+
       const requestBody: Record<string, unknown> = {
-        data: sampleQuoteData
+        data: sampleData
       }
 
       if (isSavedTemplate) {
