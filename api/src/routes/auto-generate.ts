@@ -16,8 +16,18 @@ import {
 } from "../services/autoMatcher.js";
 import { createConnector } from "../services/connectors/index.js";
 import { templateEngine } from "../services/template.js";
+import { createDevSession, generateDevSessionId } from "../lib/devSessions.js";
+import { generatePDF, generatePNG } from "../services/pdf.js";
+import { storeDocument } from "../lib/documentStore.js";
 import Mustache from "mustache";
 import type { Context } from "hono";
+
+// Helper to get base URL for hosted documents
+function getBaseUrl(c: Context): string {
+  const host = c.req.header("host") || "api.glyph.you";
+  const proto = c.req.header("x-forwarded-proto") || "https";
+  return `${proto}://${host}`;
+}
 
 const autoGenerate = new Hono();
 
@@ -97,11 +107,23 @@ autoGenerate.post("/", async (c: Context) => {
     let sourceName = "Raw Data";
 
     if (sourceId) {
-      // Fetch from registered data source
+      // Fetch from registered data source - MUST scope by api_key_id for tenant isolation
+      if (!apiKeyId) {
+        return c.json(
+          {
+            success: false,
+            error: "API key required to access data sources",
+            code: "AUTH_REQUIRED",
+          },
+          401
+        );
+      }
+
       const { data: source, error: sourceError } = await getSupabase()
         .from("data_sources")
         .select("*")
         .eq("id", sourceId)
+        .eq("api_key_id", apiKeyId)  // SECURITY: tenant isolation
         .single();
 
       if (sourceError || !source) {
@@ -215,12 +237,18 @@ autoGenerate.post("/", async (c: Context) => {
           );
         }
       } else {
-        // Try as UUID for saved template
-        const { data: savedTemplate } = await getSupabase()
+        // Try as UUID for saved template - MUST scope by api_key_id for tenant isolation
+        const savedTemplateQuery = getSupabase()
           .from("saved_templates")
           .select("*")
-          .eq("id", overrideTemplateId)
-          .single();
+          .eq("id", overrideTemplateId);
+
+        // Only scope by api_key_id if we have one (demo tier won't have it)
+        if (apiKeyId) {
+          savedTemplateQuery.eq("api_key_id", apiKeyId);
+        }
+
+        const { data: savedTemplate } = await savedTemplateQuery.single();
 
         if (!savedTemplate) {
           return c.json(
@@ -309,11 +337,17 @@ autoGenerate.post("/", async (c: Context) => {
           );
         }
       } else {
-        const { data: savedTemplate } = await getSupabase()
+        // Fetch saved template - scope by api_key_id for tenant isolation
+        const savedTemplateQuery = getSupabase()
           .from("saved_templates")
           .select("*")
-          .eq("id", bestMatch.templateId)
-          .single();
+          .eq("id", bestMatch.templateId);
+
+        if (apiKeyId) {
+          savedTemplateQuery.eq("api_key_id", apiKeyId);
+        }
+
+        const { data: savedTemplate } = await savedTemplateQuery.single();
 
         if (savedTemplate) {
           selectedTemplate = {
@@ -408,9 +442,14 @@ autoGenerate.post("/", async (c: Context) => {
       );
     }
 
-    // STEP 7: Return based on format
+    // STEP 7: Create session for subsequent operations
+    const sessionId = generateDevSessionId();
+    createDevSession(sessionId, selectedTemplate.id, renderedHtml, selectedTemplate.html_template, mappedData);
+
+    // Build result object
     const result = {
       success: true,
+      sessionId, // Now returns sessionId for /v1/modify and /v1/generate
       preview: {
         html: renderedHtml,
         templateHtml: selectedTemplate.html_template, // For editing
@@ -444,6 +483,11 @@ autoGenerate.post("/", async (c: Context) => {
       source: {
         name: sourceName,
         recordCount: 1,
+        sourceId: sourceId || null,
+      },
+      _links: {
+        modify: `POST /v1/modify with sessionId: ${sessionId}`,
+        generate: `POST /v1/generate with sessionId: ${sessionId}`,
       },
     };
 
@@ -451,12 +495,53 @@ autoGenerate.post("/", async (c: Context) => {
       return c.json(result);
     }
 
-    // For PDF/PNG, would need to use generate service
-    // This is a preview-focused endpoint, full PDF generation can use /v1/generate
-    return c.json({
-      ...result,
-      message: "For PDF/PNG generation, use POST /v1/generate with the rendered HTML",
-    });
+    // STEP 8: Generate PDF/PNG if requested
+    try {
+      let outputBuffer: Buffer;
+      let filename: string;
+
+      if (format === "pdf") {
+        outputBuffer = await generatePDF(renderedHtml);
+        filename = `glyph-auto-${selectedTemplate.id}-${Date.now()}.pdf`;
+      } else {
+        outputBuffer = await generatePNG(renderedHtml);
+        filename = `glyph-auto-${selectedTemplate.id}-${Date.now()}.png`;
+      }
+
+      // Store document and get hosted URL
+      const storedDoc = storeDocument({
+        buffer: outputBuffer,
+        format: format as "pdf" | "png",
+        filename,
+        source: { type: "data", templateId: selectedTemplate.id },
+        sessionId,
+        ttlSeconds: 3600, // 1 hour
+      });
+
+      const baseUrl = getBaseUrl(c);
+      const hostedUrl = `${baseUrl}/v1/documents/${storedDoc.id}`;
+
+      return c.json({
+        ...result,
+        output: {
+          format,
+          url: hostedUrl,
+          size: outputBuffer.length,
+          filename,
+          expiresAt: storedDoc.expiresAt,
+        },
+      });
+    } catch (pdfError) {
+      console.error("[Auto-Generate] PDF generation failed:", pdfError);
+      return c.json({
+        ...result,
+        output: {
+          error: "PDF generation failed",
+          details: pdfError instanceof Error ? pdfError.message : "Unknown error",
+          fallback: `Use POST /v1/generate with sessionId: ${sessionId}`,
+        },
+      });
+    }
   } catch (error) {
     console.error("[Auto-Generate] Error:", error);
     return c.json(
